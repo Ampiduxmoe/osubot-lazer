@@ -7,6 +7,13 @@ function main() {
   const appConfig: IAppConfig = JSON.parse(configFile.toString());
   const app = new App(appConfig);
   app.start();
+
+  const shutdown = () => {
+    console.log('Program received SIGTERM, attempting to shutdown now...');
+    app.stop();
+  };
+  process.on('SIGTERM', shutdown);
+  process.on('SIGINT', shutdown);
 }
 
 main();

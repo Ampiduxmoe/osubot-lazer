@@ -5,4 +5,11 @@ export interface IAppConfig {
       secret: string;
     };
   };
+  vk: {
+    group: {
+      id: number;
+      token: string;
+      owner: number;
+    };
+  };
 }
