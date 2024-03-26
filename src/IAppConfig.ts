@@ -12,4 +12,7 @@ export interface IAppConfig {
       owner: number;
     };
   };
+  bot: {
+    score_simulation_endpoint: string;
+  };
 }

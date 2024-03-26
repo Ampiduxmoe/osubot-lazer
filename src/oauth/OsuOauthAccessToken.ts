@@ -1,4 +1,4 @@
-import {Timespan} from '../time/Timespan';
+import {Timespan} from '../primitives/Timespan';
 import {IOsuOauthAccessTokenReadDto} from './IOsuOauthAccessTokenReadDto';
 
 export class OsuOauthAccessToken {

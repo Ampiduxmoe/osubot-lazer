@@ -1,3 +1,4 @@
+import {Result} from './Result';
 export class Timespan {
   private _milliseconds = 0;
   private _seconds = 0;
