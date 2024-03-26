@@ -93,7 +93,7 @@ export class App {
         return;
       }
       if (response.status !== 200) {
-        console.log('Could not fetch user');
+        console.log(`Could not fetch user ${username}`);
         ctx.reply(
           `Не удалось установить никнейм ${username}: \n${url} вернул код ${response.status}`
         );
@@ -255,29 +255,29 @@ export class App {
         }
       );
       if (response.status !== 200) {
-        console.log('Could not fetch cover');
+        console.log(`Could not fetch cover for ${beatmapId}`);
         return undefined;
       }
-      console.log('Sucessfully fetched cover');
 
-      console.log('Uploading cover to VK...');
+      console.log(`Uploading cover for ${beatmapId} to VK...`);
       const photo = await this.vk.upload.messagePhoto({
         source: {
           value: Buffer.from(response.data),
         },
       });
-      console.log('Uploaded cover to VK');
 
-      console.log('Adding cover to database...');
+      console.log(`Adding cover for ${beatmapId} to database...`);
       await this.dbRun('INSERT INTO covers (id, attachment) VALUES (?, ?)', [
         beatmapId,
         photo.toString(),
       ]);
-      console.log('Added cover to database');
+      console.log(
+        `Added cover to database: ${beatmapId} | ${photo.toString()}`
+      );
 
       return photo.toString();
     } catch (e) {
-      console.log(`Could not add cover for ${beatmapId}`);
+      console.log(`Error: could not add cover for ${beatmapId}`);
       console.error(e);
       return undefined;
     }
