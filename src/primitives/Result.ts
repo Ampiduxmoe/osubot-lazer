@@ -3,12 +3,12 @@ export abstract class Result<T> {
   readonly isFailure: boolean = this instanceof Failure;
 
   /** Unsafe cast to Success, used as shorter version of safe cast after checking this.isSuccess */
-  private asSuccess(): Success<T> {
+  asSuccess(): Success<T> {
     return this as unknown as Success<T>;
   }
 
   /** Unsafe cast to Failure, used as shorter version of safe cast after checking this.isFailure */
-  private asFailure(): Failure<T> {
+  asFailure(): Failure<T> {
     return this as unknown as Failure<T>;
   }
 

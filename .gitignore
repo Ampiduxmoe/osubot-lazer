@@ -44,3 +44,4 @@ yarn.lock
 
 # local db
 osu.db
+osu_dev.db

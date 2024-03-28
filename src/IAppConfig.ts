@@ -6,13 +6,16 @@ export interface IAppConfig {
     };
   };
   vk: {
-    group: {
-      id: number;
-      token: string;
-      owner: number;
-    };
+    group: IVkGroup;
+    group_dev: IVkGroup;
   };
   bot: {
     score_simulation_endpoint: string;
   };
+}
+
+export interface IVkGroup {
+  id: number;
+  token: string;
+  owner: number;
 }

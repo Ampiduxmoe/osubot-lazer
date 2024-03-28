@@ -6,13 +6,14 @@ import {IBeatmapset} from '../../dtos/osu/beatmaps/IBeatmapset';
 import {capitalize} from '../../primitives/Strings';
 import {Timespan} from '../../primitives/Timespan';
 import {round} from '../../primitives/Numbers';
+import {Result} from '../../primitives/Result';
 
 export async function recentTemplate(
   score: IScore,
   map: IBeatmapExtended,
   mapset: IBeatmapset,
   scoreSim: IPerformanceSimulationResult
-) {
+): Promise<Result<string>> {
   const mapStatus = capitalize(map.status);
   const artist = mapset.artist;
   const title = mapset.title;
@@ -81,8 +82,22 @@ export async function recentTemplate(
     goods: 0,
     beatmap_id: scoreSim.score.beatmap_id,
   });
-  const ppFcSim = await ppFcSimPromise;
-  const ppSsSim = await ppSsSimPromise;
+  const ppFcSimResult = await ppFcSimPromise;
+  if (ppFcSimResult.isFailure) {
+    const failure = ppFcSimResult.asFailure();
+    const errorText = 'Could not simulate FC score';
+    console.log(errorText);
+    return Result.fail([Error(errorText), ...failure.errors]);
+  }
+  const ppSsSimResult = await ppSsSimPromise;
+  if (ppSsSimResult.isFailure) {
+    const failure = ppSsSimResult.asFailure();
+    const errorText = 'Could not simulate SS score';
+    console.log(errorText);
+    return Result.fail([Error(errorText), ...failure.errors]);
+  }
+  const ppFcSim = ppFcSimResult.asSuccess().value;
+  const ppSsSim = ppSsSimResult.asSuccess().value;
   const ppFc = ppFcSim ? round(ppFcSim.performance_attributes.pp, 2) : '?';
   const ppSs = ppSsSim ? round(ppSsSim.performance_attributes.pp, 2) : '?';
   const hitcountsString = `${counts.count_300}/${counts.count_100}/${counts.count_50}/${counts.count_miss}`;
@@ -93,7 +108,8 @@ export async function recentTemplate(
   const mapCompletionString =
     rankAdjusted !== 'F' ? '' : `(${completionPercent}%)`;
 
-  return `
+  return Result.ok(
+    `
 
 <${mapStatus}> ${artist} - ${title} [${diffname}] by ${mapperName}
 ${lengthString} (${drainString}) | ${bpm}BPM | ${sr}✩ ${modsString}
@@ -107,5 +123,6 @@ Grade: ${rankAdjusted} ${mapCompletionString}
 
 Beatmap: ${map.url}
 
-  `.trim();
+  `.trim()
+  );
 }
