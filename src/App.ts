@@ -8,13 +8,15 @@ import {IScore} from './dtos/osu/scores/IScore';
 import {IScores} from './dtos/osu/scores/IScores';
 import {PerformanceCalculator} from './bot/performance/PerformanceCalculator';
 import {IPerformanceSimulationResult} from './bot/performance/IPerformanceSimulationResult';
-import {recentTemplate} from './bot/templates/Recent';
 import {UserDbObject} from './bot/database/Entities';
 import {Result} from './primitives/Result';
-import {catchedValueToError, stringifyErrors} from './primitives/Errors';
+import {catchedValueToError} from './primitives/Errors';
 import {BotDb} from './bot/database/BotDb';
 import {Covers} from './bot/database/modules/Covers';
 import {Bancho} from './bot/database/modules/Bancho';
+import {BotCommand} from './bot/commands/BotCommand';
+import {SetUsername} from './bot/commands/SetUsername';
+import {RecentPlay} from './bot/commands/RecentPlay';
 
 export class App {
   readonly config: IAppConfig;
@@ -32,6 +34,7 @@ export class App {
   vk: VK;
   currentGroup: IVkGroup;
   db: BotDb;
+  commands: BotCommand<unknown>[] = [];
 
   constructor(config: IAppConfig) {
     console.log('App initialization started');
@@ -47,6 +50,7 @@ export class App {
       this.db = new BotDb('osu_dev.db');
     }
     this.db.addModules([new Covers(this.db), new Bancho(this.db)]);
+    this.commands = [new SetUsername(this), new RecentPlay(this)];
     this.vk = new VK({
       pollingGroupId: this.currentGroup.id,
       token: this.currentGroup.token,
@@ -60,6 +64,9 @@ export class App {
   async start() {
     console.log('App starting...');
     await this.db.init();
+    for (const command of this.commands) {
+      command.init();
+    }
     await this.vk.updates.start();
     console.log('App started!');
   }
@@ -80,94 +87,8 @@ export class App {
     if (!this.ouathToken || !this.ouathToken.isValid()) {
       await this.refreshToken();
     }
-    const text = ctx.text.toLowerCase();
-    if (text.startsWith('l n ')) {
-      const username = text.substring(4).trim();
-      if (!username) {
-        ctx.reply('Не указан ник!');
-      }
-      const senderId = ctx.senderId;
-      const userResult = await this.getOrAddUser(senderId, username);
-      if (userResult.isFailure) {
-        const failure = userResult.asFailure();
-        const errorsText = stringifyErrors(failure.errors);
-        ctx.reply('Не удалось установить ник' + `\n${errorsText}`);
-        return;
-      }
-      const user = userResult.asSuccess().value;
-      if (user === undefined) {
-        ctx.reply(
-          `Не удалось установить никнейм ${username}: пользователь не найден`
-        );
-        return;
-      }
-      ctx.reply(`Установлен ник: ${username}`);
-      return;
-    }
-    if (text.trim() === 'l r') {
-      const senderId = ctx.senderId;
-      const userResult = await this.getOrAddUser(senderId, undefined);
-      if (userResult.isFailure) {
-        const failure = userResult.asFailure();
-        const errorsText = stringifyErrors(failure.errors);
-        ctx.reply('Не получать последний скор' + `\n${errorsText}`);
-        return;
-      }
-      const user = userResult.asSuccess().value;
-      if (user === undefined) {
-        ctx.reply('Не установлен ник');
-        return;
-      }
-      const scoreResult = await this.getRecentPlay(user);
-      if (scoreResult.isFailure) {
-        const failure = scoreResult.asFailure();
-        const errorsText = stringifyErrors(failure.errors);
-        ctx.reply('Не удалось получить последний скор' + `\n${errorsText}`);
-        return;
-      }
-      const score = scoreResult.asSuccess().value;
-      if (score === undefined) {
-        ctx.reply('Нет последних скоров!');
-        return;
-      }
-      const scoreSimResult = await this.getScoreSim(score);
-      if (scoreSimResult.isFailure) {
-        const failure = scoreSimResult.asFailure();
-        const errorsText = stringifyErrors(failure.errors);
-        ctx.reply(
-          'Не удалось вычислить атрибуты скора (performance_attributes, difficulty_attributes)' +
-            `\n${errorsText}`
-        );
-        return;
-      }
-      const scoreSim = scoreSimResult.asSuccess().value;
-      const recentTemplateResult = await recentTemplate(
-        score,
-        score.beatmap!, // mark as not-null because it is always being returned by https://osu.ppy.sh/api/v2/users/{user_id}/scores/recent (at least now)
-        score.beatmapset!, // mark as not-null because it is always being returned by https://osu.ppy.sh/api/v2/users/{user_id}/scores/recent (at least now)
-        scoreSim
-      );
-      if (recentTemplateResult.isFailure) {
-        const failure = recentTemplateResult.asFailure();
-        const errorsText = stringifyErrors(failure.errors);
-        ctx.reply('Не удалось сгенерировать текст ответа' + `\n${errorsText}`);
-        return;
-      }
-      const replyText = recentTemplateResult.asSuccess().value;
-      const coverUrlResult = await this.getCoverUrl(
-        score.beatmap!.beatmapset_id
-      );
-      if (coverUrlResult.isFailure) {
-        const failure = coverUrlResult.asFailure();
-        const errorsText = stringifyErrors(failure.errors);
-        ctx.reply('Не удалось получить БГ карты' + `\n${errorsText}`);
-        return;
-      }
-      const coverUrl = coverUrlResult.asSuccess().value;
-      ctx.reply(replyText, {
-        attachment: coverUrl,
-      });
-      return;
+    for (const command of this.commands) {
+      command.process(ctx);
     }
   }
 

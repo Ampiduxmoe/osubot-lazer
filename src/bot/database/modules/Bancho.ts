@@ -19,6 +19,13 @@ export class Bancho extends DbModule<UserDbObject> {
     ]);
   }
 
+  async getByUsername(username: string): Promise<UserDbObject | undefined> {
+    return await this.get(
+      'SELECT * FROM bancho WHERE username = ? COLLATE NOCASE LIMIT 1',
+      [username]
+    );
+  }
+
   async add(value: UserDbObject): Promise<void> {
     await this.parentDb.run(
       'INSERT INTO bancho (vk_id, osu_id, username, mode) VALUES (?, ?, ?, ?)',
