@@ -39,7 +39,7 @@ export class BotDb {
         return module;
       }
     }
-    throw Error(`Could not find database module with type ${typeof ctor}`);
+    throw Error(`Could not find database module with type ${ctor.name}`);
   }
 
   getModuleOrDefault<T, R>(
