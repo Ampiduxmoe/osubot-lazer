@@ -87,7 +87,7 @@ export class App {
         ctx.reply('Не указан ник!');
       }
       const senderId = ctx.senderId;
-      const userResult = await this.getUser(senderId, username);
+      const userResult = await this.getOrAddUser(senderId, username);
       if (userResult.isFailure) {
         const failure = userResult.asFailure();
         const errorsText = stringifyErrors(failure.errors);
@@ -106,7 +106,7 @@ export class App {
     }
     if (text.trim() === 'l r') {
       const senderId = ctx.senderId;
-      const userResult = await this.getUser(senderId, undefined);
+      const userResult = await this.getOrAddUser(senderId, undefined);
       if (userResult.isFailure) {
         const failure = userResult.asFailure();
         const errorsText = stringifyErrors(failure.errors);
@@ -272,7 +272,7 @@ export class App {
     console.log('Sucessfully refreshed token!');
   }
 
-  async getUser(
+  async getOrAddUser(
     vkId: number,
     username: string | undefined
   ): Promise<Result<UserDbObject | undefined>> {
