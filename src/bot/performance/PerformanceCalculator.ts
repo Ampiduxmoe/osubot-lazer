@@ -1,6 +1,6 @@
 import {IPerformanceSimulationResult} from './IPerformanceSimulationResult';
 import {IPerformanceSimulationParams} from './IPerformanceSimulationParams';
-import axios, {AxiosError, AxiosInstance} from 'axios';
+import axios, {AxiosInstance} from 'axios';
 import {Result} from '../../primitives/Result';
 import {catchedValueToError} from '../../primitives/Errors';
 
