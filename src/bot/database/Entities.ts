@@ -1,5 +1,5 @@
 export interface BeatmapCoverDbObject {
-  id: number;
+  beatmapset_id: number;
   attachment: string;
 }
 

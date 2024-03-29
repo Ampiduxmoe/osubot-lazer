@@ -6,13 +6,15 @@ import {ContextDefaultState, MessageContext, VK} from 'vk-io';
 import {IUserExtended} from './dtos/osu/users/IUserExtended';
 import {IScore} from './dtos/osu/scores/IScore';
 import {IScores} from './dtos/osu/scores/IScores';
-import {Database, RunResult} from 'sqlite3';
 import {PerformanceCalculator} from './bot/performance/PerformanceCalculator';
 import {IPerformanceSimulationResult} from './bot/performance/IPerformanceSimulationResult';
 import {recentTemplate} from './bot/templates/Recent';
-import {BeatmapCoverDbObject, UserDbObject} from './bot/database/Entities';
+import {UserDbObject} from './bot/database/Entities';
 import {Result} from './primitives/Result';
 import {catchedValueToError, stringifyErrors} from './primitives/Errors';
+import {BotDb} from './bot/database/BotDb';
+import {Covers} from './bot/database/modules/Covers';
+import {Bancho} from './bot/database/modules/Bancho';
 
 export class App {
   readonly config: IAppConfig;
@@ -29,7 +31,7 @@ export class App {
 
   vk: VK;
   currentGroup: IVkGroup;
-  db: Database;
+  db: BotDb;
 
   constructor(config: IAppConfig) {
     console.log('App initialization started');
@@ -38,12 +40,13 @@ export class App {
     if (isProd) {
       console.log('Initializing as production configuration');
       this.currentGroup = config.vk.group;
-      this.db = new Database('osu.db');
+      this.db = new BotDb('osu.db');
     } else {
       console.log('Initializing as development configuration');
       this.currentGroup = config.vk.group_dev;
-      this.db = new Database('osu_dev.db');
+      this.db = new BotDb('osu_dev.db');
     }
+    this.db.addModules([new Covers(this.db), new Bancho(this.db)]);
     this.vk = new VK({
       pollingGroupId: this.currentGroup.id,
       token: this.currentGroup.token,
@@ -51,12 +54,12 @@ export class App {
     PerformanceCalculator.setSimulationEndpoint(
       config.bot.score_simulation_endpoint
     );
-    this.initDb();
     this.vk.updates.on('message', ctx => this.onMessage(ctx));
   }
 
   async start() {
     console.log('App starting...');
+    await this.db.init();
     await this.vk.updates.start();
     console.log('App started!');
   }
@@ -263,64 +266,32 @@ export class App {
     }
     const rawToken: IOsuOauthAccessTokenReadDto = response.data;
     this.ouathToken = new OsuOauthAccessToken(rawToken);
+    this.apiv2httpClient.defaults.headers.common['Authorization'] = `Bearer ${
+      this.ouathToken!.value
+    }`;
     console.log('Sucessfully refreshed token!');
   }
 
-  initDb() {
-    this.db.run(
-      'CREATE TABLE IF NOT EXISTS covers (id INTEGER, attachment TEXT)'
-    );
-    this.db.run(
-      'CREATE TABLE IF NOT EXISTS bancho (vk_id INTEGER, osu_id INTEGER, username TEXT, mode INTEGER)'
-    );
-  }
-
-  async dbRun(stmt: string, opts: unknown[] = []): Promise<RunResult> {
-    return new Promise((resolve, reject) => {
-      this.db.run(stmt, opts, (res: RunResult, err: Error) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(res);
-        }
-      });
-    });
-  }
-
-  async dbGet<T>(stmt: string, opts: unknown[] = []): Promise<T | undefined> {
-    return new Promise<T>((resolve, reject) => {
-      this.db.get<T>(stmt, opts, (err, row) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(row);
-        }
-      });
-    });
-  }
-
   async getUser(
-    vk_id: number,
+    vkId: number,
     username: string | undefined
   ): Promise<Result<UserDbObject | undefined>> {
     console.log(
-      `Trying to get user with id ${vk_id} and username ${username} from database`
+      `Trying to get user with id ${vkId} and username ${username} from database`
     );
-    const user = await this.dbGet<UserDbObject>(
-      'SELECT * FROM bancho WHERE vk_id = ?',
-      [vk_id]
-    );
+    const users = this.db.getModule(Bancho);
+    const user = await users.getById(vkId);
     if (username === undefined) {
       // if username is not specified then return as is
       // since we can't add or update without username
       return Result.ok(user);
     }
     if (!user) {
-      const user = await this.addUser(vk_id, username);
+      const user = await this.addUser(vkId, username);
       return user;
     }
     if (user.username !== username) {
-      const user = await this.updateUser(vk_id, username);
+      const user = await this.updateUser(vkId, username);
       return user;
     }
     console.log(`Successfully retrieved user ${JSON.stringify(user)}`);
@@ -328,7 +299,7 @@ export class App {
   }
 
   async addUser(
-    vk_id: number,
+    vkId: number,
     username: string
   ): Promise<Result<UserDbObject | undefined>> {
     console.log(`Adding user ${username} to database...`);
@@ -343,26 +314,19 @@ export class App {
       return Result.ok(undefined);
     }
     const userDbObject: UserDbObject = {
-      vk_id: vk_id,
+      vk_id: vkId,
       osu_id: user.id,
       username: user.username,
       mode: 0,
     };
-    await this.dbRun(
-      'INSERT INTO bancho (vk_id, osu_id, username, mode) VALUES (?, ?, ?, ?)',
-      [
-        userDbObject.vk_id,
-        userDbObject.osu_id,
-        userDbObject.username,
-        userDbObject.mode,
-      ]
-    );
+    const users = this.db.getModule(Bancho);
+    await users.add(userDbObject);
     console.log(`Added user to database: ${JSON.stringify(userDbObject)}`);
     return Result.ok(userDbObject);
   }
 
   async updateUser(
-    vk_id: number,
+    vkId: number,
     username: string
   ): Promise<Result<UserDbObject | undefined>> {
     console.log(`Updating user ${username} in database...`);
@@ -378,24 +342,20 @@ export class App {
       return Result.ok(undefined);
     }
     const userDbObject: UserDbObject = {
-      vk_id: vk_id,
+      vk_id: vkId,
       osu_id: user.id,
       username: user.username,
       mode: 0,
     };
-    await this.dbRun(
-      'UPDATE bancho SET osu_id = ?, username = ? WHERE vk_id = ?',
-      [userDbObject.osu_id, userDbObject.osu_id, userDbObject.vk_id]
-    );
+    const users = this.db.getModule(Bancho);
+    await users.update(userDbObject);
     console.log(`Added user to database: ${JSON.stringify(userDbObject)}`);
     return Result.ok(userDbObject);
   }
 
   async getCoverUrl(beatmapId: number): Promise<Result<string>> {
-    const cover = await this.dbGet<BeatmapCoverDbObject>(
-      'SELECT * FROM covers WHERE id = ?',
-      [beatmapId]
-    );
+    const covers = this.db.getModule(Covers);
+    const cover = await covers.getById(beatmapId);
     if (!cover) {
       const coverUrl = await this.addCover(beatmapId);
       return coverUrl;
@@ -426,10 +386,11 @@ export class App {
       });
 
       console.log(`Adding cover for ${beatmapId} to database...`);
-      await this.dbRun('INSERT INTO covers (id, attachment) VALUES (?, ?)', [
-        beatmapId,
-        photo.toString(),
-      ]);
+      const covers = this.db.getModule(Covers);
+      await covers.add({
+        beatmapset_id: beatmapId,
+        attachment: photo.toString(),
+      });
       console.log(
         `Added cover to database: ${beatmapId} | ${photo.toString()}`
       );
