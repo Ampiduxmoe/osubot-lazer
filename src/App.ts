@@ -12,6 +12,7 @@ import {IPerformanceSimulationResult} from './bot/performance/IPerformanceSimula
 import {recentTemplate} from './bot/templates/Recent';
 import {BeatmapCoverDbObject, UserDbObject} from './bot/database/Entities';
 import {Result} from './primitives/Result';
+import {catchedValueToError, stringifyErrors} from './primitives/Errors';
 
 export class App {
   readonly config: IAppConfig;
@@ -21,6 +22,9 @@ export class App {
   apiv2httpClient = axios.create({
     baseURL: 'https://osu.ppy.sh/api/v2',
     timeout: 4e3,
+    validateStatus: function () {
+      return true;
+    },
   });
 
   vk: VK;
@@ -84,7 +88,7 @@ export class App {
       if (userResult.isFailure) {
         const failure = userResult.asFailure();
         const errorsText = stringifyErrors(failure.errors);
-        ctx.reply('Не удалось установить ник' + `\n$${errorsText}`);
+        ctx.reply('Не удалось установить ник' + `\n${errorsText}`);
         return;
       }
       const user = userResult.asSuccess().value;
@@ -103,7 +107,7 @@ export class App {
       if (userResult.isFailure) {
         const failure = userResult.asFailure();
         const errorsText = stringifyErrors(failure.errors);
-        ctx.reply('Не получать последний скор' + `\n$${errorsText}`);
+        ctx.reply('Не получать последний скор' + `\n${errorsText}`);
         return;
       }
       const user = userResult.asSuccess().value;
@@ -115,7 +119,7 @@ export class App {
       if (scoreResult.isFailure) {
         const failure = scoreResult.asFailure();
         const errorsText = stringifyErrors(failure.errors);
-        ctx.reply('Не удалось получить последний скор' + `\n$${errorsText}`);
+        ctx.reply('Не удалось получить последний скор' + `\n${errorsText}`);
         return;
       }
       const score = scoreResult.asSuccess().value;
@@ -125,11 +129,11 @@ export class App {
       }
       const scoreSimResult = await this.getScoreSim(score);
       if (scoreSimResult.isFailure) {
-        const failure = scoreResult.asFailure();
+        const failure = scoreSimResult.asFailure();
         const errorsText = stringifyErrors(failure.errors);
         ctx.reply(
           'Не удалось вычислить атрибуты скора (performance_attributes, difficulty_attributes)' +
-            `\n$${errorsText}`
+            `\n${errorsText}`
         );
         return;
       }
@@ -143,7 +147,7 @@ export class App {
       if (recentTemplateResult.isFailure) {
         const failure = recentTemplateResult.asFailure();
         const errorsText = stringifyErrors(failure.errors);
-        ctx.reply('Не удалось сгенерировать текст ответа' + `\n$${errorsText}`);
+        ctx.reply('Не удалось сгенерировать текст ответа' + `\n${errorsText}`);
         return;
       }
       const replyText = recentTemplateResult.asSuccess().value;
@@ -153,7 +157,7 @@ export class App {
       if (coverUrlResult.isFailure) {
         const failure = coverUrlResult.asFailure();
         const errorsText = stringifyErrors(failure.errors);
-        ctx.reply('Не удалось получить БГ карты' + `\n$${errorsText}`);
+        ctx.reply('Не удалось получить БГ карты' + `\n${errorsText}`);
         return;
       }
       const coverUrl = coverUrlResult.asSuccess().value;
@@ -349,7 +353,7 @@ export class App {
       [
         userDbObject.vk_id,
         userDbObject.osu_id,
-        userDbObject.osu_id,
+        userDbObject.username,
         userDbObject.mode,
       ]
     );
@@ -381,7 +385,7 @@ export class App {
     };
     await this.dbRun(
       'UPDATE bancho SET osu_id = ?, username = ? WHERE vk_id = ?',
-      [userDbObject.osu_id, userDbObject.osu_id]
+      [userDbObject.osu_id, userDbObject.osu_id, userDbObject.vk_id]
     );
     console.log(`Added user to database: ${JSON.stringify(userDbObject)}`);
     return Result.ok(userDbObject);
@@ -443,26 +447,6 @@ export class App {
       return Result.fail(allErrors);
     }
   }
-}
-
-function catchedValueToError(value: unknown): Error | undefined {
-  if (value instanceof Error) {
-    return value;
-  } else if (value instanceof String) {
-    return Error(value.toString());
-  }
-  return undefined;
-}
-
-function stringifyErrors(errors: Error[]): string {
-  if (errors.length === 0) {
-    return '';
-  }
-  let s = `[0]: ${errors[0].message}`;
-  for (let i = 1; i < errors.length; i++) {
-    s += `\n[${i}]: ${errors[i].message}`;
-  }
-  return s;
 }
 
 /**
