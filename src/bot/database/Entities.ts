@@ -9,3 +9,8 @@ export interface UserDbObject {
   username: string;
   mode: number;
 }
+
+export interface OsuUserLight {
+  osu_id: number;
+  username: string;
+}
