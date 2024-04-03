@@ -50,7 +50,7 @@ export class RecentPlay extends BotCommand<RecentPlayParams> {
       if (userFromDb) {
         recentPlayUser = userFromDb;
       } else {
-        const userResult = await this.app.getOsuUser(username);
+        const userResult = await this.app.banchoApi.getUser(username);
         if (userResult.isFailure) {
           const failure = userResult.asFailure();
           const errorsText = stringifyErrors(failure.errors);
@@ -78,7 +78,9 @@ export class RecentPlay extends BotCommand<RecentPlayParams> {
         return;
       }
     }
-    const scoreResult = await this.app.getRecentPlay(recentPlayUser);
+    const scoreResult = await this.app.banchoApi.gerRecentPlay(
+      recentPlayUser.osu_id
+    );
     if (scoreResult.isFailure) {
       const failure = scoreResult.asFailure();
       const errorsText = stringifyErrors(failure.errors);
@@ -90,22 +92,10 @@ export class RecentPlay extends BotCommand<RecentPlayParams> {
       ctx.reply('Нет последних скоров!');
       return;
     }
-    const scoreSimResult = await this.app.getScoreSim(score);
-    if (scoreSimResult.isFailure) {
-      const failure = scoreSimResult.asFailure();
-      const errorsText = stringifyErrors(failure.errors);
-      ctx.reply(
-        'Не удалось вычислить атрибуты скора (performance_attributes, difficulty_attributes)' +
-          `\n${errorsText}`
-      );
-      return;
-    }
-    const scoreSim = scoreSimResult.asSuccess().value;
     const recentTemplateResult = await recentTemplate(
       score,
       score.beatmap!, // mark as not-null because it is always being returned by https://osu.ppy.sh/api/v2/users/{user_id}/scores/recent (at least now)
-      score.beatmapset!, // mark as not-null because it is always being returned by https://osu.ppy.sh/api/v2/users/{user_id}/scores/recent (at least now)
-      scoreSim
+      score.beatmapset! // mark as not-null because it is always being returned by https://osu.ppy.sh/api/v2/users/{user_id}/scores/recent (at least now)
     );
     if (recentTemplateResult.isFailure) {
       const failure = recentTemplateResult.asFailure();

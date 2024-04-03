@@ -1,6 +1,6 @@
 export interface IPerformanceSimulationParams {
   mods: string[];
-  combo: number;
+  combo: number | null;
   misses: number;
   mehs: number;
   goods: number;

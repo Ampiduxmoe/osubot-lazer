@@ -1,13 +1,8 @@
 import {IAppConfig, IVkGroup} from './IAppConfig';
-import {IOsuOauthAccessTokenReadDto} from './oauth/IOsuOauthAccessTokenReadDto';
 import {OsuOauthAccessToken} from './oauth/OsuOauthAccessToken';
 import axios from 'axios';
 import {ContextDefaultState, MessageContext, VK} from 'vk-io';
-import {IUserExtended} from './dtos/osu/users/IUserExtended';
-import {IScore} from './dtos/osu/scores/IScore';
-import {IScores} from './dtos/osu/scores/IScores';
 import {PerformanceCalculator} from './bot/performance/PerformanceCalculator';
-import {IPerformanceSimulationResult} from './bot/performance/IPerformanceSimulationResult';
 import {UserDbObject} from './bot/database/Entities';
 import {Result} from './primitives/Result';
 import {catchedValueToError} from './primitives/Errors';
@@ -17,19 +12,14 @@ import {Bancho} from './bot/database/modules/Bancho';
 import {BotCommand} from './bot/commands/BotCommand';
 import {SetUsername} from './bot/commands/SetUsername';
 import {RecentPlay} from './bot/commands/RecentPlay';
+import {BanchoApi} from './api/bancho/BanchoApi';
 
 export class App {
   readonly config: IAppConfig;
 
   ouathToken: OsuOauthAccessToken | undefined;
 
-  apiv2httpClient = axios.create({
-    baseURL: 'https://osu.ppy.sh/api/v2',
-    timeout: 4e3,
-    validateStatus: function () {
-      return true;
-    },
-  });
+  banchoApi: BanchoApi;
 
   vk: VK;
   currentGroup: IVkGroup;
@@ -49,6 +39,10 @@ export class App {
       this.currentGroup = config.vk.group_dev;
       this.db = new BotDb('osu_dev.db');
     }
+    this.banchoApi = new BanchoApi(
+      config.osu.oauth.id,
+      config.osu.oauth.secret
+    );
     this.db.addModules([new Covers(this.db), new Bancho(this.db)]);
     this.commands = [new SetUsername(this), new RecentPlay(this)];
     this.vk = new VK({
@@ -84,113 +78,9 @@ export class App {
     if (!ctx.hasText || !ctx.text) {
       return;
     }
-    if (!this.ouathToken || !this.ouathToken.isValid()) {
-      await this.refreshToken();
-    }
     for (const command of this.commands) {
       command.process(ctx);
     }
-  }
-
-  async getOsuUser(
-    username: string
-  ): Promise<Result<IUserExtended | undefined>> {
-    console.log(`Trying to fetch user ${username}`);
-    const url = `users/${username}/osu`;
-    const response = await this.apiv2httpClient.get(url, {
-      headers: {
-        Authorization: `Bearer ${this.ouathToken!.value}`,
-      },
-    });
-    if (response.status === 401) {
-      console.log('Received 401 status, invalidating token now');
-      this.ouathToken = undefined;
-      await this.refreshToken();
-      console.log(`Trying to get user ${username} once more...`);
-      return await this.getOsuUser(username); // retry
-    }
-    if (response.status === 404) {
-      console.log(`User with username ${username} was not found`);
-      return Result.ok(undefined);
-    }
-    if (response.status !== 200) {
-      const errorText = `Could not fetch user ${username}, response status was ${response.status}`;
-      console.log(errorText);
-      return Result.fail([Error(errorText)]);
-    }
-    const rawUser: IUserExtended = response.data;
-    return Result.ok(rawUser);
-  }
-
-  async getRecentPlay(user: UserDbObject): Promise<Result<IScore | undefined>> {
-    console.log(`Trying to get recent play for ${user.username}...`);
-    const response = await this.apiv2httpClient.get(
-      `users/${user.osu_id}/scores/recent`,
-      {
-        params: {
-          include_fails: 1,
-          mode: 'osu',
-          limit: 1,
-        },
-        headers: {
-          Authorization: `Bearer ${this.ouathToken!.value}`,
-        },
-      }
-    );
-    if (response.status === 401) {
-      console.log('Received 401 status, invalidating token now');
-      this.ouathToken = undefined;
-      await this.refreshToken();
-      console.log(
-        `Trying to get recent play for ${user.username} once more...`
-      );
-      return await this.getRecentPlay(user); // retry
-    }
-    if (response.status !== 200) {
-      const errorText = `Could not fetch recent play, response status was ${response.status}`;
-      console.log(errorText);
-      return Result.fail([Error(errorText)]);
-    }
-    const rawScores: IScores = response.data;
-    if (!rawScores || !rawScores.length) {
-      console.log('Scores array was empty');
-      return Result.ok(undefined);
-    }
-    return Result.ok(rawScores[0]);
-  }
-
-  async getScoreSim(
-    score: IScore
-  ): Promise<Result<IPerformanceSimulationResult>> {
-    return await PerformanceCalculator.simulate({
-      mods: score.mods,
-      combo: score.max_combo,
-      misses: score.statistics.count_miss,
-      mehs: score.statistics.count_50,
-      goods: score.statistics.count_100,
-      beatmap_id: score.beatmap!.id,
-    });
-  }
-
-  async refreshToken() {
-    console.log('Refreshing OAuth token...');
-    const body = {
-      client_id: this.config.osu.oauth.id,
-      client_secret: this.config.osu.oauth.secret,
-      grant_type: 'client_credentials',
-      scope: 'public',
-    };
-    const response = await axios.post('https://osu.ppy.sh/oauth/token', body);
-    if (response.status !== 200) {
-      console.log('Could not fetch new token');
-      return;
-    }
-    const rawToken: IOsuOauthAccessTokenReadDto = response.data;
-    this.ouathToken = new OsuOauthAccessToken(rawToken);
-    this.apiv2httpClient.defaults.headers.common['Authorization'] = `Bearer ${
-      this.ouathToken!.value
-    }`;
-    console.log('Sucessfully refreshed token!');
   }
 
   async getOrAddUser(
@@ -224,7 +114,7 @@ export class App {
     username: string
   ): Promise<Result<UserDbObject | undefined>> {
     console.log(`Adding user ${username} to database...`);
-    const userResult = await this.getOsuUser(username);
+    const userResult = await this.banchoApi.getUser(username);
     if (userResult.isFailure) {
       const failure = userResult.asFailure();
       const errorText = 'Could not add user to the database';
@@ -251,7 +141,7 @@ export class App {
     username: string
   ): Promise<Result<UserDbObject | undefined>> {
     console.log(`Updating user ${username} in database...`);
-    const userResult = await this.getOsuUser(username);
+    const userResult = await this.banchoApi.getUser(username);
     if (userResult.isFailure) {
       const failure = userResult.asFailure();
       const errorText = 'Could not update user';

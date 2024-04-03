@@ -1,4 +1,3 @@
-import {IPerformanceSimulationResult} from '../performance/IPerformanceSimulationResult';
 import {PerformanceCalculator} from '../performance/PerformanceCalculator';
 import {IScore} from '../../dtos/osu/scores/IScore';
 import {IBeatmapExtended} from '../../dtos/osu/beatmaps/IBeatmapExtended';
@@ -11,8 +10,7 @@ import {Result} from '../../primitives/Result';
 export async function recentTemplate(
   score: IScore,
   map: IBeatmapExtended,
-  mapset: IBeatmapset,
-  scoreSim: IPerformanceSimulationResult
+  mapset: IBeatmapset
 ): Promise<Result<string>> {
   const mapStatus = capitalize(map.status);
   const artist = mapset.artist;
@@ -27,6 +25,64 @@ export async function recentTemplate(
   if (mods.includes('DT')) {
     speed = 1.5;
   }
+
+  const counts = score.statistics;
+  const hitcountsTotal =
+    counts.count_300 + counts.count_100 + counts.count_50 + counts.count_miss;
+  const objectsTotal =
+    map.count_circles + map.count_sliders + map.count_spinners;
+  const totalToHitRatio = objectsTotal / hitcountsTotal;
+  const fcMehs = Math.floor(totalToHitRatio * counts.count_50);
+  const fcGoods = Math.floor(totalToHitRatio * counts.count_100);
+  const scoreSimPromise = PerformanceCalculator.simulate({
+    mods: mods,
+    combo: score.max_combo,
+    misses: counts.count_miss,
+    mehs: counts.count_50,
+    goods: counts.count_100,
+    beatmap_id: map.id,
+  });
+  const ppFcSimPromise = PerformanceCalculator.simulate({
+    mods: mods,
+    combo: null,
+    misses: 0,
+    mehs: fcMehs,
+    goods: fcGoods,
+    beatmap_id: map.id,
+  });
+  const ppSsSimPromise = PerformanceCalculator.simulate({
+    mods: mods,
+    combo: null,
+    misses: 0,
+    mehs: 0,
+    goods: 0,
+    beatmap_id: map.id,
+  });
+  const scoreSimResult = await scoreSimPromise;
+  if (scoreSimResult.isFailure) {
+    const failure = scoreSimResult.asFailure();
+    const errorText = 'Could not simulate recent score';
+    console.log(errorText);
+    return Result.fail([Error(errorText), ...failure.errors]);
+  }
+  const ppFcSimResult = await ppFcSimPromise;
+  if (ppFcSimResult.isFailure) {
+    const failure = ppFcSimResult.asFailure();
+    const errorText = 'Could not simulate FC of recent score';
+    console.log(errorText);
+    return Result.fail([Error(errorText), ...failure.errors]);
+  }
+  const ppSsSimResult = await ppSsSimPromise;
+  if (ppSsSimResult.isFailure) {
+    const failure = ppSsSimResult.asFailure();
+    const errorText = 'Could not simulate SS of recent score';
+    console.log(errorText);
+    return Result.fail([Error(errorText), ...failure.errors]);
+  }
+  const scoreSim = scoreSimResult.asSuccess().value;
+  const ppFcSim = ppFcSimResult.asSuccess().value;
+  const ppSsSim = ppSsSimResult.asSuccess().value;
+
   const totalLength = new Timespan().addSeconds(map.total_length / speed);
   const z0 = totalLength.minutes <= 9 ? '0' : '';
   const z1 = totalLength.seconds <= 9 ? '0' : '';
@@ -57,47 +113,6 @@ export async function recentTemplate(
 
   const acc = round(score.accuracy * 100, 2);
   const pp = round(scoreSim.performance_attributes.pp, 2);
-
-  const counts = score.statistics;
-  const hitcountsTotal =
-    counts.count_300 + counts.count_100 + counts.count_50 + counts.count_miss;
-  const objectsTotal =
-    map.count_circles + map.count_sliders + map.count_spinners;
-  const totalToHitRatio = objectsTotal / hitcountsTotal;
-  const fcMehs = Math.floor(totalToHitRatio * scoreSim.score.statistics.meh);
-  const fcGoods = Math.floor(totalToHitRatio * scoreSim.score.statistics.ok);
-  const ppFcSimPromise = PerformanceCalculator.simulate({
-    mods: mods,
-    combo: scoreSim.difficulty_attributes.max_combo,
-    misses: 0,
-    mehs: fcMehs,
-    goods: fcGoods,
-    beatmap_id: scoreSim.score.beatmap_id,
-  });
-  const ppSsSimPromise = PerformanceCalculator.simulate({
-    mods: mods,
-    combo: scoreSim.difficulty_attributes.max_combo,
-    misses: 0,
-    mehs: 0,
-    goods: 0,
-    beatmap_id: scoreSim.score.beatmap_id,
-  });
-  const ppFcSimResult = await ppFcSimPromise;
-  if (ppFcSimResult.isFailure) {
-    const failure = ppFcSimResult.asFailure();
-    const errorText = 'Could not simulate FC score';
-    console.log(errorText);
-    return Result.fail([Error(errorText), ...failure.errors]);
-  }
-  const ppSsSimResult = await ppSsSimPromise;
-  if (ppSsSimResult.isFailure) {
-    const failure = ppSsSimResult.asFailure();
-    const errorText = 'Could not simulate SS score';
-    console.log(errorText);
-    return Result.fail([Error(errorText), ...failure.errors]);
-  }
-  const ppFcSim = ppFcSimResult.asSuccess().value;
-  const ppSsSim = ppSsSimResult.asSuccess().value;
   const ppFc = ppFcSim ? round(ppFcSim.performance_attributes.pp, 2) : '?';
   const ppSs = ppSsSim ? round(ppSsSim.performance_attributes.pp, 2) : '?';
   const hitcountsString = `${counts.count_300}/${counts.count_100}/${counts.count_50}/${counts.count_miss}`;
