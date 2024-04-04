@@ -43,12 +43,16 @@ export abstract class BotCommand<TExecParams> {
   async process(
     ctx: MessageContext<ContextDefaultState> & object
   ): Promise<void> {
-    if (!this._isAvailable) {
-      ctx.reply('Команда недоступна!');
-      return;
+    const text = ctx.text;
+    if (text && !text.startsWith('l ')) {
+      return; // TODO: extract prefix into some server command list logic
     }
     const matchResult = this.matchMessage(ctx);
     if (!matchResult.isMatch) {
+      return;
+    }
+    if (!this._isAvailable) {
+      ctx.reply('Команда недоступна!');
       return;
     }
     this.execute(matchResult.executionParams!, ctx);
