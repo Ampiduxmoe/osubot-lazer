@@ -2,6 +2,7 @@ import {MessageContext, ContextDefaultState, VK} from 'vk-io';
 import {CommandMatchResult} from './CommandMatchResult';
 import {BotDb} from '../database/BotDb';
 import {IOsuServerApi} from '../../api/IOsuServerApi';
+import {catchedValueToError} from '../../primitives/Errors';
 export abstract class BotCommand<TExecParams> {
   private _isAvailable: Boolean;
 
@@ -55,7 +56,24 @@ export abstract class BotCommand<TExecParams> {
       ctx.reply('Команда недоступна!');
       return;
     }
-    this.execute(matchResult.executionParams!, ctx);
+    try {
+      const params = matchResult.executionParams!;
+      console.log(
+        `Trying to execute command ${this.name} (${JSON.stringify(params)})`
+      );
+      await this.execute(params, ctx);
+    } catch (e) {
+      console.log(e);
+      const internalError = catchedValueToError(e);
+      const fallbackError = Error(
+        'Error has occured that did not match any known error type'
+      );
+      const finalError = internalError || fallbackError;
+      ctx.reply(
+        `Произошла ошибка при выполнении команды\n${finalError.message}`
+      );
+      return;
+    }
   }
 
   abstract isAvailable(): Boolean;
@@ -67,5 +85,5 @@ export abstract class BotCommand<TExecParams> {
   abstract execute(
     params: TExecParams,
     ctx: MessageContext<ContextDefaultState> & object
-  ): void;
+  ): Promise<void>;
 }
