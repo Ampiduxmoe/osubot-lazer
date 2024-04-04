@@ -45,7 +45,7 @@ export abstract class BotCommand<TExecParams> {
     ctx: MessageContext<ContextDefaultState> & object
   ): Promise<void> {
     const text = ctx.text;
-    if (text && !text.startsWith('l ')) {
+    if (text && !text.toLowerCase().startsWith('l ')) {
       return; // TODO: extract prefix into some server command list logic
     }
     const matchResult = this.matchMessage(ctx);
