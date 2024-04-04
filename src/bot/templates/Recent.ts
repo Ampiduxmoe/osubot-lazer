@@ -32,22 +32,22 @@ export async function recentTemplate(
   const objectsTotal =
     map.count_circles + map.count_sliders + map.count_spinners;
   const totalToHitRatio = objectsTotal / hitcountsTotal;
-  const fcMehs = Math.floor(totalToHitRatio * counts.count_50);
-  const fcGoods = Math.floor(totalToHitRatio * counts.count_100);
+  const fullPlayMehs = Math.floor(totalToHitRatio * counts.count_50);
+  const fullPlayGoods = Math.floor(totalToHitRatio * counts.count_100);
   const scoreSimPromise = PerformanceCalculator.simulate({
     mods: mods,
     combo: score.max_combo,
     misses: counts.count_miss,
-    mehs: counts.count_50,
-    goods: counts.count_100,
+    mehs: fullPlayMehs,
+    goods: fullPlayGoods,
     beatmap_id: map.id,
   });
   const ppFcSimPromise = PerformanceCalculator.simulate({
     mods: mods,
     combo: null,
     misses: 0,
-    mehs: fcMehs,
-    goods: fcGoods,
+    mehs: fullPlayMehs,
+    goods: fullPlayGoods,
     beatmap_id: map.id,
   });
   const ppSsSimPromise = PerformanceCalculator.simulate({
@@ -96,14 +96,15 @@ export async function recentTemplate(
   const cs = round(map.cs * (mods.includes('HR') ? 1.3 : 1), 2);
   const od = round(scoreSim.difficulty_attributes.overall_difficulty, 2);
   const hp = map.drain;
-  const statsString = `AR:${ar} CS:${cs} OD:${od} HP:${hp}`;
+  // eslint-disable-next-line no-irregular-whitespace
+  const statsString = `AR:${ar}　CS:${cs}　OD:${od}　HP:${hp}`;
 
   const bpm = round(map.bpm! * speed, 2); // mark as not-null because i don't know why would you return null on a map bpm
   const sr = round(scoreSim.difficulty_attributes.star_rating, 2);
 
   let modsString = '';
   if (mods.length) {
-    modsString = `+${mods.join('')}`;
+    modsString = `${mods.join('')}`;
   }
 
   const totalScore = score.score;
@@ -123,21 +124,125 @@ export async function recentTemplate(
   const mapCompletionString =
     rankAdjusted !== 'F' ? '' : `(${completionPercent}%)`;
 
+  const specialFormatProbability = 0.002;
+  const returnSpecialFormatting = Math.random() < specialFormatProbability;
+  if (returnSpecialFormatting) {
+    const mapStatusSpecial =
+      {
+        Graveyard: '​Кладбищѣ​',
+        Wip: 'Въ работѣ',
+        Pending: 'Сдѣлано',
+        Ranked: 'Замѣчательный',
+        Approved: 'Хорошій',
+        Qualified: 'Разсматриваемый',
+        Loved: 'Любимѣйшій',
+      }[mapStatus] || 'Неизвѣстно';
+    const minutesString = getCorrectCase(
+      totalLength.minutes,
+      'минуту',
+      'минуты',
+      'минутъ'
+    );
+    const secondsString = getCorrectCase(
+      totalLength.seconds,
+      'секунду',
+      'секунды',
+      'секундъ'
+    );
+    const getHitsCase = (n: number) => {
+      return getCorrectCase(n, 'попаданіе', 'попаданія', 'попаданій');
+    };
+    const hits300string = getHitsCase(counts.count_300);
+    const name300string = getCorrectCase(
+      counts.count_300,
+      'отличное',
+      'отличныхъ',
+      'отличныхъ'
+    );
+    const hits100string = getHitsCase(counts.count_100);
+    const name100string = getCorrectCase(
+      counts.count_100,
+      'хорошее',
+      'хорошихъ',
+      'хорошихъ'
+    );
+    const hits50string = getHitsCase(counts.count_50);
+    const name50string = getCorrectCase(
+      counts.count_50,
+      'плохое',
+      'плохихъ',
+      'плохихъ'
+    );
+    const hits0string = getHitsCase(counts.count_miss);
+    const name0string = getCorrectCase(
+      counts.count_miss,
+      'пропущенное',
+      'пропущенныхъ',
+      'пропущенныхъ'
+    );
+    const specialRank = {
+      SS: 'ЪЪ',
+      S: 'Ъ',
+      A: 'А',
+      B: 'Б',
+      C: 'В',
+      D: 'Г',
+      F: 'Ж',
+    }[rankAdjusted]!;
+    /* eslint-disable prettier/prettier */
+    return Result.ok(
+      `
+Послѣдняя дѣятельность отъ ${score.user!.username}
+<${mapStatusSpecial}> ${artist} - ${title} [${diffname}] сдѣлана ${mapperName}
+Длится ${totalLength.minutes} ${minutesString} и ${totalLength.seconds} ${secondsString}
+${bpm} ударовъ въ минуту, ${sr.toFixed(2)} трудностей (съ ${modsString})
+Быстрота суженія ${ar}, величина круговъ ${cs}, точность нажатія ${od} и умаленіе жизней ${hp}
+
+Cобрано ${totalScore} очковъ
+${combo} послѣдовательныхъ попаданій изъ ${max_combo}
+Мѣткость нажатій ${acc}%
+${pp} балловъ исполненія (${ppFc} коли попасть вездѣ и ${ppSs} для безупречнаго прохожденія)
+Бойкій молодецъ сдѣлалъ ${counts.count_300} ${name300string} ${hits300string}, ${counts.count_100} ${name100string} ${hits100string}, ${counts.count_50} ${name50string} ${hits50string} и ${counts.count_miss} ${name0string} ${hits0string}
+Прохожденіе окончено на ${completionPercent}%
+Оцѣнка сего: ${specialRank}
+
+Переходъ на карту: ${map.url}
+    `.trim()
+    );
+  }
+
+  /* eslint-disable no-irregular-whitespace */
   return Result.ok(
     `
-
-<${mapStatus}> ${artist} - ${title} [${diffname}] by ${mapperName}
-${lengthString} (${drainString}) | ${bpm}BPM | ${sr}✩ ${modsString}
+<${mapStatus}> Recent play for ${score.user!.username}
+${artist} - ${title} [${diffname}] by ${mapperName}
+${lengthString} (${drainString})　${bpm} BPM　${sr} ★　+${modsString}
 ${statsString}
 
-Score: ${totalScore} | Combo: ${comboString}
+Score: ${totalScore}　Combo: ${comboString}
 Accuracy: ${acc}%
-PP: ${pp} ⯈ FC: ${ppFc} ⯈ SS: ${ppSs}
+PP: ${pp}　⯈ FC: ${ppFc}　⯈ SS: ${ppSs}
 Hitcounts: ${hitcountsString}
 Grade: ${rankAdjusted} ${mapCompletionString}
 
 Beatmap: ${map.url}
-
   `.trim()
   );
+}
+
+function getCorrectCase(n: number, one: string, two: string, many: string) {
+  const preLastDigit = Math.floor((n % 100) / 10);
+  if (preLastDigit === 1) {
+    return many;
+  }
+  switch (n % 10) {
+    case 1:
+      return one;
+    case 2:
+    case 3:
+    case 4:
+      return two;
+    default:
+      return many;
+  }
 }
