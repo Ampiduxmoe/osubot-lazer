@@ -23,7 +23,11 @@ export class BanchoUsersCache extends DbModule<CachedUserDbObject> {
     if (result === undefined) {
       return result;
     }
-    const expireDate = new Date(Date.parse(result.timestamp!));
+    let timestampString = result.timestamp!;
+    if (!timestampString.endsWith('Z')) {
+      timestampString += 'Z';
+    }
+    const expireDate = new Date(Date.parse(timestampString));
     expireDate.setDate(expireDate.getDate() + this.expireTimeDays);
     const now = Date.now();
     if (now > expireDate.valueOf()) {
