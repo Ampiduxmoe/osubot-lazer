@@ -13,4 +13,5 @@ export interface UserDbObject {
 export interface OsuUserLight {
   osu_id: number;
   username: string;
+  timestamp?: string;
 }

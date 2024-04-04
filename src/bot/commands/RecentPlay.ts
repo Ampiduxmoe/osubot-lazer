@@ -1,11 +1,11 @@
 import {MessageContext, ContextDefaultState} from 'vk-io';
 import {BotCommand} from './BotCommand';
-import {Bancho} from '../database/modules/Bancho';
+import {BanchoUsers} from '../database/modules/BanchoUsers';
 import {CommandMatchResult} from './CommandMatchResult';
 import {stringifyErrors} from '../../primitives/Errors';
-import {Covers} from '../database/modules/Covers';
-import {UserDbObject} from '../database/Entities';
+import {BanchoCovers} from '../database/modules/BanchoCovers';
 import {recentTemplate} from '../templates/Recent';
+import {BanchoUsersCache} from '../database/modules/BanchoUsersCache';
 
 export class RecentPlay extends BotCommand<RecentPlayParams> {
   name = RecentPlay.name;
@@ -14,10 +14,11 @@ export class RecentPlay extends BotCommand<RecentPlayParams> {
   usage = 'r [ник]';
 
   isAvailable(): Boolean {
-    const db = this.app.db;
+    const db = this.db;
     const requiredModules = [
-      db.getModuleOrDefault(Bancho, undefined),
-      db.getModuleOrDefault(Covers, undefined),
+      db.getModuleOrDefault(BanchoUsers, undefined),
+      db.getModuleOrDefault(BanchoUsersCache, undefined),
+      db.getModuleOrDefault(BanchoCovers, undefined),
     ];
     for (const module of requiredModules) {
       if (module === undefined) {
@@ -41,46 +42,56 @@ export class RecentPlay extends BotCommand<RecentPlayParams> {
     params: RecentPlayParams,
     ctx: MessageContext<ContextDefaultState> & object
   ) {
+    console.log(
+      `Executing ${RecentPlay.name} command (${JSON.stringify(params)})`
+    );
     const username = params.username;
-    const users = this.app.db.getModule(Bancho);
+    const users = this.db.getModule(BanchoUsers);
     const senderId = ctx.senderId;
-    let recentPlayUser: UserDbObject;
-    if (username) {
-      const userFromDb = await users.getByUsername(username);
+    let osuUserId: number;
+    if (!username) {
+      const userFromDb = await users.getById(senderId);
       if (userFromDb) {
-        recentPlayUser = userFromDb;
+        console.log(
+          `Successfully got osu_id for sender ${senderId} from ${BanchoUsers.name}`
+        );
+        osuUserId = userFromDb.osu_id;
       } else {
-        const userResult = await this.app.banchoApi.getUser(username);
+        ctx.reply('Не установлен ник');
+        return;
+      }
+    } else {
+      const usersCache = this.db.getModule(BanchoUsersCache);
+      const usernameWithId = await usersCache.getByUsername(username);
+      if (usernameWithId) {
+        console.log(
+          `Successfully got osu_id for username ${username} from ${BanchoUsersCache.name}`
+        );
+        osuUserId = usernameWithId.osu_id;
+      } else {
+        const userResult = await this.api.getUser(username);
         if (userResult.isFailure) {
           const failure = userResult.asFailure();
           const errorsText = stringifyErrors(failure.errors);
           ctx.reply('Не удалось получить последний скор' + `\n${errorsText}`);
           return;
         }
-        const user = userResult.asSuccess().value;
-        if (user === undefined) {
+        const rawUser = userResult.asSuccess().value;
+        if (rawUser === undefined) {
           ctx.reply(`Пользователь с ником ${username} не найден`);
           return;
         }
-        recentPlayUser = {
-          vk_id: senderId,
-          osu_id: user.id,
-          username: user.username,
-          mode: 0,
-        };
-      }
-    } else {
-      const userFromDb = await users.getById(senderId);
-      if (userFromDb) {
-        recentPlayUser = userFromDb;
-      } else {
-        ctx.reply('Не установлен ник');
-        return;
+        usersCache.add({
+          osu_id: rawUser.id,
+          username: rawUser.username,
+        });
+        console.log(
+          `Successfully got osu_id for username ${username} from API`
+        );
+        osuUserId = rawUser.id;
       }
     }
-    const scoreResult = await this.app.banchoApi.gerRecentPlay(
-      recentPlayUser.osu_id
-    );
+    const scoreResult = await this.api.gerRecentPlay(osuUserId);
     if (scoreResult.isFailure) {
       const failure = scoreResult.asFailure();
       const errorsText = stringifyErrors(failure.errors);
@@ -104,18 +115,20 @@ export class RecentPlay extends BotCommand<RecentPlayParams> {
       return;
     }
     const replyText = recentTemplateResult.asSuccess().value;
-    const coverUrlResult = await this.app.getCoverUrl(
-      score.beatmap!.beatmapset_id
+    const covers = this.db.getModule(BanchoCovers);
+    const coverResult = await covers.getByIdOrDownload(
+      score.beatmap!.beatmapset_id,
+      this.vk
     );
-    if (coverUrlResult.isFailure) {
-      const failure = coverUrlResult.asFailure();
+    if (coverResult.isFailure) {
+      const failure = coverResult.asFailure();
       const errorsText = stringifyErrors(failure.errors);
       ctx.reply('Не удалось получить БГ карты' + `\n${errorsText}`);
       return;
     }
-    const coverUrl = coverUrlResult.asSuccess().value;
+    const cover = coverResult.asSuccess().value;
     ctx.reply(replyText, {
-      attachment: coverUrl,
+      attachment: cover.attachment,
     });
     return;
   }

@@ -1,6 +1,7 @@
-import {MessageContext, ContextDefaultState} from 'vk-io';
-import {App} from '../../App';
+import {MessageContext, ContextDefaultState, VK} from 'vk-io';
 import {CommandMatchResult} from './CommandMatchResult';
+import {BotDb} from '../database/BotDb';
+import {IOsuServerApi} from '../../api/IOsuServerApi';
 export abstract class BotCommand<TExecParams> {
   private _isAvailable: Boolean;
 
@@ -16,10 +17,14 @@ export abstract class BotCommand<TExecParams> {
   /** Instructions on usage */
   abstract readonly usage: string;
 
-  app: App;
+  db: BotDb;
+  api: IOsuServerApi;
+  vk: VK;
 
-  constructor(app: App) {
-    this.app = app;
+  constructor(db: BotDb, api: IOsuServerApi, vk: VK) {
+    this.db = db;
+    this.api = api;
+    this.vk = vk;
     this._isAvailable = false;
   }
 
@@ -39,6 +44,7 @@ export abstract class BotCommand<TExecParams> {
     ctx: MessageContext<ContextDefaultState> & object
   ): Promise<void> {
     if (!this._isAvailable) {
+      ctx.reply('Команда недоступна!');
       return;
     }
     const matchResult = this.matchMessage(ctx);

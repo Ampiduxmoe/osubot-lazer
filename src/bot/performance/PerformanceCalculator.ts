@@ -44,7 +44,7 @@ export class PerformanceCalculator {
       const rawResult: IPerformanceSimulationResult = response.data;
       return Result.ok(rawResult);
     } catch (e) {
-      const errorText = 'Could not reach score simulation endpoint';
+      const errorText = 'No response from score simulation endpoint';
       console.log(errorText);
       const internalError = catchedValueToError(e);
       if (internalError !== undefined) {
