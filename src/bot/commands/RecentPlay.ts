@@ -42,9 +42,6 @@ export class RecentPlay extends BotCommand<RecentPlayParams> {
     params: RecentPlayParams,
     ctx: MessageContext<ContextDefaultState> & object
   ) {
-    console.log(
-      `Executing ${RecentPlay.name} command (${JSON.stringify(params)})`
-    );
     const username = params.username;
     const users = this.db.getModule(BanchoUsers);
     const senderId = ctx.senderId;

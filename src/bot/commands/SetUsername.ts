@@ -4,7 +4,8 @@ import {BanchoUsers} from '../database/modules/BanchoUsers';
 import {CommandMatchResult} from './CommandMatchResult';
 import {stringifyErrors} from '../../primitives/Errors';
 import {BanchoUsersCache} from '../database/modules/BanchoUsersCache';
-import {UserDbObject} from '../database/Entities';
+import {UserDbObject, UserStatsDbObject} from '../database/Entities';
+import {BanchoUserStats} from '../database/modules/BanchoUserStats';
 
 export class SetUsername extends BotCommand<SetUsernameParams> {
   name = SetUsername.name;
@@ -17,6 +18,7 @@ export class SetUsername extends BotCommand<SetUsernameParams> {
     const requiredModules = [
       db.getModuleOrDefault(BanchoUsers, undefined),
       db.getModuleOrDefault(BanchoUsersCache, undefined),
+      db.getModuleOrDefault(BanchoUserStats, undefined),
     ];
     for (const module of requiredModules) {
       if (module === undefined) {
@@ -102,6 +104,30 @@ export class SetUsername extends BotCommand<SetUsernameParams> {
       await users.add(newUserBind);
     }
     ctx.reply(`Установлен ник: ${newUserBind.username}`);
+    const userStats = this.db.getModule(BanchoUserStats);
+    const existingStats = await userStats.getById(rawUser.id);
+    const newStats: UserStatsDbObject = {
+      osu_id: rawUser.id,
+      username: rawUser.username,
+      pp: rawUser.statistics.pp,
+      rank: rawUser.statistics.global_rank,
+      accuracy: rawUser.statistics.hit_accuracy,
+    };
+    if (existingStats !== undefined) {
+      console.log(
+        `Stats for ${rawUser.id} already exist, updating with ${JSON.stringify(
+          newStats
+        )}`
+      );
+      userStats.update(newStats);
+    } else {
+      console.log(
+        `Stats for ${
+          rawUser.id
+        } have not been found, inserting ${JSON.stringify(newStats)}`
+      );
+      userStats.add(newStats);
+    }
     return;
   }
 }
