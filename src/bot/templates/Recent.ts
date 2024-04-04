@@ -96,15 +96,14 @@ export async function recentTemplate(
   const cs = round(map.cs * (mods.includes('HR') ? 1.3 : 1), 2);
   const od = round(scoreSim.difficulty_attributes.overall_difficulty, 2);
   const hp = map.drain;
-  // eslint-disable-next-line no-irregular-whitespace
-  const statsString = `AR:${ar}　CS:${cs}　OD:${od}　HP:${hp}`;
 
   const bpm = round(map.bpm! * speed, 2); // mark as not-null because i don't know why would you return null on a map bpm
   const sr = round(scoreSim.difficulty_attributes.star_rating, 2);
 
-  let modsString = '';
+  const modsString = mods.join('');
+  let modsPlusSign = '';
   if (mods.length) {
-    modsString = `${mods.join('')}`;
+    modsPlusSign = '+';
   }
 
   const totalScore = score.score;
@@ -149,6 +148,7 @@ export async function recentTemplate(
       'секунды',
       'секундъ'
     );
+    const specialModsString = modsString === '' ? 'NM' : modsString;
     const getHitsCase = (n: number) => {
       return getCorrectCase(n, 'попаданіе', 'попаданія', 'попаданій');
     };
@@ -195,7 +195,7 @@ export async function recentTemplate(
 Послѣдняя дѣятельность отъ ${score.user!.username}
 <${mapStatusSpecial}> ${artist} - ${title} [${diffname}] сдѣлана ${mapperName}
 Длится ${totalLength.minutes} ${minutesString} и ${totalLength.seconds} ${secondsString}
-${bpm} ударовъ въ минуту, ${sr.toFixed(2)} трудностей (съ ${modsString})
+${bpm} ударовъ въ минуту, ${sr.toFixed(2)} трудностей (съ ${specialModsString})
 Быстрота суженія ${ar}, величина круговъ ${cs}, точность нажатія ${od} и умаленіе жизней ${hp}
 
 Cобрано ${totalScore} очковъ
@@ -214,10 +214,11 @@ ${pp} балловъ исполненія (${ppFc} коли попасть ве�
   /* eslint-disable no-irregular-whitespace */
   return Result.ok(
     `
+[Server: Bancho]
 <${mapStatus}> Recent play for ${score.user!.username}
 ${artist} - ${title} [${diffname}] by ${mapperName}
-${lengthString} (${drainString})　${bpm} BPM　${sr} ★　+${modsString}
-${statsString}
+${lengthString} (${drainString})　${bpm} BPM　${sr}★　${modsPlusSign}${modsString}
+AR: ${ar}　CS: ${cs}　OD: ${od}　HP: ${hp}
 
 Score: ${totalScore}　Combo: ${comboString}
 Accuracy: ${acc}%
