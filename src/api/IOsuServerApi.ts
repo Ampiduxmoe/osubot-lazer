@@ -5,4 +5,9 @@ import {IScore} from '../../src/dtos/osu/scores/IScore';
 export interface IOsuServerApi {
   getUser(username: string): Promise<Result<IUserExtended | undefined>>;
   gerRecentPlay(osu_id: number): Promise<Result<IScore | undefined>>;
+  gerBestPlays(
+    osu_id: number,
+    offset: number,
+    limit: number
+  ): Promise<Result<IScore[]>>;
 }

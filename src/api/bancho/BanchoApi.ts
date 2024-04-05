@@ -131,4 +131,47 @@ export class BanchoApi implements IOsuServerApi {
       return Result.fail([finalError]);
     }
   }
+
+  async gerBestPlays(
+    osu_id: number,
+    offset: number,
+    limit: number
+  ): Promise<Result<IScore[]>> {
+    console.log(`Trying to get best plays on Bancho for ${osu_id}...`);
+    await this.refreshTokenIfNeeded();
+    try {
+      const response = await this.apiv2httpClient.get(
+        `users/${osu_id}/scores/best`,
+        {
+          params: {
+            mode: 'osu',
+            offset: offset,
+            limit: limit,
+          },
+        }
+      );
+      if (response.status === 401) {
+        console.log('Received 401 status, invalidating token now');
+        this.ouathToken = undefined;
+        const errorText = `Could not fetch best plays on Bancho for ${osu_id}: current OAuth token is not valid`;
+        console.log(errorText);
+        return Result.fail([Error(errorText)]);
+      }
+      if (response.status !== 200) {
+        const errorText = `Could not fetch best plays on Bancho for ${osu_id}, response status was ${response.status}`;
+        console.log(errorText);
+        return Result.fail([Error(errorText)]);
+      }
+      const rawScores: IScores = response.data;
+      return Result.ok(rawScores);
+    } catch (e) {
+      console.log(e);
+      const internalError = catchedValueToError(e);
+      const fallbackError = Error(
+        'Error has occured that did not match any known error type'
+      );
+      const finalError = internalError || fallbackError;
+      return Result.fail([finalError]);
+    }
+  }
 }
