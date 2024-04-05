@@ -12,6 +12,8 @@ import {BanchoApi} from './api/bancho/BanchoApi';
 import {BanchoUsersCache} from './bot/database/modules/BanchoUsersCache';
 import {ChatLeaderboard} from './bot/commands/ChatLeaderboard';
 import {BanchoUserStats} from './bot/database/modules/BanchoUserStats';
+import {ShowUserStats} from './bot/commands/ShowUserStats';
+import {UserTopPlays} from './bot/commands/UserTopPlays';
 
 export class App {
   readonly config: IAppConfig;
@@ -56,6 +58,8 @@ export class App {
       new SetUsername(this.db, this.banchoApi, this.vk),
       new RecentPlay(this.db, this.banchoApi, this.vk),
       new ChatLeaderboard(this.db, this.banchoApi, this.vk),
+      new ShowUserStats(this.db, this.banchoApi, this.vk),
+      new UserTopPlays(this.db, this.banchoApi, this.vk),
     ];
     PerformanceCalculator.setSimulationEndpoint(
       config.bot.score_simulation_endpoint

@@ -44,8 +44,11 @@ export abstract class BotCommand<TExecParams> {
   async process(
     ctx: MessageContext<ContextDefaultState> & object
   ): Promise<void> {
-    const text = ctx.text;
-    if (text && !text.toLowerCase().startsWith('l ')) {
+    if (!ctx.hasText && !ctx.hasMessagePayload) {
+      return;
+    }
+    const text = ctx.text?.toLowerCase();
+    if (!ctx.hasMessagePayload && text && !text.startsWith('l ')) {
       return; // TODO: extract prefix into some server command list logic
     }
     const matchResult = this.matchMessage(ctx);
@@ -86,4 +89,21 @@ export abstract class BotCommand<TExecParams> {
     params: TExecParams,
     ctx: MessageContext<ContextDefaultState> & object
   ): Promise<void>;
+
+  /**
+   * Gets command text from either payload (preferred) or message text.
+   * If there is no text and no payload, throws an error.
+   */
+  protected getCommandFromPayloadOrText(
+    ctx: MessageContext<ContextDefaultState> & object
+  ): string {
+    if (!ctx.hasMessagePayload && !ctx.hasText) {
+      throw Error('Message context has no payload and no text');
+    }
+    const command: string | undefined = ctx.hasMessagePayload
+      ? ctx.messagePayload!.command
+      : undefined;
+    const commandText = command?.toLowerCase() || ctx.text!.toLowerCase();
+    return commandText;
+  }
 }
