@@ -3,6 +3,8 @@ import {BotDb} from './BotDb';
 export abstract class DbModule<T> {
   parentDb: BotDb;
   tableName: string;
+  private _isInitializing = false;
+  private _isInitialized = false;
 
   constructor(parentDb: BotDb, tableName: string) {
     this.parentDb = parentDb;
@@ -10,9 +12,18 @@ export abstract class DbModule<T> {
   }
 
   async init(): Promise<void> {
-    console.log(`Initializing database module ${this.tableName}...`);
-    await this.createTable();
-    console.log(`Database module ${this.tableName} initialized`);
+    if (this._isInitializing || this._isInitialized) {
+      return;
+    }
+    try {
+      this._isInitializing = true;
+      console.log(`Initializing database module ${this.tableName}...`);
+      await this.createTable();
+      this._isInitialized = true;
+      console.log(`Database module ${this.tableName} initialized`);
+    } finally {
+      this._isInitializing = false;
+    }
   }
   abstract createTable(): Promise<void>;
 

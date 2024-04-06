@@ -14,6 +14,8 @@ import {ChatLeaderboard} from './bot/commands/ChatLeaderboard';
 import {BanchoUserStats} from './bot/database/modules/BanchoUserStats';
 import {ShowUserStats} from './bot/commands/ShowUserStats';
 import {UserTopPlays} from './bot/commands/UserTopPlays';
+import {BanchoBeatmapsetsCache} from './bot/database/modules/BanchoBeatmapsetsCache';
+import {JsonCache} from './bot/database/modules/JsonCache';
 
 export class App {
   readonly config: IAppConfig;
@@ -40,15 +42,24 @@ export class App {
       this.currentGroup = config.vk.group_dev;
       this.db = new BotDb('osu_dev.db');
     }
+    const jsonCache = new JsonCache(this.db);
     this.banchoApi = new BanchoApi(
       config.osu.oauth.id,
-      config.osu.oauth.secret
+      config.osu.oauth.secret,
+      new Promise<JsonCache>((resolve, reject) => {
+        jsonCache
+          .init()
+          .then(() => resolve(jsonCache))
+          .catch(e => reject(e));
+      })
     );
     this.db.addModules([
+      jsonCache,
       new BanchoUsers(this.db),
       new BanchoUsersCache(this.db),
       new BanchoUserStats(this.db),
       new BanchoCovers(this.db),
+      new BanchoBeatmapsetsCache(this.db),
     ]);
     this.vk = new VK({
       pollingGroupId: this.currentGroup.id,

@@ -18,8 +18,21 @@ export interface UserStatsDbObject {
   accuracy: number;
 }
 
-export interface OsuUserLight {
+export interface CachedUserDbObject {
   osu_id: number;
   username: string;
   timestamp?: string;
+}
+
+export interface CachedBeatmapsetDbObject {
+  beatmapset_id: number;
+  artist: string;
+  title: string;
+  creator: string;
+  timestamp?: string;
+}
+
+export interface CachedJsonDbObject {
+  object_name: string;
+  json_string: string;
 }

@@ -7,10 +7,19 @@ import {IOsuOauthAccessTokenReadDto} from '../../../src/oauth/IOsuOauthAccessTok
 import {OsuOauthAccessToken} from '../../oauth/OsuOauthAccessToken';
 import {catchedValueToError} from '../../primitives/Errors';
 import {IScores} from '../../../src/dtos/osu/scores/IScores';
+import {JsonCache} from '../../bot/database/modules/JsonCache';
 
 export class BanchoApi implements IOsuServerApi {
+  private rawTokenCacheId = 'raw_osu_oauth_token';
   private ouathClientId: number;
   private oauthClientSecret: string;
+  private _jsonCache: JsonCache | undefined;
+  private get jsonCache(): JsonCache {
+    if (this._jsonCache === undefined) {
+      throw Error('Variable jsonCache must be initialized before any use');
+    }
+    return this._jsonCache;
+  }
   private ouathToken: OsuOauthAccessToken | undefined = undefined;
 
   private apiv2httpClient = axios.create({
@@ -21,37 +30,78 @@ export class BanchoApi implements IOsuServerApi {
     },
   });
 
-  constructor(ouathClientId: number, oauthClientSecret: string) {
+  constructor(
+    ouathClientId: number,
+    oauthClientSecret: string,
+    jsonCache: Promise<JsonCache>
+  ) {
     this.ouathClientId = ouathClientId;
     this.oauthClientSecret = oauthClientSecret;
+    jsonCache.then(cache => {
+      this._jsonCache = cache;
+      cache
+        .validateAndGet<IOsuOauthAccessTokenReadDto>({
+          object_name: this.rawTokenCacheId,
+          validate: t =>
+            Boolean(t.token_type && t.expires_in && t.access_token),
+        })
+        .then(rawToken => {
+          if (rawToken !== undefined) {
+            console.log('Attempting to use cached OAuth token...');
+            this.trySetToken(rawToken);
+          }
+        });
+    });
   }
 
-  async refreshTokenIfNeeded(): Promise<void> {
+  private async refreshTokenIfNeeded(): Promise<void> {
     if (this.ouathToken === undefined || !this.ouathToken.isValid()) {
       await this.refreshToken();
     }
   }
 
-  async refreshToken() {
+  private async refreshToken() {
     console.log('Refreshing Bancho OAuth token...');
     try {
-      const body = {
-        client_id: this.ouathClientId,
-        client_secret: this.oauthClientSecret,
-        grant_type: 'client_credentials',
-        scope: 'public',
-      };
-      const response = await axios.post('https://osu.ppy.sh/oauth/token', body);
-      const rawToken: IOsuOauthAccessTokenReadDto = response.data;
-      this.ouathToken = new OsuOauthAccessToken(rawToken);
-      this.apiv2httpClient.defaults.headers.common[
-        'Authorization'
-      ] = `Bearer ${rawToken.access_token}`;
-      console.log('Sucessfully refreshed token!');
+      const rawToken = await this.fetchToken();
+      this.trySetToken(rawToken);
     } catch (e) {
       console.log('Could not fetch new token');
       console.log(e);
     }
+  }
+
+  private async fetchToken(): Promise<IOsuOauthAccessTokenReadDto> {
+    const body = {
+      client_id: this.ouathClientId,
+      client_secret: this.oauthClientSecret,
+      grant_type: 'client_credentials',
+      scope: 'public',
+    };
+    const response = await axios.post('https://osu.ppy.sh/oauth/token', body);
+    const rawToken = response.data;
+    const oldTokenCache = await this.jsonCache.getByName(this.rawTokenCacheId);
+    if (oldTokenCache !== undefined) {
+      await this.jsonCache.delete(oldTokenCache);
+    }
+    await this.jsonCache.add({
+      object_name: this.rawTokenCacheId,
+      json_string: JSON.stringify(rawToken),
+    });
+    return rawToken;
+  }
+
+  private trySetToken(rawToken: IOsuOauthAccessTokenReadDto) {
+    const token = new OsuOauthAccessToken(rawToken);
+    if (!token.isValid()) {
+      console.log('Can not set OAuth token: expiration date reached');
+      return;
+    }
+    this.ouathToken = token;
+    this.apiv2httpClient.defaults.headers.common[
+      'Authorization'
+    ] = `Bearer ${rawToken.access_token}`;
+    console.log('Sucessfully set token!');
   }
 
   async getUser(username: string): Promise<Result<IUserExtended | undefined>> {

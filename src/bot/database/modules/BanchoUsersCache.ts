@@ -1,4 +1,4 @@
-import {OsuUserLight as CachedUserDbObject} from '../Entities';
+import {CachedUserDbObject} from '../Entities';
 import {DbModule} from '../DbModule';
 import {BotDb} from '../BotDb';
 
