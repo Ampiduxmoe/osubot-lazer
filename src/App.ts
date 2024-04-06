@@ -62,7 +62,8 @@ export class App {
       new UserTopPlays(this.db, this.banchoApi, this.vk),
     ];
     PerformanceCalculator.setSimulationEndpoint(
-      config.bot.score_simulation_endpoint
+      config.bot.score_simulation.endpoint,
+      config.bot.score_simulation.default_timeout
     );
     this.vk.updates.on('message', ctx => this.onMessage(ctx));
   }

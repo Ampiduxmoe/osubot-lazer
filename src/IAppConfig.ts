@@ -10,7 +10,10 @@ export interface IAppConfig {
     group_dev: IVkGroup;
   };
   bot: {
-    score_simulation_endpoint: string;
+    score_simulation: {
+      endpoint: string;
+      default_timeout: number;
+    };
   };
 }
 

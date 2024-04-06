@@ -8,11 +8,11 @@ export class PerformanceCalculator {
   private static simulationEndpoint: string | undefined;
   private static httpClient: AxiosInstance | undefined;
 
-  static setSimulationEndpoint(endpoint: string) {
+  static setSimulationEndpoint(endpoint: string, timeout: number) {
     PerformanceCalculator.simulationEndpoint = endpoint;
     PerformanceCalculator.httpClient = axios.create({
       baseURL: endpoint,
-      timeout: 4e3,
+      timeout: timeout,
       validateStatus: function () {
         return true;
       },
