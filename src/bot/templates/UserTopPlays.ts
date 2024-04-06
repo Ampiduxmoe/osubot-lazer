@@ -86,8 +86,17 @@ export async function userTopPlaysTemplate(
     const hoursFormatted = (hours > 9 ? '' : '0') + hours;
     const minutes = date.getUTCMinutes();
     const minutesFormatted = (minutes > 9 ? '' : '0') + minutes;
+    const mapUrlShort = map.url.replace('beatmaps', 'b');
 
     /* eslint-disable no-irregular-whitespace */
+    if (scores.length > 3) {
+      return `
+${scorePosition}. ${songTitle} [${diffname}] ${modsPlusSign}${modsString}
+${sr}★　${comboString}　${acc}%
+${pp}pp　${mapUrlShort}
+      `.trim();
+    }
+
     return `
 ${scorePosition}. ${songTitle} [${diffname}] ${modsPlusSign}${modsString}
 ${lengthString} 　${bpm} BPM　${sr}★
@@ -96,17 +105,18 @@ Grade: ${score.rank}　${comboString}
 Accuracy: ${acc}%　${hitcountsString}
 PP: ${pp}
 ${dayFormatted}.${monthFormatted}.${year} ${hoursFormatted}:${minutesFormatted}
-${map.url.replace('beatmaps', 'b')}
+${mapUrlShort}
     `.trim();
   });
 
   const username = scores[0].user!.username;
+  const scoresSeparator = scores.length > 3 ? '\n\n' : '\n\n';
   return Result.ok(
     `
 [Server: Bancho]
 Топ скоры игрока ${username} [STD]
 
-${scoreTexts.join('\n\n')}
+${scoreTexts.join(scoresSeparator)}
   `.trim()
   );
 }

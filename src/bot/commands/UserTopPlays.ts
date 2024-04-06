@@ -5,6 +5,7 @@ import {BanchoUsersCache} from '../database/modules/BanchoUsersCache';
 import {BanchoUsers} from '../database/modules/BanchoUsers';
 import {stringifyErrors} from '../../primitives/Errors';
 import {userTopPlaysTemplate} from '../templates/UserTopPlays';
+import {clamp} from '../../primitives/Numbers';
 
 export class UserTopPlays extends BotCommand<UserTopPlaysParams> {
   name = UserTopPlays.name;
@@ -28,11 +29,43 @@ export class UserTopPlays extends BotCommand<UserTopPlaysParams> {
   matchMessage(
     ctx: MessageContext<ContextDefaultState> & object
   ): CommandMatchResult<UserTopPlaysParams> {
-    const commandText = this.getCommandFromPayloadOrText(ctx);
+    const commandText = this.getCommandFromPayloadOrText(ctx).toLowerCase();
     const tokens = commandText.split(' ');
     if (tokens[1] === 't') {
-      const username = tokens[2];
-      return CommandMatchResult.ok({username});
+      let username: string | undefined = tokens[2];
+      if (username !== undefined) {
+        if (username.startsWith('\\') || username.startsWith('+')) {
+          username = undefined;
+        }
+      }
+      const offsetString = tokens.find(t => t.startsWith('\\'));
+      const limitString = tokens.find(t => t.startsWith('+'));
+      let offset: number, limit: number;
+      if (offsetString !== undefined) {
+        const parseResult = parseInt(offsetString.substring(1));
+        if (isNaN(parseResult)) {
+          offset = 0;
+        } else {
+          offset = clamp(parseResult - 1, 0, 99);
+        }
+      } else {
+        offset = 0;
+      }
+      if (limitString !== undefined) {
+        const parseResult = parseInt(limitString.substring(1));
+        if (isNaN(parseResult)) {
+          limit = 3;
+        } else {
+          limit = clamp(parseResult, 1, 10);
+        }
+      } else {
+        if (offsetString !== undefined) {
+          limit = 1;
+        } else {
+          limit = 3;
+        }
+      }
+      return CommandMatchResult.ok({username, limit, offset});
     }
     return CommandMatchResult.fail();
   }
@@ -41,6 +74,8 @@ export class UserTopPlays extends BotCommand<UserTopPlaysParams> {
     ctx: MessageContext<ContextDefaultState> & object
   ) {
     const username = params.username;
+    const offset = params.offset;
+    const limit = params.limit;
     const users = this.db.getModule(BanchoUsers);
     const senderId = ctx.senderId;
     let osuUserId: number;
@@ -86,7 +121,11 @@ export class UserTopPlays extends BotCommand<UserTopPlaysParams> {
         osuUserId = rawUser.id;
       }
     }
-    const topScoresResult = await this.api.gerBestPlays(osuUserId, 0, 3);
+    const topScoresResult = await this.api.getBestPlays(
+      osuUserId,
+      offset,
+      limit
+    );
     if (topScoresResult.isFailure) {
       const failure = topScoresResult.asFailure();
       const errorsText = stringifyErrors(failure.errors);
@@ -98,7 +137,10 @@ export class UserTopPlays extends BotCommand<UserTopPlaysParams> {
       ctx.reply('Нет лучших скоров!');
       return;
     }
-    const topPlaysTemplateResult = await userTopPlaysTemplate(scores, 1);
+    const topPlaysTemplateResult = await userTopPlaysTemplate(
+      scores,
+      1 + offset
+    );
     if (topPlaysTemplateResult.isFailure) {
       const failure = topPlaysTemplateResult.asFailure();
       const errorsText = stringifyErrors(failure.errors);
@@ -113,4 +155,6 @@ export class UserTopPlays extends BotCommand<UserTopPlaysParams> {
 
 export interface UserTopPlaysParams {
   username: string | undefined;
+  offset: number;
+  limit: number;
 }

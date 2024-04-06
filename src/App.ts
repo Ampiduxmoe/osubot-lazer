@@ -7,7 +7,7 @@ import {BanchoCovers} from './bot/database/modules/BanchoCovers';
 import {BanchoUsers} from './bot/database/modules/BanchoUsers';
 import {BotCommand} from './bot/commands/BotCommand';
 import {SetUsername} from './bot/commands/SetUsername';
-import {RecentPlay} from './bot/commands/RecentPlay';
+import {UserRecentPlays} from './bot/commands/UserRecentPlays';
 import {BanchoApi} from './api/bancho/BanchoApi';
 import {BanchoUsersCache} from './bot/database/modules/BanchoUsersCache';
 import {ChatLeaderboard} from './bot/commands/ChatLeaderboard';
@@ -56,7 +56,7 @@ export class App {
     });
     this.commands = [
       new SetUsername(this.db, this.banchoApi, this.vk),
-      new RecentPlay(this.db, this.banchoApi, this.vk),
+      new UserRecentPlays(this.db, this.banchoApi, this.vk),
       new ChatLeaderboard(this.db, this.banchoApi, this.vk),
       new ShowUserStats(this.db, this.banchoApi, this.vk),
       new UserTopPlays(this.db, this.banchoApi, this.vk),

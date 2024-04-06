@@ -103,7 +103,7 @@ export abstract class BotCommand<TExecParams> {
     const command: string | undefined = ctx.hasMessagePayload
       ? ctx.messagePayload!.command
       : undefined;
-    const commandText = command?.toLowerCase() || ctx.text!.toLowerCase();
+    const commandText = command || ctx.text!;
     return commandText;
   }
 }

@@ -4,11 +4,12 @@ import {BanchoUsers} from '../database/modules/BanchoUsers';
 import {CommandMatchResult} from './CommandMatchResult';
 import {stringifyErrors} from '../../primitives/Errors';
 import {BanchoCovers} from '../database/modules/BanchoCovers';
-import {recentTemplate} from '../templates/Recent';
+import {userRecentPlaysTemplate} from '../templates/UserRecentPlays';
 import {BanchoUsersCache} from '../database/modules/BanchoUsersCache';
+import {clamp} from '../../primitives/Numbers';
 
-export class RecentPlay extends BotCommand<RecentPlayParams> {
-  name = RecentPlay.name;
+export class UserRecentPlays extends BotCommand<UserRecentPlaysParams> {
+  name = UserRecentPlays.name;
   title = 'Последний плей';
   description = 'показывает последний сабмитнутый плей игрока';
   usage = 'r [ник]';
@@ -29,20 +30,50 @@ export class RecentPlay extends BotCommand<RecentPlayParams> {
   }
   matchMessage(
     ctx: MessageContext<ContextDefaultState> & object
-  ): CommandMatchResult<RecentPlayParams> {
+  ): CommandMatchResult<UserRecentPlaysParams> {
     const text = ctx.text!.toLowerCase();
     const tokens = text.split(' ');
     if (tokens[1] === 'r') {
-      const username = tokens[2];
-      return CommandMatchResult.ok({username});
+      let username: string | undefined = tokens[2];
+      if (username !== undefined) {
+        if (username.startsWith('\\') || username.startsWith('+')) {
+          username = undefined;
+        }
+      }
+      const offsetString = tokens.find(t => t.startsWith('\\'));
+      const limitString = tokens.find(t => t.startsWith('+'));
+      let offset: number, limit: number;
+      if (offsetString !== undefined) {
+        const parseResult = parseInt(offsetString.substring(1));
+        if (isNaN(parseResult)) {
+          offset = 0;
+        } else {
+          offset = clamp(parseResult - 1, 0, 999);
+        }
+      } else {
+        offset = 0;
+      }
+      if (limitString !== undefined) {
+        const parseResult = parseInt(limitString.substring(1));
+        if (isNaN(parseResult)) {
+          limit = 1;
+        } else {
+          limit = clamp(parseResult, 1, 10);
+        }
+      } else {
+        limit = 1;
+      }
+      return CommandMatchResult.ok({username, offset, limit});
     }
     return CommandMatchResult.fail();
   }
   async execute(
-    params: RecentPlayParams,
+    params: UserRecentPlaysParams,
     ctx: MessageContext<ContextDefaultState> & object
   ) {
     const username = params.username;
+    const offset = params.offset;
+    const limit = params.limit;
     const users = this.db.getModule(BanchoUsers);
     const senderId = ctx.senderId;
     let osuUserId: number;
@@ -88,22 +119,25 @@ export class RecentPlay extends BotCommand<RecentPlayParams> {
         osuUserId = rawUser.id;
       }
     }
-    const scoreResult = await this.api.gerRecentPlay(osuUserId);
-    if (scoreResult.isFailure) {
-      const failure = scoreResult.asFailure();
+    const scoresResult = await this.api.gerRecentPlays(
+      osuUserId,
+      offset,
+      limit
+    );
+    if (scoresResult.isFailure) {
+      const failure = scoresResult.asFailure();
       const errorsText = stringifyErrors(failure.errors);
       ctx.reply('Не удалось получить последний скор' + `\n${errorsText}`);
       return;
     }
-    const score = scoreResult.asSuccess().value;
-    if (score === undefined) {
+    const scores = scoresResult.asSuccess().value;
+    if (!scores.length) {
       ctx.reply('Нет последних скоров!');
       return;
     }
-    const recentTemplateResult = await recentTemplate(
-      score,
-      score.beatmap!, // mark as not-null because it is always being returned by https://osu.ppy.sh/api/v2/users/{user_id}/scores/recent (at least now)
-      score.beatmapset! // mark as not-null because it is always being returned by https://osu.ppy.sh/api/v2/users/{user_id}/scores/recent (at least now)
+    const recentTemplateResult = await userRecentPlaysTemplate(
+      scores,
+      1 + offset
     );
     if (recentTemplateResult.isFailure) {
       const failure = recentTemplateResult.asFailure();
@@ -113,8 +147,12 @@ export class RecentPlay extends BotCommand<RecentPlayParams> {
     }
     const replyText = recentTemplateResult.asSuccess().value;
     const covers = this.db.getModule(BanchoCovers);
+    if (scores.length > 1) {
+      ctx.reply(replyText);
+      return;
+    }
     const coverResult = await covers.getByIdOrDownload(
-      score.beatmap!.beatmapset_id,
+      scores[0].beatmap!.beatmapset_id,
       this.vk
     );
     if (coverResult.isFailure) {
@@ -131,6 +169,8 @@ export class RecentPlay extends BotCommand<RecentPlayParams> {
   }
 }
 
-export interface RecentPlayParams {
+export interface UserRecentPlaysParams {
   username: string | undefined;
+  offset: number;
+  limit: number;
 }

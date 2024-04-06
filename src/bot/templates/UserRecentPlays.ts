@@ -1,17 +1,25 @@
 import {PerformanceCalculator} from '../performance/PerformanceCalculator';
 import {IScore} from '../../dtos/osu/scores/IScore';
-import {IBeatmapExtended} from '../../dtos/osu/beatmaps/IBeatmapExtended';
-import {IBeatmapset} from '../../dtos/osu/beatmaps/IBeatmapset';
 import {capitalize} from '../../primitives/Strings';
 import {Timespan} from '../../primitives/Timespan';
 import {round} from '../../primitives/Numbers';
 import {Result} from '../../primitives/Result';
+import {IPerformanceSimulationResult} from '../performance/IPerformanceSimulationResult';
 
-export async function recentTemplate(
-  score: IScore,
-  map: IBeatmapExtended,
-  mapset: IBeatmapset
+export async function userRecentPlaysTemplate(
+  scores: IScore[],
+  startingPosition: number
 ): Promise<Result<string>> {
+  if (scores.length > 1) {
+    return multipleScoresTemplate(scores, startingPosition);
+  } else {
+    return singleScoreTemplate(scores[0]);
+  }
+}
+
+async function singleScoreTemplate(score: IScore): Promise<Result<string>> {
+  const map = score.beatmap!;
+  const mapset = score.beatmapset!;
   const mapStatus = capitalize(map.status);
   const artist = mapset.artist;
   const title = mapset.title;
@@ -32,12 +40,13 @@ export async function recentTemplate(
   const objectsTotal =
     map.count_circles + map.count_sliders + map.count_spinners;
   const totalToHitRatio = objectsTotal / hitcountsTotal;
+  const fullPlayMisses = Math.floor(totalToHitRatio * counts.count_miss);
   const fullPlayMehs = Math.floor(totalToHitRatio * counts.count_50);
   const fullPlayGoods = Math.floor(totalToHitRatio * counts.count_100);
   const scoreSimPromise = PerformanceCalculator.simulate({
     mods: mods,
     combo: score.max_combo,
-    misses: counts.count_miss,
+    misses: fullPlayMisses,
     mehs: fullPlayMehs,
     goods: fullPlayGoods,
     beatmap_id: map.id,
@@ -61,7 +70,7 @@ export async function recentTemplate(
   const scoreSimResult = await scoreSimPromise;
   if (scoreSimResult.isFailure) {
     const failure = scoreSimResult.asFailure();
-    const errorText = 'Could not simulate recent score';
+    const errorText = 'Could not simulate copy of recent score';
     console.log(errorText);
     return Result.fail([Error(errorText), ...failure.errors]);
   }
@@ -97,7 +106,7 @@ export async function recentTemplate(
   const od = round(scoreSim.difficulty_attributes.overall_difficulty, 2);
   const hp = map.drain;
 
-  const bpm = round(map.bpm! * speed, 2); // mark as not-null because i don't know why would you return null on a map bpm
+  const bpm = round(map.bpm! * speed, 2);
   const sr = round(scoreSim.difficulty_attributes.star_rating, 2);
 
   const modsString = mods.join('');
@@ -112,7 +121,7 @@ export async function recentTemplate(
   const comboString = `${combo}x/${max_combo}x`;
 
   const acc = round(score.accuracy * 100, 2);
-  const pp = round(scoreSim.performance_attributes.pp, 2);
+  const pp = score.pp || round(scoreSim.performance_attributes.pp, 2) || 0;
   const ppFc = ppFcSim ? round(ppFcSim.performance_attributes.pp, 2) : '?';
   const ppSs = ppSsSim ? round(ppSsSim.performance_attributes.pp, 2) : '?';
   const hitcountsString = `${counts.count_300}/${counts.count_100}/${counts.count_50}/${counts.count_miss}`;
@@ -215,7 +224,7 @@ ${pp} балловъ исполненія (${ppFc} коли попасть ве�
   return Result.ok(
     `
 [Server: Bancho]
-<${mapStatus}> Recent play for ${score.user!.username}
+<${mapStatus}> Последний скор игрока ${score.user!.username}
 ${artist} - ${title} [${diffname}] by ${mapperName}
 ${lengthString} (${drainString})　${bpm} BPM　${sr}★　${modsPlusSign}${modsString}
 AR: ${ar}　CS: ${cs}　OD: ${od}　HP: ${hp}
@@ -228,6 +237,98 @@ Grade: ${rankAdjusted} ${mapCompletionString}
 
 Beatmap: ${map.url}
   `.trim()
+  );
+}
+
+async function multipleScoresTemplate(
+  scores: IScore[],
+  startingPosition: number
+): Promise<Result<string>> {
+  const username = scores[0].user!.username;
+  const scoreSimPromises = scores.map(s => {
+    const map = s.beatmap!;
+    const counts = s.statistics;
+    const hitcountsTotal =
+      counts.count_300 + counts.count_100 + counts.count_50 + counts.count_miss;
+    const objectsTotal =
+      map.count_circles + map.count_sliders + map.count_spinners;
+    const totalToHitRatio = objectsTotal / hitcountsTotal;
+    const fullPlayMisses = Math.floor(totalToHitRatio * counts.count_miss);
+    const fullPlayMehs = Math.floor(totalToHitRatio * counts.count_50);
+    const fullPlayGoods = Math.floor(totalToHitRatio * counts.count_100);
+    return PerformanceCalculator.simulate({
+      mods: s.mods,
+      combo: s.max_combo,
+      misses: fullPlayMisses,
+      mehs: fullPlayMehs,
+      goods: fullPlayGoods,
+      beatmap_id: map.id,
+    });
+  });
+  const scoreSims: IPerformanceSimulationResult[] = [];
+  for (const [index, promise] of scoreSimPromises.entries()) {
+    const scoreSim = await promise;
+    if (scoreSim.isFailure) {
+      const failure = scoreSim.asFailure();
+      const errorText = `Could not get max combo for map ${
+        scores[index].beatmap!.id
+      }`;
+      console.log(errorText);
+      return Result.fail([Error(errorText), ...failure.errors]);
+    }
+    scoreSims.push(scoreSim.asSuccess().value);
+  }
+
+  const scoreTexts = scores.map((score, index) => {
+    const map = score.beatmap!;
+    const mapset = score.beatmapset!;
+    const scoreSim = scoreSims[index];
+
+    const scorePosition = startingPosition + index;
+    const title = mapset.title;
+    const diffname = map.version;
+    const mods = score.mods;
+    const modsString = mods.join('');
+    let modsPlusSign = '';
+    if (mods.length) {
+      modsPlusSign = '+';
+    }
+
+    const sr = round(scoreSim.difficulty_attributes.star_rating, 2);
+    const counts = score.statistics;
+    const hitcountsTotal =
+      counts.count_300 + counts.count_100 + counts.count_50 + counts.count_miss;
+    const objectsTotal =
+      map.count_circles + map.count_sliders + map.count_spinners;
+    const rankAdjusted = hitcountsTotal < objectsTotal ? 'F' : score.rank;
+    const mapProgress = hitcountsTotal / objectsTotal;
+    const completionPercent = round(mapProgress * 100, 2);
+    const mapCompletionString =
+      rankAdjusted !== 'F' ? '' : ` (${completionPercent}%)`;
+    const combo = score.max_combo;
+    const max_combo = scoreSim.difficulty_attributes.max_combo;
+    const comboString = `${combo}x/${max_combo}x`;
+    const acc = round(score.accuracy * 100, 2);
+
+    const pp = score.pp || round(scoreSim.performance_attributes.pp, 2) || 0;
+    const mapUrlShort = map.url.replace('beatmaps', 'b');
+
+    /* eslint-disable no-irregular-whitespace */
+    return `
+${scorePosition}. ${title} [${diffname}] ${modsPlusSign}${modsString}
+${sr}★　${rankAdjusted}${mapCompletionString}　${comboString}　${acc}%
+${pp}pp　${mapUrlShort}
+    `.trim();
+  });
+
+  const scoresSeparator = '\n\n';
+  return Result.ok(
+    `
+[Server: Bancho]
+Последние скоры игрока ${username} [STD]
+
+${scoreTexts.join(scoresSeparator)}
+    `.trim()
   );
 }
 

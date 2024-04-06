@@ -89,8 +89,12 @@ export class BanchoApi implements IOsuServerApi {
     }
   }
 
-  async gerRecentPlay(osu_id: number): Promise<Result<IScore | undefined>> {
-    console.log(`Trying to get recent play on Bancho for ${osu_id}...`);
+  async gerRecentPlays(
+    osu_id: number,
+    offset: number,
+    limit: number
+  ): Promise<Result<IScore[]>> {
+    console.log(`Trying to get recent plays on Bancho for ${osu_id}...`);
     await this.refreshTokenIfNeeded();
     try {
       const response = await this.apiv2httpClient.get(
@@ -99,7 +103,8 @@ export class BanchoApi implements IOsuServerApi {
           params: {
             include_fails: 1,
             mode: 'osu',
-            limit: 1,
+            offset: offset,
+            limit: limit,
           },
         }
       );
@@ -116,11 +121,10 @@ export class BanchoApi implements IOsuServerApi {
         return Result.fail([Error(errorText)]);
       }
       const rawScores: IScores = response.data;
-      if (!rawScores || !rawScores.length) {
-        console.log('Scores array was empty');
-        return Result.ok(undefined);
-      }
-      return Result.ok(rawScores[0]);
+      console.log(
+        `Number of fetched recent plays on Bancho for ${osu_id}: ${rawScores.length}`
+      );
+      return Result.ok(rawScores);
     } catch (e) {
       console.log(e);
       const internalError = catchedValueToError(e);
@@ -132,7 +136,7 @@ export class BanchoApi implements IOsuServerApi {
     }
   }
 
-  async gerBestPlays(
+  async getBestPlays(
     osu_id: number,
     offset: number,
     limit: number
@@ -163,6 +167,9 @@ export class BanchoApi implements IOsuServerApi {
         return Result.fail([Error(errorText)]);
       }
       const rawScores: IScores = response.data;
+      console.log(
+        `Number of fetched top plays on Bancho for ${osu_id}: ${rawScores.length}`
+      );
       return Result.ok(rawScores);
     } catch (e) {
       console.log(e);

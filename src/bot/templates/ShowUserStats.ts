@@ -1,8 +1,8 @@
-import {IUserExtended} from '../../../src/dtos/osu/users/IUserExtended';
+import {IUserExtended} from '../../dtos/osu/users/IUserExtended';
 import {Timespan} from '../../primitives/Timespan';
 import {round} from '../../primitives/Numbers';
 
-export function userStatsTemplate(user: IUserExtended) {
+export function showUserStatsTemplate(user: IUserExtended) {
   const username = user.username;
   const rankGlobal = user.statistics.global_rank;
   const rankCountry = user.statistics.country_rank;

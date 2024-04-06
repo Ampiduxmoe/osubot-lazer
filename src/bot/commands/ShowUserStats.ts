@@ -6,7 +6,7 @@ import {BanchoUsers} from '../database/modules/BanchoUsers';
 import {stringifyErrors} from '../../primitives/Errors';
 import {BanchoUserStats} from '../database/modules/BanchoUserStats';
 import {UserStatsDbObject} from '../../../src/bot/database/Entities';
-import {userStatsTemplate} from '../templates/UserStats';
+import {showUserStatsTemplate} from '../templates/ShowUserStats';
 
 export class ShowUserStats extends BotCommand<ShowUserStatsParams> {
   name = ShowUserStats.name;
@@ -80,7 +80,7 @@ export class ShowUserStats extends BotCommand<ShowUserStatsParams> {
           command: `l t ${rawUser.username}`,
         },
       });
-    ctx.reply(userStatsTemplate(rawUser), {keyboard});
+    ctx.reply(showUserStatsTemplate(rawUser), {keyboard});
     const usersCache = this.db.getModule(BanchoUsersCache);
     const cachedUser = await usersCache.getByUsername(username);
     if (cachedUser !== undefined) {
