@@ -317,7 +317,7 @@ async function multipleScoresTemplate(
     return `
 ${scorePosition}. ${title} [${diffname}] ${modsPlusSign}${modsString}
 ${sr}★　${rankAdjusted}${mapCompletionString}　${comboString}　${acc}%
-${pp}pp　${mapUrlShort}
+${pp}pp　 ${mapUrlShort}
     `.trim();
   });
 

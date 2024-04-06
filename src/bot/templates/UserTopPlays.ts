@@ -93,7 +93,7 @@ export async function userTopPlaysTemplate(
       return `
 ${scorePosition}. ${songTitle} [${diffname}] ${modsPlusSign}${modsString}
 ${sr}★　${comboString}　${acc}%
-${pp}pp　${mapUrlShort}
+${pp}pp　 ${mapUrlShort}
       `.trim();
     }
 
