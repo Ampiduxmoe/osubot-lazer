@@ -121,7 +121,7 @@ async function singleScoreTemplate(score: IScore): Promise<Result<string>> {
   const comboString = `${combo}x/${max_combo}x`;
 
   const acc = round(score.accuracy * 100, 2);
-  const pp = score.pp || round(scoreSim.performance_attributes.pp, 2) || 0;
+  const pp = round(score.pp || scoreSim.performance_attributes.pp || 0, 2);
   const ppFc = ppFcSim ? round(ppFcSim.performance_attributes.pp, 2) : '?';
   const ppSs = ppSsSim ? round(ppSsSim.performance_attributes.pp, 2) : '?';
   const hitcountsString = `${counts.count_300}/${counts.count_100}/${counts.count_50}/${counts.count_miss}`;
@@ -131,6 +131,7 @@ async function singleScoreTemplate(score: IScore): Promise<Result<string>> {
   const completionPercent = round(mapProgress * 100, 2);
   const mapCompletionString =
     rankAdjusted !== 'F' ? '' : `(${completionPercent}%)`;
+  const mapUrlShort = map.url.replace('beatmaps', 'b');
 
   const specialFormatProbability = 0.002;
   const returnSpecialFormatting = Math.random() < specialFormatProbability;
@@ -215,7 +216,7 @@ ${pp} балловъ исполненія (${ppFc} коли попасть ве�
 Прохожденіе окончено на ${completionPercent}%
 Оцѣнка сего: ${specialRank}
 
-Переходъ на карту: ${map.url}
+Переходъ на карту: ${mapUrlShort}
     `.trim()
     );
   }
@@ -224,8 +225,9 @@ ${pp} балловъ исполненія (${ppFc} коли попасть ве�
   return Result.ok(
     `
 [Server: Bancho]
-<${mapStatus}> Последний скор игрока ${score.user!.username}
-${artist} - ${title} [${diffname}] by ${mapperName}
+Последний скор игрока ${score.user!.username} [STD]
+
+<${mapStatus}> ${artist} - ${title} [${diffname}] by ${mapperName}
 ${lengthString} (${drainString})　${bpm} BPM　${sr}★　${modsPlusSign}${modsString}
 AR: ${ar}　CS: ${cs}　OD: ${od}　HP: ${hp}
 
@@ -235,7 +237,7 @@ PP: ${pp}　⯈ FC: ${ppFc}　⯈ SS: ${ppSs}
 Hitcounts: ${hitcountsString}
 Grade: ${rankAdjusted} ${mapCompletionString}
 
-Beatmap: ${map.url}
+Beatmap: ${mapUrlShort}
   `.trim()
   );
 }
@@ -310,7 +312,7 @@ async function multipleScoresTemplate(
     const comboString = `${combo}x/${max_combo}x`;
     const acc = round(score.accuracy * 100, 2);
 
-    const pp = score.pp || round(scoreSim.performance_attributes.pp, 2) || 0;
+    const pp = round(score.pp || scoreSim.performance_attributes.pp || 0, 2);
     const mapUrlShort = map.url.replace('beatmaps', 'b');
 
     /* eslint-disable no-irregular-whitespace */
