@@ -3,7 +3,7 @@ export interface IPerformanceSimulationResult {
     ruleset_id: number;
     beatmap_id: number;
     beatmap: string;
-    mods: string[];
+    mods: {acronym: string}[];
     total_score: number;
     legacy_total_score: number;
     accuracy: number;

@@ -42,6 +42,36 @@ export class PerformanceCalculator {
         return Result.fail([Error(errorText)]);
       }
       const rawResult: IPerformanceSimulationResult = response.data;
+
+      const isRequestWithHidden = params.mods.find(
+        s => s.toLowerCase() === 'hd'
+      );
+      const isResponseWithHidden = rawResult.score.mods.find(
+        s => s.acronym.toLowerCase() === 'hd'
+      );
+      if (isRequestWithHidden && !isResponseWithHidden) {
+        let aim = rawResult.performance_attributes.aim;
+        let speed = rawResult.performance_attributes.speed;
+        let accuracy = rawResult.performance_attributes.accuracy;
+        const flashlight = rawResult.performance_attributes.flashlight;
+        const ppPow = (n: number): number => Math.pow(n, 1.1);
+        const basePp = Math.pow(
+          ppPow(aim) + ppPow(speed) + ppPow(accuracy) + ppPow(flashlight),
+          1.0 / 1.1
+        );
+        const multiplier = rawResult.performance_attributes.pp / basePp;
+        const ar = rawResult.difficulty_attributes.approach_rate;
+        aim *= 1.0 + 0.04 * (12.0 - ar);
+        speed *= 1.0 + 0.04 * (12.0 - ar);
+        accuracy *= 1.08;
+        const actualPp =
+          Math.pow(
+            ppPow(aim) + ppPow(speed) + ppPow(accuracy) + ppPow(flashlight),
+            1.0 / 1.1
+          ) * multiplier;
+        rawResult.performance_attributes.pp = actualPp;
+        rawResult.score.mods = [...rawResult.score.mods, {acronym: 'HD'}];
+      }
       return Result.ok(rawResult);
     } catch (e) {
       const errorText = 'No response from score simulation endpoint';
