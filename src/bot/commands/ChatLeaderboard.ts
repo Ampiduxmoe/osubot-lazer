@@ -30,14 +30,10 @@ export class ChatLeaderboard extends BotCommand<ChatLeaderboardParams> {
     const text = ctx.text!.toLowerCase();
     const tokens = text.split(' ');
     if (tokens[1] === 'chat') {
-      let peerId: number | undefined = parseInt(tokens[2]);
-      if (tokens[2] === undefined && ctx.isChat) {
-        peerId = ctx.peerId;
-      } else if (isNaN(peerId)) {
-        peerId = undefined;
-      } else {
-        peerId = peerId + 2000000000;
+      if (!ctx.isChat) {
+        return CommandMatchResult.fail();
       }
+      const peerId = ctx.peerId;
       return CommandMatchResult.ok({peerId});
     }
     return CommandMatchResult.fail();
