@@ -6,6 +6,7 @@ import {BanchoUsers} from '../database/modules/BanchoUsers';
 import {stringifyErrors} from '../../primitives/Errors';
 import {userTopPlaysTemplate} from '../templates/UserTopPlays';
 import {clamp} from '../../primitives/Numbers';
+import {BanchoChatBeatmapCache} from '../database/modules/BanchoChatBeatmapCache';
 
 export class UserTopPlays extends BotCommand<UserTopPlaysParams> {
   name = UserTopPlays.name;
@@ -18,6 +19,7 @@ export class UserTopPlays extends BotCommand<UserTopPlaysParams> {
     const requiredModules = [
       db.getModuleOrDefault(BanchoUsers, undefined),
       db.getModuleOrDefault(BanchoUsersCache, undefined),
+      db.getModuleOrDefault(BanchoChatBeatmapCache, undefined),
     ];
     for (const module of requiredModules) {
       if (module === undefined) {
@@ -136,6 +138,17 @@ export class UserTopPlays extends BotCommand<UserTopPlaysParams> {
     if (!scores.length) {
       ctx.reply('Нет лучших скоров!');
       return;
+    }
+    if (scores.length === 1) {
+      const chatBeatmapCache = this.db.getModule(BanchoChatBeatmapCache);
+      const prevMap = await chatBeatmapCache.getById(ctx.peerId);
+      if (prevMap !== undefined) {
+        await chatBeatmapCache.delete(prevMap);
+      }
+      await chatBeatmapCache.add({
+        peer_id: ctx.peerId,
+        beatmap_id: scores[0].beatmap!.id,
+      });
     }
     const topPlaysTemplateResult = await userTopPlaysTemplate(
       scores,

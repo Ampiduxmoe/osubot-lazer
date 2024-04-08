@@ -7,12 +7,13 @@ import {BanchoCovers} from '../database/modules/BanchoCovers';
 import {userRecentPlaysTemplate} from '../templates/UserRecentPlays';
 import {BanchoUsersCache} from '../database/modules/BanchoUsersCache';
 import {clamp} from '../../primitives/Numbers';
+import {BanchoChatBeatmapCache} from '../database/modules/BanchoChatBeatmapCache';
 
 export class UserRecentPlays extends BotCommand<UserRecentPlaysParams> {
   name = UserRecentPlays.name;
   title = 'Последний плей';
-  description = 'показывает последний сабмитнутый плей игрока';
-  usage = 'r [ник]';
+  description = 'показывает последний сабмитнутый плей/пасс игрока';
+  usage = 'r/rp [ник]';
 
   isAvailable(): Boolean {
     const db = this.db;
@@ -20,6 +21,7 @@ export class UserRecentPlays extends BotCommand<UserRecentPlaysParams> {
       db.getModuleOrDefault(BanchoUsers, undefined),
       db.getModuleOrDefault(BanchoUsersCache, undefined),
       db.getModuleOrDefault(BanchoCovers, undefined),
+      db.getModuleOrDefault(BanchoChatBeatmapCache, undefined),
     ];
     for (const module of requiredModules) {
       if (module === undefined) {
@@ -33,13 +35,14 @@ export class UserRecentPlays extends BotCommand<UserRecentPlaysParams> {
   ): CommandMatchResult<UserRecentPlaysParams> {
     const text = ctx.text!.toLowerCase();
     const tokens = text.split(' ');
-    if (tokens[1] === 'r') {
+    if (tokens[1] === 'r' || tokens[1] === 'rp') {
       let username: string | undefined = tokens[2];
       if (username !== undefined) {
         if (username.startsWith('\\') || username.startsWith('+')) {
           username = undefined;
         }
       }
+      const include_fails = tokens[1] === 'r' ? 1 : 0;
       const offsetString = tokens.find(t => t.startsWith('\\'));
       const limitString = tokens.find(t => t.startsWith('+'));
       let offset: number, limit: number;
@@ -63,7 +66,7 @@ export class UserRecentPlays extends BotCommand<UserRecentPlaysParams> {
       } else {
         limit = 1;
       }
-      return CommandMatchResult.ok({username, offset, limit});
+      return CommandMatchResult.ok({username, include_fails, offset, limit});
     }
     return CommandMatchResult.fail();
   }
@@ -72,6 +75,7 @@ export class UserRecentPlays extends BotCommand<UserRecentPlaysParams> {
     ctx: MessageContext<ContextDefaultState> & object
   ) {
     const username = params.username;
+    const include_fails = params.include_fails;
     const offset = params.offset;
     const limit = params.limit;
     const users = this.db.getModule(BanchoUsers);
@@ -119,8 +123,9 @@ export class UserRecentPlays extends BotCommand<UserRecentPlaysParams> {
         osuUserId = rawUser.id;
       }
     }
-    const scoresResult = await this.api.gerRecentPlays(
+    const scoresResult = await this.api.getRecentPlays(
       osuUserId,
+      include_fails,
       offset,
       limit
     );
@@ -134,6 +139,17 @@ export class UserRecentPlays extends BotCommand<UserRecentPlaysParams> {
     if (!scores.length) {
       ctx.reply('Нет последних скоров!');
       return;
+    }
+    if (scores.length === 1) {
+      const chatBeatmapCache = this.db.getModule(BanchoChatBeatmapCache);
+      const prevMap = await chatBeatmapCache.getById(ctx.peerId);
+      if (prevMap !== undefined) {
+        await chatBeatmapCache.delete(prevMap);
+      }
+      await chatBeatmapCache.add({
+        peer_id: ctx.peerId,
+        beatmap_id: scores[0].beatmap!.id,
+      });
     }
     const recentTemplateResult = await userRecentPlaysTemplate(
       scores,
@@ -156,9 +172,7 @@ export class UserRecentPlays extends BotCommand<UserRecentPlaysParams> {
       this.vk
     );
     if (coverResult.isFailure) {
-      const failure = coverResult.asFailure();
-      const errorsText = stringifyErrors(failure.errors);
-      ctx.reply('Не удалось получить БГ карты' + `\n${errorsText}`);
+      ctx.reply(replyText + '\n\nБГ карты прикрепить не удалось 😭');
       return;
     }
     const cover = coverResult.asSuccess().value;
@@ -171,6 +185,7 @@ export class UserRecentPlays extends BotCommand<UserRecentPlaysParams> {
 
 export interface UserRecentPlaysParams {
   username: string | undefined;
+  include_fails: number;
   offset: number;
   limit: number;
 }

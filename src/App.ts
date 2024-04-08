@@ -16,6 +16,8 @@ import {ShowUserStats} from './bot/commands/ShowUserStats';
 import {UserTopPlays} from './bot/commands/UserTopPlays';
 import {BanchoBeatmapsetsCache} from './bot/database/modules/BanchoBeatmapsetsCache';
 import {JsonCache} from './bot/database/modules/JsonCache';
+import {BanchoChatBeatmapCache} from './bot/database/modules/BanchoChatBeatmapCache';
+import {MapUserScore} from './bot/commands/MapUserScore';
 
 export class App {
   readonly config: IAppConfig;
@@ -60,6 +62,7 @@ export class App {
       new BanchoUserStats(this.db),
       new BanchoCovers(this.db),
       new BanchoBeatmapsetsCache(this.db),
+      new BanchoChatBeatmapCache(this.db),
     ]);
     this.vk = new VK({
       pollingGroupId: this.currentGroup.id,
@@ -71,6 +74,7 @@ export class App {
       new ChatLeaderboard(this.db, this.banchoApi, this.vk),
       new ShowUserStats(this.db, this.banchoApi, this.vk),
       new UserTopPlays(this.db, this.banchoApi, this.vk),
+      new MapUserScore(this.db, this.banchoApi, this.vk),
     ];
     PerformanceCalculator.setSimulationEndpoint(
       config.bot.score_simulation.endpoint,

@@ -106,4 +106,59 @@ export abstract class BotCommand<TExecParams> {
     const commandText = command || ctx.text!;
     return commandText;
   }
+
+  protected hasMapLink(text: string): boolean {
+    const regexes = [
+      /https?:\/\/osu\.ppy\.sh\/b\/(?<ID>\d+)/gi,
+      /(https?:\/\/)?osu\.ppy\.sh\/beatmaps\/(?<ID>\d+)/gi,
+      /(https?:\/\/)?osu\.ppy\.sh\/beatmapsets\/(\d+)#(osu|taiko|fruits|mania)+\/(?<ID>\d+)/gi,
+    ];
+    for (const regex of regexes) {
+      const matches = [...text.matchAll(regex)];
+      if (matches.length > 0) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  protected getSingleBeatmapIdFromPayloadOrText(
+    ctx: MessageContext<ContextDefaultState> & object
+  ): number | undefined {
+    const commandText = this.getCommandFromPayloadOrText(ctx);
+    const regexes = [
+      /https?:\/\/osu\.ppy\.sh\/b\/(?<ID>\d+)/gi,
+      /(https?:\/\/)?osu\.ppy\.sh\/beatmaps\/(?<ID>\d+)/gi,
+      /(https?:\/\/)?osu\.ppy\.sh\/beatmapsets\/(\d+)#(osu|taiko|fruits|mania)+\/(?<ID>\d+)/gi,
+    ];
+    const getSingleIdFromString = (s: string): number | undefined => {
+      for (const regex of regexes) {
+        const matches = [...s.matchAll(regex)];
+        if (matches.length === 1) {
+          return Number(matches[0].groups!.ID);
+        }
+      }
+      return undefined;
+    };
+
+    const idFromCommand = getSingleIdFromString(commandText);
+    if (idFromCommand) {
+      return idFromCommand;
+    }
+
+    if (ctx.hasAttachments('link')) {
+      const url = ctx.getAttachments('link')[0].url;
+      const idFromlink = getSingleIdFromString(url);
+      if (idFromlink) {
+        return idFromlink;
+      }
+    }
+
+    if (ctx.hasReplyMessage) {
+      const replyMsg = ctx.replyMessage!;
+      return this.getSingleBeatmapIdFromPayloadOrText(replyMsg);
+    }
+
+    return undefined;
+  }
 }

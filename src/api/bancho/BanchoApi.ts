@@ -7,10 +7,14 @@ import {IOsuOauthAccessTokenReadDto} from '../../../src/oauth/IOsuOauthAccessTok
 import {OsuOauthAccessToken} from '../../oauth/OsuOauthAccessToken';
 import {catchedValueToError} from '../../primitives/Errors';
 import {IScores} from '../../../src/dtos/osu/scores/IScores';
-import {JsonCache} from '../../bot/database/modules/JsonCache';
+import {
+  JsonCache,
+  RAW_OSU_OAUTH_TOKEN_ID,
+} from '../../bot/database/modules/JsonCache';
+import {IBeatmapUserScore} from '../../dtos/osu/beatmaps/IBeatmapUserScore';
+import {IBeatmapExtended} from '../../dtos/osu/beatmaps/IBeatmapExtended';
 
 export class BanchoApi implements IOsuServerApi {
-  private rawTokenCacheId = 'raw_osu_oauth_token';
   private ouathClientId: number;
   private oauthClientSecret: string;
   private _jsonCache: JsonCache | undefined;
@@ -41,7 +45,7 @@ export class BanchoApi implements IOsuServerApi {
       this._jsonCache = cache;
       cache
         .validateAndGet<IOsuOauthAccessTokenReadDto>({
-          object_name: this.rawTokenCacheId,
+          object_name: RAW_OSU_OAUTH_TOKEN_ID,
           validate: t =>
             Boolean(t.token_type && t.expires_in && t.access_token),
         })
@@ -80,12 +84,14 @@ export class BanchoApi implements IOsuServerApi {
     };
     const response = await axios.post('https://osu.ppy.sh/oauth/token', body);
     const rawToken = response.data;
-    const oldTokenCache = await this.jsonCache.getByName(this.rawTokenCacheId);
+    const oldTokenCache = await this.jsonCache.getByName(
+      RAW_OSU_OAUTH_TOKEN_ID
+    );
     if (oldTokenCache !== undefined) {
       await this.jsonCache.delete(oldTokenCache);
     }
     await this.jsonCache.add({
-      object_name: this.rawTokenCacheId,
+      object_name: RAW_OSU_OAUTH_TOKEN_ID,
       json_string: JSON.stringify(rawToken),
     });
     return rawToken;
@@ -139,8 +145,9 @@ export class BanchoApi implements IOsuServerApi {
     }
   }
 
-  async gerRecentPlays(
+  async getRecentPlays(
     osu_id: number,
+    include_fails: number,
     offset: number,
     limit: number
   ): Promise<Result<IScore[]>> {
@@ -151,7 +158,7 @@ export class BanchoApi implements IOsuServerApi {
         `users/${osu_id}/scores/recent`,
         {
           params: {
-            include_fails: 1,
+            include_fails: include_fails,
             mode: 'osu',
             offset: offset,
             limit: limit,
@@ -221,6 +228,88 @@ export class BanchoApi implements IOsuServerApi {
         `Number of fetched top plays on Bancho for ${osu_id}: ${rawScores.length}`
       );
       return Result.ok(rawScores);
+    } catch (e) {
+      console.log(e);
+      const internalError = catchedValueToError(e);
+      const fallbackError = Error(
+        'Error has occured that did not match any known error type'
+      );
+      const finalError = internalError || fallbackError;
+      return Result.fail([finalError]);
+    }
+  }
+
+  async getMapUserScore(
+    osu_id: number,
+    beatmap_id: number,
+    mods: string[]
+  ): Promise<Result<IBeatmapUserScore | undefined>> {
+    console.log(
+      `Trying to get map ${beatmap_id} score on Bancho for ${osu_id}...`
+    );
+    await this.refreshTokenIfNeeded();
+    try {
+      const response = await this.apiv2httpClient.get(
+        `beatmaps/${beatmap_id}/scores/users/${osu_id}`,
+        {
+          params: {
+            mode: 'osu',
+            mods: mods,
+          },
+        }
+      );
+      if (response.status === 404) {
+        return Result.ok(undefined);
+      }
+      if (response.status === 401) {
+        console.log('Received 401 status, invalidating token now');
+        this.ouathToken = undefined;
+        const errorText = `Could not fetch map ${beatmap_id} score on Bancho for ${osu_id}: current OAuth token is not valid`;
+        console.log(errorText);
+        return Result.fail([Error(errorText)]);
+      }
+      if (response.status !== 200) {
+        const errorText = `Could not fetch map ${beatmap_id} score on Bancho for ${osu_id}, response status was ${response.status}`;
+        console.log(errorText);
+        return Result.fail([Error(errorText)]);
+      }
+      const rawUserScore: IBeatmapUserScore = response.data;
+      return Result.ok(rawUserScore);
+    } catch (e) {
+      console.log(e);
+      const internalError = catchedValueToError(e);
+      const fallbackError = Error(
+        'Error has occured that did not match any known error type'
+      );
+      const finalError = internalError || fallbackError;
+      return Result.fail([finalError]);
+    }
+  }
+
+  async getBeatmap(
+    beatmap_id: number
+  ): Promise<Result<IBeatmapExtended | undefined>> {
+    console.log(`Trying to get map ${beatmap_id} on Bancho...`);
+    await this.refreshTokenIfNeeded();
+    try {
+      const response = await this.apiv2httpClient.get(`beatmaps/${beatmap_id}`);
+      if (response.status === 404) {
+        return Result.ok(undefined);
+      }
+      if (response.status === 401) {
+        console.log('Received 401 status, invalidating token now');
+        this.ouathToken = undefined;
+        const errorText = `Could not fetch map ${beatmap_id} on Bancho: current OAuth token is not valid`;
+        console.log(errorText);
+        return Result.fail([Error(errorText)]);
+      }
+      if (response.status !== 200) {
+        const errorText = `Could not fetch map ${beatmap_id} on Bancho, response status was ${response.status}`;
+        console.log(errorText);
+        return Result.fail([Error(errorText)]);
+      }
+      const rawUserScore: IBeatmapExtended = response.data;
+      return Result.ok(rawUserScore);
     } catch (e) {
       console.log(e);
       const internalError = catchedValueToError(e);

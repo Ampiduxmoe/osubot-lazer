@@ -1,4 +1,5 @@
 import {IBeatmap} from './IBeatmap';
+import {IBeatmapset} from './IBeatmapset';
 
 export interface IBeatmapExtended extends IBeatmap {
   accuracy: number;
@@ -19,4 +20,5 @@ export interface IBeatmapExtended extends IBeatmap {
   playcount: number;
   ranked: number;
   url: string;
+  beatmapset: IBeatmapset; // should be IBeatmapSetExtended
 }

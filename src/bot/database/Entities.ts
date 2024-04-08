@@ -32,6 +32,11 @@ export interface CachedBeatmapsetDbObject {
   timestamp?: string;
 }
 
+export interface CachedChatBeatmapDbObject {
+  peer_id: number;
+  beatmap_id: number;
+}
+
 export interface CachedJsonDbObject {
   object_name: string;
   json_string: string;

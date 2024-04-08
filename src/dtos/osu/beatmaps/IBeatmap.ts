@@ -1,3 +1,5 @@
+import {IBeatmapset} from './IBeatmapset';
+
 export interface IBeatmap {
   beatmapset_id: number;
   difficulty_rating: number;
@@ -10,6 +12,6 @@ export interface IBeatmap {
   // fields marked as optional in docs:
   max_combo?: number;
   checksum?: string;
-  // beatmapset?: ...
+  beatmapset?: IBeatmapset;
   // failtimes?: ...
 }
