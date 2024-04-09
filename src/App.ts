@@ -19,6 +19,8 @@ import {JsonCache} from './bot/database/modules/JsonCache';
 import {BanchoChatBeatmapCache} from './bot/database/modules/BanchoChatBeatmapCache';
 import {MapUserScore} from './bot/commands/MapUserScore';
 import {ChatMapLeadearboard} from './bot/commands/ChatMapLeaderboard';
+import {SetUsernameDecoration} from './bot/commands/SetUsernameDecoration';
+import {UsernameDecorations} from './bot/database/modules/UsernameDecorations';
 
 export class App {
   readonly config: IAppConfig;
@@ -64,19 +66,22 @@ export class App {
       new BanchoCovers(this.db),
       new BanchoBeatmapsetsCache(this.db),
       new BanchoChatBeatmapCache(this.db),
+      new UsernameDecorations(this.db),
     ]);
     this.vk = new VK({
       pollingGroupId: this.currentGroup.id,
       token: this.currentGroup.token,
     });
+    const owner = this.currentGroup.owner;
     this.commands = [
-      new SetUsername(this.db, this.banchoApi, this.vk),
-      new UserRecentPlays(this.db, this.banchoApi, this.vk),
-      new ChatLeaderboard(this.db, this.banchoApi, this.vk),
-      new ShowUserStats(this.db, this.banchoApi, this.vk),
-      new UserTopPlays(this.db, this.banchoApi, this.vk),
-      new MapUserScore(this.db, this.banchoApi, this.vk),
-      new ChatMapLeadearboard(this.db, this.banchoApi, this.vk),
+      new SetUsername(this.db, this.banchoApi, this.vk, owner),
+      new UserRecentPlays(this.db, this.banchoApi, this.vk, owner),
+      new ChatLeaderboard(this.db, this.banchoApi, this.vk, owner),
+      new ShowUserStats(this.db, this.banchoApi, this.vk, owner),
+      new UserTopPlays(this.db, this.banchoApi, this.vk, owner),
+      new MapUserScore(this.db, this.banchoApi, this.vk, owner),
+      new ChatMapLeadearboard(this.db, this.banchoApi, this.vk, owner),
+      new SetUsernameDecoration(this.db, this.banchoApi, this.vk, owner),
     ];
     PerformanceCalculator.setSimulationEndpoint(
       config.bot.score_simulation.endpoint,

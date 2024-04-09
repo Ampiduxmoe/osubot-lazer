@@ -7,6 +7,7 @@ import {stringifyErrors} from '../../primitives/Errors';
 import {userTopPlaysTemplate} from '../templates/UserTopPlays';
 import {clamp} from '../../primitives/Numbers';
 import {BanchoChatBeatmapCache} from '../database/modules/BanchoChatBeatmapCache';
+import {UsernameDecorations} from '../database/modules/UsernameDecorations';
 
 export class UserTopPlays extends BotCommand<UserTopPlaysParams> {
   name = UserTopPlays.name;
@@ -20,6 +21,7 @@ export class UserTopPlays extends BotCommand<UserTopPlaysParams> {
       db.getModuleOrDefault(BanchoUsers, undefined),
       db.getModuleOrDefault(BanchoUsersCache, undefined),
       db.getModuleOrDefault(BanchoChatBeatmapCache, undefined),
+      db.getModuleOrDefault(UsernameDecorations, undefined),
     ];
     for (const module of requiredModules) {
       if (module === undefined) {
@@ -149,6 +151,13 @@ export class UserTopPlays extends BotCommand<UserTopPlaysParams> {
         peer_id: ctx.peerId,
         beatmap_id: scores[0].beatmap!.id,
       });
+    }
+    const decors = this.db.getModule(UsernameDecorations);
+    let finalUsername = scores[0].user!.username;
+    const decor = await decors.getByUsername(finalUsername);
+    if (decor !== undefined) {
+      finalUsername = decor.pattern.replace('${username}', finalUsername);
+      scores[0].user!.username = finalUsername;
     }
     const topPlaysTemplateResult = await userTopPlaysTemplate(
       scores,

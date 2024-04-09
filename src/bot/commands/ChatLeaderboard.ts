@@ -4,6 +4,7 @@ import {BanchoUsers} from '../database/modules/BanchoUsers';
 import {CommandMatchResult} from './CommandMatchResult';
 import {UserDbObject, UserStatsDbObject} from '../database/Entities';
 import {BanchoUserStats} from '../database/modules/BanchoUserStats';
+import {UsernameDecorations} from '../database/modules/UsernameDecorations';
 
 export class ChatLeaderboard extends BotCommand<ChatLeaderboardParams> {
   name = ChatLeaderboard.name;
@@ -16,6 +17,7 @@ export class ChatLeaderboard extends BotCommand<ChatLeaderboardParams> {
     const requiredModules = [
       db.getModuleOrDefault(BanchoUsers, undefined),
       db.getModuleOrDefault(BanchoUserStats, undefined),
+      db.getModuleOrDefault(UsernameDecorations, undefined),
     ];
     for (const module of requiredModules) {
       if (module === undefined) {
@@ -82,16 +84,22 @@ export class ChatLeaderboard extends BotCommand<ChatLeaderboardParams> {
     const sortedStats = chatUserStats
       .filter(s => s !== undefined)
       .sort((a, b) => b!.pp - a!.pp);
-    const statStrings = sortedStats.map((stats, index) => {
+    const decors = this.db.getModule(UsernameDecorations);
+    const statStringsPromises = sortedStats.map(async (stats, index) => {
       const s = stats!;
       const n = index + 1;
-      const username = s.username;
+      let username = s.username;
+      const decor = await decors.getByUsername(username);
+      if (decor !== undefined) {
+        username = decor.pattern.replace('${username}', username);
+      }
       const pp = Math.floor(s.pp);
       const rank = s.rank;
       const acc = s.accuracy.toFixed(2);
       // eslint-disable-next-line no-irregular-whitespace
       return `${n}.　${username}　${pp}pp　#${rank}　${acc}%`;
     });
+    const statStrings = await Promise.all(statStringsPromises);
     const joinedStats = statStrings.join('\n');
     ctx.reply(`Топ чата (ID ${peerId - 2000000000}):\n${joinedStats}`);
     return;

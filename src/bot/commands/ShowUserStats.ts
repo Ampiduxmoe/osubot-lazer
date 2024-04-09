@@ -7,6 +7,8 @@ import {stringifyErrors} from '../../primitives/Errors';
 import {BanchoUserStats} from '../database/modules/BanchoUserStats';
 import {UserStatsDbObject} from '../../../src/bot/database/Entities';
 import {showUserStatsTemplate} from '../templates/ShowUserStats';
+import {IUserExtended} from '../../dtos/osu/users/IUserExtended';
+import {UsernameDecorations} from '../database/modules/UsernameDecorations';
 
 export class ShowUserStats extends BotCommand<ShowUserStatsParams> {
   name = ShowUserStats.name;
@@ -20,6 +22,7 @@ export class ShowUserStats extends BotCommand<ShowUserStatsParams> {
       db.getModuleOrDefault(BanchoUsers, undefined),
       db.getModuleOrDefault(BanchoUsersCache, undefined),
       db.getModuleOrDefault(BanchoUserStats, undefined),
+      db.getModuleOrDefault(UsernameDecorations, undefined),
     ];
     for (const module of requiredModules) {
       if (module === undefined) {
@@ -80,7 +83,15 @@ export class ShowUserStats extends BotCommand<ShowUserStatsParams> {
           command: `l t ${rawUser.username}`,
         },
       });
-    ctx.reply(showUserStatsTemplate(rawUser), {keyboard});
+    const editedUser: IUserExtended = JSON.parse(JSON.stringify(rawUser));
+    const decors = this.db.getModule(UsernameDecorations);
+    let finalUsername = editedUser.username;
+    const decor = await decors.getByUsername(finalUsername);
+    if (decor !== undefined) {
+      finalUsername = decor.pattern.replace('${username}', finalUsername);
+      editedUser.username = finalUsername;
+    }
+    ctx.reply(showUserStatsTemplate(editedUser), {keyboard});
     const usersCache = this.db.getModule(BanchoUsersCache);
     const cachedUser = await usersCache.getByUsername(username);
     if (cachedUser !== undefined) {

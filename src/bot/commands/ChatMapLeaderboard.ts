@@ -11,6 +11,7 @@ import {BanchoChatBeatmapCache} from '../database/modules/BanchoChatBeatmapCache
 import {UserDbObject} from '../database/Entities';
 import {stringifyErrors} from '../../primitives/Errors';
 import {BanchoBeatmapsetsCache} from '../database/modules/BanchoBeatmapsetsCache';
+import {UsernameDecorations} from '../database/modules/UsernameDecorations';
 
 export class ChatMapLeadearboard extends BotCommand<ChatMapLeaderboardParams> {
   name = ChatMapLeadearboard.name;
@@ -25,6 +26,7 @@ export class ChatMapLeadearboard extends BotCommand<ChatMapLeaderboardParams> {
       db.getModuleOrDefault(BanchoUsersCache, undefined),
       db.getModuleOrDefault(BanchoChatBeatmapCache, undefined),
       db.getModuleOrDefault(BanchoBeatmapsetsCache, undefined),
+      db.getModuleOrDefault(UsernameDecorations, undefined),
     ];
     for (const module of requiredModules) {
       if (module === undefined) {
@@ -113,6 +115,7 @@ export class ChatMapLeadearboard extends BotCommand<ChatMapLeaderboardParams> {
       }
       beatmapId = lastSeenBeatmap.beatmap_id;
     }
+    const decors = this.db.getModule(UsernameDecorations);
     const scorePromises = uniqueOsuIds.map(async osuUserId => {
       const mapScoreResult = await this.api.getMapUserScore(
         osuUserId,
@@ -128,6 +131,16 @@ export class ChatMapLeadearboard extends BotCommand<ChatMapLeaderboardParams> {
         return undefined;
       }
       const mapScore = mapScoreResult.asSuccess().value;
+      const username = mapScore?.score.user!.username;
+      if (username) {
+        const decor = await decors.getByUsername(username);
+        if (decor !== undefined) {
+          mapScore.score.user!.username = decor.pattern.replace(
+            '${username}',
+            username
+          );
+        }
+      }
       return mapScore;
     });
     const scores = (await Promise.all(scorePromises))

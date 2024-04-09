@@ -8,6 +8,7 @@ import {userRecentPlaysTemplate} from '../templates/UserRecentPlays';
 import {BanchoUsersCache} from '../database/modules/BanchoUsersCache';
 import {clamp} from '../../primitives/Numbers';
 import {BanchoChatBeatmapCache} from '../database/modules/BanchoChatBeatmapCache';
+import {UsernameDecorations} from '../database/modules/UsernameDecorations';
 
 export class UserRecentPlays extends BotCommand<UserRecentPlaysParams> {
   name = UserRecentPlays.name;
@@ -22,6 +23,7 @@ export class UserRecentPlays extends BotCommand<UserRecentPlaysParams> {
       db.getModuleOrDefault(BanchoUsersCache, undefined),
       db.getModuleOrDefault(BanchoCovers, undefined),
       db.getModuleOrDefault(BanchoChatBeatmapCache, undefined),
+      db.getModuleOrDefault(UsernameDecorations, undefined),
     ];
     for (const module of requiredModules) {
       if (module === undefined) {
@@ -150,6 +152,13 @@ export class UserRecentPlays extends BotCommand<UserRecentPlaysParams> {
         peer_id: ctx.peerId,
         beatmap_id: scores[0].beatmap!.id,
       });
+    }
+    const decors = this.db.getModule(UsernameDecorations);
+    let finalUsername = scores[0].user!.username;
+    const decor = await decors.getByUsername(finalUsername);
+    if (decor !== undefined) {
+      finalUsername = decor.pattern.replace('${username}', finalUsername);
+      scores[0].user!.username = finalUsername;
     }
     const recentTemplateResult = await userRecentPlaysTemplate(
       scores,

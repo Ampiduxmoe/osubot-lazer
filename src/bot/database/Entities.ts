@@ -37,6 +37,11 @@ export interface CachedChatBeatmapDbObject {
   beatmap_id: number;
 }
 
+export interface UsernameDecorationDbObject {
+  username: string;
+  pattern: string;
+}
+
 export interface CachedJsonDbObject {
   object_name: string;
   json_string: string;

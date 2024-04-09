@@ -21,11 +21,13 @@ export abstract class BotCommand<TExecParams> {
   db: BotDb;
   api: IOsuServerApi;
   vk: VK;
+  adminVkId: number;
 
-  constructor(db: BotDb, api: IOsuServerApi, vk: VK) {
+  constructor(db: BotDb, api: IOsuServerApi, vk: VK, adminVkId: number) {
     this.db = db;
     this.api = api;
     this.vk = vk;
+    this.adminVkId = adminVkId;
     this._isAvailable = false;
   }
 

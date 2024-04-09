@@ -7,6 +7,7 @@ import {stringifyErrors} from '../../primitives/Errors';
 import {BanchoBeatmapsetsCache} from '../database/modules/BanchoBeatmapsetsCache';
 import {BanchoChatBeatmapCache} from '../database/modules/BanchoChatBeatmapCache';
 import {BanchoCovers} from '../database/modules/BanchoCovers';
+import {UsernameDecorations} from '../database/modules/UsernameDecorations';
 import {
   mapUserScoreTemplate,
   MapUserScoreMapsetMetadata,
@@ -26,6 +27,7 @@ export class MapUserScore extends BotCommand<MapUserScoreParams> {
       db.getModuleOrDefault(BanchoUsersCache, undefined),
       db.getModuleOrDefault(BanchoBeatmapsetsCache, undefined),
       db.getModuleOrDefault(BanchoChatBeatmapCache, undefined),
+      db.getModuleOrDefault(UsernameDecorations, undefined),
     ];
     for (const module of requiredModules) {
       if (module === undefined) {
@@ -200,6 +202,13 @@ export class MapUserScore extends BotCommand<MapUserScoreParams> {
         title: mapset.title,
         creator: mapset.creator,
       });
+    }
+    const decors = this.db.getModule(UsernameDecorations);
+    let finalUsername = mapScore.score.user!.username;
+    const decor = await decors.getByUsername(finalUsername);
+    if (decor !== undefined) {
+      finalUsername = decor.pattern.replace('${username}', finalUsername);
+      mapScore.score.user!.username = finalUsername;
     }
     const recentTemplateResult = await mapUserScoreTemplate(
       mapScore,
