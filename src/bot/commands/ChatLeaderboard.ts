@@ -81,15 +81,7 @@ export class ChatLeaderboard extends BotCommand<ChatLeaderboardParams> {
     }
     const sortedStats = chatUserStats
       .filter(s => s !== undefined)
-      .sort((stats1, stats2) => {
-        if (stats1!.pp > stats2!.pp) {
-          return -1;
-        }
-        if (stats1!.pp < stats2!.pp) {
-          return 1;
-        }
-        return 0;
-      });
+      .sort((a, b) => b!.pp - a!.pp);
     const statStrings = sortedStats.map((stats, index) => {
       const s = stats!;
       const n = index + 1;

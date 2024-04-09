@@ -18,6 +18,7 @@ import {BanchoBeatmapsetsCache} from './bot/database/modules/BanchoBeatmapsetsCa
 import {JsonCache} from './bot/database/modules/JsonCache';
 import {BanchoChatBeatmapCache} from './bot/database/modules/BanchoChatBeatmapCache';
 import {MapUserScore} from './bot/commands/MapUserScore';
+import {ChatMapLeadearboard} from './bot/commands/ChatMapLeaderboard';
 
 export class App {
   readonly config: IAppConfig;
@@ -75,6 +76,7 @@ export class App {
       new ShowUserStats(this.db, this.banchoApi, this.vk),
       new UserTopPlays(this.db, this.banchoApi, this.vk),
       new MapUserScore(this.db, this.banchoApi, this.vk),
+      new ChatMapLeadearboard(this.db, this.banchoApi, this.vk),
     ];
     PerformanceCalculator.setSimulationEndpoint(
       config.bot.score_simulation.endpoint,
