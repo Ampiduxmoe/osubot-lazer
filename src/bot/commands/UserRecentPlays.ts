@@ -149,11 +149,12 @@ export class UserRecentPlays extends BotCommand<UserRecentPlaysParams> {
         osuUserId = rawUser.id;
       }
     }
+    const requestOffset = mods.length ? 0 : offset;
     const requestLimit = mods.length ? 100 : limit;
     const scoresResult = await this.api.getRecentPlays(
       osuUserId,
       include_fails,
-      offset,
+      requestOffset,
       requestLimit
     );
     if (scoresResult.isFailure) {

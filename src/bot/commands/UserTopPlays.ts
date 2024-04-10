@@ -143,10 +143,11 @@ export class UserTopPlays extends BotCommand<UserTopPlaysParams> {
         osuUserId = rawUser.id;
       }
     }
+    const requestOffset = mods.length ? 0 : offset;
     const requestLimit = mods.length ? 100 : limit;
     const topScoresResult = await this.api.getBestPlays(
       osuUserId,
-      offset,
+      requestOffset,
       requestLimit
     );
     if (topScoresResult.isFailure) {
