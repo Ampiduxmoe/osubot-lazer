@@ -38,13 +38,19 @@ export class UserTopPlays extends BotCommand<UserTopPlaysParams> {
     if (tokens[1] === 't') {
       let username: string | undefined = tokens[2];
       if (username !== undefined) {
-        if (username.startsWith('\\') || username.startsWith('+')) {
+        if (
+          username.startsWith('\\') ||
+          username.startsWith(':') ||
+          username.startsWith('+')
+        ) {
           username = undefined;
         }
       }
       const offsetString = tokens.find(t => t.startsWith('\\'));
-      const limitString = tokens.find(t => t.startsWith('+'));
+      const limitString = tokens.find(t => t.startsWith(':'));
+      const modsString = tokens.find(t => t.startsWith('+'));
       let offset: number, limit: number;
+      let mods: string[] = [];
       if (offsetString !== undefined) {
         const parseResult = parseInt(offsetString.substring(1));
         if (isNaN(parseResult)) {
@@ -69,7 +75,18 @@ export class UserTopPlays extends BotCommand<UserTopPlaysParams> {
           limit = 3;
         }
       }
-      return CommandMatchResult.ok({username, limit, offset});
+      if (modsString !== undefined) {
+        const matchedMods = modsString
+          .substring(1)
+          .toUpperCase()
+          .match(/.{2}/g);
+        if (matchedMods) {
+          mods = matchedMods
+            .flat()
+            .filter((value, index, array) => array.indexOf(value) === index); // unique
+        }
+      }
+      return CommandMatchResult.ok({username, limit, offset, mods});
     }
     return CommandMatchResult.fail();
   }
@@ -80,6 +97,7 @@ export class UserTopPlays extends BotCommand<UserTopPlaysParams> {
     const username = params.username;
     const offset = params.offset;
     const limit = params.limit;
+    const mods = params.mods;
     const users = this.db.getModule(BanchoUsers);
     const senderId = ctx.senderId;
     let osuUserId: number;
@@ -107,7 +125,7 @@ export class UserTopPlays extends BotCommand<UserTopPlaysParams> {
         if (userResult.isFailure) {
           const failure = userResult.asFailure();
           const errorsText = stringifyErrors(failure.errors);
-          ctx.reply('Не удалось получить последний скор' + `\n${errorsText}`);
+          ctx.reply('Не удалось получить лучшие скоры' + `\n${errorsText}`);
           return;
         }
         const rawUser = userResult.asSuccess().value;
@@ -125,10 +143,11 @@ export class UserTopPlays extends BotCommand<UserTopPlaysParams> {
         osuUserId = rawUser.id;
       }
     }
+    const requestLimit = mods.length ? 100 : limit;
     const topScoresResult = await this.api.getBestPlays(
       osuUserId,
       offset,
-      limit
+      requestLimit
     );
     if (topScoresResult.isFailure) {
       const failure = topScoresResult.asFailure();
@@ -136,7 +155,22 @@ export class UserTopPlays extends BotCommand<UserTopPlaysParams> {
       ctx.reply('Не удалось получить лучшие скоры' + `\n${errorsText}`);
       return;
     }
-    const scores = topScoresResult.asSuccess().value;
+    let scores = topScoresResult.asSuccess().value;
+    if (mods.length) {
+      scores = scores.filter(score => {
+        if (score.mods.length !== mods.length) {
+          return false;
+        }
+        for (const mod of score.mods) {
+          if (!mods.includes(mod.toUpperCase())) {
+            return false;
+          }
+        }
+        return true;
+      });
+      scores = scores.splice(offset);
+      scores.splice(limit);
+    }
     if (!scores.length) {
       ctx.reply('Нет лучших скоров!');
       return;
@@ -179,4 +213,5 @@ export interface UserTopPlaysParams {
   username: string | undefined;
   offset: number;
   limit: number;
+  mods: string[];
 }
