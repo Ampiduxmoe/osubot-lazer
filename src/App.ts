@@ -21,6 +21,7 @@ import {MapUserScore} from './bot/commands/MapUserScore';
 import {ChatMapLeadearboard} from './bot/commands/ChatMapLeaderboard';
 import {SetUsernameDecoration} from './bot/commands/SetUsernameDecoration';
 import {UsernameDecorations} from './bot/database/modules/UsernameDecorations';
+import {SetMap} from './bot/commands/SetMap';
 
 export class App {
   readonly config: IAppConfig;
@@ -82,6 +83,7 @@ export class App {
       new MapUserScore(this.db, this.banchoApi, this.vk, owner),
       new ChatMapLeadearboard(this.db, this.banchoApi, this.vk, owner),
       new SetUsernameDecoration(this.db, this.banchoApi, this.vk, owner),
+      new SetMap(this.db, this.banchoApi, this.vk, owner),
     ];
     PerformanceCalculator.setSimulationEndpoint(
       config.bot.score_simulation.endpoint,
@@ -108,9 +110,6 @@ export class App {
 
   async onMessage(ctx: MessageContext<ContextDefaultState> & object) {
     if (ctx.isGroup || ctx.isFromGroup || ctx.isEvent) {
-      return;
-    }
-    if (!ctx.hasText || !ctx.text) {
       return;
     }
     for (const command of this.commands) {

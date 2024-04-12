@@ -33,7 +33,12 @@ export class UserTopPlays extends BotCommand<UserTopPlaysParams> {
   matchMessage(
     ctx: MessageContext<ContextDefaultState> & object
   ): CommandMatchResult<UserTopPlaysParams> {
-    const commandText = this.getCommandFromPayloadOrText(ctx).toLowerCase();
+    let commandText: string;
+    try {
+      commandText = this.getCommandFromPayloadOrText(ctx).toLowerCase();
+    } catch {
+      return CommandMatchResult.fail();
+    }
     const tokens = commandText.split(' ');
     if (tokens[1] === 't') {
       let username: string | undefined = tokens[2];

@@ -23,6 +23,9 @@ export abstract class BotCommand<TExecParams> {
   vk: VK;
   adminVkId: number;
 
+  ignorePrefix = false;
+  ignoreMissingTextAndPayload = false;
+
   constructor(db: BotDb, api: IOsuServerApi, vk: VK, adminVkId: number) {
     this.db = db;
     this.api = api;
@@ -46,11 +49,20 @@ export abstract class BotCommand<TExecParams> {
   async process(
     ctx: MessageContext<ContextDefaultState> & object
   ): Promise<void> {
-    if (!ctx.hasText && !ctx.hasMessagePayload) {
+    if (
+      !ctx.hasText &&
+      !ctx.hasMessagePayload &&
+      !this.ignoreMissingTextAndPayload
+    ) {
       return;
     }
     const text = ctx.text?.toLowerCase();
-    if (!ctx.hasMessagePayload && text && !text.startsWith('l ')) {
+    if (
+      !ctx.hasMessagePayload &&
+      !this.ignorePrefix &&
+      text &&
+      !text.startsWith('l ')
+    ) {
       return; // TODO: extract prefix into some server command list logic
     }
     const matchResult = this.matchMessage(ctx);
@@ -124,10 +136,29 @@ export abstract class BotCommand<TExecParams> {
     return false;
   }
 
+  protected hasSingleMapLink(text: string): boolean {
+    const regexes = [
+      /https?:\/\/osu\.ppy\.sh\/b\/(?<ID>\d+)/gi,
+      /(https?:\/\/)?osu\.ppy\.sh\/beatmaps\/(?<ID>\d+)/gi,
+      /(https?:\/\/)?osu\.ppy\.sh\/beatmapsets\/(\d+)#(osu|taiko|fruits|mania)+\/(?<ID>\d+)/gi,
+    ];
+    let numberOfMatches = 0;
+    for (const regex of regexes) {
+      const matches = [...text.matchAll(regex)];
+      numberOfMatches += matches.length;
+    }
+    return numberOfMatches === 1;
+  }
+
   protected getSingleBeatmapIdFromPayloadOrText(
     ctx: MessageContext<ContextDefaultState> & object
   ): number | undefined {
-    const commandText = this.getCommandFromPayloadOrText(ctx);
+    let commandText: string | undefined = undefined;
+    try {
+      commandText = this.getCommandFromPayloadOrText(ctx);
+    } catch {
+      /* empty */
+    }
     const regexes = [
       /https?:\/\/osu\.ppy\.sh\/b\/(?<ID>\d+)/gi,
       /(https?:\/\/)?osu\.ppy\.sh\/beatmaps\/(?<ID>\d+)/gi,
@@ -143,9 +174,11 @@ export abstract class BotCommand<TExecParams> {
       return undefined;
     };
 
-    const idFromCommand = getSingleIdFromString(commandText);
-    if (idFromCommand) {
-      return idFromCommand;
+    if (commandText) {
+      const idFromCommand = getSingleIdFromString(commandText);
+      if (idFromCommand) {
+        return idFromCommand;
+      }
     }
 
     if (ctx.hasAttachments('link')) {
