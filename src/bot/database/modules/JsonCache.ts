@@ -63,4 +63,4 @@ interface JsonCacheValidateAndGetParams<T> {
   validate: (value: T) => boolean;
 }
 
-export const RAW_OSU_OAUTH_TOKEN_ID = 'raw_osu_oauth_token';
+export const OSU_OAUTH_TOKEN_ID = 'osu_oauth_token';

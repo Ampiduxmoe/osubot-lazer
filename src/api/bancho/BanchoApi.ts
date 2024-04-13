@@ -9,7 +9,7 @@ import {catchedValueToError} from '../../primitives/Errors';
 import {IScores} from '../../../src/dtos/osu/scores/IScores';
 import {
   JsonCache,
-  RAW_OSU_OAUTH_TOKEN_ID,
+  OSU_OAUTH_TOKEN_ID,
 } from '../../bot/database/modules/JsonCache';
 import {IBeatmapUserScore} from '../../dtos/osu/beatmaps/IBeatmapUserScore';
 import {IBeatmapExtended} from '../../dtos/osu/beatmaps/IBeatmapExtended';
@@ -44,15 +44,27 @@ export class BanchoApi implements IOsuServerApi {
     jsonCache.then(cache => {
       this._jsonCache = cache;
       cache
-        .validateAndGet<IOsuOauthAccessTokenReadDto>({
-          object_name: RAW_OSU_OAUTH_TOKEN_ID,
+        .validateAndGet<OsuOauthAccessToken>({
+          object_name: OSU_OAUTH_TOKEN_ID,
           validate: t =>
-            Boolean(t.token_type && t.expires_in && t.access_token),
+            Boolean(
+              t.expirationDate &&
+                t.grantDate &&
+                t.tokenDuration &&
+                t.tokenType &&
+                t.value
+            ),
         })
-        .then(rawToken => {
-          if (rawToken !== undefined) {
+        .then(token => {
+          if (token !== undefined) {
             console.log('Attempting to use cached OAuth token...');
-            this.trySetToken(rawToken);
+            token.isValid = (): boolean => {
+              const now = new Date();
+              return (
+                now.getTime() < Date.parse(token.expirationDate.toString())
+              );
+            };
+            this.trySetToken(token);
           }
         });
     });
@@ -68,7 +80,8 @@ export class BanchoApi implements IOsuServerApi {
     console.log('Refreshing Bancho OAuth token...');
     try {
       const rawToken = await this.fetchToken();
-      this.trySetToken(rawToken);
+      const token = new OsuOauthAccessToken(rawToken);
+      this.trySetToken(token);
     } catch (e) {
       console.log('Could not fetch new token');
       console.log(e);
@@ -84,21 +97,19 @@ export class BanchoApi implements IOsuServerApi {
     };
     const response = await axios.post('https://osu.ppy.sh/oauth/token', body);
     const rawToken = response.data;
-    const oldTokenCache = await this.jsonCache.getByName(
-      RAW_OSU_OAUTH_TOKEN_ID
-    );
+    const token = new OsuOauthAccessToken(rawToken);
+    const oldTokenCache = await this.jsonCache.getByName(OSU_OAUTH_TOKEN_ID);
     if (oldTokenCache !== undefined) {
       await this.jsonCache.delete(oldTokenCache);
     }
     await this.jsonCache.add({
-      object_name: RAW_OSU_OAUTH_TOKEN_ID,
-      json_string: JSON.stringify(rawToken),
+      object_name: OSU_OAUTH_TOKEN_ID,
+      json_string: JSON.stringify(token),
     });
     return rawToken;
   }
 
-  private trySetToken(rawToken: IOsuOauthAccessTokenReadDto) {
-    const token = new OsuOauthAccessToken(rawToken);
+  private trySetToken(token: OsuOauthAccessToken) {
     if (!token.isValid()) {
       console.log('Can not set OAuth token: expiration date reached');
       return;
@@ -106,7 +117,7 @@ export class BanchoApi implements IOsuServerApi {
     this.ouathToken = token;
     this.apiv2httpClient.defaults.headers.common[
       'Authorization'
-    ] = `Bearer ${rawToken.access_token}`;
+    ] = `Bearer ${token.value}`;
     console.log('Sucessfully set token!');
   }
 
