@@ -29,7 +29,13 @@ export class JsonCache extends DbModule<CachedJsonDbObject> {
     if (cachedJsonObject === undefined) {
       return undefined;
     }
-    const value: T = JSON.parse(cachedJsonObject.json_string);
+    let value: T;
+    try {
+      value = JSON.parse(cachedJsonObject.json_string);
+    } catch {
+      await this.delete(cachedJsonObject);
+      return undefined;
+    }
     if (!params.validate(value)) {
       await this.delete(cachedJsonObject);
       return undefined;
