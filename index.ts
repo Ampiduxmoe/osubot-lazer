@@ -1,6 +1,7 @@
 import {App} from './src/App';
 import {IAppConfig} from './src/IAppConfig';
 import * as fs from 'fs';
+import {main as newMain} from './clean/src/main/Main';
 
 function main() {
   const configFile = fs.readFileSync('./app-config.json');
@@ -16,4 +17,4 @@ function main() {
   process.on('SIGINT', shutdown);
 }
 
-main();
+newMain();
