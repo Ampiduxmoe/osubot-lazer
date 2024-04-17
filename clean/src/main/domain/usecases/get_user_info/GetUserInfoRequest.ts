@@ -1,7 +1,6 @@
 import {OsuServer} from '../../../../primitives/OsuServer';
 
-export interface GetRecentPlaysResponse {
+export interface GetUserInfoRequest {
   server: OsuServer;
-  user: string;
-  scores: string[];
+  username: string;
 }

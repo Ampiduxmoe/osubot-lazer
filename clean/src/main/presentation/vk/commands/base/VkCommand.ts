@@ -6,6 +6,6 @@ export abstract class VkCommand<TExecutionParams, TViewParams> {
   abstract matchVkMessage(
     ctx: VkMessageContext
   ): CommandMatchResult<TExecutionParams>;
-  abstract createViewParams(params: TExecutionParams): TViewParams;
+  abstract process(params: TExecutionParams): Promise<TViewParams>;
   abstract createOutputMessage(params: TViewParams): VkOutputMessage;
 }

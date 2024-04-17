@@ -1,6 +1,6 @@
-import {RecentPlayServer} from './BoundaryTypes';
+import {OsuServer} from '../../../../primitives/OsuServer';
 export interface GetRecentPlaysRequest {
-  server: RecentPlayServer;
+  server: OsuServer;
   username: string;
   includeFails: boolean;
   offset: number;

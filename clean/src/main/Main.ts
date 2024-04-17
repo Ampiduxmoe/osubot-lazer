@@ -4,6 +4,10 @@ import {VkClient} from './presentation/vk/VkClient';
 import {VK} from 'vk-io';
 import {UserRecentPlays} from './presentation/vk/commands/UserRecentPlays';
 import {GetRecentPlaysUseCase} from './domain/usecases/get_recent_plays/GetRecentPlaysUseCase';
+import {GetUserInfoUseCase} from './domain/usecases/get_user_info/GetUserInfoUseCase';
+import {OsuUsersDaoImpl} from './data/dao/OsuUsersDaoImpl';
+import {BanchoApi} from './data/raw/http/bancho/BanchoApi';
+import {UserInfo} from './presentation/vk/commands/UserInfo';
 export function main() {
   const configFile = fs.readFileSync('./app-config.json');
   const appConfig: IAppConfig = JSON.parse(configFile.toString());
@@ -25,7 +29,18 @@ export function main() {
   const vkClient = new VkClient(vk);
 
   const getRecentPlaysUseCase = new GetRecentPlaysUseCase();
-  vkClient.addCommands([new UserRecentPlays(getRecentPlaysUseCase)]);
+
+  const banchoApi = new BanchoApi(
+    appConfig.osu.oauth.id,
+    appConfig.osu.oauth.secret
+  );
+  const osuUsersDao = new OsuUsersDaoImpl([banchoApi]);
+  const getUserInfoUseCase = new GetUserInfoUseCase(osuUsersDao);
+
+  vkClient.addCommands([
+    new UserRecentPlays(getRecentPlaysUseCase),
+    new UserInfo(getUserInfoUseCase),
+  ]);
 
   vkClient.start();
 

@@ -4,6 +4,7 @@
     "rootDir": ".",
     "outDir": "build",
     "noImplicitAny": true,
+    "skipLibCheck": true,
   },
   "include": [
     "*.ts",

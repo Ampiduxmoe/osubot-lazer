@@ -5,7 +5,9 @@ import {GetRecentPlaysResponse} from './GetRecentPlaysResponse';
 export class GetRecentPlaysUseCase
   implements UseCase<GetRecentPlaysRequest, GetRecentPlaysResponse>
 {
-  execute(params: GetRecentPlaysRequest): GetRecentPlaysResponse {
+  async execute(
+    params: GetRecentPlaysRequest
+  ): Promise<GetRecentPlaysResponse> {
     return {
       server: params.server,
       user: 'TestUser',

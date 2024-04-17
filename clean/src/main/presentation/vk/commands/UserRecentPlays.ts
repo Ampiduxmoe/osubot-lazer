@@ -3,10 +3,10 @@ import {CommandMatchResult} from './base/CommandMatchResult';
 import {VkOutputMessage} from './base/VkOutputMessage';
 import {VkCommand} from './base/VkCommand';
 import {GetRecentPlaysUseCase} from '../../../domain/usecases/get_recent_plays/GetRecentPlaysUseCase';
-import {RecentPlayServer} from '../../../domain/usecases/get_recent_plays/BoundaryTypes';
+import {OsuServer} from '../../../../primitives/OsuServer';
 
 export class UserRecentPlays extends VkCommand<
-  UserRecentExecutionParams,
+  UserRecentPlaysExecutionParams,
   UserRecentPlaysViewParams
 > {
   getRecentPlays: GetRecentPlaysUseCase;
@@ -18,8 +18,8 @@ export class UserRecentPlays extends VkCommand<
 
   matchVkMessage(
     ctx: VkMessageContext
-  ): CommandMatchResult<UserRecentExecutionParams> {
-    const fail = CommandMatchResult.fail<UserRecentExecutionParams>();
+  ): CommandMatchResult<UserRecentPlaysExecutionParams> {
+    const fail = CommandMatchResult.fail<UserRecentPlaysExecutionParams>();
     if (!ctx.hasText) {
       return fail;
     }
@@ -27,16 +27,13 @@ export class UserRecentPlays extends VkCommand<
     if (!text.startsWith('test')) {
       return fail;
     }
-    return CommandMatchResult.ok({
-      server: RecentPlayServer.Bancho,
-      username: String(text.split(' ')[1]),
-    });
+    return fail;
   }
 
-  createViewParams(
-    params: UserRecentExecutionParams
-  ): UserRecentPlaysViewParams {
-    const recentPlays = this.getRecentPlays.execute({
+  async process(
+    params: UserRecentPlaysExecutionParams
+  ): Promise<UserRecentPlaysViewParams> {
+    const recentPlays = await this.getRecentPlays.execute({
       server: params.server,
       username: 'Someone good',
       includeFails: true,
@@ -55,20 +52,20 @@ export class UserRecentPlays extends VkCommand<
     const username = params.username;
     const scores = params.scores;
     return {
-      text: `Server: ${server}, scores: ${scores}, username: ${username}`,
+      text: `Server: ${OsuServer[server]}, scores: ${scores}, username: ${username}`,
       attachment: undefined,
       buttons: [[{text: 'Я тестовая кнопка', command: 'test FOOBAR 123'}]],
     };
   }
 }
 
-interface UserRecentExecutionParams {
-  server: RecentPlayServer;
+interface UserRecentPlaysExecutionParams {
+  server: OsuServer;
   username: string;
 }
 
 interface UserRecentPlaysViewParams {
-  server: RecentPlayServer;
+  server: OsuServer;
   username: string;
   scores: string[];
 }

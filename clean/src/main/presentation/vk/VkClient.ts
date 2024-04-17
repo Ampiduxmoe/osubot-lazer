@@ -43,10 +43,10 @@ export class VkClient {
     for (const command of this.commands) {
       const matchResult = command.matchVkMessage(ctx);
       if (!matchResult.isMatch) {
-        return;
+        continue;
       }
       const executionParams = matchResult.commandParams!;
-      const viewParams = command.createViewParams(executionParams);
+      const viewParams = await command.process(executionParams);
       const outputMessage = command.createOutputMessage(viewParams);
       if (!outputMessage.text && !outputMessage.attachment) {
         return;
