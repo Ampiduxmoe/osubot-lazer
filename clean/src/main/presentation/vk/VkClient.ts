@@ -2,6 +2,7 @@ import {VK, Keyboard, KeyboardBuilder} from 'vk-io';
 import {VkCommand} from './commands/base/VkCommand';
 import {VkMessageContext} from './VkMessageContext';
 import {VkOutputMessageButton} from './commands/base/VkOutputMessage';
+import {APP_CODE_NAME} from '../../App';
 
 type UnknownExecutionParams = unknown;
 type UnknownViewParams = unknown;
@@ -71,6 +72,7 @@ export class VkClient {
         keyboard.textButton({
           label: button.text,
           payload: {
+            target: APP_CODE_NAME,
             command: button.command,
           },
         });

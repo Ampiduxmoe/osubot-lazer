@@ -1,7 +1,7 @@
 import {VkMessageContext} from '../VkMessageContext';
 import {CommandMatchResult} from './base/CommandMatchResult';
 import {VkOutputMessage} from './base/VkOutputMessage';
-import {VkCommand} from './base/VkCommand';
+import {CommandPrefixes, VkCommand} from './base/VkCommand';
 import {GetRecentPlaysUseCase} from '../../../domain/usecases/get_recent_plays/GetRecentPlaysUseCase';
 import {OsuServer} from '../../../../primitives/OsuServer';
 
@@ -9,6 +9,8 @@ export class UserRecentPlays extends VkCommand<
   UserRecentPlaysExecutionParams,
   UserRecentPlaysViewParams
 > {
+  static prefixes = new CommandPrefixes(['r', 'recent', 'rp', 'recentpass']);
+  prefixes = UserRecentPlays.prefixes;
   getRecentPlays: GetRecentPlaysUseCase;
 
   constructor(getRecentPlays: GetRecentPlaysUseCase) {
