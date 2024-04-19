@@ -7,8 +7,8 @@ export class GetOsuUserInfoUseCase
   implements UseCase<GetOsuUserInfoRequest, GetOsuUserInfoResponse>
 {
   osuUsers: OsuUsersDao;
-  constructor(users: OsuUsersDao) {
-    this.osuUsers = users;
+  constructor(osuUsers: OsuUsersDao) {
+    this.osuUsers = osuUsers;
   }
 
   async execute(

@@ -4,7 +4,7 @@ import {VkClient} from './presentation/vk/VkClient';
 import {GetRecentPlaysUseCase} from './domain/usecases/get_recent_plays/GetRecentPlaysUseCase';
 import {BanchoApi} from './data/raw/http/bancho/BanchoApi';
 import {OsuUsersDaoImpl} from './data/dao/OsuUsersDaoImpl';
-import {GetOsuUserInfoUseCase} from './domain/usecases/get_user_info/GetOsuUserInfoUseCase';
+import {GetOsuUserInfoUseCase} from './domain/usecases/get_osu_user_info/GetOsuUserInfoUseCase';
 import {UserRecentPlays} from './presentation/vk/commands/UserRecentPlays';
 import {UserInfo} from './presentation/vk/commands/UserInfo';
 import {SetUsername} from './presentation/vk/commands/SetUsername';
