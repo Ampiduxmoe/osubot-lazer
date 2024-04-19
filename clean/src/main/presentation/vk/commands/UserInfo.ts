@@ -3,7 +3,7 @@ import {CommandMatchResult} from './base/CommandMatchResult';
 import {VkOutputMessage} from './base/VkOutputMessage';
 import {VkCommand, CommandPrefixes} from './base/VkCommand';
 import {OsuServer} from '../../../../primitives/OsuServer';
-import {GetUserInfoUseCase} from '../../../domain/usecases/get_user_info/GetUserInfoUseCase';
+import {GetOsuUserInfoUseCase} from '../../../domain/usecases/get_user_info/GetOsuUserInfoUseCase';
 import {Timespan} from '../../../../primitives/Timespan';
 import {APP_CODE_NAME} from '../../../App';
 import {SERVERS} from './base/OsuServers';
@@ -15,11 +15,11 @@ export class UserInfo extends VkCommand<
 > {
   static prefixes = new CommandPrefixes(['u', 'user']);
   prefixes = UserInfo.prefixes;
-  getUserInfo: GetUserInfoUseCase;
+  getOsuUserInfo: GetOsuUserInfoUseCase;
 
-  constructor(getRecentPlays: GetUserInfoUseCase) {
+  constructor(getRecentPlays: GetOsuUserInfoUseCase) {
     super();
-    this.getUserInfo = getRecentPlays;
+    this.getOsuUserInfo = getRecentPlays;
   }
 
   matchVkMessage(
@@ -57,7 +57,7 @@ export class UserInfo extends VkCommand<
   }
 
   async process(params: UserInfoExecutionParams): Promise<UserInfoViewParams> {
-    const userInfo = await this.getUserInfo.execute({
+    const userInfo = await this.getOsuUserInfo.execute({
       server: params.server,
       username: params.username,
     });

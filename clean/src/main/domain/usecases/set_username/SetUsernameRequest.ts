@@ -1,6 +1,7 @@
 import {OsuServer} from '../../../../primitives/OsuServer';
 
-export interface GetUserInfoRequest {
+export interface SetUsernameRequest {
+  id: string;
   server: OsuServer;
   username: string;
 }

@@ -1,20 +1,22 @@
 import {UseCase} from '../UseCase';
-import {GetUserInfoRequest} from './GetUserInfoRequest';
-import {GetUserInfoResponse} from './GetUserInfoResponse';
+import {GetOsuUserInfoRequest} from './GetOsuUserInfoRequest';
+import {GetOsuUserInfoResponse} from './GetOsuUserInfoResponse';
 import {OsuUsersDao} from '../../../data/dao/OsuUsersDao';
 
-export class GetUserInfoUseCase
-  implements UseCase<GetUserInfoRequest, GetUserInfoResponse>
+export class GetOsuUserInfoUseCase
+  implements UseCase<GetOsuUserInfoRequest, GetOsuUserInfoResponse>
 {
-  users: OsuUsersDao;
+  osuUsers: OsuUsersDao;
   constructor(users: OsuUsersDao) {
-    this.users = users;
+    this.osuUsers = users;
   }
 
-  async execute(params: GetUserInfoRequest): Promise<GetUserInfoResponse> {
+  async execute(
+    params: GetOsuUserInfoRequest
+  ): Promise<GetOsuUserInfoResponse> {
     const username = params.username;
     const server = params.server;
-    const user = await this.users.getByUsername(username, server);
+    const user = await this.osuUsers.getByUsername(username, server);
     return {
       userId: user.id,
       username: user.username,
