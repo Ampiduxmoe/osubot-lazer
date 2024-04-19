@@ -12,6 +12,7 @@ import {SetUsernameUseCase} from './domain/usecases/set_username/SetUsernameUseC
 import {AppUsers} from './data/raw/db/tables/AppUsers';
 import {SqliteDb} from './data/raw/db/SqliteDb';
 import {SqlDb} from './data/raw/db/SqlDb';
+import {GetAppUserInfoUseCase} from './domain/usecases/get_app_user_info/GetAppUserInfoUseCase';
 
 export const APP_CODE_NAME = 'osubot-lazer';
 
@@ -23,18 +24,15 @@ export class App {
   currentVkGroup: VkGroup;
   vkClient: VkClient;
 
-  private initActions: (() => Promise<void>)[] = [];
-
   constructor(config: AppConfig) {
-    console.log('App initialization started');
     this.config = config;
     const isProd = isProduction(/* fallbackValue = */ true);
     if (isProd) {
-      console.log('Initializing as production configuration');
+      console.log('Configuring as production configuration');
       this.currentVkGroup = config.vk.group;
       this.db = new SqliteDb('osu.db');
     } else {
-      console.log('Initializing as development configuration');
+      console.log('Configuring as development configuration');
       this.currentVkGroup = config.vk.group_dev;
       this.db = new SqliteDb('osu_dev.db');
     }
@@ -46,24 +44,25 @@ export class App {
     const appUsers = new AppUsers(this.db);
 
     const getOsuUserInfoUseCase = new GetOsuUserInfoUseCase(osuUsersDao);
+    const getAppUserInfoUseCase = new GetAppUserInfoUseCase(appUsers);
     const setUsernameUseCase = new SetUsernameUseCase(appUsers, osuUsersDao);
     const getRecentPlaysUseCase = new GetRecentPlaysUseCase();
 
     this.vkClient = this.createVkClient({
       group: this.currentVkGroup,
       getOsuUserInfoUseCase: getOsuUserInfoUseCase,
+      getAppUserInfoUseCase: getAppUserInfoUseCase,
       setUsernameUseCase: setUsernameUseCase,
       getRecentPlaysUseCase: getRecentPlaysUseCase,
     });
 
-    this.initActions.push(async () => {
+    (async () => {
       console.log('Started initializing tables');
       const allDbTables = [appUsers];
       const initPromises = allDbTables.map(t => t.init());
       await Promise.all(initPromises);
       console.log('All tables initialized successfully');
-    });
-    this.init();
+    })();
   }
 
   createVkClient(params: VkClientCreationParams): VkClient {
@@ -74,15 +73,11 @@ export class App {
 
     const vkClient = new VkClient(vk);
     vkClient.addCommands([
-      new UserInfo(params.getOsuUserInfoUseCase),
+      new UserInfo(params.getOsuUserInfoUseCase, params.getAppUserInfoUseCase),
       new SetUsername(params.setUsernameUseCase),
       new UserRecentPlays(params.getRecentPlaysUseCase),
     ]);
     return vkClient;
-  }
-
-  async init(): Promise<void> {
-    await Promise.all(this.initActions.map(init => init()));
   }
 
   async start(): Promise<void> {
@@ -117,6 +112,7 @@ function isProduction(fallbackValue: boolean): boolean {
 interface VkClientCreationParams {
   group: VkGroup;
   getOsuUserInfoUseCase: GetOsuUserInfoUseCase;
+  getAppUserInfoUseCase: GetAppUserInfoUseCase;
   setUsernameUseCase: SetUsernameUseCase;
   getRecentPlaysUseCase: GetRecentPlaysUseCase;
 }
