@@ -1,4 +1,10 @@
-import {Auth, Client, UserExtended, UserScore} from 'osu-web.js';
+import {
+  Auth,
+  Client,
+  OsuJSUnexpectedResponseError,
+  UserExtended,
+  UserScore,
+} from 'osu-web.js';
 import {OsuOauthAccessToken} from '../OsuOauthAccessToken';
 import {OsuApi} from '../OsuAPI';
 import {OsuServer} from '../../../../../primitives/OsuServer';
@@ -49,10 +55,21 @@ export class BanchoApi implements OsuApi {
     console.log('Sucessfully set token!');
   }
 
-  async getUser(username: string): Promise<UserExtended> {
+  async getUser(username: string): Promise<UserExtended | undefined> {
     console.log(`Trying to fetch Bancho user ${username}`);
     await this.refreshTokenIfNeeded();
-    const user = await this.client.users.getUser(username);
+    let user: UserExtended;
+    try {
+      user = await this.client.users.getUser(username);
+    } catch (e) {
+      if (
+        e instanceof OsuJSUnexpectedResponseError &&
+        e.response().status === 404
+      ) {
+        return undefined;
+      }
+      throw e;
+    }
     return user;
   }
 

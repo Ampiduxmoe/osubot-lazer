@@ -1,4 +1,8 @@
 export interface GetOsuUserInfoResponse {
+  userInfo: OsuUserInfo | undefined;
+}
+
+interface OsuUserInfo {
   userId: number;
   username: string;
   accuracy: number;

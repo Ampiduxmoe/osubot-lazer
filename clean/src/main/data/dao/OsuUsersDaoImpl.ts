@@ -7,7 +7,10 @@ export class OsuUsersDaoImpl implements OsuUsersDao {
   constructor(apis: OsuApi[]) {
     this.apis = apis;
   }
-  async getByUsername(username: string, server: OsuServer): Promise<OsuUser> {
+  async getByUsername(
+    username: string,
+    server: OsuServer
+  ): Promise<OsuUser | undefined> {
     const api = this.apis.find(api => api.server === server);
     if (api === undefined) {
       throw Error(`Could not find API for server ${OsuServer[server]}`);

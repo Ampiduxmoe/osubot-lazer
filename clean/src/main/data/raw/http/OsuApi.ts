@@ -4,7 +4,7 @@ import {OsuServer} from '../../../../primitives/OsuServer';
 export interface OsuApi {
   server: OsuServer;
 
-  getUser(username: string): Promise<UserExtended>;
+  getUser(username: string): Promise<UserExtended | undefined>;
 
   getRecentPlays(
     osuId: number,

@@ -72,18 +72,28 @@ export class UserInfo extends VkCommand<
       if (boundUser === undefined) {
         return {
           server: params.server,
+          usernameInput: undefined,
           userInfo: undefined,
         };
       }
       username = boundUser.username;
     }
-    const userInfo = await this.getOsuUserInfo.execute({
+    const userInfoResponse = await this.getOsuUserInfo.execute({
       server: params.server,
       username: username,
     });
+    const userInfo = userInfoResponse.userInfo;
+    if (userInfo === undefined) {
+      return {
+        server: params.server,
+        usernameInput: params.username,
+        userInfo: undefined,
+      };
+    }
     const playtime = new Timespan().addSeconds(userInfo.playtimeSeconds);
     return {
       server: params.server,
+      usernameInput: params.username,
       userInfo: {
         username: userInfo.username,
         rankGlobal: userInfo.rankGlobal,
@@ -104,7 +114,13 @@ export class UserInfo extends VkCommand<
   createOutputMessage(params: UserInfoViewParams): VkOutputMessage {
     const userInfo = params.userInfo;
     if (userInfo === undefined) {
-      return this.createUsernameNotBoundMessage(params.server);
+      if (params.usernameInput === undefined) {
+        return this.createUsernameNotBoundMessage(params.server);
+      }
+      return this.createUserNotFoundMessage(
+        params.server,
+        params.usernameInput
+      );
     }
     const serverString = OsuServer[params.server];
     const {username} = userInfo;
@@ -150,6 +166,22 @@ https://osu.ppy.sh/u/${userId}
     };
   }
 
+  createUserNotFoundMessage(
+    server: OsuServer,
+    usernameInput: string
+  ): VkOutputMessage {
+    const serverString = OsuServer[server];
+    const text = `
+[Server: ${serverString}]
+Пользователь с ником ${usernameInput} не найден
+    `.trim();
+    return {
+      text: text,
+      attachment: undefined,
+      buttons: undefined,
+    };
+  }
+
   createUsernameNotBoundMessage(server: OsuServer): VkOutputMessage {
     const serverString = OsuServer[server];
     const text = `
@@ -172,6 +204,7 @@ interface UserInfoExecutionParams {
 
 interface UserInfoViewParams {
   server: OsuServer;
+  usernameInput: string | undefined;
   userInfo: OsuUserInfo | undefined;
 }
 
