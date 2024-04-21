@@ -1,7 +1,6 @@
-import {OsuServer} from '../../../../../primitives/OsuServer';
 import {OperationExecutionResult} from '../SqlDb';
 import {SqlDbTable} from '../SqlDbTable';
-import {AppUser} from '../entities/AppUser';
+import {AppUser, AppUserKey} from '../entities/AppUser';
 
 export class AppUsers extends SqlDbTable<AppUser, AppUserKey> {
   tableName = 'app_users';
@@ -35,9 +34,4 @@ export class AppUsers extends SqlDbTable<AppUser, AppUserKey> {
       [value.id, value.server]
     );
   }
-}
-
-export interface AppUserKey {
-  id: string;
-  server: OsuServer;
 }

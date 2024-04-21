@@ -3,6 +3,7 @@ export interface GetRecentPlaysRequest {
   server: OsuServer;
   username: string;
   includeFails: boolean;
-  offset: number;
+  startPosition: number;
   quantity: number;
+  mods: string[];
 }

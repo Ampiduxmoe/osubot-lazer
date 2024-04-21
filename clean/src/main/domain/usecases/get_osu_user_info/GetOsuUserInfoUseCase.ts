@@ -14,9 +14,10 @@ export class GetOsuUserInfoUseCase
   async execute(
     params: GetOsuUserInfoRequest
   ): Promise<GetOsuUserInfoResponse> {
-    const username = params.username;
-    const server = params.server;
-    const user = await this.osuUsers.getByUsername(username, server);
+    const user = await this.osuUsers.getByUsername(
+      params.username,
+      params.server
+    );
     if (user === undefined) {
       return {
         userInfo: undefined,

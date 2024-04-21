@@ -1,23 +1,20 @@
+import {AppUsersDao} from '../../../data/dao/AppUsersDao';
 import {UseCase} from '../UseCase';
 import {GetAppUserInfoRequest} from './GetAppUserInfoRequest';
 import {GetAppUserInfoResponse} from './GetAppUserInfoResponse';
-import {AppUsers} from '../../../data/raw/db/tables/AppUsers';
 
 export class GetAppUserInfoUseCase
   implements UseCase<GetAppUserInfoRequest, GetAppUserInfoResponse>
 {
-  appUsers: AppUsers;
-  constructor(appUsers: AppUsers) {
+  appUsers: AppUsersDao;
+  constructor(appUsers: AppUsersDao) {
     this.appUsers = appUsers;
   }
 
   async execute(
     params: GetAppUserInfoRequest
   ): Promise<GetAppUserInfoResponse> {
-    const user = await this.appUsers.get({
-      id: params.id,
-      server: params.server,
-    });
+    const user = await this.appUsers.get(params.id, params.server);
     if (user === undefined) {
       return {
         userInfo: undefined,

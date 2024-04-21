@@ -13,6 +13,10 @@ import {AppUsers} from './data/raw/db/tables/AppUsers';
 import {SqliteDb} from './data/raw/db/SqliteDb';
 import {SqlDb} from './data/raw/db/SqlDb';
 import {GetAppUserInfoUseCase} from './domain/usecases/get_app_user_info/GetAppUserInfoUseCase';
+import {OsuIdsAndUsernames} from './data/raw/db/tables/OsuIdsAndUsernames';
+import {AppUsersDaoImpl} from './data/dao/AppUsersDaoImpl';
+import {OsuRecentScoresDaoImpl} from './data/dao/OsuRecentScoresDaoImpl';
+import {CachedOsuIdsDaoImpl} from './data/dao/CachedOsuIdsDaoImpl';
 
 export const APP_CODE_NAME = 'osubot-lazer';
 
@@ -39,14 +43,27 @@ export class App {
 
     const banchoOuath = config.osu.bancho.oauth;
     const banchoApi = new BanchoApi(banchoOuath.id, banchoOuath.secret);
-    const osuUsersDao = new OsuUsersDaoImpl([banchoApi]);
 
+    const apiList = [banchoApi];
+
+    const osuIdsAndUsernames = new OsuIdsAndUsernames(this.db);
     const appUsers = new AppUsers(this.db);
 
+    const allDbTables = [osuIdsAndUsernames, appUsers];
+
+    const osuUsersDao = new OsuUsersDaoImpl(apiList, osuIdsAndUsernames);
+    const appUsersDao = new AppUsersDaoImpl(appUsers);
+    const recentScoresDao = new OsuRecentScoresDaoImpl(apiList);
+    const cachedOsuIdsDao = new CachedOsuIdsDaoImpl(osuIdsAndUsernames);
+
     const getOsuUserInfoUseCase = new GetOsuUserInfoUseCase(osuUsersDao);
-    const getAppUserInfoUseCase = new GetAppUserInfoUseCase(appUsers);
-    const setUsernameUseCase = new SetUsernameUseCase(appUsers, osuUsersDao);
-    const getRecentPlaysUseCase = new GetRecentPlaysUseCase();
+    const getAppUserInfoUseCase = new GetAppUserInfoUseCase(appUsersDao);
+    const setUsernameUseCase = new SetUsernameUseCase(appUsersDao, osuUsersDao);
+    const getRecentPlaysUseCase = new GetRecentPlaysUseCase(
+      recentScoresDao,
+      cachedOsuIdsDao,
+      osuUsersDao
+    );
 
     this.vkClient = this.createVkClient({
       group: this.currentVkGroup,
@@ -58,7 +75,6 @@ export class App {
 
     (async () => {
       console.log('Started initializing tables');
-      const allDbTables = [appUsers];
       const initPromises = allDbTables.map(t => t.init());
       await Promise.all(initPromises);
       console.log('All tables initialized successfully');
@@ -66,16 +82,19 @@ export class App {
   }
 
   createVkClient(params: VkClientCreationParams): VkClient {
+    const {getOsuUserInfoUseCase} = params;
+    const {getAppUserInfoUseCase} = params;
+    const {setUsernameUseCase} = params;
+    const {getRecentPlaysUseCase} = params;
     const vk = new VK({
       pollingGroupId: params.group.id,
       token: params.group.token,
     });
-
     const vkClient = new VkClient(vk);
     vkClient.addCommands([
-      new UserInfo(params.getOsuUserInfoUseCase, params.getAppUserInfoUseCase),
-      new SetUsername(params.setUsernameUseCase),
-      new UserRecentPlays(params.getRecentPlaysUseCase),
+      new UserInfo(getOsuUserInfoUseCase, getAppUserInfoUseCase),
+      new SetUsername(setUsernameUseCase),
+      new UserRecentPlays(getRecentPlaysUseCase, getAppUserInfoUseCase),
     ]);
     return vkClient;
   }

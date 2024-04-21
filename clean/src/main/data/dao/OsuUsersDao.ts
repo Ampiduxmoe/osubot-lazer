@@ -1,7 +1,9 @@
 import {UserExtended} from 'osu-web.js';
 import {OsuServer} from '../../../primitives/OsuServer';
 
-export type OsuUser = UserExtended;
+export type OsuUser = UserExtended & {
+  server: OsuServer;
+};
 
 export interface OsuUsersDao {
   getByUsername(

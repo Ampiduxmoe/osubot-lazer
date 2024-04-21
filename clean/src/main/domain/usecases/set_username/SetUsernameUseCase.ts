@@ -1,16 +1,16 @@
-import {AppUsers} from '../../../data/raw/db/tables/AppUsers';
 import {UseCase} from '../UseCase';
 import {SetUsernameRequest} from './SetUsernameRequest';
 import {SetUsernameResponse} from './SetUsernameResponse';
 import {OsuUsersDao} from '../../../data/dao/OsuUsersDao';
 import {OsuRuleset} from '../../../../primitives/OsuRuleset';
+import {AppUsersDao} from '../../../data/dao/AppUsersDao';
 
 export class SetUsernameUseCase
   implements UseCase<SetUsernameRequest, SetUsernameResponse>
 {
-  appUsers: AppUsers;
+  appUsers: AppUsersDao;
   osuUsers: OsuUsersDao;
-  constructor(appUsers: AppUsers, osuUsers: OsuUsersDao) {
+  constructor(appUsers: AppUsersDao, osuUsers: OsuUsersDao) {
     this.appUsers = appUsers;
     this.osuUsers = osuUsers;
   }
@@ -26,15 +26,7 @@ export class SetUsernameUseCase
         failureReason: 'user not found',
       };
     }
-    const oldAppUser = await this.appUsers.get({
-      id: params.id,
-      server: params.server,
-    });
-    let addOrUpdate = this.appUsers.add;
-    if (oldAppUser !== undefined) {
-      addOrUpdate = this.appUsers.update;
-    }
-    await addOrUpdate.call(this.appUsers, {
+    this.appUsers.addOrUpdate({
       id: params.id,
       server: params.server,
       osu_id: osuUser.id,
