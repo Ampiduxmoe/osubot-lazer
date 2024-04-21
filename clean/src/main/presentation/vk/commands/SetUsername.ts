@@ -14,8 +14,8 @@ export class SetUsername extends VkCommand<
 > {
   static prefixes = new CommandPrefixes(['n', 'nickname', 'username']);
   prefixes = SetUsername.prefixes;
-  setUsername: SetUsernameUseCase;
 
+  setUsername: SetUsernameUseCase;
   constructor(setUsername: SetUsernameUseCase) {
     super();
     this.setUsername = setUsername;
@@ -26,7 +26,7 @@ export class SetUsername extends VkCommand<
   ): CommandMatchResult<SetUsernameExecutionParams> {
     const fail = CommandMatchResult.fail<SetUsernameExecutionParams>();
     let command: string | undefined = undefined;
-    if (ctx.hasMessagePayload && ctx.messagePayload!.traget === APP_CODE_NAME) {
+    if (ctx.hasMessagePayload && ctx.messagePayload!.target === APP_CODE_NAME) {
       command = ctx.messagePayload!.command;
     } else if (ctx.hasText) {
       command = ctx.text!;
@@ -52,7 +52,7 @@ export class SetUsername extends VkCommand<
     return CommandMatchResult.ok({
       vkUserId: ctx.senderId,
       server: server,
-      username: username,
+      usernameInput: username,
     });
   }
 
@@ -62,7 +62,7 @@ export class SetUsername extends VkCommand<
     const result = await this.setUsername.execute({
       id: VkIdConverter.vkUserIdToAppUserId(params.vkUserId),
       server: params.server,
-      username: params.username,
+      username: params.usernameInput,
     });
     if (result.isFailure) {
       const internalFailureReason = result.failureReason!;
@@ -106,7 +106,7 @@ export class SetUsername extends VkCommand<
 interface SetUsernameExecutionParams {
   vkUserId: number;
   server: OsuServer;
-  username: string;
+  usernameInput: string;
 }
 
 interface SetUsernameViewParams {

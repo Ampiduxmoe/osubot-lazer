@@ -17,9 +17,9 @@ export class UserInfo extends VkCommand<
 > {
   static prefixes = new CommandPrefixes(['u', 'user']);
   prefixes = UserInfo.prefixes;
+
   getOsuUserInfo: GetOsuUserInfoUseCase;
   getAppUserInfo: GetAppUserInfoUseCase;
-
   constructor(
     getRecentPlays: GetOsuUserInfoUseCase,
     getAppUserInfo: GetAppUserInfoUseCase
@@ -34,7 +34,7 @@ export class UserInfo extends VkCommand<
   ): CommandMatchResult<UserInfoExecutionParams> {
     const fail = CommandMatchResult.fail<UserInfoExecutionParams>();
     let command: string | undefined = undefined;
-    if (ctx.hasMessagePayload && ctx.messagePayload!.traget === APP_CODE_NAME) {
+    if (ctx.hasMessagePayload && ctx.messagePayload!.target === APP_CODE_NAME) {
       command = ctx.messagePayload!.command;
     } else if (ctx.hasText) {
       command = ctx.text!;
@@ -56,13 +56,13 @@ export class UserInfo extends VkCommand<
     const username = tokens[2];
     return CommandMatchResult.ok({
       server: server,
-      username: username,
+      usernameInput: username,
       vkUserId: ctx.senderId,
     });
   }
 
   async process(params: UserInfoExecutionParams): Promise<UserInfoViewParams> {
-    let username = params.username;
+    let username = params.usernameInput;
     if (username === undefined) {
       const appUserInfoResponse = await this.getAppUserInfo.execute({
         id: VkIdConverter.vkUserIdToAppUserId(params.vkUserId),
@@ -86,14 +86,14 @@ export class UserInfo extends VkCommand<
     if (userInfo === undefined) {
       return {
         server: params.server,
-        usernameInput: params.username,
+        usernameInput: params.usernameInput,
         userInfo: undefined,
       };
     }
     const playtime = new Timespan().addSeconds(userInfo.playtimeSeconds);
     return {
       server: params.server,
-      usernameInput: params.username,
+      usernameInput: params.usernameInput,
       userInfo: {
         username: userInfo.username,
         rankGlobal: userInfo.rankGlobal,
@@ -145,7 +145,8 @@ https://osu.ppy.sh/u/${userId}
 
     const serverPrefix = SERVERS.getPrefixByServer(params.server);
     const bestPlaysPrefix = 't'; // TODO: use UserBestPlays.prefixes
-    const recentPlaysPrefix = UserRecentPlays.prefixes;
+    const recentPlaysPrefix = UserRecentPlays.recentPlaysPrefixes[0];
+    const recentPassesPrefix = UserRecentPlays.recentPassesPrefixes[0];
     return {
       text: text,
       attachment: undefined,
@@ -160,6 +161,12 @@ https://osu.ppy.sh/u/${userId}
           {
             text: `Последний скор ${username}`,
             command: `${serverPrefix} ${recentPlaysPrefix} ${username}`,
+          },
+        ],
+        [
+          {
+            text: `Последний пасс ${username}`,
+            command: `${serverPrefix} ${recentPassesPrefix} ${username}`,
           },
         ],
       ],
@@ -198,7 +205,7 @@ https://osu.ppy.sh/u/${userId}
 
 interface UserInfoExecutionParams {
   server: OsuServer;
-  username: string | undefined;
+  usernameInput: string | undefined;
   vkUserId: number;
 }
 
