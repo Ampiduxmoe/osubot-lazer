@@ -3,7 +3,7 @@ import {VkMessageContext} from '../../VkMessageContext';
 import {CommandMatchResult} from './CommandMatchResult';
 import {VkOutputMessage} from './VkOutputMessage';
 
-export abstract class VkCommand<TExecutionParams, TViewParams> {
+export abstract class VkCommand<TExecutionArgs, TViewParams> {
   abstract internalName: string;
   abstract shortDescription: string;
   abstract prefixes: CommandPrefixes | undefined;
@@ -11,8 +11,8 @@ export abstract class VkCommand<TExecutionParams, TViewParams> {
 
   abstract matchVkMessage(
     ctx: VkMessageContext
-  ): CommandMatchResult<TExecutionParams>;
-  abstract process(params: TExecutionParams): Promise<TViewParams>;
+  ): CommandMatchResult<TExecutionArgs>;
+  abstract process(args: TExecutionArgs): Promise<TViewParams>;
   abstract createOutputMessage(params: TViewParams): VkOutputMessage;
 }
 

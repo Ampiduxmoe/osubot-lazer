@@ -14,7 +14,7 @@ import {
 import {MainArgsProcessor} from '../../common/arg_processing/MainArgsProcessor';
 
 export class SetUsername extends VkCommand<
-  SetUsernameExecutionParams,
+  SetUsernameExecutionArgs,
   SetUsernameViewParams
 > {
   internalName = SetUsername.name;
@@ -37,8 +37,8 @@ export class SetUsername extends VkCommand<
 
   matchVkMessage(
     ctx: VkMessageContext
-  ): CommandMatchResult<SetUsernameExecutionParams> {
-    const fail = CommandMatchResult.fail<SetUsernameExecutionParams>();
+  ): CommandMatchResult<SetUsernameExecutionArgs> {
+    const fail = CommandMatchResult.fail<SetUsernameExecutionArgs>();
     let command: string | undefined = undefined;
     if (ctx.hasMessagePayload && ctx.messagePayload!.target === APP_CODE_NAME) {
       command = ctx.messagePayload!.command;
@@ -84,17 +84,17 @@ export class SetUsername extends VkCommand<
     return CommandMatchResult.ok({
       vkUserId: ctx.senderId,
       server: server,
-      usernameInput: username,
+      username: username,
     });
   }
 
   async process(
-    params: SetUsernameExecutionParams
+    args: SetUsernameExecutionArgs
   ): Promise<SetUsernameViewParams> {
     const result = await this.setUsername.execute({
-      id: VkIdConverter.vkUserIdToAppUserId(params.vkUserId),
-      server: params.server,
-      username: params.usernameInput,
+      id: VkIdConverter.vkUserIdToAppUserId(args.vkUserId),
+      server: args.server,
+      username: args.username,
     });
     if (result.isFailure) {
       const internalFailureReason = result.failureReason!;
@@ -107,13 +107,13 @@ export class SetUsername extends VkCommand<
           throw Error('Switch case is not exhaustive');
       }
       return {
-        server: params.server,
+        server: args.server,
         failureReason: failureReason,
       };
     }
     const username = result.username!;
     return {
-      server: params.server,
+      server: args.server,
       username: username,
     };
   }
@@ -135,10 +135,10 @@ export class SetUsername extends VkCommand<
   }
 }
 
-interface SetUsernameExecutionParams {
+interface SetUsernameExecutionArgs {
   vkUserId: number;
   server: OsuServer;
-  usernameInput: string;
+  username: string;
 }
 
 interface SetUsernameViewParams {

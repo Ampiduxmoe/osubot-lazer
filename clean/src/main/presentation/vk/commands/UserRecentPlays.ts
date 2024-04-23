@@ -21,7 +21,7 @@ import {
 import {MainArgsProcessor} from '../../common/arg_processing/MainArgsProcessor';
 
 export class UserRecentPlays extends VkCommand<
-  UserRecentPlaysExecutionParams,
+  UserRecentPlaysExecutionArgs,
   UserRecentPlaysViewParams
 > {
   internalName = UserRecentPlays.name;
@@ -57,8 +57,8 @@ export class UserRecentPlays extends VkCommand<
 
   matchVkMessage(
     ctx: VkMessageContext
-  ): CommandMatchResult<UserRecentPlaysExecutionParams> {
-    const fail = CommandMatchResult.fail<UserRecentPlaysExecutionParams>();
+  ): CommandMatchResult<UserRecentPlaysExecutionArgs> {
+    const fail = CommandMatchResult.fail<UserRecentPlaysExecutionArgs>();
     let command: string | undefined = undefined;
     if (ctx.hasMessagePayload && ctx.messagePayload!.target === APP_CODE_NAME) {
       command = ctx.messagePayload!.command;
@@ -101,10 +101,10 @@ export class UserRecentPlays extends VkCommand<
       return fail;
     }
     return CommandMatchResult.ok({
+      vkUserId: ctx.senderId,
       server: server,
       passesOnly: UserRecentPlays.recentPassesPrefixes.includes(commandPrefix),
-      usernameInput: username,
-      vkUserId: ctx.senderId,
+      username: username,
       startPosition: startPosition,
       quantity: quantity,
       mods: mods,
@@ -112,40 +112,41 @@ export class UserRecentPlays extends VkCommand<
   }
 
   async process(
-    params: UserRecentPlaysExecutionParams
+    args: UserRecentPlaysExecutionArgs
   ): Promise<UserRecentPlaysViewParams> {
-    let username = params.usernameInput;
+    let username = args.username;
     if (username === undefined) {
       const appUserInfoResponse = await this.getAppUserInfo.execute({
-        id: VkIdConverter.vkUserIdToAppUserId(params.vkUserId),
-        server: params.server,
+        id: VkIdConverter.vkUserIdToAppUserId(args.vkUserId),
+        server: args.server,
       });
       const boundUser = appUserInfoResponse.userInfo;
       if (boundUser === undefined) {
         return {
-          server: params.server,
-          passesOnly: params.passesOnly,
+          server: args.server,
+          passesOnly: args.passesOnly,
           usernameInput: undefined,
           recentPlays: undefined,
         };
       }
       username = boundUser.username;
     }
-    const mods = params.mods || [];
+    const mods = args.mods || [];
     const startPosition = clamp(
-      mods.length > 0 ? 1 : params.startPosition || 1,
+      mods.length > 0 ? 1 : args.startPosition || 1,
       1,
       100
     );
+    // eslint-disable-next-line prettier/prettier
     const quantity = clamp(
-      mods.length > 0 ? 100 : params.quantity || 1,
+      mods.length > 0 ? 100 : args.quantity || 1,
       1,
       100
     );
     const recentPlaysResult = await this.getRecentPlays.execute({
-      server: params.server,
+      server: args.server,
       username: username,
-      includeFails: !params.passesOnly,
+      includeFails: !args.passesOnly,
       startPosition: startPosition,
       quantity: quantity,
       mods: mods,
@@ -155,9 +156,9 @@ export class UserRecentPlays extends VkCommand<
       switch (internalFailureReason) {
         case 'user not found':
           return {
-            server: params.server,
-            passesOnly: params.passesOnly,
-            usernameInput: params.usernameInput,
+            server: args.server,
+            passesOnly: args.passesOnly,
+            usernameInput: args.username,
             recentPlays: undefined,
           };
         default:
@@ -165,9 +166,9 @@ export class UserRecentPlays extends VkCommand<
       }
     }
     return {
-      server: params.server,
-      passesOnly: params.passesOnly,
-      usernameInput: params.usernameInput,
+      server: args.server,
+      passesOnly: args.passesOnly,
+      usernameInput: args.username,
       recentPlays: recentPlaysResult.recentPlays!,
     };
   }
@@ -265,11 +266,11 @@ ${scoresText}
   }
 }
 
-interface UserRecentPlaysExecutionParams {
+interface UserRecentPlaysExecutionArgs {
+  vkUserId: number;
   server: OsuServer;
   passesOnly: boolean;
-  usernameInput: string | undefined;
-  vkUserId: number;
+  username: string | undefined;
   startPosition: number | undefined;
   quantity: number | undefined;
   mods: string[] | undefined;

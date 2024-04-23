@@ -46,13 +46,13 @@ export class VkClient {
       if (!matchResult.isMatch) {
         continue;
       }
-      const executionParams = matchResult.commandParams!;
+      const executionArgs = matchResult.commandArgs!;
       console.log(
-        `Trying to execute command ${command.internalName} (${JSON.stringify(
-          executionParams
-        )})`
+        `Trying to execute command ${
+          command.internalName
+        } (args=${JSON.stringify(executionArgs)})`
       );
-      const viewParams = await command.process(executionParams);
+      const viewParams = await command.process(executionArgs);
       const outputMessage = command.createOutputMessage(viewParams);
       if (!outputMessage.text && !outputMessage.attachment) {
         return;

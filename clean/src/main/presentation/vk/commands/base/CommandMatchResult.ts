@@ -1,16 +1,16 @@
 export class CommandMatchResult<T> {
   /** Whether command should be executed based on current context */
   isMatch: boolean;
-  /** Parameters required by execute function. Must not be undefined if {@link isMatch} is true */
-  commandParams: T | undefined;
+  /** Arguments required to execute command. Must not be undefined if {@link isMatch} is true */
+  commandArgs: T | undefined;
 
-  constructor(isMatch: boolean, executionParams: T | undefined) {
+  constructor(isMatch: boolean, executionArgs: T | undefined) {
     this.isMatch = isMatch;
-    this.commandParams = executionParams;
+    this.commandArgs = executionArgs;
   }
 
-  static ok<R>(executionParams: R): CommandMatchResult<R> {
-    return new CommandMatchResult(true, executionParams);
+  static ok<R>(executionArgs: R): CommandMatchResult<R> {
+    return new CommandMatchResult(true, executionArgs);
   }
 
   static fail<R>(): CommandMatchResult<R> {

@@ -18,7 +18,7 @@ import {
 import {MainArgsProcessor} from '../../common/arg_processing/MainArgsProcessor';
 
 export class UserInfo extends VkCommand<
-  UserInfoExecutionParams,
+  UserInfoExecutionArgs,
   UserInfoViewParams
 > {
   internalName = UserInfo.name;
@@ -46,8 +46,8 @@ export class UserInfo extends VkCommand<
 
   matchVkMessage(
     ctx: VkMessageContext
-  ): CommandMatchResult<UserInfoExecutionParams> {
-    const fail = CommandMatchResult.fail<UserInfoExecutionParams>();
+  ): CommandMatchResult<UserInfoExecutionArgs> {
+    const fail = CommandMatchResult.fail<UserInfoExecutionArgs>();
     let command: string | undefined = undefined;
     if (ctx.hasMessagePayload && ctx.messagePayload!.target === APP_CODE_NAME) {
       command = ctx.messagePayload!.command;
@@ -88,22 +88,22 @@ export class UserInfo extends VkCommand<
     }
     return CommandMatchResult.ok({
       server: server,
-      usernameInput: username,
+      username: username,
       vkUserId: ctx.senderId,
     });
   }
 
-  async process(params: UserInfoExecutionParams): Promise<UserInfoViewParams> {
-    let username = params.usernameInput;
+  async process(args: UserInfoExecutionArgs): Promise<UserInfoViewParams> {
+    let username = args.username;
     if (username === undefined) {
       const appUserInfoResponse = await this.getAppUserInfo.execute({
-        id: VkIdConverter.vkUserIdToAppUserId(params.vkUserId),
-        server: params.server,
+        id: VkIdConverter.vkUserIdToAppUserId(args.vkUserId),
+        server: args.server,
       });
       const boundUser = appUserInfoResponse.userInfo;
       if (boundUser === undefined) {
         return {
-          server: params.server,
+          server: args.server,
           usernameInput: undefined,
           userInfo: undefined,
         };
@@ -111,21 +111,21 @@ export class UserInfo extends VkCommand<
       username = boundUser.username;
     }
     const userInfoResponse = await this.getOsuUserInfo.execute({
-      server: params.server,
+      server: args.server,
       username: username,
     });
     const userInfo = userInfoResponse.userInfo;
     if (userInfo === undefined) {
       return {
-        server: params.server,
-        usernameInput: params.usernameInput,
+        server: args.server,
+        usernameInput: args.username,
         userInfo: undefined,
       };
     }
     const playtime = new Timespan().addSeconds(userInfo.playtimeSeconds);
     return {
-      server: params.server,
-      usernameInput: params.usernameInput,
+      server: args.server,
+      usernameInput: args.username,
       userInfo: {
         username: userInfo.username,
         rankGlobal: userInfo.rankGlobal,
@@ -235,9 +235,9 @@ https://osu.ppy.sh/u/${userId}
   }
 }
 
-interface UserInfoExecutionParams {
+interface UserInfoExecutionArgs {
   server: OsuServer;
-  usernameInput: string | undefined;
+  username: string | undefined;
   vkUserId: number;
 }
 
