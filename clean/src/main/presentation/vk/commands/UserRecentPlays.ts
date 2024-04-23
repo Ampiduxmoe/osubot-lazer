@@ -6,16 +6,27 @@ import {GetRecentPlaysUseCase} from '../../../domain/usecases/get_recent_plays/G
 import {OsuServer} from '../../../../primitives/OsuServer';
 import {APP_CODE_NAME} from '../../../App';
 import {SERVERS} from './base/OsuServers';
-import {uniquesFilter} from '../../../../primitives/Arrays';
 import {GetAppUserInfoUseCase} from '../../../domain/usecases/get_app_user_info/GetAppUserInfoUseCase';
 import {VkIdConverter} from '../VkIdConverter';
 import {clamp} from '../../../../primitives/Numbers';
 import {OsuUserRecentPlays} from '../../../domain/usecases/get_recent_plays/GetRecentPlaysResponse';
+import {
+  COMMAND_PREFIX,
+  MODS,
+  QUANTITY,
+  SERVER_PREFIX,
+  START_POSITION,
+  USERNAME,
+} from '../../common/arg_processing/CommandArguments';
+import {MainArgsProcessor} from '../../common/arg_processing/MainArgsProcessor';
 
 export class UserRecentPlays extends VkCommand<
   UserRecentPlaysExecutionParams,
   UserRecentPlaysViewParams
 > {
+  internalName = UserRecentPlays.name;
+  shortDescription = 'последние плеи';
+
   static recentPlaysPrefixes = ['r', 'recent'];
   static recentPassesPrefixes = ['rp', 'recentpass'];
   static prefixes = new CommandPrefixes([
@@ -23,6 +34,15 @@ export class UserRecentPlays extends VkCommand<
     ...UserRecentPlays.recentPassesPrefixes,
   ]);
   prefixes = UserRecentPlays.prefixes;
+
+  commandStructure = [
+    {argument: SERVER_PREFIX, isOptional: false},
+    {argument: COMMAND_PREFIX, isOptional: false},
+    {argument: USERNAME, isOptional: true},
+    {argument: START_POSITION, isOptional: true},
+    {argument: QUANTITY, isOptional: true},
+    {argument: MODS, isOptional: true},
+  ];
 
   getRecentPlays: GetRecentPlaysUseCase;
   getAppUserInfo: GetAppUserInfoUseCase;
@@ -49,43 +69,37 @@ export class UserRecentPlays extends VkCommand<
       return fail;
     }
 
-    const tokens = command.split(' ');
+    const splitSequence = ' ';
+    const tokens = command.split(splitSequence);
+    const argsProcessor = new MainArgsProcessor(
+      [...tokens],
+      this.commandStructure.map(e => e.argument)
+    );
+    const server = argsProcessor.use(SERVER_PREFIX).at(0).extract();
+    const commandPrefix = argsProcessor.use(COMMAND_PREFIX).at(0).extract();
+    const startPosition = argsProcessor.use(START_POSITION).extract();
+    const quantity = argsProcessor.use(QUANTITY).extract();
+    const mods = argsProcessor.use(MODS).extract();
+    const usernameParts: string[] = [];
+    let usernamePart = argsProcessor.use(USERNAME).extract();
+    while (usernamePart !== undefined) {
+      usernameParts.push(usernamePart);
+      usernamePart = argsProcessor.use(USERNAME).extract();
+    }
+    const username =
+      usernameParts.length === 0
+        ? undefined
+        : usernameParts.join(splitSequence);
 
-    const server = SERVERS.getServerByPrefixIgnoringCase(tokens[0]);
-    if (server === undefined) {
+    if (argsProcessor.remainingTokens.length > 0) {
       return fail;
     }
-    const commandPrefix = tokens[1] || '';
+    if (server === undefined || commandPrefix === undefined) {
+      return fail;
+    }
     if (!this.prefixes.matchIgnoringCase(commandPrefix)) {
       return fail;
     }
-    const username = tokens[2];
-
-    const startPositionString = tokens.find(t => t.startsWith('\\'));
-    const quantityString = tokens.find(t => t.startsWith(':'));
-    const modsString = tokens.find(t => t.startsWith('+'));
-    let startPosition: number | undefined = undefined;
-    let quantity: number | undefined = undefined;
-    let mods: string[] = [];
-    if (startPositionString !== undefined) {
-      const parseResult = parseInt(startPositionString.substring(1));
-      if (!isNaN(parseResult)) {
-        startPosition = parseResult;
-      }
-    }
-    if (quantityString !== undefined) {
-      const parseResult = parseInt(quantityString.substring(1));
-      if (!isNaN(parseResult)) {
-        quantity = parseResult;
-      }
-    }
-    if (modsString !== undefined) {
-      const matchedMods = modsString.substring(1).toUpperCase().match(/.{2}/g);
-      if (matchedMods) {
-        mods = matchedMods.flat().filter(uniquesFilter);
-      }
-    }
-
     return CommandMatchResult.ok({
       server: server,
       passesOnly: UserRecentPlays.recentPassesPrefixes.includes(commandPrefix),
@@ -117,7 +131,7 @@ export class UserRecentPlays extends VkCommand<
       }
       username = boundUser.username;
     }
-    const mods = params.mods;
+    const mods = params.mods || [];
     const startPosition = clamp(
       mods.length > 0 ? 1 : params.startPosition || 1,
       1,
@@ -258,7 +272,7 @@ interface UserRecentPlaysExecutionParams {
   vkUserId: number;
   startPosition: number | undefined;
   quantity: number | undefined;
-  mods: string[];
+  mods: string[] | undefined;
 }
 
 interface UserRecentPlaysViewParams {

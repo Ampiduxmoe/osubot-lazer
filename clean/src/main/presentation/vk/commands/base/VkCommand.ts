@@ -1,9 +1,13 @@
+import {CommandArgument} from '../../../common/arg_processing/CommandArgument';
 import {VkMessageContext} from '../../VkMessageContext';
 import {CommandMatchResult} from './CommandMatchResult';
 import {VkOutputMessage} from './VkOutputMessage';
 
 export abstract class VkCommand<TExecutionParams, TViewParams> {
+  abstract internalName: string;
+  abstract shortDescription: string;
   abstract prefixes: CommandPrefixes | undefined;
+  abstract commandStructure: CommandStructureElement[];
 
   abstract matchVkMessage(
     ctx: VkMessageContext
@@ -22,4 +26,9 @@ export class CommandPrefixes extends Array<string> {
   matchIgnoringCase(s: string) {
     return this.find(x => x.toLowerCase() === s.toLowerCase()) !== undefined;
   }
+}
+
+interface CommandStructureElement {
+  argument: CommandArgument<unknown>;
+  isOptional: boolean;
 }

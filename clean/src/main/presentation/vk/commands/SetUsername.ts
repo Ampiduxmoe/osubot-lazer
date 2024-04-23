@@ -4,16 +4,30 @@ import {VkOutputMessage} from './base/VkOutputMessage';
 import {VkCommand, CommandPrefixes} from './base/VkCommand';
 import {OsuServer} from '../../../../primitives/OsuServer';
 import {APP_CODE_NAME} from '../../../App';
-import {SERVERS} from './base/OsuServers';
 import {SetUsernameUseCase} from '../../../domain/usecases/set_username/SetUsernameUseCase';
 import {VkIdConverter} from '../VkIdConverter';
+import {
+  COMMAND_PREFIX,
+  SERVER_PREFIX,
+  USERNAME,
+} from '../../common/arg_processing/CommandArguments';
+import {MainArgsProcessor} from '../../common/arg_processing/MainArgsProcessor';
 
 export class SetUsername extends VkCommand<
   SetUsernameExecutionParams,
   SetUsernameViewParams
 > {
+  internalName = SetUsername.name;
+  shortDescription = 'установить ник';
+
   static prefixes = new CommandPrefixes(['n', 'nickname', 'username']);
   prefixes = SetUsername.prefixes;
+
+  commandStructure = [
+    {argument: SERVER_PREFIX, isOptional: false},
+    {argument: COMMAND_PREFIX, isOptional: false},
+    {argument: USERNAME, isOptional: false},
+  ];
 
   setUsername: SetUsernameUseCase;
   constructor(setUsername: SetUsernameUseCase) {
@@ -35,18 +49,36 @@ export class SetUsername extends VkCommand<
       return fail;
     }
 
-    const tokens = command.split(' ');
+    const splitSequence = ' ';
+    const tokens = command.split(splitSequence);
+    const argsProcessor = new MainArgsProcessor(
+      [...tokens],
+      this.commandStructure.map(e => e.argument)
+    );
+    const server = argsProcessor.use(SERVER_PREFIX).at(0).extract();
+    const commandPrefix = argsProcessor.use(COMMAND_PREFIX).at(0).extract();
+    const usernameParts: string[] = [];
+    let usernamePart = argsProcessor.use(USERNAME).extract();
+    while (usernamePart !== undefined) {
+      usernameParts.push(usernamePart);
+      usernamePart = argsProcessor.use(USERNAME).extract();
+    }
+    const username =
+      usernameParts.length === 0
+        ? undefined
+        : usernameParts.join(splitSequence);
 
-    const server = SERVERS.getServerByPrefixIgnoringCase(tokens[0]);
-    if (server === undefined) {
+    if (argsProcessor.remainingTokens.length > 0) {
       return fail;
     }
-    const commandPrefix = tokens[1] || '';
+    if (
+      server === undefined ||
+      commandPrefix === undefined ||
+      username === undefined
+    ) {
+      return fail;
+    }
     if (!this.prefixes.matchIgnoringCase(commandPrefix)) {
-      return fail;
-    }
-    const username = tokens[2];
-    if (username === undefined) {
       return fail;
     }
     return CommandMatchResult.ok({
