@@ -2,6 +2,9 @@ import {OsuServer} from '../../../../primitives/OsuServer';
 import {SERVERS} from '../../vk/commands/base/OsuServers';
 import {pickRandom, uniquesFilter} from '../../../../primitives/Arrays';
 import {CommandArgument} from './CommandArgument';
+import {SetUsername} from '../../vk/commands/SetUsername';
+import {UserInfo} from '../../vk/commands/UserInfo';
+import {UserRecentPlays} from '../../vk/commands/UserRecentPlays';
 
 export const SERVER_PREFIX: CommandArgument<OsuServer> = {
   displayName: 'server',
@@ -18,9 +21,16 @@ export const SERVER_PREFIX: CommandArgument<OsuServer> = {
 };
 
 export const COMMAND_PREFIX: CommandArgument<string> = {
-  displayName: '~',
+  displayName: 'command',
   description: 'буква или название команды',
-  usageExample: '~',
+  get usageExample(): string {
+    const somePrefixes = [
+      ...SetUsername.prefixes,
+      ...UserInfo.prefixes,
+      ...UserRecentPlays.prefixes,
+    ];
+    return pickRandom(somePrefixes);
+  },
   match: function (): boolean {
     return true;
   },

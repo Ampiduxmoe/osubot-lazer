@@ -19,8 +19,9 @@ export class SetUsername extends VkCommand<
 > {
   internalName = SetUsername.name;
   shortDescription = 'установить ник';
+  longDescription = 'Привязывает игровой никнейм к вашему аккаунту ВК';
 
-  static prefixes = new CommandPrefixes(['n', 'nickname', 'username']);
+  static prefixes = new CommandPrefixes('n', 'nickname');
   prefixes = SetUsername.prefixes;
 
   commandStructure = [

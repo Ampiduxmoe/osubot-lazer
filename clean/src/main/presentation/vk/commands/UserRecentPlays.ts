@@ -25,14 +25,19 @@ export class UserRecentPlays extends VkCommand<
   UserRecentPlaysViewParams
 > {
   internalName = UserRecentPlays.name;
-  shortDescription = 'последние плеи';
+  shortDescription = 'последние скоры';
+  longDescription =
+    'Отображает последние скоры игрока\n' +
+    'Используйте ' +
+    `${UserRecentPlays.recentPlaysPrefixes.join(' или ')} для всех скоров ` +
+    `и ${UserRecentPlays.recentPassesPrefixes.join(' или ')} только для пассов`;
 
-  static recentPlaysPrefixes = ['r', 'recent'];
-  static recentPassesPrefixes = ['rp', 'recentpass'];
-  static prefixes = new CommandPrefixes([
+  static recentPlaysPrefixes = new CommandPrefixes('r', 'recent');
+  static recentPassesPrefixes = new CommandPrefixes('rp', 'recentpass');
+  static prefixes = new CommandPrefixes(
     ...UserRecentPlays.recentPlaysPrefixes,
-    ...UserRecentPlays.recentPassesPrefixes,
-  ]);
+    ...UserRecentPlays.recentPassesPrefixes
+  );
   prefixes = UserRecentPlays.prefixes;
 
   commandStructure = [

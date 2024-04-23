@@ -17,6 +17,7 @@ import {OsuIdsAndUsernames} from './data/raw/db/tables/OsuIdsAndUsernames';
 import {AppUsersDaoImpl} from './data/dao/AppUsersDaoImpl';
 import {OsuRecentScoresDaoImpl} from './data/dao/OsuRecentScoresDaoImpl';
 import {CachedOsuIdsDaoImpl} from './data/dao/CachedOsuIdsDaoImpl';
+import {Help} from './presentation/vk/commands/Help';
 
 export const APP_CODE_NAME = 'osubot-lazer';
 
@@ -91,11 +92,13 @@ export class App {
       token: params.group.token,
     });
     const vkClient = new VkClient(vk);
-    vkClient.addCommands([
+    const commands = [
       new UserInfo(getOsuUserInfoUseCase, getAppUserInfoUseCase),
       new SetUsername(setUsernameUseCase),
       new UserRecentPlays(getRecentPlaysUseCase, getAppUserInfoUseCase),
-    ]);
+    ];
+    const helpCommand = new Help(commands);
+    vkClient.addCommands([helpCommand, ...commands]);
     return vkClient;
   }
 

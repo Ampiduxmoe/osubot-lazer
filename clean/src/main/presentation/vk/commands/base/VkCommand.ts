@@ -6,7 +6,8 @@ import {VkOutputMessage} from './VkOutputMessage';
 export abstract class VkCommand<TExecutionArgs, TViewParams> {
   abstract internalName: string;
   abstract shortDescription: string;
-  abstract prefixes: CommandPrefixes | undefined;
+  abstract longDescription: string;
+  abstract prefixes: CommandPrefixes;
   abstract commandStructure: CommandStructureElement[];
 
   abstract matchVkMessage(
@@ -17,7 +18,7 @@ export abstract class VkCommand<TExecutionArgs, TViewParams> {
 }
 
 export class CommandPrefixes extends Array<string> {
-  constructor(prefixes: string[]) {
+  constructor(...prefixes: string[]) {
     super(...prefixes);
   }
   match(s: string) {

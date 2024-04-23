@@ -23,8 +23,9 @@ export class UserInfo extends VkCommand<
 > {
   internalName = UserInfo.name;
   shortDescription = 'статы игрока';
+  longDescription = 'Отображает основную информацию об игроке';
 
-  static prefixes = new CommandPrefixes(['u', 'user']);
+  static prefixes = new CommandPrefixes('u', 'user');
   prefixes = UserInfo.prefixes;
 
   commandStructure = [
