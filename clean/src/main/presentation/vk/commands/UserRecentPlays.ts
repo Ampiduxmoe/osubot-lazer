@@ -11,7 +11,7 @@ import {VkIdConverter} from '../VkIdConverter';
 import {clamp} from '../../../../primitives/Numbers';
 import {OsuUserRecentPlays} from '../../../domain/usecases/get_recent_plays/GetRecentPlaysResponse';
 import {
-  COMMAND_PREFIX,
+  OWN_COMMAND_PREFIX,
   MODS,
   QUANTITY,
   SERVER_PREFIX,
@@ -42,7 +42,7 @@ export class UserRecentPlays extends VkCommand<
 
   commandStructure = [
     {argument: SERVER_PREFIX, isOptional: false},
-    {argument: COMMAND_PREFIX, isOptional: false},
+    {argument: OWN_COMMAND_PREFIX, isOptional: false},
     {argument: USERNAME, isOptional: true},
     {argument: START_POSITION, isOptional: true},
     {argument: QUANTITY, isOptional: true},
@@ -81,7 +81,7 @@ export class UserRecentPlays extends VkCommand<
       this.commandStructure.map(e => e.argument)
     );
     const server = argsProcessor.use(SERVER_PREFIX).at(0).extract();
-    const commandPrefix = argsProcessor.use(COMMAND_PREFIX).at(0).extract();
+    const commandPrefix = argsProcessor.use(OWN_COMMAND_PREFIX).at(0).extract();
     const startPosition = argsProcessor.use(START_POSITION).extract();
     const quantity = argsProcessor.use(QUANTITY).extract();
     const mods = argsProcessor.use(MODS).extract();

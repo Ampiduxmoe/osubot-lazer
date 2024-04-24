@@ -11,7 +11,7 @@ import {UserRecentPlays} from './UserRecentPlays';
 import {GetAppUserInfoUseCase} from '../../../domain/usecases/get_app_user_info/GetAppUserInfoUseCase';
 import {VkIdConverter} from '../VkIdConverter';
 import {
-  COMMAND_PREFIX,
+  OWN_COMMAND_PREFIX,
   SERVER_PREFIX,
   USERNAME,
 } from '../../common/arg_processing/CommandArguments';
@@ -30,7 +30,7 @@ export class UserInfo extends VkCommand<
 
   commandStructure = [
     {argument: SERVER_PREFIX, isOptional: false},
-    {argument: COMMAND_PREFIX, isOptional: false},
+    {argument: OWN_COMMAND_PREFIX, isOptional: false},
     {argument: USERNAME, isOptional: true},
   ];
 
@@ -66,7 +66,7 @@ export class UserInfo extends VkCommand<
       this.commandStructure.map(e => e.argument)
     );
     const server = argsProcessor.use(SERVER_PREFIX).at(0).extract();
-    const commandPrefix = argsProcessor.use(COMMAND_PREFIX).at(0).extract();
+    const commandPrefix = argsProcessor.use(OWN_COMMAND_PREFIX).at(0).extract();
     const usernameParts: string[] = [];
     let usernamePart = argsProcessor.use(USERNAME).extract();
     while (usernamePart !== undefined) {

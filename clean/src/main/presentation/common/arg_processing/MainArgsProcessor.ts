@@ -43,6 +43,10 @@ class MainValueExtractor<T> implements ValueExtractor<T> {
       this.index = matchingTokenIndex;
       alreadyMatched = true;
     }
+    const index = this.index!;
+    if (index < 0 || index >= this.tokensRef.length) {
+      return undefined;
+    }
     const token = this.tokensRef[this.index!];
     if (alreadyMatched || this.arg.match(token)) {
       return this.arg.parse(token);

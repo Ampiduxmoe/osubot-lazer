@@ -5,6 +5,8 @@ import {CommandArgument} from './CommandArgument';
 import {SetUsername} from '../../vk/commands/SetUsername';
 import {UserInfo} from '../../vk/commands/UserInfo';
 import {UserRecentPlays} from '../../vk/commands/UserRecentPlays';
+import {Help} from '../../vk/commands/Help';
+import {CommandPrefixes} from '../../vk/commands/base/VkCommand';
 
 export const SERVER_PREFIX: CommandArgument<OsuServer> = {
   displayName: 'server',
@@ -20,7 +22,19 @@ export const SERVER_PREFIX: CommandArgument<OsuServer> = {
   },
 };
 
-export const COMMAND_PREFIX: CommandArgument<string> = {
+export const OWN_COMMAND_PREFIX: CommandArgument<string> = {
+  displayName: '~',
+  description: '~',
+  usageExample: '~',
+  match: function (): boolean {
+    return true;
+  },
+  parse: function (token: string): string {
+    return token;
+  },
+};
+
+export const VK_FOREIGN_COMMAND_PREFIX: CommandArgument<string> = {
   displayName: 'command',
   description: 'буква или название команды',
   get usageExample(): string {
@@ -31,8 +45,14 @@ export const COMMAND_PREFIX: CommandArgument<string> = {
     ];
     return pickRandom(somePrefixes);
   },
-  match: function (): boolean {
-    return true;
+  match: function (token: string): boolean {
+    const allPrefixes = new CommandPrefixes(
+      ...Help.prefixes,
+      ...SetUsername.prefixes,
+      ...UserInfo.prefixes,
+      ...UserRecentPlays.prefixes
+    );
+    return allPrefixes.matchIgnoringCase(token);
   },
   parse: function (token: string): string {
     return token;

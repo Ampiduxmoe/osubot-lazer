@@ -3,8 +3,12 @@ import {CommandMatchResult} from './base/CommandMatchResult';
 import {VkOutputMessage} from './base/VkOutputMessage';
 import {VkCommand, CommandPrefixes} from './base/VkCommand';
 import {APP_CODE_NAME} from '../../../App';
-import {COMMAND_PREFIX} from '../../common/arg_processing/CommandArguments';
+import {
+  VK_FOREIGN_COMMAND_PREFIX,
+  OWN_COMMAND_PREFIX,
+} from '../../common/arg_processing/CommandArguments';
 import {pickRandom} from '../../../../primitives/Arrays';
+import {MainArgsProcessor} from '../../common/arg_processing/MainArgsProcessor';
 
 export class Help extends VkCommand<HelpExecutionArgs, HelpViewParams> {
   internalName = Help.name;
@@ -15,8 +19,8 @@ export class Help extends VkCommand<HelpExecutionArgs, HelpViewParams> {
   prefixes = Help.prefixes;
 
   commandStructure = [
-    {argument: COMMAND_PREFIX, isOptional: false},
-    {argument: COMMAND_PREFIX, isOptional: true},
+    {argument: OWN_COMMAND_PREFIX, isOptional: false},
+    {argument: VK_FOREIGN_COMMAND_PREFIX, isOptional: true},
   ];
 
   commands: VkCommand<unknown, unknown>[];
@@ -37,11 +41,11 @@ export class Help extends VkCommand<HelpExecutionArgs, HelpViewParams> {
       return fail;
     }
 
-    command = command.toLowerCase();
+    let commandWithoutOwnPrefix = command.toLowerCase();
     let isMatch = false;
     for (const prefix of this.prefixes.map(x => x).reverse()) {
-      if (command.startsWith(prefix)) {
-        command = command.replace(prefix, '');
+      if (commandWithoutOwnPrefix.startsWith(prefix)) {
+        commandWithoutOwnPrefix = commandWithoutOwnPrefix.replace(prefix, '');
         isMatch = true;
         break;
       }
@@ -49,12 +53,18 @@ export class Help extends VkCommand<HelpExecutionArgs, HelpViewParams> {
     if (!isMatch) {
       return fail;
     }
-    if (command.length === 0) {
-      return CommandMatchResult.ok({
-        commandPrefix: undefined,
-      });
-    }
-    const commandPrefix = command.trim();
+    const splitSequence = ' ';
+    const tokens = commandWithoutOwnPrefix
+      .split(splitSequence)
+      .filter(s => s !== '');
+    const argsProcessor = new MainArgsProcessor(
+      [...tokens],
+      this.commandStructure.map(e => e.argument)
+    );
+    const commandPrefix = argsProcessor
+      .use(VK_FOREIGN_COMMAND_PREFIX)
+      .at(0)
+      .extract();
 
     return CommandMatchResult.ok({
       commandPrefix: commandPrefix,
@@ -129,12 +139,10 @@ ${commandBriefs.join('\n')}
     const structureElements: string[] = [];
     const usageElements: string[] = [];
     const argDescriptions: string[] = [];
-    let mainPrefixSeen = false;
     let hasOptionalArgs = false;
     for (const structureElement of command.commandStructure) {
       const {argument, isOptional} = structureElement;
-      if (argument === COMMAND_PREFIX && !mainPrefixSeen) {
-        mainPrefixSeen = true;
+      if (argument === OWN_COMMAND_PREFIX) {
         structureElements.push(command.prefixes.join('|'));
         usageElements.push(pickRandom(command.prefixes));
         continue;
