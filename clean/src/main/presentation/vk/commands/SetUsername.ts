@@ -72,11 +72,7 @@ export class SetUsername extends VkCommand<
     if (argsProcessor.remainingTokens.length > 0) {
       return fail;
     }
-    if (
-      server === undefined ||
-      commandPrefix === undefined ||
-      username === undefined
-    ) {
+    if (server === undefined || commandPrefix === undefined) {
       return fail;
     }
     if (!this.prefixes.matchIgnoringCase(commandPrefix)) {
@@ -92,6 +88,13 @@ export class SetUsername extends VkCommand<
   async process(
     args: SetUsernameExecutionArgs
   ): Promise<SetUsernameViewParams> {
+    if (args.username === undefined) {
+      return {
+        server: args.server,
+        usernameInput: undefined,
+        username: undefined,
+      };
+    }
     const result = await this.setUsername.execute({
       id: VkIdConverter.vkUserIdToAppUserId(args.vkUserId),
       server: args.server,
@@ -99,30 +102,34 @@ export class SetUsername extends VkCommand<
     });
     if (result.isFailure) {
       const internalFailureReason = result.failureReason!;
-      let failureReason: SetUsernameFailureReason;
       switch (internalFailureReason) {
         case 'user not found':
-          failureReason = 'user not found';
-          break;
+          return {
+            server: args.server,
+            usernameInput: args.username,
+            username: undefined,
+          };
         default:
           throw Error('Switch case is not exhaustive');
       }
-      return {
-        server: args.server,
-        failureReason: failureReason,
-      };
     }
     const username = result.username!;
     return {
       server: args.server,
+      usernameInput: args.username,
       username: username,
     };
   }
 
   createOutputMessage(params: SetUsernameViewParams): VkOutputMessage {
-    const serverString = OsuServer[params.server];
-    const {username} = params;
-
+    const {server, usernameInput, username} = params;
+    if (username === undefined) {
+      if (usernameInput === undefined) {
+        return this.createUsernameNotSpecifiedMessage(server);
+      }
+      return this.createUserNotFoundMessage(server, usernameInput);
+    }
+    const serverString = OsuServer[server];
     const text = `
 [Server: ${serverString}]
 Установлен ник ${username}
@@ -134,18 +141,45 @@ export class SetUsername extends VkCommand<
       buttons: undefined,
     };
   }
+
+  createUsernameNotSpecifiedMessage(server: OsuServer): VkOutputMessage {
+    const serverString = OsuServer[server];
+    const text = `
+[Server: ${serverString}]
+Не указан ник!
+    `.trim();
+    return {
+      text: text,
+      attachment: undefined,
+      buttons: undefined,
+    };
+  }
+
+  createUserNotFoundMessage(
+    server: OsuServer,
+    usernameInput: string
+  ): VkOutputMessage {
+    const serverString = OsuServer[server];
+    const text = `
+[Server: ${serverString}]
+Пользователь с ником ${usernameInput} не найден
+    `.trim();
+    return {
+      text: text,
+      attachment: undefined,
+      buttons: undefined,
+    };
+  }
 }
 
 interface SetUsernameExecutionArgs {
   vkUserId: number;
   server: OsuServer;
-  username: string;
+  username: string | undefined;
 }
 
 interface SetUsernameViewParams {
   server: OsuServer;
-  username?: string;
-  failureReason?: SetUsernameFailureReason;
+  usernameInput: string | undefined;
+  username: string | undefined;
 }
-
-type SetUsernameFailureReason = 'user not found';
