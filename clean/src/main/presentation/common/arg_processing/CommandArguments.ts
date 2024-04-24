@@ -55,7 +55,13 @@ export const USERNAME: CommandArgument<string> = {
       'Flaro',
       'aknzx',
     ];
-    return pickRandom(someUsernames);
+    const username = pickRandom(someUsernames);
+    return pickRandom([
+      username.toLowerCase(),
+      username.toUpperCase(),
+      username,
+      username,
+    ]);
   },
   match: function (token: string): boolean {
     const invalidUsernameRegex = /[^a-zA-Z0-9_ [\-\]]/;
@@ -68,9 +74,9 @@ export const USERNAME: CommandArgument<string> = {
 
 export const START_POSITION: CommandArgument<number> = {
   displayName: '\\position',
-  description: 'номер скора, с которой начинать поиск',
+  description: 'номер скора, с которого начинать поиск',
   get usageExample(): string {
-    const randPos = 1 + Math.floor(Math.random() * 89);
+    const randPos = 1 + Math.floor(Math.random() * 9);
     return `\\${randPos}`;
   },
   match: function (token: string): boolean {
@@ -114,10 +120,9 @@ export const MODS: CommandArgument<string[]> = {
   displayName: '+mods',
   description: 'список модов (одной строкой без пробелов)',
   get usageExample(): string {
-    const maybeNf = pickRandom(['nf', 'NF', '']);
     const maybeHd = pickRandom(['hd', 'HD', '']);
     const dtOrHr = pickRandom(['dt', 'DT', 'hr', 'HR']);
-    return `+${maybeNf}${maybeHd}${dtOrHr}`;
+    return `+${maybeHd}${dtOrHr}`;
   },
   match: function (token: string): boolean {
     const modsRegex = /^\+([a-zA-Z]{2})+$/;
