@@ -15,7 +15,7 @@ export class Help extends VkCommand<HelpExecutionArgs, HelpViewParams> {
   shortDescription = 'информация о командах';
   longDescription = 'Отображает информацию о доступных командах';
 
-  static prefixes = new CommandPrefixes('osubot', 'osubot help');
+  static prefixes = new CommandPrefixes('osubot', 'osubot-help');
   prefixes = Help.prefixes;
 
   commandStructure = [
@@ -40,32 +40,30 @@ export class Help extends VkCommand<HelpExecutionArgs, HelpViewParams> {
     if (command === undefined) {
       return fail;
     }
-
-    let commandWithoutOwnPrefix = command.toLowerCase();
-    let isMatch = false;
-    for (const prefix of this.prefixes.map(x => x).reverse()) {
-      if (commandWithoutOwnPrefix.startsWith(prefix)) {
-        commandWithoutOwnPrefix = commandWithoutOwnPrefix.replace(prefix, '');
-        isMatch = true;
-        break;
-      }
-    }
-    if (!isMatch) {
-      return fail;
-    }
     const splitSequence = ' ';
-    const tokens = commandWithoutOwnPrefix
-      .split(splitSequence)
-      .filter(s => s !== '');
+    const tokens = command.split(splitSequence);
     const argsProcessor = new MainArgsProcessor(
       [...tokens],
       this.commandStructure.map(e => e.argument)
     );
+    const ownCommandPrefix = argsProcessor
+      .use(OWN_COMMAND_PREFIX)
+      .at(0)
+      .extract();
     const commandPrefix = argsProcessor
       .use(VK_FOREIGN_COMMAND_PREFIX)
       .at(0)
       .extract();
 
+    if (argsProcessor.remainingTokens.length > 0) {
+      return fail;
+    }
+    if (ownCommandPrefix === undefined) {
+      return fail;
+    }
+    if (!this.prefixes.matchIgnoringCase(ownCommandPrefix)) {
+      return fail;
+    }
     return CommandMatchResult.ok({
       commandPrefix: commandPrefix,
     });
