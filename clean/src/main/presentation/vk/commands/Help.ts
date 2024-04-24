@@ -84,27 +84,30 @@ export class Help extends VkCommand<HelpExecutionArgs, HelpViewParams> {
     for (const command of this.commands) {
       if (command.prefixes.matchIgnoringCase(prefixToDescribe)) {
         return {
+          commandPrefixInput: prefixToDescribe,
           command: command,
         };
       }
     }
-    return {};
+    return {
+      commandPrefixInput: prefixToDescribe,
+    };
   }
 
   createOutputMessage(params: HelpViewParams): VkOutputMessage {
-    const {commandList, command} = params;
+    const {commandList, commandPrefixInput, command} = params;
     if (commandList !== undefined) {
       return this.createCommandListMessage(commandList);
     }
     if (command !== undefined) {
-      return this.createCommandDescriptionMessage(command);
+      return this.createCommandDescriptionMessage(commandPrefixInput!, command);
     }
-    return this.createCommandNotFoundMessage();
+    return this.createCommandNotFoundMessage(commandPrefixInput!);
   }
 
-  createCommandNotFoundMessage(): VkOutputMessage {
+  createCommandNotFoundMessage(commandPrefixInput: string): VkOutputMessage {
     return {
-      text: 'Команда не найдена',
+      text: `Команда ${commandPrefixInput} не найдена`,
       attachment: undefined,
       buttons: [[{text: 'Список команд', command: this.prefixes[0]}]],
     };
@@ -132,6 +135,7 @@ ${commandBriefs.join('\n')}
   }
 
   createCommandDescriptionMessage(
+    commandPrefixInput: string,
     command: VkCommand<unknown, unknown>
   ): VkOutputMessage {
     const structureElements: string[] = [];
@@ -163,6 +167,7 @@ ${commandBriefs.join('\n')}
       ? 'Аргументы в [квадратных скобках] указывать не обязательно\n'
       : '';
     const text = `
+Команда ${commandPrefixInput.toLowerCase()}
 ${description}
 
 Использование:
@@ -185,5 +190,6 @@ interface HelpExecutionArgs {
 
 interface HelpViewParams {
   commandList?: VkCommand<unknown, unknown>[];
+  commandPrefixInput?: string;
   command?: VkCommand<unknown, unknown>;
 }

@@ -29,8 +29,10 @@ export class UserRecentPlays extends VkCommand<
   longDescription =
     'Отображает последние скоры игрока\n' +
     'Используйте ' +
-    `${UserRecentPlays.recentPlaysPrefixes.join(' или ')} для всех скоров ` +
-    `и ${UserRecentPlays.recentPassesPrefixes.join(' или ')} только для пассов`;
+    UserRecentPlays.recentPlaysPrefixes.map(s => `"${s}"`).join(' или ') +
+    ' для всех скоров, и ' +
+    UserRecentPlays.recentPassesPrefixes.map(s => `"${s}"`).join(' или ') +
+    ' для пассов';
 
   static recentPlaysPrefixes = new CommandPrefixes('r', 'recent');
   static recentPassesPrefixes = new CommandPrefixes('rp', 'recentpass');
