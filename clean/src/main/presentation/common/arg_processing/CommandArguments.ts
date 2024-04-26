@@ -1,5 +1,5 @@
 import {OsuServer} from '../../../../primitives/OsuServer';
-import {SERVERS} from '../../vk/commands/base/OsuServers';
+import {SERVERS} from '../OsuServers';
 import {pickRandom, uniquesFilter} from '../../../../primitives/Arrays';
 import {CommandArgument} from './CommandArgument';
 import {SetUsername} from '../../vk/commands/SetUsername';

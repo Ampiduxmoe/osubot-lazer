@@ -1,4 +1,4 @@
-import {OsuServer} from '../../../../../primitives/OsuServer';
+import {OsuServer} from '../../../primitives/OsuServer';
 
 interface ServerWithPrefix {
   server: OsuServer;

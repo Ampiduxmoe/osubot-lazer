@@ -1,6 +1,6 @@
 import {CommandArgument} from '../../../common/arg_processing/CommandArgument';
 import {VkMessageContext} from '../../VkMessageContext';
-import {CommandMatchResult} from './CommandMatchResult';
+import {CommandMatchResult} from '../../../common/CommandMatchResult';
 import {VkOutputMessage} from './VkOutputMessage';
 
 export abstract class VkCommand<TExecutionArgs, TViewParams> {

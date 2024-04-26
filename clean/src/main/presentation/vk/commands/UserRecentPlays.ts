@@ -1,11 +1,11 @@
 import {VkMessageContext} from '../VkMessageContext';
-import {CommandMatchResult} from './base/CommandMatchResult';
+import {CommandMatchResult} from '../../common/CommandMatchResult';
 import {VkOutputMessage} from './base/VkOutputMessage';
 import {CommandPrefixes, VkCommand} from './base/VkCommand';
 import {GetRecentPlaysUseCase} from '../../../domain/usecases/get_recent_plays/GetRecentPlaysUseCase';
 import {OsuServer} from '../../../../primitives/OsuServer';
 import {APP_CODE_NAME} from '../../../App';
-import {SERVERS} from './base/OsuServers';
+import {SERVERS} from '../../common/OsuServers';
 import {GetAppUserInfoUseCase} from '../../../domain/usecases/get_app_user_info/GetAppUserInfoUseCase';
 import {VkIdConverter} from '../VkIdConverter';
 import {clamp} from '../../../../primitives/Numbers';

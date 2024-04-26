@@ -1,5 +1,5 @@
 import {VkMessageContext} from '../VkMessageContext';
-import {CommandMatchResult} from './base/CommandMatchResult';
+import {CommandMatchResult} from '../../common/CommandMatchResult';
 import {VkOutputMessage} from './base/VkOutputMessage';
 import {VkCommand, CommandPrefixes} from './base/VkCommand';
 import {APP_CODE_NAME} from '../../../App';
