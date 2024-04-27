@@ -52,16 +52,21 @@ export class VkClient {
           command.internalName
         } (args=${JSON.stringify(executionArgs)})`
       );
-      const viewParams = await command.process(executionArgs);
-      const outputMessage = command.createOutputMessage(viewParams);
-      if (!outputMessage.text && !outputMessage.attachment) {
-        return;
+      try {
+        const viewParams = await command.process(executionArgs);
+        const outputMessage = command.createOutputMessage(viewParams);
+        if (!outputMessage.text && !outputMessage.attachment) {
+          return;
+        }
+        const text = outputMessage.text || '';
+        const attachment = outputMessage.attachment;
+        const buttons = outputMessage.buttons;
+        const keyboard = buttons && this.createKeyboard(buttons);
+        await ctx.reply(text, {attachment, keyboard});
+      } catch (e) {
+        console.error(e);
+        await ctx.reply('Произошла ошибка при выполнении команды');
       }
-      const text = outputMessage.text || '';
-      const attachment = outputMessage.attachment;
-      const buttons = outputMessage.buttons;
-      const keyboard = buttons && this.createKeyboard(buttons);
-      await ctx.reply(text, {attachment, keyboard});
     }
   }
 
