@@ -4,6 +4,7 @@ import {GetRecentPlaysResponse, RecentPlay} from './GetRecentPlaysResponse';
 import {OsuRecentScoresDao} from '../../../data/dao/OsuRecentScoresDao';
 import {CachedOsuIdsDao} from '../../../data/dao/CachedOsuIdsDao';
 import {OsuUsersDao} from '../../../data/dao/OsuUsersDao';
+import {OsuRuleset} from '../../../../primitives/OsuRuleset';
 
 export class GetRecentPlaysUseCase
   implements UseCase<GetRecentPlaysRequest, GetRecentPlaysResponse>
@@ -29,7 +30,11 @@ export class GetRecentPlaysUseCase
     let osuId = osuIdAndUsername?.id;
     let caseCorrectUsername = osuIdAndUsername?.username;
     if (osuId === undefined || caseCorrectUsername === undefined) {
-      const osuUser = await this.osuUsers.getByUsername(username, server);
+      const osuUser = await this.osuUsers.getByUsername(
+        username,
+        server,
+        OsuRuleset.osu
+      );
       if (osuUser === undefined) {
         return {
           isFailure: true,
@@ -39,6 +44,8 @@ export class GetRecentPlaysUseCase
       osuId = osuUser.id;
       caseCorrectUsername = osuUser.username;
     }
+    osuId = osuId!;
+    caseCorrectUsername = caseCorrectUsername!;
     const rawRecentScores = await this.recentScores.getByUserId(
       osuId,
       server,
@@ -46,11 +53,36 @@ export class GetRecentPlaysUseCase
       params.startPosition,
       params.quantity
     );
-    const recentPlays = rawRecentScores.map(s => {
+    const recentPlays = rawRecentScores.map(() => {
       const osuUserRecentScore: RecentPlay = {
-        score: s.score,
-        pp: s.pp || 0,
-        accuracy: s.accuracy,
+        beatmapset: {
+          status: 'Ranked',
+          artist: '',
+          title: '',
+          creator: '',
+        },
+        beatmap: {
+          difficultyName: '',
+          length: NaN,
+          bpm: NaN,
+          stars: NaN,
+          ar: NaN,
+          cs: NaN,
+          od: NaN,
+          hp: NaN,
+          maxCombo: NaN,
+          url: '',
+        },
+        mods: [],
+        totalScore: NaN,
+        combo: NaN,
+        accuracy: NaN,
+        pp: {
+          value: NaN,
+          ifFc: NaN,
+          ifSs: NaN,
+        },
+        grade: 'F',
       };
       return osuUserRecentScore;
     });

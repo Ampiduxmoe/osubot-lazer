@@ -123,6 +123,27 @@ export class UserInfo extends VkCommand<
         userInfo: undefined,
       };
     }
+    let maybeRankGlobalHighest = userInfo.rankGlobalHighest;
+    let rankHighestDateInLocalFormat: string | undefined = undefined;
+    if (userInfo.rankGlobalHighestDate !== undefined) {
+      const date = new Date(userInfo.rankGlobalHighestDate);
+      const now = Date.now();
+      const threeMonthsMillis = new Timespan().addDays(90).totalMiliseconds();
+      if (
+        now - date.getTime() < threeMonthsMillis ||
+        userInfo.rankGlobal === maybeRankGlobalHighest
+      ) {
+        maybeRankGlobalHighest = undefined;
+      } else {
+        const day = date.getUTCDate();
+        const dayFormatted = (day > 9 ? '' : '0') + day;
+        const month = date.getUTCMonth() + 1;
+        const monthFormatted = (month > 9 ? '' : '0') + month;
+        const year = date.getUTCFullYear();
+        rankHighestDateInLocalFormat = `${dayFormatted}.${monthFormatted}.${year}`;
+      }
+    }
+
     const playtime = new Timespan().addSeconds(userInfo.playtimeSeconds);
     return {
       server: args.server,
@@ -130,10 +151,12 @@ export class UserInfo extends VkCommand<
       userInfo: {
         username: userInfo.username,
         rankGlobal: userInfo.rankGlobal,
+        rankGlobalHighest: maybeRankGlobalHighest,
+        rankGlobalHighestDate: rankHighestDateInLocalFormat,
         countryCode: userInfo.countryCode,
         rankCountry: userInfo.rankCountry,
         playcount: userInfo.playcount,
-        lvl: userInfo.lvl,
+        lvl: userInfo.level,
         playtimeDays: playtime.days,
         playtimeHours: playtime.hours,
         playtimeMinutes: playtime.minutes,
@@ -158,16 +181,22 @@ export class UserInfo extends VkCommand<
     const serverString = OsuServer[params.server];
     const {username} = userInfo;
     const {rankGlobal, countryCode, rankCountry} = userInfo;
+    const {rankGlobalHighest, rankGlobalHighestDate} = userInfo;
     const {playcount, lvl} = userInfo;
     const {playtimeDays, playtimeHours, playtimeMinutes} = userInfo;
     const pp = userInfo.pp.toFixed(2);
     const accuracy = userInfo.accuracy.toFixed(2);
     const {userId} = userInfo;
 
+    const maybePeakRankString =
+      rankGlobalHighest === undefined
+        ? ''
+        : `\nPeak rank: #${rankGlobalHighest} (${rankGlobalHighestDate})`;
+
     const text = `
 [Server: ${serverString}]
 Player: ${username} (STD)
-Rank: #${rankGlobal} (${countryCode} #${rankCountry})
+Rank: #${rankGlobal} (${countryCode} #${rankCountry})${maybePeakRankString}
 Playcount: ${playcount} (Lv${lvl})
 Playtime: ${playtimeDays}d ${playtimeHours}h ${playtimeMinutes}m
 PP: ${pp}
@@ -251,6 +280,8 @@ interface UserInfoViewParams {
 interface OsuUserInfo {
   username: string;
   rankGlobal: number;
+  rankGlobalHighest: number | undefined;
+  rankGlobalHighestDate: string | undefined;
   countryCode: string;
   rankCountry: number;
   playcount: number;

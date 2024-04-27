@@ -6,6 +6,8 @@ import {
   OsuIdAndUsername,
   OsuIdAndUsernameKey,
 } from '../raw/db/entities/OsuIdAndUsername';
+import {OsuRuleset} from '../../../primitives/OsuRuleset';
+import {OsuUserInfo} from '../raw/http/boundary/OsuUserInfo';
 
 export class OsuUsersDaoImpl implements OsuUsersDao {
   private apis: OsuApi[];
@@ -22,26 +24,28 @@ export class OsuUsersDaoImpl implements OsuUsersDao {
   }
   async getByUsername(
     username: string,
-    server: OsuServer
+    server: OsuServer,
+    ruleset: OsuRuleset
   ): Promise<OsuUser | undefined> {
     const api = this.apis.find(api => api.server === server);
     if (api === undefined) {
       throw Error(`Could not find API for server ${OsuServer[server]}`);
     }
-    const user = await api.getUser(username);
-    if (user === undefined) {
+    const userInfo = await api.getUser(username, ruleset);
+    if (userInfo === undefined) {
       return undefined;
     }
-    const osuUser = user as OsuUser;
-    osuUser.server = server;
-    await this.cacheUserId(osuUser);
-    return osuUser;
+    await this.cacheUserId(userInfo, server);
+    return userInfo as OsuUser;
   }
-  private async cacheUserId(osuUser: OsuUser): Promise<void> {
+  private async cacheUserId(
+    osuUserInfo: OsuUserInfo,
+    server: OsuServer
+  ): Promise<void> {
     const newOsuIdAndUsername: OsuIdAndUsername = {
-      username: osuUser.username,
-      server: osuUser.server,
-      id: osuUser.id,
+      username: osuUserInfo.username,
+      server: server,
+      id: osuUserInfo.id,
     };
     const existingIdAndUsername = await this.osuIdsAndUsernamesTable.get(
       newOsuIdAndUsername as OsuIdAndUsernameKey

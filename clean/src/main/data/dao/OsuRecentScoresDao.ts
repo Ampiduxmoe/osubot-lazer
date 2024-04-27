@@ -1,7 +1,6 @@
 import {OsuServer} from '../../../primitives/OsuServer';
-import {UserScore} from 'osu-web.js';
 
-export type OsuRecentScore = UserScore;
+export type OsuRecentScore = unknown;
 
 export interface OsuRecentScoresDao {
   getByUserId(

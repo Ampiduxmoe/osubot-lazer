@@ -18,7 +18,8 @@ export class SetUsernameUseCase
   async execute(params: SetUsernameRequest): Promise<SetUsernameResponse> {
     const osuUser = await this.osuUsers.getByUsername(
       params.username,
-      params.server
+      params.server,
+      OsuRuleset.osu
     );
     if (osuUser === undefined) {
       return {

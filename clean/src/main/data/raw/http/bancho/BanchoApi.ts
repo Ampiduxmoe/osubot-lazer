@@ -1,76 +1,44 @@
-import {
-  Auth,
-  Client,
-  OsuJSUnexpectedResponseError,
-  UserExtended,
-  UserScore,
-} from 'osu-web.js';
-import {OsuOauthAccessToken} from '../OsuOauthAccessToken';
 import {OsuApi} from '../OsuAPI';
 import {OsuServer} from '../../../../../primitives/OsuServer';
+import {BanchoClient} from './client/BanchoClient';
+import {OsuRuleset} from '../../../../../primitives/OsuRuleset';
+import {OsuUserInfo} from '../boundary/OsuUserInfo';
 
 export class BanchoApi implements OsuApi {
-  private ouathClientId: number;
-  private oauthClientSecret: string;
-  private ouathToken: OsuOauthAccessToken | undefined = undefined;
-
-  private client: Client = new Client('');
-
+  private client: BanchoClient;
   constructor(ouathClientId: number, oauthClientSecret: string) {
-    this.ouathClientId = ouathClientId;
-    this.oauthClientSecret = oauthClientSecret;
+    this.client = new BanchoClient(ouathClientId, oauthClientSecret);
   }
 
   server: OsuServer = OsuServer.Bancho;
 
-  private async refreshTokenIfNeeded(): Promise<void> {
-    if (this.ouathToken === undefined || !this.ouathToken.isValid()) {
-      await this.refreshToken();
+  async getUser(
+    username: string,
+    ruleset: OsuRuleset
+  ): Promise<OsuUserInfo | undefined> {
+    const user = await this.client.users.getByUsername(username, ruleset);
+    if (user === undefined) {
+      return undefined;
     }
-  }
-
-  private async refreshToken() {
-    console.log('Refreshing Bancho OAuth token...');
-    const token = await this.fetchToken();
-    this.trySetToken(token);
-  }
-
-  private async fetchToken(): Promise<OsuOauthAccessToken> {
-    const auth = new Auth(this.ouathClientId, this.oauthClientSecret, '');
-    const rawToken = await auth.clientCredentialsGrant();
-    const token = new OsuOauthAccessToken(rawToken);
-    /*
-      TODO: cache token
-    */
-    return token;
-  }
-
-  private trySetToken(token: OsuOauthAccessToken) {
-    if (!token.isValid()) {
-      console.log('Can not set OAuth token: expiration date reached');
-      return;
-    }
-    this.ouathToken = token;
-    this.client = new Client(token.value);
-    console.log('Sucessfully set token!');
-  }
-
-  async getUser(username: string): Promise<UserExtended | undefined> {
-    console.log(`Trying to fetch Bancho user ${username}`);
-    await this.refreshTokenIfNeeded();
-    let user: UserExtended;
-    try {
-      user = await this.client.users.getUser(username);
-    } catch (e) {
-      if (
-        e instanceof OsuJSUnexpectedResponseError &&
-        e.response().status === 404
-      ) {
-        return undefined;
-      }
-      throw e;
-    }
-    return user;
+    return {
+      id: user.id,
+      username: user.username,
+      countryCode: user.country_code,
+      rankGlobal: user.statistics.global_rank || NaN,
+      rankGlobalHighest:
+        user.rank_highest === null
+          ? undefined
+          : {
+              value: user.rank_highest!.rank,
+              date: String(user.rank_highest!.updated_at),
+            },
+      rankCountry: user.statistics.country_rank || NaN,
+      playcount: user.statistics.play_count,
+      level: user.statistics.level.current,
+      playtime: user.statistics.play_time,
+      pp: user.statistics.pp,
+      accuracy: user.statistics.hit_accuracy,
+    };
   }
 
   async getRecentPlays(
@@ -78,17 +46,8 @@ export class BanchoApi implements OsuApi {
     includeFails: boolean,
     offset: number,
     quantity: number
-  ): Promise<UserScore[]> {
+  ): Promise<unknown[]> {
     console.log(`Trying to get recent plays on Bancho for ${osuId}...`);
-    await this.refreshTokenIfNeeded();
-    const scores = await this.client.users.getUserScores(osuId, 'recent', {
-      query: {
-        mode: 'osu',
-        offset: offset,
-        limit: quantity,
-        include_fails: includeFails,
-      },
-    });
-    return scores;
+    return [];
   }
 }

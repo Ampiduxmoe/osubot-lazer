@@ -1,5 +1,5 @@
-import {GuestToken} from 'osu-web.js';
-import {Timespan} from '../../../../primitives/Timespan';
+import {Timespan} from '../../../../../primitives/Timespan';
+import {RawOauthToken} from './RawOauthToken';
 
 export class OsuOauthAccessToken {
   readonly tokenType: string;
@@ -7,7 +7,7 @@ export class OsuOauthAccessToken {
   readonly expirationTime: number;
   readonly value: string;
 
-  constructor(rawToken: GuestToken) {
+  constructor(rawToken: RawOauthToken) {
     this.tokenType = rawToken.token_type;
     this.grantTime = Date.now();
     const tokenDuration = new Timespan().addSeconds(rawToken.expires_in);
@@ -15,8 +15,8 @@ export class OsuOauthAccessToken {
     this.value = rawToken.access_token;
   }
 
-  isValid(): boolean {
+  isValid(safetyMargin = new Timespan()): boolean {
     const now = Date.now();
-    return now < this.expirationTime;
+    return now < this.expirationTime - safetyMargin.totalMiliseconds();
   }
 }

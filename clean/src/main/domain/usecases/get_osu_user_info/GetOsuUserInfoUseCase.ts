@@ -2,6 +2,7 @@ import {UseCase} from '../UseCase';
 import {GetOsuUserInfoRequest} from './GetOsuUserInfoRequest';
 import {GetOsuUserInfoResponse} from './GetOsuUserInfoResponse';
 import {OsuUsersDao} from '../../../data/dao/OsuUsersDao';
+import {OsuRuleset} from '../../../../primitives/OsuRuleset';
 
 export class GetOsuUserInfoUseCase
   implements UseCase<GetOsuUserInfoRequest, GetOsuUserInfoResponse>
@@ -16,7 +17,8 @@ export class GetOsuUserInfoUseCase
   ): Promise<GetOsuUserInfoResponse> {
     const user = await this.osuUsers.getByUsername(
       params.username,
-      params.server
+      params.server,
+      OsuRuleset.osu
     );
     if (user === undefined) {
       return {
@@ -27,14 +29,16 @@ export class GetOsuUserInfoUseCase
       userInfo: {
         userId: user.id,
         username: user.username,
-        accuracy: user.statistics.hit_accuracy,
-        pp: user.statistics.pp,
-        rankGlobal: user.statistics.global_rank || NaN,
-        countryCode: user.country_code,
-        rankCountry: user.statistics.country_rank || NaN,
-        playcount: user.statistics.play_count,
-        playtimeSeconds: user.statistics.play_time,
-        lvl: user.statistics.level.current,
+        accuracy: user.accuracy,
+        pp: user.pp,
+        rankGlobal: user.rankGlobal,
+        rankGlobalHighest: user.rankGlobalHighest?.value,
+        rankGlobalHighestDate: user.rankGlobalHighest?.date,
+        countryCode: user.countryCode,
+        rankCountry: user.rankCountry,
+        playcount: user.playcount,
+        playtimeSeconds: user.playtime,
+        level: user.level,
       },
     };
   }

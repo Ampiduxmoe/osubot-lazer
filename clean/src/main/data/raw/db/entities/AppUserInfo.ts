@@ -1,11 +1,11 @@
 import {OsuRuleset} from '../../../../../primitives/OsuRuleset';
 import {OsuServer} from '../../../../../primitives/OsuServer';
 
-export interface AppUserKey {
+export interface AppUserInfoKey {
   id: string;
   server: OsuServer;
 }
-export type AppUser = AppUserKey & {
+export type AppUserInfo = AppUserInfoKey & {
   osu_id: number;
   username: string;
   ruleset: OsuRuleset;

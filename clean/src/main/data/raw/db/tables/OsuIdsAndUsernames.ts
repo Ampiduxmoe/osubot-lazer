@@ -4,7 +4,7 @@ import {
   OsuIdAndUsername,
   OsuIdAndUsernameKey,
 } from '../entities/OsuIdAndUsername';
-import {Cacheable} from '../entities/Cachable';
+import {Cacheable} from '../entities/Cacheable';
 import {Timespan} from '../../../../../primitives/Timespan';
 
 export class OsuIdsAndUsernames extends SqlDbTable<

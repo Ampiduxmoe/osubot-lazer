@@ -8,9 +8,11 @@ interface OsuUserInfo {
   accuracy: number;
   pp: number;
   rankGlobal: number;
+  rankGlobalHighest: number | undefined;
+  rankGlobalHighestDate: string | undefined;
   countryCode: string;
   rankCountry: number;
   playcount: number;
   playtimeSeconds: number;
-  lvl: number;
+  level: number;
 }

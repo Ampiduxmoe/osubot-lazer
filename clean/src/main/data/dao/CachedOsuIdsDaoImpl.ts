@@ -4,7 +4,7 @@ import {
   OsuIdAndUsername,
   OsuIdAndUsernameKey,
 } from '../raw/db/entities/OsuIdAndUsername';
-import {CachedOsuIdsDao} from './CachedOsuIdsDao';
+import {CachedOsuId, CachedOsuIdsDao} from './CachedOsuIdsDao';
 
 export class CachedOsuIdsDaoImpl implements CachedOsuIdsDao {
   private osuIdsAndUsernamesTable: SqlDbTable<
@@ -19,7 +19,7 @@ export class CachedOsuIdsDaoImpl implements CachedOsuIdsDao {
   async get(
     username: string,
     server: OsuServer
-  ): Promise<OsuIdAndUsername | undefined> {
+  ): Promise<CachedOsuId | undefined> {
     return await this.osuIdsAndUsernamesTable.get({
       username: username,
       server: server,

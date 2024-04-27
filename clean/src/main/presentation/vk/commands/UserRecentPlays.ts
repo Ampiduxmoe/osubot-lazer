@@ -196,7 +196,7 @@ export class UserRecentPlays extends VkCommand<
       return this.createNoRecentPlaysMessage(server, passesOnly, username);
     }
     const scoresText = recentPlays.plays
-      .map(p => `score: ${p.score}, acc: ${p.accuracy}, pp: ${p.pp}`)
+      .map(p => `score: ${p.totalScore}, acc: ${p.accuracy}, pp: ${p.pp}`)
       .join('\n');
 
     const serverString = OsuServer[params.server];
