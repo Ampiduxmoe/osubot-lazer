@@ -1,5 +1,5 @@
 import {Country} from '../common_types/Country';
-import {Cover} from '../common_types/Cover';
+import {UserCover} from '../common_types/UserCover';
 import {ISO8601Timestamp} from '../common_types/ISO8601Timestamp';
 import {Kudosu} from '../common_types/Kudosu';
 import {Page} from '../common_types/Page';
@@ -61,7 +61,7 @@ export interface UserExtended {
 
   // included optional 'User' fields for https://osu.ppy.sh/docs/index.html#userextended
   country: Country;
-  cover: Cover;
+  cover: UserCover;
   kudosu: Kudosu;
   /** Present only if this is the currently authenticated user */
   is_restricted?: boolean;

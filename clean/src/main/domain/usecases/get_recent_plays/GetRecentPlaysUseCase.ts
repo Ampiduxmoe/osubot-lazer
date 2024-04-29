@@ -1,7 +1,14 @@
 import {UseCase} from '../UseCase';
 import {GetRecentPlaysRequest} from './GetRecentPlaysRequest';
-import {GetRecentPlaysResponse, RecentPlay} from './GetRecentPlaysResponse';
-import {OsuRecentScoresDao} from '../../../data/dao/OsuRecentScoresDao';
+import {
+  GetRecentPlaysResponse,
+  RecentPlay,
+  BeatmapsetRankStatus,
+} from './GetRecentPlaysResponse';
+import {
+  OsuRecentScoresDao,
+  RecentScore,
+} from '../../../data/dao/OsuRecentScoresDao';
 import {CachedOsuIdsDao} from '../../../data/dao/CachedOsuIdsDao';
 import {OsuUsersDao} from '../../../data/dao/OsuUsersDao';
 import {OsuRuleset} from '../../../../primitives/OsuRuleset';
@@ -46,43 +53,53 @@ export class GetRecentPlaysUseCase
     }
     osuId = osuId!;
     caseCorrectUsername = caseCorrectUsername!;
-    const rawRecentScores = await this.recentScores.getByUserId(
+    const rawRecentScores = await this.recentScores.get(
       osuId,
       server,
       params.includeFails,
+      params.quantity,
       params.startPosition,
-      params.quantity
+      OsuRuleset.osu
     );
-    const recentPlays = rawRecentScores.map(() => {
+    const recentPlays = rawRecentScores.map(s => {
       const osuUserRecentScore: RecentPlay = {
         beatmapset: {
-          status: 'Ranked',
-          artist: '',
-          title: '',
-          creator: '',
+          status: extractBeatmapsetRankStatus(s),
+          artist: s.beatmapset.artist,
+          title: s.beatmapset.title,
+          creator: s.beatmapset.creator,
         },
         beatmap: {
-          difficultyName: '',
-          length: NaN,
-          bpm: NaN,
-          stars: NaN,
-          ar: NaN,
-          cs: NaN,
-          od: NaN,
-          hp: NaN,
+          difficultyName: s.beatmap.version,
+          totalLength: s.beatmap.totalLength,
+          drainLength: s.beatmap.hitLength,
+          bpm: s.beatmap.bpm,
+          stars: s.beatmap.difficultyRating,
+          ar: s.beatmap.ar,
+          cs: s.beatmap.cs,
+          od: s.beatmap.od,
+          hp: s.beatmap.hp,
           maxCombo: NaN,
-          url: '',
+          url: s.beatmap.url,
+          countCircles: s.beatmap.countCircles,
+          countSliders: s.beatmap.countSliders,
+          countSpinners: s.beatmap.countSpinners,
         },
-        mods: [],
-        totalScore: NaN,
-        combo: NaN,
-        accuracy: NaN,
+        mods: s.mods,
+        passed: s.passed,
+        totalScore: s.totalScore,
+        combo: s.maxCombo,
+        accuracy: s.accuracy,
         pp: {
-          value: NaN,
+          value: s.pp || NaN,
           ifFc: NaN,
           ifSs: NaN,
         },
-        grade: 'F',
+        countGreat: s.statistics.great,
+        countOk: s.statistics.ok,
+        countMeh: s.statistics.meh,
+        countMiss: s.statistics.miss,
+        grade: s.rank,
       };
       return osuUserRecentScore;
     });
@@ -93,5 +110,26 @@ export class GetRecentPlaysUseCase
         plays: recentPlays,
       },
     };
+  }
+}
+
+function extractBeatmapsetRankStatus(score: RecentScore): BeatmapsetRankStatus {
+  switch (score.beatmapset.status) {
+    case 'graveyard':
+      return 'Graveyard';
+    case 'wip':
+      return 'Wip';
+    case 'pending':
+      return 'Pending';
+    case 'ranked':
+      return 'Ranked';
+    case 'approved':
+      return 'Approved';
+    case 'qualified':
+      return 'Qualified';
+    case 'loved':
+      return 'Loved';
+    default:
+      throw Error('Unkown beatmapset status');
   }
 }

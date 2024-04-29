@@ -2,6 +2,7 @@ import {AxiosInstance} from 'axios';
 import {OsuRuleset} from '../../../../../../../primitives/OsuRuleset';
 import {UserExtended} from './UserExtended';
 import {Playmode} from '../common_types/Playmode';
+import {RecentScore} from './RecentScore';
 
 export class BanchoUsers {
   private url = '/users';
@@ -18,23 +19,7 @@ export class BanchoUsers {
       `Trying to fetch Bancho user ${username} (${OsuRuleset[ruleset]})`
     );
     const httpClient = await this.getHttpClient();
-    let playmode: Playmode;
-    switch (ruleset) {
-      case OsuRuleset.osu:
-        playmode = 'osu';
-        break;
-      case OsuRuleset.taiko:
-        playmode = 'taiko';
-        break;
-      case OsuRuleset.ctb:
-        playmode = 'fruits';
-        break;
-      case OsuRuleset.mania:
-        playmode = 'mania';
-        break;
-      default:
-        throw Error('Unknown ruleset');
-    }
+    const playmode = rulesetToPlaymode(ruleset);
     const url = `${this.url}/${username}/${playmode}`;
     const response = await httpClient.get(url, {
       params: {
@@ -51,4 +36,53 @@ export class BanchoUsers {
     );
     return rawUser;
   }
+
+  async getRecentScores(
+    userId: number,
+    includeFails: boolean,
+    quantity: number,
+    startPosition: number,
+    ruleset: OsuRuleset
+  ): Promise<RecentScore[]> {
+    const type: UserScoresType = 'recent';
+    console.log(
+      `Trying to fetch Bancho '${type}' scores for ${userId} (${OsuRuleset[ruleset]})`
+    );
+    const httpClient = await this.getHttpClient();
+    const playmode = rulesetToPlaymode(ruleset);
+    const url = `${this.url}/${userId}/scores/${type}`;
+    const response = await httpClient.get(url, {
+      headers: {
+        'x-api-version': 20220705,
+      },
+      params: {
+        include_fails: includeFails ? 1 : 0,
+        mode: playmode,
+        limit: quantity,
+        offset: startPosition - 1,
+      },
+    });
+    const scores: RecentScore[] = response.data;
+    console.log(
+      `Successfully fetched Bancho '${type}' scores for ${userId} (${OsuRuleset[ruleset]})`
+    );
+    return scores;
+  }
 }
+
+function rulesetToPlaymode(ruleset: OsuRuleset): Playmode {
+  switch (ruleset) {
+    case OsuRuleset.osu:
+      return 'osu';
+    case OsuRuleset.taiko:
+      return 'taiko';
+    case OsuRuleset.ctb:
+      return 'fruits';
+    case OsuRuleset.mania:
+      return 'mania';
+    default:
+      throw Error('Unknown ruleset');
+  }
+}
+
+type UserScoresType = 'best' | 'firsts' | 'recent';

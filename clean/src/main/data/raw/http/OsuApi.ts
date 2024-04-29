@@ -1,6 +1,7 @@
 import {OsuRuleset} from '../../../../primitives/OsuRuleset';
 import {OsuServer} from '../../../../primitives/OsuServer';
 import {OsuUserInfo} from './boundary/OsuUserInfo';
+import {RecentScoreInfo} from './boundary/RecentScoreInfo';
 
 export interface OsuApi {
   server: OsuServer;
@@ -11,9 +12,10 @@ export interface OsuApi {
   ): Promise<OsuUserInfo | undefined>;
 
   getRecentPlays(
-    osuId: number,
+    osuUserId: number,
     includeFails: boolean,
-    offset: number,
-    quantity: number
-  ): Promise<unknown[]>;
+    quantity: number,
+    startPosition: number,
+    ruleset: OsuRuleset
+  ): Promise<RecentScoreInfo[]>;
 }

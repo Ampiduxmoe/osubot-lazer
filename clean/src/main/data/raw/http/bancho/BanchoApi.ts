@@ -3,6 +3,7 @@ import {OsuServer} from '../../../../../primitives/OsuServer';
 import {BanchoClient} from './client/BanchoClient';
 import {OsuRuleset} from '../../../../../primitives/OsuRuleset';
 import {OsuUserInfo} from '../boundary/OsuUserInfo';
+import {RecentScoreInfo} from '../boundary/RecentScoreInfo';
 
 export class BanchoApi implements OsuApi {
   private client: BanchoClient;
@@ -42,12 +43,71 @@ export class BanchoApi implements OsuApi {
   }
 
   async getRecentPlays(
-    osuId: number,
+    osuUserId: number,
     includeFails: boolean,
-    offset: number,
-    quantity: number
-  ): Promise<unknown[]> {
-    console.log(`Trying to get recent plays on Bancho for ${osuId}...`);
-    return [];
+    quantity: number,
+    startPosition: number,
+    ruleset: OsuRuleset
+  ): Promise<RecentScoreInfo[]> {
+    const scores = await this.client.users.getRecentScores(
+      osuUserId,
+      includeFails,
+      quantity,
+      startPosition,
+      ruleset
+    );
+    return scores.map(s => {
+      const scoreInfo: RecentScoreInfo = {
+        id: s.id,
+        userId: s.user_id,
+        mods: s.mods,
+        statistics: {
+          great: s.statistics.great || 0,
+          ok: s.statistics.ok || 0,
+          meh: s.statistics.meh || 0,
+          miss: s.statistics.miss || 0,
+        },
+        rank: s.rank,
+        accuracy: s.accuracy,
+        startedAt: s.started_at as string | null,
+        endedAt: s.ended_at as string,
+        isPerfectCombo: s.is_perfect_combo,
+        maxCombo: s.max_combo,
+        passed: s.passed,
+        pp: s.pp,
+        totalScore: s.total_score,
+        beatmap: {
+          id: s.beatmap.id,
+          userId: s.beatmap.user_id,
+          version: s.beatmap.version,
+          totalLength: s.beatmap.total_length,
+          hitLength: s.beatmap.hit_length,
+          difficultyRating: s.beatmap.difficulty_rating,
+          bpm: s.beatmap.bpm,
+          ar: s.beatmap.ar,
+          cs: s.beatmap.cs,
+          od: s.beatmap.accuracy,
+          hp: s.beatmap.drain,
+          countCircles: s.beatmap.count_circles,
+          countSliders: s.beatmap.count_sliders,
+          countSpinners: s.beatmap.count_spinners,
+          url: s.beatmap.url,
+        },
+        beatmapset: {
+          id: s.beatmapset.id,
+          userId: s.beatmapset.user_id,
+          creator: s.beatmapset.creator,
+          artist: s.beatmapset.artist,
+          title: s.beatmapset.title,
+          coverUrl: s.beatmapset.covers.cover,
+          status: s.beatmapset.status,
+        },
+        user: {
+          id: s.user.id,
+          username: s.user.username,
+        },
+      };
+      return scoreInfo;
+    });
   }
 }

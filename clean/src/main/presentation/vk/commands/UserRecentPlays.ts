@@ -1,3 +1,4 @@
+/* eslint-disable no-irregular-whitespace */
 import {VkMessageContext} from '../VkMessageContext';
 import {CommandMatchResult} from '../../common/CommandMatchResult';
 import {VkOutputMessage} from './base/VkOutputMessage';
@@ -9,7 +10,12 @@ import {SERVERS} from '../../common/OsuServers';
 import {GetAppUserInfoUseCase} from '../../../domain/usecases/get_app_user_info/GetAppUserInfoUseCase';
 import {VkIdConverter} from '../VkIdConverter';
 import {clamp} from '../../../../primitives/Numbers';
-import {OsuUserRecentPlays} from '../../../domain/usecases/get_recent_plays/GetRecentPlaysResponse';
+import {
+  OsuUserRecentPlays,
+  RecentPlay,
+  SettingsDT,
+  SettingsDefaults,
+} from '../../../domain/usecases/get_recent_plays/GetRecentPlaysResponse';
 import {
   OWN_COMMAND_PREFIX,
   MODS,
@@ -19,6 +25,7 @@ import {
   USERNAME,
 } from '../../common/arg_processing/CommandArguments';
 import {MainArgsProcessor} from '../../common/arg_processing/MainArgsProcessor';
+import {Timespan} from '../../../../primitives/Timespan';
 
 export class UserRecentPlays extends VkCommand<
   UserRecentPlaysExecutionArgs,
@@ -195,14 +202,18 @@ export class UserRecentPlays extends VkCommand<
     if (recentPlays.plays.length === 0) {
       return this.createNoRecentPlaysMessage(server, passesOnly, username);
     }
-    const scoresText = recentPlays.plays
-      .map(p => `score: ${p.totalScore}, acc: ${p.accuracy}, pp: ${p.pp}`)
-      .join('\n');
 
     const serverString = OsuServer[params.server];
     const oneScore = recentPlays.plays.length === 1;
     const passesString = oneScore ? 'Последний пасс' : 'Последние пассы';
     const scoresString = oneScore ? 'Последний скор' : 'Последние скоры';
+    const scoresText = recentPlays.plays
+      .map(p =>
+        oneScore
+          ? this.verboseScoreDescription(p)
+          : this.shortScoreDescription(p)
+      )
+      .join('\n');
     const text = `
 [Server: ${serverString}]
 ${passesOnly ? passesString : scoresString} ${username}
@@ -213,6 +224,110 @@ ${scoresText}
       attachment: undefined,
       buttons: undefined,
     };
+  }
+
+  verboseScoreDescription(play: RecentPlay): string {
+    const map = play.beatmap;
+    const mapset = play.beatmapset;
+
+    const modAcronyms = play.mods.map(m => m.acronym);
+    let speed = 1;
+    if (modAcronyms.includes('DT')) {
+      const settings = play.mods.find(m => m.acronym === 'DT');
+      if (settings !== undefined) {
+        speed =
+          (settings as SettingsDT).speed_change ??
+          SettingsDefaults.DT.speed_change!;
+      }
+    }
+    // TODO HT
+
+    const mapStatus = mapset.status;
+    const {artist, title} = mapset;
+    const diffname = map.difficultyName;
+    const mapperName = mapset.creator;
+    const totalLength = new Timespan().addSeconds(map.totalLength / speed);
+    const z0 = totalLength.minutes <= 9 ? '0' : '';
+    const z1 = totalLength.seconds <= 9 ? '0' : '';
+    const drainLength = new Timespan().addSeconds(map.drainLength / speed);
+    const z2 = drainLength.minutes <= 9 ? '0' : '';
+    const z3 = drainLength.seconds <= 9 ? '0' : '';
+    const lengthString = `${z0}${totalLength.minutes}:${z1}${totalLength.seconds}`;
+    const drainString = `${z2}${drainLength.minutes}:${z3}${drainLength.seconds}`;
+    const bpm = map.bpm;
+    const sr = map.stars;
+    const modsString = modAcronyms.join('');
+    let modsPlusSign = '';
+    if (modAcronyms.length) {
+      modsPlusSign = '+';
+    }
+    const {ar, cs, od, hp} = map;
+    const {totalScore} = play;
+    const combo = play.combo;
+    const max_combo = play.beatmap.maxCombo;
+    const comboString = `${combo}x/${max_combo}x`;
+    const acc = (play.accuracy * 100).toFixed(2);
+    const pp = play.pp.value.toFixed(2);
+    const ppFc = play.pp.ifFc.toFixed(2);
+    const ppSs = play.pp.ifSs.toFixed(2);
+    const hitcountsString = `${play.countGreat}/${play.countOk}/${play.countMeh}/${play.countMiss}`;
+    const {grade} = play;
+    const hitcountsTotal =
+      play.countGreat + play.countOk + play.countMeh + play.countMiss;
+    const objectsTotal =
+      map.countCircles + map.countSliders + map.countSpinners;
+    const mapProgress = hitcountsTotal / objectsTotal;
+    const completionPercent = (mapProgress * 100).toFixed(2);
+    const mapCompletionString = play.passed ? '' : `(${completionPercent}%)`;
+    const mapUrlShort = map.url.replace('beatmaps', 'b');
+    return `
+<${mapStatus}> ${artist} - ${title} [${diffname}] by ${mapperName}
+${lengthString} (${drainString})　${bpm} BPM　${sr}★　${modsPlusSign}${modsString}
+AR: ${ar}　CS: ${cs}　OD: ${od}　HP: ${hp}
+
+Score: ${totalScore}　Combo: ${comboString}
+Accuracy: ${acc}%
+PP: ${pp}　⯈ FC: ${ppFc}　⯈ SS: ${ppSs}
+Hitcounts: ${hitcountsString}
+Grade: ${grade} ${mapCompletionString}
+
+Beatmap: ${mapUrlShort}
+    `.trim();
+  }
+
+  shortScoreDescription(play: RecentPlay): string {
+    const map = play.beatmap;
+    const mapset = play.beatmapset;
+
+    const modAcronyms = play.mods.map(m => m.acronym);
+
+    const {title} = mapset;
+    const diffname = map.difficultyName;
+    const sr = map.stars;
+    const modsString = modAcronyms.join('');
+    let modsPlusSign = '';
+    if (modAcronyms.length) {
+      modsPlusSign = '+';
+    }
+    const combo = play.combo;
+    const max_combo = play.beatmap.maxCombo;
+    const comboString = `${combo}x/${max_combo}x`;
+    const acc = (play.accuracy * 100).toFixed(2);
+    const pp = play.pp.value.toFixed(2);
+    const {grade} = play;
+    const hitcountsTotal =
+      play.countGreat + play.countOk + play.countMeh + play.countMiss;
+    const objectsTotal =
+      map.countCircles + map.countSliders + map.countSpinners;
+    const mapProgress = hitcountsTotal / objectsTotal;
+    const completionPercent = (mapProgress * 100).toFixed(2);
+    const mapCompletionString = play.passed ? '' : `(${completionPercent}%)`;
+    const mapUrlShort = map.url.replace('beatmaps', 'b');
+    return `
+#　${title} [${diffname}] ${modsPlusSign}${modsString}
+${sr}★　${grade}${mapCompletionString}　${comboString}　${acc}%
+${pp}pp　 ${mapUrlShort}
+    `.trim();
   }
 
   createUserNotFoundMessage(

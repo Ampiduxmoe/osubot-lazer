@@ -54,7 +54,10 @@ export class App {
 
     const osuUsersDao = new OsuUsersDaoImpl(apiList, osuIdsAndUsernames);
     const appUsersDao = new AppUsersDaoImpl(appUsers);
-    const recentScoresDao = new OsuRecentScoresDaoImpl(apiList);
+    const recentScoresDao = new OsuRecentScoresDaoImpl(
+      apiList,
+      osuIdsAndUsernames
+    );
     const cachedOsuIdsDao = new CachedOsuIdsDaoImpl(osuIdsAndUsernames);
 
     const getOsuUserInfoUseCase = new GetOsuUserInfoUseCase(osuUsersDao);
