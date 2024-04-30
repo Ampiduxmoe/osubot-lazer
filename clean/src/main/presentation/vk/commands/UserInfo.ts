@@ -180,7 +180,9 @@ export class UserInfo extends VkCommand<
     }
     const serverString = OsuServer[params.server];
     const {username} = userInfo;
-    const {rankGlobal, countryCode, rankCountry} = userInfo;
+    const rankGlobal = userInfo.rankGlobal || '--';
+    const countryCode = userInfo.countryCode;
+    const rankCountry = userInfo.rankCountry || '--';
     const {rankGlobalHighest, rankGlobalHighestDate} = userInfo;
     const {playcount, lvl} = userInfo;
     const {playtimeDays, playtimeHours, playtimeMinutes} = userInfo;
@@ -279,11 +281,11 @@ interface UserInfoViewParams {
 
 interface OsuUserInfo {
   username: string;
-  rankGlobal: number;
+  rankGlobal: number | null;
   rankGlobalHighest: number | undefined;
   rankGlobalHighestDate: string | undefined;
   countryCode: string;
-  rankCountry: number;
+  rankCountry: number | null;
   playcount: number;
   lvl: number;
   playtimeDays: number;

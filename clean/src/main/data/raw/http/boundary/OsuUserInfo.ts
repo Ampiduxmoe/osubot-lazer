@@ -2,14 +2,14 @@ export interface OsuUserInfo {
   id: number;
   username: string;
   countryCode: string;
-  rankGlobal: number;
+  rankGlobal: number | null;
   rankGlobalHighest:
     | {
         value: number;
         date: string;
       }
     | undefined;
-  rankCountry: number;
+  rankCountry: number | null;
   playcount: number;
   level: number;
   /** Total playtime in seconds */

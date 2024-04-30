@@ -25,7 +25,7 @@ export class BanchoApi implements OsuApi {
       id: user.id,
       username: user.username,
       countryCode: user.country_code,
-      rankGlobal: user.statistics.global_rank || NaN,
+      rankGlobal: user.statistics.global_rank || null,
       rankGlobalHighest:
         user.rank_highest === null
           ? undefined
@@ -33,7 +33,7 @@ export class BanchoApi implements OsuApi {
               value: user.rank_highest!.rank,
               date: String(user.rank_highest!.updated_at),
             },
-      rankCountry: user.statistics.country_rank || NaN,
+      rankCountry: user.statistics.country_rank || null,
       playcount: user.statistics.play_count,
       level: user.statistics.level.current,
       playtime: user.statistics.play_time,

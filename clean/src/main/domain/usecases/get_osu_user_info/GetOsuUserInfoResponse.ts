@@ -7,11 +7,11 @@ interface OsuUserInfo {
   username: string;
   accuracy: number;
   pp: number;
-  rankGlobal: number;
+  rankGlobal: number | null;
   rankGlobalHighest: number | undefined;
   rankGlobalHighestDate: string | undefined;
   countryCode: string;
-  rankCountry: number;
+  rankCountry: number | null;
   playcount: number;
   playtimeSeconds: number;
   level: number;
