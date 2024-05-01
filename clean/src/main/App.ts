@@ -18,6 +18,8 @@ import {AppUsersDaoImpl} from './data/dao/AppUsersDaoImpl';
 import {OsuRecentScoresDaoImpl} from './data/dao/OsuRecentScoresDaoImpl';
 import {CachedOsuIdsDaoImpl} from './data/dao/CachedOsuIdsDaoImpl';
 import {Help} from './presentation/vk/commands/Help';
+import {ScoreSimulationsDaoImpl} from './data/dao/ScoreSimulationsDaoImpl';
+import {OsutoolsSimulationApi} from './data/raw/http/score_simulation/OsutoolsSImulationApi';
 
 export const APP_CODE_NAME = 'osubot-lazer';
 
@@ -42,22 +44,28 @@ export class App {
       this.db = new SqliteDb('osu_dev.db');
     }
 
+    const scoreSiulationApi = new OsutoolsSimulationApi(
+      config.bot.score_simulation.endpoint_url,
+      config.bot.score_simulation.default_timeout
+    );
+
     const banchoOuath = config.osu.bancho.oauth;
     const banchoApi = new BanchoApi(banchoOuath.id, banchoOuath.secret);
 
-    const apiList = [banchoApi];
+    const osuApiList = [banchoApi];
 
     const osuIdsAndUsernames = new OsuIdsAndUsernames(this.db);
     const appUsers = new AppUsers(this.db);
 
     const allDbTables = [osuIdsAndUsernames, appUsers];
 
-    const osuUsersDao = new OsuUsersDaoImpl(apiList, osuIdsAndUsernames);
+    const osuUsersDao = new OsuUsersDaoImpl(osuApiList, osuIdsAndUsernames);
     const appUsersDao = new AppUsersDaoImpl(appUsers);
     const recentScoresDao = new OsuRecentScoresDaoImpl(
-      apiList,
+      osuApiList,
       osuIdsAndUsernames
     );
+    const scoreSimulationsDao = new ScoreSimulationsDaoImpl(scoreSiulationApi);
     const cachedOsuIdsDao = new CachedOsuIdsDaoImpl(osuIdsAndUsernames);
 
     const getOsuUserInfoUseCase = new GetOsuUserInfoUseCase(osuUsersDao);
@@ -65,6 +73,7 @@ export class App {
     const setUsernameUseCase = new SetUsernameUseCase(appUsersDao, osuUsersDao);
     const getRecentPlaysUseCase = new GetRecentPlaysUseCase(
       recentScoresDao,
+      scoreSimulationsDao,
       cachedOsuIdsDao,
       osuUsersDao
     );

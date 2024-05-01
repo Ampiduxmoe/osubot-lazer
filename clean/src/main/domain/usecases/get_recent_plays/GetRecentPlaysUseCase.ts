@@ -12,19 +12,23 @@ import {
 import {CachedOsuIdsDao} from '../../../data/dao/CachedOsuIdsDao';
 import {OsuUsersDao} from '../../../data/dao/OsuUsersDao';
 import {OsuRuleset} from '../../../../primitives/OsuRuleset';
+import {ScoreSimulationsDao} from '../../../data/dao/ScoreSimulationsDao';
 
 export class GetRecentPlaysUseCase
   implements UseCase<GetRecentPlaysRequest, GetRecentPlaysResponse>
 {
   recentScores: OsuRecentScoresDao;
+  scoreSimulations: ScoreSimulationsDao;
   cachedOsuIds: CachedOsuIdsDao;
   osuUsers: OsuUsersDao;
   constructor(
     recentScores: OsuRecentScoresDao,
+    scoreSimulations: ScoreSimulationsDao,
     cachedOsuIds: CachedOsuIdsDao,
     osuUsers: OsuUsersDao
   ) {
     this.recentScores = recentScores;
+    this.scoreSimulations = scoreSimulations;
     this.cachedOsuIds = cachedOsuIds;
     this.osuUsers = osuUsers;
   }
@@ -61,7 +65,26 @@ export class GetRecentPlaysUseCase
       params.startPosition,
       OsuRuleset.osu
     );
-    const recentPlays = rawRecentScores.map(s => {
+    const recentPlayPromises = rawRecentScores.map(async s => {
+      const mods = s.mods.map(s => s.acronym);
+      const map = s.beatmap;
+      const counts = s.statistics;
+      const hitcountsTotal =
+        counts.great + counts.ok + counts.meh + counts.miss;
+      const objectsTotal =
+        map.countCircles + map.countSliders + map.countSpinners;
+      const totalToHitRatio = objectsTotal / hitcountsTotal;
+      const fullPlayMisses = Math.floor(totalToHitRatio * counts.miss);
+      const fullPlayMehs = Math.floor(totalToHitRatio * counts.meh);
+      const fullPlayGoods = Math.floor(totalToHitRatio * counts.ok);
+      const scoreSimulation = await this.scoreSimulations.get(
+        s.beatmap.id,
+        mods,
+        s.maxCombo,
+        fullPlayMisses,
+        fullPlayMehs,
+        fullPlayGoods
+      );
       const osuUserRecentScore: RecentPlay = {
         beatmapset: {
           status: extractBeatmapsetRankStatus(s),
@@ -79,7 +102,7 @@ export class GetRecentPlaysUseCase
           cs: s.beatmap.cs,
           od: s.beatmap.od,
           hp: s.beatmap.hp,
-          maxCombo: NaN,
+          maxCombo: scoreSimulation.difficultyAttributes.maxCombo,
           url: s.beatmap.url,
           countCircles: s.beatmap.countCircles,
           countSliders: s.beatmap.countSliders,
@@ -91,7 +114,8 @@ export class GetRecentPlaysUseCase
         combo: s.maxCombo,
         accuracy: s.accuracy,
         pp: {
-          value: s.pp || NaN,
+          value:
+            s.pp === null ? scoreSimulation.performanceAttributes.pp : s.pp,
           ifFc: NaN,
           ifSs: NaN,
         },
@@ -103,6 +127,18 @@ export class GetRecentPlaysUseCase
       };
       return osuUserRecentScore;
     });
+    const recentPlays = await Promise.all(recentPlayPromises);
+    if (recentPlays.length === 1) {
+      const simulatedPpValues = await getFcAndSsValues(
+        rawRecentScores[0],
+        this.scoreSimulations
+      );
+      recentPlays[0].pp = {
+        value: recentPlays[0].pp.value,
+        ifFc: simulatedPpValues.fc,
+        ifSs: simulatedPpValues.ss,
+      };
+    }
     return {
       isFailure: false,
       recentPlays: {
@@ -111,6 +147,29 @@ export class GetRecentPlaysUseCase
       },
     };
   }
+}
+
+async function getFcAndSsValues(
+  score: RecentScore,
+  dao: ScoreSimulationsDao
+): Promise<{
+  fc: number;
+  ss: number;
+}> {
+  const mods = score.mods.map(s => s.acronym);
+  const map = score.beatmap;
+  const counts = score.statistics;
+  const hitcountsTotal = counts.great + counts.ok + counts.meh + counts.miss;
+  const objectsTotal = map.countCircles + map.countSliders + map.countSpinners;
+  const totalToHitRatio = objectsTotal / hitcountsTotal;
+  const fullPlayMehs = Math.floor(totalToHitRatio * counts.meh);
+  const fullPlayGoods = Math.floor(totalToHitRatio * counts.ok);
+  const fcPromise = dao.get(map.id, mods, null, 0, fullPlayMehs, fullPlayGoods);
+  const ssPromise = dao.get(map.id, mods, null, 0, 0, 0);
+  return {
+    fc: (await fcPromise).performanceAttributes.pp,
+    ss: (await ssPromise).performanceAttributes.pp,
+  };
 }
 
 function extractBeatmapsetRankStatus(score: RecentScore): BeatmapsetRankStatus {
