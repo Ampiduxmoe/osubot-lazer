@@ -36,6 +36,11 @@ export interface RecentPlay {
     acronym: string;
     settings?: ModSettings | object;
   }[];
+  stars: number;
+  ar: number;
+  cs: number;
+  od: number;
+  hp: number;
   passed: boolean;
   totalScore: number;
   combo: number;

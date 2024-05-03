@@ -24,8 +24,12 @@ export class OsutoolsSimulationApi implements ScoreSimulationApi {
     combo: number | null,
     misses: number,
     mehs: number,
-    goods: number
+    goods: number,
+    simulationParams?: {
+      dtRate?: number;
+    }
   ): Promise<ScoreSimulationInfo> {
+    let url = '/';
     const body: RawScoreSimulationParams = {
       beatmap_id: beatmapId,
       mods: mods,
@@ -34,8 +38,16 @@ export class OsutoolsSimulationApi implements ScoreSimulationApi {
       mehs: mehs,
       goods: goods,
     };
+    if (
+      mods.find(m => m.toLowerCase() === 'dt') !== undefined &&
+      simulationParams !== undefined &&
+      simulationParams.dtRate !== undefined
+    ) {
+      url = url + 'dt';
+      body.dt_rate = simulationParams.dtRate;
+    }
     console.log(`Trying to get score simulation (${JSON.stringify(body)})...`);
-    const response = await this.httpClient.post('/', body);
+    const response = await this.httpClient.post(url, body);
     const simulationResult: RawScoreSimulationResult = response.data;
     const {score, performance_attributes, difficulty_attributes} =
       simulationResult;

@@ -12,7 +12,10 @@ export class ScoreSimulationsDaoImpl implements ScoreSimulationsDao {
     combo: number | null,
     misses: number,
     mehs: number,
-    goods: number
+    goods: number,
+    simulationParams?: {
+      dtRate?: number;
+    }
   ): Promise<SimulatedScore> {
     const scoreSimulation = await this.api.simulate(
       beatmapId,
@@ -20,12 +23,14 @@ export class ScoreSimulationsDaoImpl implements ScoreSimulationsDao {
       combo,
       misses,
       mehs,
-      goods
+      goods,
+      simulationParams
     );
     const isRequestWithHidden = mods.find(s => s.toLowerCase() === 'hd');
     const isResponseWithHidden = scoreSimulation.score.mods.find(
       m => m.toLowerCase() === 'hd'
     );
+    // some versions can't calculate hidden for some reason
     if (isRequestWithHidden && !isResponseWithHidden) {
       let aim = scoreSimulation.performanceAttributes.aim;
       let speed = scoreSimulation.performanceAttributes.speed;

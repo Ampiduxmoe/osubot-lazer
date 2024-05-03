@@ -9,7 +9,7 @@ import {APP_CODE_NAME} from '../../../App';
 import {SERVERS} from '../../common/OsuServers';
 import {GetAppUserInfoUseCase} from '../../../domain/usecases/get_app_user_info/GetAppUserInfoUseCase';
 import {VkIdConverter} from '../VkIdConverter';
-import {clamp} from '../../../../primitives/Numbers';
+import {clamp, round} from '../../../../primitives/Numbers';
 import {
   OsuUserRecentPlays,
   RecentPlay,
@@ -233,10 +233,10 @@ ${scoresText}
     const modAcronyms = play.mods.map(m => m.acronym);
     let speed = 1;
     if (modAcronyms.includes('DT')) {
-      const settings = play.mods.find(m => m.acronym === 'DT');
-      if (settings !== undefined) {
+      const dt = play.mods.find(m => m.acronym === 'DT');
+      if (dt !== undefined && dt.settings !== undefined) {
         speed =
-          (settings as SettingsDT).speed_change ??
+          (dt.settings as SettingsDT).speed_change ??
           SettingsDefaults.DT.speed_change!;
       }
     }
@@ -254,14 +254,20 @@ ${scoresText}
     const z3 = drainLength.seconds <= 9 ? '0' : '';
     const lengthString = `${z0}${totalLength.minutes}:${z1}${totalLength.seconds}`;
     const drainString = `${z2}${drainLength.minutes}:${z3}${drainLength.seconds}`;
-    const bpm = map.bpm;
-    const sr = map.stars;
-    const modsString = modAcronyms.join('');
+    const bpm = round(map.bpm * speed, 2);
+    const sr = play.stars.toFixed(2);
+    let modsString = modAcronyms.join('');
+    if (speed !== 1 && speed !== 1.5) {
+      modsString += ` (${speed}x)`;
+    }
     let modsPlusSign = '';
     if (modAcronyms.length) {
       modsPlusSign = '+';
     }
-    const {ar, cs, od, hp} = map;
+    const ar = round(play.ar, 2);
+    const cs = round(play.cs, 2);
+    const od = round(play.od, 2);
+    const hp = round(play.hp, 2);
     const {totalScore} = play;
     const combo = play.combo;
     const max_combo = play.beatmap.maxCombo;

@@ -4,6 +4,7 @@ import {
   GetRecentPlaysResponse,
   RecentPlay,
   BeatmapsetRankStatus,
+  SettingsDT,
 } from './GetRecentPlaysResponse';
 import {
   OsuRecentScoresDao,
@@ -77,13 +78,15 @@ export class GetRecentPlaysUseCase
       const fullPlayMisses = Math.floor(totalToHitRatio * counts.miss);
       const fullPlayMehs = Math.floor(totalToHitRatio * counts.meh);
       const fullPlayGoods = Math.floor(totalToHitRatio * counts.ok);
+      const simulationParams = getSimulationParams(s);
       const scoreSimulation = await this.scoreSimulations.get(
         s.beatmap.id,
         mods,
         s.maxCombo,
         fullPlayMisses,
         fullPlayMehs,
-        fullPlayGoods
+        fullPlayGoods,
+        simulationParams
       );
       const osuUserRecentScore: RecentPlay = {
         beatmapset: {
@@ -109,6 +112,11 @@ export class GetRecentPlaysUseCase
           countSpinners: s.beatmap.countSpinners,
         },
         mods: s.mods,
+        stars: scoreSimulation.difficultyAttributes.starRating,
+        ar: scoreSimulation.difficultyAttributes.approachRate,
+        cs: s.beatmap.cs, // TODO
+        od: scoreSimulation.difficultyAttributes.overallDifficulty,
+        hp: s.beatmap.hp, // TODO
         passed: s.passed,
         totalScore: s.totalScore,
         combo: s.maxCombo,
@@ -164,12 +172,31 @@ async function getFcAndSsValues(
   const totalToHitRatio = objectsTotal / hitcountsTotal;
   const fullPlayMehs = Math.floor(totalToHitRatio * counts.meh);
   const fullPlayGoods = Math.floor(totalToHitRatio * counts.ok);
-  const fcPromise = dao.get(map.id, mods, null, 0, fullPlayMehs, fullPlayGoods);
-  const ssPromise = dao.get(map.id, mods, null, 0, 0, 0);
+  const simulationParams = getSimulationParams(score);
+
+  // eslint-disable-next-line prettier/prettier
+  const fcPromise = dao.get(map.id, mods, null, 0, fullPlayMehs, fullPlayGoods, simulationParams);
+  const ssPromise = dao.get(map.id, mods, null, 0, 0, 0, simulationParams);
   return {
     fc: (await fcPromise).performanceAttributes.pp,
     ss: (await ssPromise).performanceAttributes.pp,
   };
+}
+
+function getSimulationParams(score: RecentScore):
+  | {
+      dtRate?: number;
+    }
+  | undefined {
+  let simulationParams = undefined;
+  const dt = score.mods.find(m => m.acronym.toLowerCase() === 'dt');
+  if (dt !== undefined && dt.settings !== undefined) {
+    const dtRate = (dt.settings as SettingsDT).speed_change;
+    if (dtRate !== undefined) {
+      simulationParams = {dtRate};
+    }
+  }
+  return simulationParams;
 }
 
 function extractBeatmapsetRankStatus(score: RecentScore): BeatmapsetRankStatus {

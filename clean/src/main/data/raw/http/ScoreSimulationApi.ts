@@ -6,6 +6,9 @@ export interface ScoreSimulationApi {
     combo: number | null,
     misses: number,
     mehs: number,
-    goods: number
+    goods: number,
+    simulationParams?: {
+      dtRate?: number;
+    }
   ): Promise<ScoreSimulationInfo>;
 }

@@ -5,4 +5,5 @@ export interface RawScoreSimulationParams {
   misses: number;
   mehs: number;
   goods: number;
+  dt_rate?: number;
 }
