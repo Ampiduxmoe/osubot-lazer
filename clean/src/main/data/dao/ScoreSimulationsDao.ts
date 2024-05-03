@@ -12,6 +12,13 @@ export interface ScoreSimulationsDao {
     goods: number,
     simulationParams?: {
       dtRate?: number;
+      htRate?: number;
+      difficultyAdjust?: {
+        ar?: number;
+        cs?: number;
+        od?: number;
+        hp?: number;
+      };
     }
   ): Promise<SimulatedScore>;
 }

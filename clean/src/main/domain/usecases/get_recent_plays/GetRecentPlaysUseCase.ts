@@ -5,6 +5,8 @@ import {
   RecentPlay,
   BeatmapsetRankStatus,
   SettingsDT,
+  SettingsHT,
+  SettingsDA,
 } from './GetRecentPlaysResponse';
 import {
   OsuRecentScoresDao,
@@ -14,6 +16,7 @@ import {CachedOsuIdsDao} from '../../../data/dao/CachedOsuIdsDao';
 import {OsuUsersDao} from '../../../data/dao/OsuUsersDao';
 import {OsuRuleset} from '../../../../primitives/OsuRuleset';
 import {ScoreSimulationsDao} from '../../../data/dao/ScoreSimulationsDao';
+import {BeatmapStats} from '../../entities/BeatmapStats';
 
 export class GetRecentPlaysUseCase
   implements UseCase<GetRecentPlaysRequest, GetRecentPlaysResponse>
@@ -88,6 +91,21 @@ export class GetRecentPlaysUseCase
         fullPlayGoods,
         simulationParams
       );
+      const moddedBeatmapStats = new BeatmapStats(
+        s.beatmap.ar,
+        s.beatmap.cs,
+        s.beatmap.od,
+        s.beatmap.hp
+      );
+      if (mods.find(m => m.toLowerCase() === 'da')) {
+        if (simulationParams?.difficultyAdjust !== undefined) {
+          moddedBeatmapStats.applyDaMod(simulationParams.difficultyAdjust);
+        }
+      } else if (mods.find(m => m.toLowerCase() === 'hr')) {
+        moddedBeatmapStats.applyHrMod();
+      } else if (mods.find(m => m.toLowerCase() === 'ez')) {
+        moddedBeatmapStats.applyEzMod();
+      }
       const osuUserRecentScore: RecentPlay = {
         beatmapset: {
           status: extractBeatmapsetRankStatus(s),
@@ -114,9 +132,9 @@ export class GetRecentPlaysUseCase
         mods: s.mods,
         stars: scoreSimulation.difficultyAttributes.starRating,
         ar: scoreSimulation.difficultyAttributes.approachRate,
-        cs: s.beatmap.cs, // TODO
+        cs: moddedBeatmapStats.cs,
         od: scoreSimulation.difficultyAttributes.overallDifficulty,
-        hp: s.beatmap.hp, // TODO
+        hp: moddedBeatmapStats.hp,
         passed: s.passed,
         totalScore: s.totalScore,
         combo: s.maxCombo,
@@ -183,18 +201,41 @@ async function getFcAndSsValues(
   };
 }
 
-function getSimulationParams(score: RecentScore):
-  | {
-      dtRate?: number;
-    }
-  | undefined {
-  let simulationParams = undefined;
+interface SimulationParams {
+  dtRate?: number;
+  htRate?: number;
+  difficultyAdjust?: {
+    ar?: number;
+    cs?: number;
+    od?: number;
+    hp?: number;
+  };
+}
+function getSimulationParams(score: RecentScore): SimulationParams | undefined {
+  let simulationParams: SimulationParams | undefined = undefined;
   const dt = score.mods.find(m => m.acronym.toLowerCase() === 'dt');
   if (dt !== undefined && dt.settings !== undefined) {
     const dtRate = (dt.settings as SettingsDT).speed_change;
     if (dtRate !== undefined) {
       simulationParams = {dtRate};
     }
+  }
+  const ht = score.mods.find(m => m.acronym.toLowerCase() === 'ht');
+  if (ht !== undefined && ht.settings !== undefined) {
+    const htRate = (ht.settings as SettingsHT).speed_change;
+    if (htRate !== undefined) {
+      simulationParams = {htRate};
+    }
+  }
+  const da = score.mods.find(m => m.acronym.toLowerCase() === 'da');
+  if (da !== undefined && da.settings !== undefined) {
+    const settingsDa = da.settings as SettingsDA;
+    const ar = settingsDa.approach_rate;
+    const cs = settingsDa.circle_size;
+    const od = settingsDa.overall_difficulty;
+    const hp = settingsDa.drain_rate;
+    simulationParams ??= {};
+    simulationParams.difficultyAdjust = {ar, cs, od, hp};
   }
   return simulationParams;
 }

@@ -15,6 +15,13 @@ export class ScoreSimulationsDaoImpl implements ScoreSimulationsDao {
     goods: number,
     simulationParams?: {
       dtRate?: number;
+      htRate?: number;
+      difficultyAdjust?: {
+        ar?: number;
+        cs?: number;
+        od?: number;
+        hp?: number;
+      };
     }
   ): Promise<SimulatedScore> {
     const scoreSimulation = await this.api.simulate(

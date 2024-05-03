@@ -13,8 +13,10 @@ import {clamp, round} from '../../../../primitives/Numbers';
 import {
   OsuUserRecentPlays,
   RecentPlay,
+  SettingsDA,
   SettingsDT,
   SettingsDefaults,
+  SettingsHT,
 } from '../../../domain/usecases/get_recent_plays/GetRecentPlaysResponse';
 import {
   OWN_COMMAND_PREFIX,
@@ -230,17 +232,39 @@ ${scoresText}
     const map = play.beatmap;
     const mapset = play.beatmapset;
 
-    const modAcronyms = play.mods.map(m => m.acronym);
     let speed = 1;
-    if (modAcronyms.includes('DT')) {
-      const dt = play.mods.find(m => m.acronym === 'DT');
-      if (dt !== undefined && dt.settings !== undefined) {
-        speed =
-          (dt.settings as SettingsDT).speed_change ??
-          SettingsDefaults.DT.speed_change!;
+    const dtMod = play.mods.find(m => m.acronym === 'DT');
+    if (dtMod !== undefined) {
+      speed =
+        (dtMod.settings as SettingsDT)?.speed_change ??
+        SettingsDefaults.DT.speed_change!;
+    }
+    const htMod = play.mods.find(m => m.acronym === 'HT');
+    if (htMod !== undefined) {
+      speed =
+        (htMod.settings as SettingsHT)?.speed_change ??
+        SettingsDefaults.HT.speed_change!;
+    }
+    let arAsterisk = '';
+    let csAsterisk = '';
+    let odAsterisk = '';
+    let hpAsterisk = '';
+    const daMod = play.mods.find(m => m.acronym === 'DA');
+    if (daMod !== undefined && daMod.settings !== undefined) {
+      const daSettings = daMod.settings as SettingsDA;
+      if (daSettings.approach_rate !== undefined) {
+        arAsterisk = '*';
+      }
+      if (daSettings.circle_size !== undefined) {
+        csAsterisk = '*';
+      }
+      if (daSettings.overall_difficulty !== undefined) {
+        odAsterisk = '*';
+      }
+      if (daSettings.drain_rate !== undefined) {
+        hpAsterisk = '*';
       }
     }
-    // TODO HT
 
     const mapStatus = mapset.status;
     const {artist, title} = mapset;
@@ -256,8 +280,14 @@ ${scoresText}
     const drainString = `${z2}${drainLength.minutes}:${z3}${drainLength.seconds}`;
     const bpm = round(map.bpm * speed, 2);
     const sr = play.stars.toFixed(2);
+    const modAcronyms = play.mods.map(m => m.acronym);
     let modsString = modAcronyms.join('');
-    if (speed !== 1 && speed !== 1.5) {
+    const defaultSpeeds = [
+      1,
+      SettingsDefaults.DT.speed_change!,
+      SettingsDefaults.HT.speed_change!,
+    ];
+    if (!defaultSpeeds.includes(speed)) {
       modsString += ` (${speed}x)`;
     }
     let modsPlusSign = '';
@@ -289,7 +319,7 @@ ${scoresText}
     return `
 <${mapStatus}> ${artist} - ${title} [${diffname}] by ${mapperName}
 ${lengthString} (${drainString})　${bpm} BPM　${sr}★　${modsPlusSign}${modsString}
-AR: ${ar}　CS: ${cs}　OD: ${od}　HP: ${hp}
+AR: ${ar}${arAsterisk}　CS: ${cs}${csAsterisk}　OD: ${od}${odAsterisk}　HP: ${hp}${hpAsterisk}
 
 Score: ${totalScore}　Combo: ${comboString}
 Accuracy: ${acc}%
@@ -305,12 +335,33 @@ Beatmap: ${mapUrlShort}
     const map = play.beatmap;
     const mapset = play.beatmapset;
 
-    const modAcronyms = play.mods.map(m => m.acronym);
+    let speed = 1;
+    const dtMod = play.mods.find(m => m.acronym === 'DT');
+    if (dtMod !== undefined && dtMod.settings !== undefined) {
+      speed =
+        (dtMod.settings as SettingsDT).speed_change ??
+        SettingsDefaults.DT.speed_change!;
+    }
+    const htMod = play.mods.find(m => m.acronym === 'HT');
+    if (htMod !== undefined && htMod.settings !== undefined) {
+      speed =
+        (htMod.settings as SettingsHT).speed_change ??
+        SettingsDefaults.HT.speed_change!;
+    }
 
     const {title} = mapset;
     const diffname = map.difficultyName;
-    const sr = map.stars;
-    const modsString = modAcronyms.join('');
+    const sr = play.stars.toFixed(2);
+    const modAcronyms = play.mods.map(m => m.acronym);
+    let modsString = modAcronyms.join('');
+    const defaultSpeeds = [
+      1,
+      SettingsDefaults.DT.speed_change!,
+      SettingsDefaults.HT.speed_change!,
+    ];
+    if (!defaultSpeeds.includes(speed)) {
+      modsString += ` (${speed}x)`;
+    }
     let modsPlusSign = '';
     if (modAcronyms.length) {
       modsPlusSign = '+';

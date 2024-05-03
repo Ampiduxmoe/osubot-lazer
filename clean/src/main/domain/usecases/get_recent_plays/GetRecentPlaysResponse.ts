@@ -75,6 +75,11 @@ export interface SettingsDT {
   speed_change?: number;
 }
 
+export interface SettingsHT {
+  adjust_pitch?: boolean;
+  speed_change?: number;
+}
+
 export interface SettingsDA {
   drain_rate?: number;
   circle_size?: number;
@@ -94,6 +99,10 @@ export class SettingsDefaults {
   static DT: SettingsDT = {
     adjust_pitch: false,
     speed_change: 1.5,
+  };
+  static HT: SettingsHT = {
+    adjust_pitch: false,
+    speed_change: 0.75,
   };
   static CL: SettingsCL = {
     classic_health: true,

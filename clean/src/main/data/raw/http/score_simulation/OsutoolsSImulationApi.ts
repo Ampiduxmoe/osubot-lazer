@@ -2,7 +2,12 @@ import axios, {AxiosInstance} from 'axios';
 import {ScoreSimulationApi} from '../ScoreSimulationApi';
 import {ScoreSimulationInfo} from '../boundary/ScoreSimulationInfo';
 import {RawScoreSimulationResult} from './RawScoreSimulationResult';
-import {RawScoreSimulationParams} from './RawSimulationParams';
+import {round} from '../../../../../primitives/Numbers';
+import {
+  RawScoreSimulationParams,
+  RawScoreSimulationParamsDt,
+  RawScoreSimulationParamsHt,
+} from './RawSimulationParams';
 
 export class OsutoolsSimulationApi implements ScoreSimulationApi {
   private httpClient: AxiosInstance;
@@ -27,6 +32,13 @@ export class OsutoolsSimulationApi implements ScoreSimulationApi {
     goods: number,
     simulationParams?: {
       dtRate?: number;
+      htRate?: number;
+      difficultyAdjust?: {
+        ar?: number;
+        cs?: number;
+        od?: number;
+        hp?: number;
+      };
     }
   ): Promise<ScoreSimulationInfo> {
     let url = '/';
@@ -44,7 +56,34 @@ export class OsutoolsSimulationApi implements ScoreSimulationApi {
       simulationParams.dtRate !== undefined
     ) {
       url = url + 'dt';
-      body.dt_rate = simulationParams.dtRate;
+      (body as RawScoreSimulationParamsDt).dt_rate = simulationParams.dtRate;
+    } else if (
+      mods.find(m => m.toLowerCase() === 'ht') !== undefined &&
+      simulationParams !== undefined &&
+      simulationParams.htRate !== undefined
+    ) {
+      url = url + 'ht';
+      (body as RawScoreSimulationParamsHt).ht_rate = simulationParams.htRate;
+    }
+    if (
+      mods.find(m => m.toLowerCase() === 'da') !== undefined &&
+      simulationParams !== undefined &&
+      simulationParams.difficultyAdjust !== undefined
+    ) {
+      const da = simulationParams.difficultyAdjust;
+      body.da_settings = {};
+      if (da.ar !== undefined) {
+        body.da_settings.ar = round(da.ar, 1);
+      }
+      if (da.cs !== undefined) {
+        body.da_settings.cs = round(da.cs, 1);
+      }
+      if (da.od !== undefined) {
+        body.da_settings.od = round(da.od, 1);
+      }
+      if (da.hp !== undefined) {
+        body.da_settings.hp = round(da.hp, 1);
+      }
     }
     console.log(`Trying to get score simulation (${JSON.stringify(body)})...`);
     const response = await this.httpClient.post(url, body);
