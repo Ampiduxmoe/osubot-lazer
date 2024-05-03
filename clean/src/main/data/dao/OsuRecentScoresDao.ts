@@ -9,6 +9,10 @@ export interface OsuRecentScoresDao {
     osuUserId: number,
     server: OsuServer,
     includeFails: boolean,
+    mods: {
+      acronym: string;
+      isOptional: boolean;
+    }[],
     quantity: number,
     startPosition: number,
     ruleset: OsuRuleset

@@ -147,18 +147,9 @@ export class UserRecentPlays extends VkCommand<
       }
       username = boundUser.username;
     }
-    const mods = args.mods || [];
-    const startPosition = clamp(
-      mods.length > 0 ? 1 : args.startPosition || 1,
-      1,
-      100
-    );
-    // eslint-disable-next-line prettier/prettier
-    const quantity = clamp(
-      mods.length > 0 ? 100 : args.quantity || 1,
-      1,
-      100
-    );
+    const mods = args.mods ?? [];
+    const startPosition = clamp(args.startPosition ?? 1, 1, 100);
+    const quantity = clamp(args.quantity ?? 1, 1, 10);
     const recentPlaysResult = await this.getRecentPlays.execute({
       server: args.server,
       username: username,
