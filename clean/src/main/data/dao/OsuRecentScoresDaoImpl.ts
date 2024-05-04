@@ -38,7 +38,6 @@ export class OsuRecentScoresDaoImpl implements OsuRecentScoresDao {
     if (api === undefined) {
       throw Error(`Could not find API for server ${OsuServer[server]}`);
     }
-    console.log(mods);
     const requiredMods = mods
       .filter(m => m.isOptional === false)
       .map(m => m.acronym.toLowerCase());
