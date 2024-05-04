@@ -2,7 +2,9 @@ import {RecentScoreInfo} from '../raw/http/boundary/RecentScoreInfo';
 import {OsuServer} from '../../../primitives/OsuServer';
 import {OsuRuleset} from '../../../primitives/OsuRuleset';
 
-export type RecentScore = RecentScoreInfo;
+export type RecentScore = RecentScoreInfo & {
+  absolutePosision: number;
+};
 
 export interface OsuRecentScoresDao {
   get(
@@ -16,5 +18,5 @@ export interface OsuRecentScoresDao {
     quantity: number,
     startPosition: number,
     ruleset: OsuRuleset
-  ): Promise<RecentScoreInfo[]>;
+  ): Promise<RecentScore[]>;
 }

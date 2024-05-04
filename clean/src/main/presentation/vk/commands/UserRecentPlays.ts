@@ -202,10 +202,10 @@ export class UserRecentPlays extends VkCommand<
     const passesString = oneScore ? 'Последний пасс' : 'Последние пассы';
     const scoresString = oneScore ? 'Последний скор' : 'Последние скоры';
     const scoresText = recentPlays.plays
-      .map(p =>
+      .map((p, i) =>
         oneScore
           ? this.verboseScoreDescription(p)
-          : this.shortScoreDescription(p)
+          : this.shortScoreDescription(p, i)
       )
       .join('\n');
     const text = `
@@ -323,7 +323,7 @@ Beatmap: ${mapUrlShort}
     `.trim();
   }
 
-  shortScoreDescription(play: RecentPlay): string {
+  shortScoreDescription(play: RecentPlay, index: number): string {
     const map = play.beatmap;
     const mapset = play.beatmapset;
 
@@ -341,6 +341,9 @@ Beatmap: ${mapUrlShort}
         SettingsDefaults.HT.speed_change!;
     }
 
+    const relPos = index + 1;
+    const absPos = play.absolutePosition;
+    const maybeAbsPos = absPos === relPos ? '' : `\\${absPos}`;
     const {title} = mapset;
     const diffname = map.difficultyName;
     const sr = play.stars.toFixed(2);
@@ -373,7 +376,7 @@ Beatmap: ${mapUrlShort}
     const mapCompletionString = play.passed ? '' : `(${completionPercent}%)`;
     const mapUrlShort = map.url.replace('beatmaps', 'b');
     return `
-#　${title} [${diffname}] ${modsPlusSign}${modsString}
+${relPos}${maybeAbsPos}. ${title} [${diffname}] ${modsPlusSign}${modsString}
 ${sr}★　${grade}${mapCompletionString}　${comboString}　${acc}%
 ${pp}pp　 ${mapUrlShort}
     `.trim();

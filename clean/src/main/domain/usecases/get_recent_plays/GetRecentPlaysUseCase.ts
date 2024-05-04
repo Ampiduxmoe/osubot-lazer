@@ -108,6 +108,7 @@ export class GetRecentPlaysUseCase
         moddedBeatmapStats.applyEzMod();
       }
       const osuUserRecentScore: RecentPlay = {
+        absolutePosition: s.absolutePosision,
         beatmapset: {
           status: extractBeatmapsetRankStatus(s),
           artist: s.beatmapset.artist,

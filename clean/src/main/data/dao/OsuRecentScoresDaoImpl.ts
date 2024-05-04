@@ -1,4 +1,3 @@
-import {RecentScoreInfo} from '../raw/http/boundary/RecentScoreInfo';
 import {OsuServer} from '../../../primitives/OsuServer';
 import {OsuRuleset} from '../../../primitives/OsuRuleset';
 import {
@@ -33,7 +32,7 @@ export class OsuRecentScoresDaoImpl implements OsuRecentScoresDao {
     quantity: number,
     startPosition: number,
     ruleset: OsuRuleset
-  ): Promise<RecentScoreInfo[]> {
+  ): Promise<RecentScore[]> {
     const api = this.apis.find(api => api.server === server);
     if (api === undefined) {
       throw Error(`Could not find API for server ${OsuServer[server]}`);
@@ -70,7 +69,12 @@ export class OsuRecentScoresDaoImpl implements OsuRecentScoresDao {
       };
       await this.cacheUserId(userIdAndUsername, server);
     }
-    let filteredScores = scoreInfos.filter(s => {
+    const recentScores = scoreInfos.map((s, i) => {
+      const recentScore = s as RecentScore;
+      recentScore.absolutePosision = i + adjustedStartPosition;
+      return recentScore;
+    });
+    let filteredScores = recentScores.filter(s => {
       if (allFilterMods.length === 0) {
         return true;
       }
@@ -94,7 +98,7 @@ export class OsuRecentScoresDaoImpl implements OsuRecentScoresDao {
       filteredScores = filteredScores.splice(startPosition - 1);
       filteredScores.splice(quantity);
     }
-    return filteredScores as RecentScore[];
+    return filteredScores;
   }
 
   private async cacheUserId(

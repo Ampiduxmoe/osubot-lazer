@@ -10,6 +10,7 @@ export interface OsuUserRecentPlays {
 }
 
 export interface RecentPlay {
+  absolutePosition: number;
   beatmapset: {
     status: BeatmapsetRankStatus;
     artist: string;
