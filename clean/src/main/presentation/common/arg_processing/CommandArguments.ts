@@ -7,6 +7,7 @@ import {UserInfo} from '../../vk/commands/UserInfo';
 import {UserRecentPlays} from '../../vk/commands/UserRecentPlays';
 import {Help} from '../../vk/commands/Help';
 import {CommandPrefixes} from '../../vk/commands/base/VkCommand';
+import {ModArg} from './ModArg';
 
 export const SERVER_PREFIX: CommandArgument<OsuServer> = {
   displayName: 'server',
@@ -136,24 +137,48 @@ export const QUANTITY: CommandArgument<number> = {
   },
 };
 
-export const MODS: CommandArgument<string[]> = {
+export const MODS: CommandArgument<ModArg[]> = {
   displayName: '+mods',
-  description: 'список модов (одной строкой без пробелов)',
+  description:
+    'список модов (одной строкой без пробелов); в скобках указываются допустимые, но не обязательные моды',
   get usageExample(): string {
-    const maybeHd = pickRandom(['hd', 'HD', '']);
+    const maybeHd = pickRandom(['hd', 'HD', '(hd)', '(HD)', '']);
     const dtOrHr = pickRandom(['dt', 'DT', 'hr', 'HR']);
-    return `+${maybeHd}${dtOrHr}`;
+    const maybeCl = pickRandom(['cl', 'CL', '(cl)', '(CL)', '']);
+    return pickRandom([
+      `+${maybeHd}${dtOrHr}${maybeCl}`,
+      `+${maybeCl}${maybeHd}${dtOrHr}`,
+    ]);
   },
   match: function (token: string): boolean {
-    const modsRegex = /^\+([a-zA-Z]{2})+$/;
+    const modsRegex = /^\+(([a-zA-Z]{2})|(\([a-zA-Z]{2}\)))+$/;
     return modsRegex.test(token);
   },
-  parse: function (token: string): string[] {
-    return token
-      .substring(1)
-      .toUpperCase()
-      .match(/.{2}/g)!
-      .flat()
-      .filter(uniquesFilter);
+  parse: function (token: string): ModArg[] {
+    const modsString = token.substring(1).toUpperCase();
+    const optionalMods =
+      modsString
+        .match(/\(.{2}\)/g)
+        ?.flat()
+        ?.filter(uniquesFilter)
+        ?.map(s => s.substring(1, 3)) ?? [];
+    let noOptionalModsString = modsString;
+    for (const optionalMod of optionalMods) {
+      noOptionalModsString = noOptionalModsString.replace(
+        `(${optionalMod})`,
+        ''
+      );
+    }
+    const requiredMods =
+      // eslint-disable-next-line prettier/prettier
+      noOptionalModsString
+        .match(/.{2}/g)
+        ?.flat()
+        ?.filter(uniquesFilter) ?? [];
+    const mods: ModArg[] = [
+      ...optionalMods.map(m => ({acronym: m, isOptional: true})),
+      ...requiredMods.map(m => ({acronym: m, isOptional: false})),
+    ];
+    return mods;
   },
 };

@@ -28,6 +28,7 @@ import {
 } from '../../common/arg_processing/CommandArguments';
 import {MainArgsProcessor} from '../../common/arg_processing/MainArgsProcessor';
 import {Timespan} from '../../../../primitives/Timespan';
+import {ModArg} from '../../common/arg_processing/ModArg';
 
 export class UserRecentPlays extends VkCommand<
   UserRecentPlaysExecutionArgs,
@@ -443,7 +444,7 @@ interface UserRecentPlaysExecutionArgs {
   username: string | undefined;
   startPosition: number | undefined;
   quantity: number | undefined;
-  mods: string[] | undefined;
+  mods: ModArg[] | undefined;
 }
 
 interface UserRecentPlaysViewParams {

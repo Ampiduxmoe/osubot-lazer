@@ -5,5 +5,8 @@ export interface GetRecentPlaysRequest {
   includeFails: boolean;
   startPosition: number;
   quantity: number;
-  mods: string[];
+  mods: {
+    acronym: string;
+    isOptional: boolean;
+  }[];
 }

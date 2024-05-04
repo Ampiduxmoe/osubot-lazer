@@ -65,7 +65,7 @@ export class GetRecentPlaysUseCase
       osuId,
       server,
       params.includeFails,
-      params.mods.map(m => ({acronym: m, isOptional: false})),
+      params.mods,
       params.quantity,
       params.startPosition,
       OsuRuleset.osu
