@@ -14,12 +14,17 @@ import {SqliteDb} from './data/raw/db/SqliteDb';
 import {SqlDb} from './data/raw/db/SqlDb';
 import {GetAppUserInfoUseCase} from './domain/usecases/get_app_user_info/GetAppUserInfoUseCase';
 import {OsuIdsAndUsernames} from './data/raw/db/tables/OsuIdsAndUsernames';
+import {AppUserApiRequestsCounts} from './data/raw/db/tables/AppUserApiRequestsCounts';
 import {AppUsersDaoImpl} from './data/dao/AppUsersDaoImpl';
 import {OsuRecentScoresDaoImpl} from './data/dao/OsuRecentScoresDaoImpl';
 import {CachedOsuIdsDaoImpl} from './data/dao/CachedOsuIdsDaoImpl';
 import {Help} from './presentation/vk/commands/Help';
 import {ScoreSimulationsDaoImpl} from './data/dao/ScoreSimulationsDaoImpl';
 import {OsutoolsSimulationApi} from './data/raw/http/score_simulation/OsutoolsSImulationApi';
+import {AppUserRecentApiRequestsDaoImpl} from './data/dao/AppUserRecentApiRequestsDaoImpl';
+import {AppUserApiRequestsSummariesDaoImpl} from './data/dao/AppUserApiRequestsSummariesDaoImpl';
+import {TimeWindows} from './data/raw/db/tables/TimeWindows';
+import {Timespan} from '../primitives/Timespan';
 
 export const APP_CODE_NAME = 'osubot-lazer';
 
@@ -30,6 +35,9 @@ export class App {
 
   currentVkGroup: VkGroup;
   vkClient: VkClient;
+
+  startHandlers: (() => Promise<void>)[] = [];
+  stopHandlers: (() => Promise<void>)[] = [];
 
   constructor(config: AppConfig) {
     this.config = config;
@@ -54,16 +62,35 @@ export class App {
 
     const osuApiList = [banchoApi];
 
+    const requestsCounts = new AppUserApiRequestsCounts(this.db);
+    const timeWindows = new TimeWindows(this.db);
     const osuIdsAndUsernames = new OsuIdsAndUsernames(this.db);
     const appUsers = new AppUsers(this.db);
 
-    const allDbTables = [osuIdsAndUsernames, appUsers];
+    const allDbTables = [
+      requestsCounts,
+      timeWindows,
+      osuIdsAndUsernames,
+      appUsers,
+    ];
 
-    const osuUsersDao = new OsuUsersDaoImpl(osuApiList, osuIdsAndUsernames);
+    const requestSummariesDao = new AppUserApiRequestsSummariesDaoImpl(
+      requestsCounts,
+      timeWindows
+    );
+    const recentApiRequestsDao = new AppUserRecentApiRequestsDaoImpl(
+      requestSummariesDao
+    );
+    const osuUsersDao = new OsuUsersDaoImpl(
+      osuApiList,
+      osuIdsAndUsernames,
+      recentApiRequestsDao
+    );
     const appUsersDao = new AppUsersDaoImpl(appUsers);
     const recentScoresDao = new OsuRecentScoresDaoImpl(
       osuApiList,
-      osuIdsAndUsernames
+      osuIdsAndUsernames,
+      recentApiRequestsDao
     );
     const scoreSimulationsDao = new ScoreSimulationsDaoImpl(scoreSiulationApi);
     const cachedOsuIdsDao = new CachedOsuIdsDaoImpl(osuIdsAndUsernames);
@@ -86,12 +113,21 @@ export class App {
       getRecentPlaysUseCase: getRecentPlaysUseCase,
     });
 
-    (async () => {
+    this.startHandlers.push(async () => {
       console.log('Started initializing tables');
       const initPromises = allDbTables.map(t => t.init());
       await Promise.all(initPromises);
       console.log('All tables initialized successfully');
-    })();
+    });
+    this.startHandlers.push(async () => {
+      recentApiRequestsDao.startRequestsCleanups(
+        new Timespan().addMinutes(1).totalMiliseconds()
+      );
+    });
+    this.stopHandlers.push(async () => {
+      recentApiRequestsDao.stopRequestsCleanups();
+      await recentApiRequestsDao.convertToSummaries();
+    });
   }
 
   createVkClient(params: VkClientCreationParams): VkClient {
@@ -116,6 +152,9 @@ export class App {
 
   async start(): Promise<void> {
     console.log('App starting...');
+    for (const startHandler of this.startHandlers) {
+      await startHandler();
+    }
     await this.vkClient.start();
     console.log('App started!');
   }
@@ -123,6 +162,9 @@ export class App {
   async stop(): Promise<void> {
     console.log('App stopping...');
     await this.vkClient.stop();
+    for (const stopHandler of this.stopHandlers) {
+      await stopHandler();
+    }
     console.log('Stopped');
   }
 }

@@ -8,6 +8,7 @@ export type RecentScore = RecentScoreInfo & {
 
 export interface OsuRecentScoresDao {
   get(
+    appUserId: string,
     osuUserId: number,
     server: OsuServer,
     includeFails: boolean,

@@ -30,4 +30,15 @@ export class SqliteDb implements SqlDb {
       });
     });
   }
+  getAll<T>(stmt: string, opts: unknown[]): Promise<T[]> {
+    return new Promise<T[]>((resolve, reject) => {
+      this.sqliteDb.all<T>(stmt, opts, (e, rows) => {
+        if (e) {
+          reject(e);
+        } else {
+          resolve(rows);
+        }
+      });
+    });
+  }
 }

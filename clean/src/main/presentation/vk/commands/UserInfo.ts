@@ -112,6 +112,7 @@ export class UserInfo extends VkCommand<
       username = boundUser.username;
     }
     const userInfoResponse = await this.getOsuUserInfo.execute({
+      appUserId: VkIdConverter.vkUserIdToAppUserId(args.vkUserId),
       server: args.server,
       username: username,
     });

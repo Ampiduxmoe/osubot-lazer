@@ -6,6 +6,7 @@ export type OsuUser = OsuUserInfo;
 
 export interface OsuUsersDao {
   getByUsername(
+    appUserId: string,
     username: string,
     server: OsuServer,
     ruleset: OsuRuleset

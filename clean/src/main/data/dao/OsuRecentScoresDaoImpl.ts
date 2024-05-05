@@ -7,6 +7,10 @@ import {
 import {OsuRecentScoresDao, RecentScore} from './OsuRecentScoresDao';
 import {OsuApi} from '../raw/http/OsuAPI';
 import {SqlDbTable} from '../raw/db/SqlDbTable';
+import {
+  AppUserRecentApiRequestsDao,
+  COMMON_REQUEST_SUBTARGETS,
+} from './AppUserRecentApiRequestsDao';
 
 export class OsuRecentScoresDaoImpl implements OsuRecentScoresDao {
   private apis: OsuApi[];
@@ -14,14 +18,18 @@ export class OsuRecentScoresDaoImpl implements OsuRecentScoresDao {
     OsuIdAndUsername,
     OsuIdAndUsernameKey
   >;
+  private recentApiRequests: AppUserRecentApiRequestsDao;
   constructor(
     apis: OsuApi[],
-    osuIdsAndUsernamesTable: SqlDbTable<OsuIdAndUsername, OsuIdAndUsernameKey>
+    osuIdsAndUsernamesTable: SqlDbTable<OsuIdAndUsername, OsuIdAndUsernameKey>,
+    recentApiRequests: AppUserRecentApiRequestsDao
   ) {
     this.apis = apis;
     this.osuIdsAndUsernamesTable = osuIdsAndUsernamesTable;
+    this.recentApiRequests = recentApiRequests;
   }
   async get(
+    appUserId: string,
     osuUserId: number,
     server: OsuServer,
     includeFails: boolean,
@@ -54,6 +62,13 @@ export class OsuRecentScoresDaoImpl implements OsuRecentScoresDao {
       adjustedQuantity = 100;
       adjustedStartPosition = 1;
     }
+    await this.recentApiRequests.add({
+      time: Date.now(),
+      appUserId: appUserId,
+      target: OsuServer[api.server],
+      subtarget: COMMON_REQUEST_SUBTARGETS.userRecentPlays,
+      count: 1,
+    });
     const scoreInfos = await api.getRecentPlays(
       osuUserId,
       includeFails,

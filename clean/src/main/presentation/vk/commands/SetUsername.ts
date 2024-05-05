@@ -96,7 +96,7 @@ export class SetUsername extends VkCommand<
       };
     }
     const result = await this.setUsername.execute({
-      id: VkIdConverter.vkUserIdToAppUserId(args.vkUserId),
+      appUserId: VkIdConverter.vkUserIdToAppUserId(args.vkUserId),
       server: args.server,
       username: args.username,
     });

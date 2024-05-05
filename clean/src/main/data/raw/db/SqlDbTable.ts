@@ -1,6 +1,6 @@
 import {SqlDb, OperationExecutionResult} from './SqlDb';
 
-export abstract class SqlDbTable<T, TKey> {
+export abstract class SqlDbTable<T, TGet> {
   abstract tableName: string;
 
   db: SqlDb;
@@ -26,7 +26,7 @@ export abstract class SqlDbTable<T, TKey> {
 
   abstract createTable(): Promise<OperationExecutionResult>;
 
-  abstract get(key: TKey): Promise<T | undefined>;
+  abstract get(key: TGet): Promise<T | undefined>;
   abstract add(value: T): Promise<OperationExecutionResult>;
   abstract update(value: T): Promise<OperationExecutionResult>;
   abstract delete(value: T): Promise<OperationExecutionResult>;

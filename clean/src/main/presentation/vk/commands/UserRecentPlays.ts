@@ -152,6 +152,7 @@ export class UserRecentPlays extends VkCommand<
     const startPosition = clamp(args.startPosition ?? 1, 1, 100);
     const quantity = clamp(args.quantity ?? 1, 1, 10);
     const recentPlaysResult = await this.getRecentPlays.execute({
+      appUserId: VkIdConverter.vkUserIdToAppUserId(args.vkUserId),
       server: args.server,
       username: username,
       includeFails: !args.passesOnly,

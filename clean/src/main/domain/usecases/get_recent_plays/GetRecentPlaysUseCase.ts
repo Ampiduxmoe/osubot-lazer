@@ -46,6 +46,7 @@ export class GetRecentPlaysUseCase
     let caseCorrectUsername = osuIdAndUsername?.username;
     if (osuId === undefined || caseCorrectUsername === undefined) {
       const osuUser = await this.osuUsers.getByUsername(
+        params.appUserId,
         username,
         server,
         OsuRuleset.osu
@@ -62,6 +63,7 @@ export class GetRecentPlaysUseCase
     osuId = osuId!;
     caseCorrectUsername = caseCorrectUsername!;
     const rawRecentScores = await this.recentScores.get(
+      params.appUserId,
       osuId,
       server,
       params.includeFails,
