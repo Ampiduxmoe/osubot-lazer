@@ -214,6 +214,23 @@ export const ANY_WORD: (
   },
 });
 
+export const ANY_STRING: (
+  name: string,
+  description: string
+) => CommandArgument<string> = (name, description) => ({
+  displayName: name,
+  description: description,
+  get usageExample(): string {
+    return pickRandom(['foo123!', '321[]bar']);
+  },
+  match: function (): boolean {
+    return true;
+  },
+  parse: function (token: string): string {
+    return token;
+  },
+});
+
 export const DAY_OFFSET: CommandArgument<number> = {
   displayName: 'today[±N]',
   description: 'номер дня относительно сегодня',
@@ -264,5 +281,5 @@ export const NUMBER: (
   },
 });
 
-export const APP_USER_ID = ANY_WORD('ID', 'ID пользователя приложения');
+export const APP_USER_ID = ANY_STRING('ID', 'ID пользователя приложения');
 export const VK_USER_ID = NUMBER('ID пользователя VK', 0, +Infinity);
