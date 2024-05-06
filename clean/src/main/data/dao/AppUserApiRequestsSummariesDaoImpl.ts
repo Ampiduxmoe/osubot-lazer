@@ -5,7 +5,10 @@ import {
   AppUserApiRequestsCountKey,
 } from '../raw/db/entities/AppUserApiRequestsCount';
 import {TimeWindow, TimeWindowKey} from '../raw/db/entities/TimeWindow';
-import {AppUserApiRequestsSummariesDao} from './AppUserApiRequestsSummariesDao';
+import {
+  AppUserApiRequestsSummariesDao,
+  AppUserApiRequestsSummary,
+} from './AppUserApiRequestsSummariesDao';
 import {AppUserApiRequests} from './AppUserRecentApiRequestsDao';
 
 export class AppUserApiRequestsSummariesDaoImpl
@@ -48,15 +51,15 @@ export class AppUserApiRequestsSummariesDaoImpl
     const fittingTimeWindow = todayTimeWindows.find(
       w => w.start_time < targetTime && w.end_time > targetTime
     )!;
-    const existingSummaries =
+    const existingRequestsCounts =
       (await this.requestsCounts.get({
         time_window_ids: [fittingTimeWindow.id],
         app_user_id: requests.appUserId,
       })) ?? [];
-    const summary = existingSummaries.find(
+    const requestCount = existingRequestsCounts.find(
       s => s.target === requests.target && s.subtarget === requests.subtarget
     );
-    if (summary === undefined) {
+    if (requestCount === undefined) {
       this.requestsCounts.add([
         {
           time_window_id: fittingTimeWindow.id,
@@ -68,8 +71,78 @@ export class AppUserApiRequestsSummariesDaoImpl
       ]);
       return;
     }
-    summary.count += requests.count;
-    this.requestsCounts.update([summary]);
+    requestCount.count += requests.count;
+    this.requestsCounts.update([requestCount]);
+  }
+
+  async get(
+    timeStart: number,
+    timeEnd: number,
+    targetAppUserId: string | undefined
+  ): Promise<AppUserApiRequestsSummary[]> {
+    const timeWindows = await this.timeWindows.get({
+      start_time: timeStart,
+      end_time: timeEnd,
+    });
+    if (timeWindows === undefined || timeWindows.length === 0) {
+      return [];
+    }
+    const requestsCounts =
+      (await this.requestsCounts.get({
+        time_window_ids: timeWindows.map(w => w.id),
+        app_user_id: targetAppUserId,
+      })) ?? [];
+    const byTimeWindows: {
+      [timeWindowId: number]: {
+        [appUserId: string]: {
+          target: string;
+          subtarget: string | null;
+          count: number;
+        }[];
+      };
+    } = {};
+    for (const requestCount of requestsCounts) {
+      const timeWindowId = requestCount.time_window_id;
+      if (byTimeWindows[timeWindowId] === undefined) {
+        byTimeWindows[timeWindowId] = {};
+      }
+      const appUserId = requestCount.app_user_id;
+      if (byTimeWindows[timeWindowId][appUserId] === undefined) {
+        byTimeWindows[timeWindowId][appUserId] = [];
+      }
+      byTimeWindows[timeWindowId][appUserId].push({
+        target: requestCount.target,
+        subtarget: requestCount.subtarget,
+        count: requestCount.count,
+      });
+    }
+    const result: AppUserApiRequestsSummary[] = [];
+    for (const timeWindow of timeWindows) {
+      const timeWindowData = byTimeWindows[timeWindow.id];
+      if (timeWindowData === undefined) {
+        continue;
+      }
+      const appUsers: {
+        appUserId: string;
+        counts: {
+          target: string;
+          subtarget: string | null;
+          count: number;
+        }[];
+      }[] = [];
+      for (const appUserId in timeWindowData) {
+        appUsers.push({
+          appUserId: appUserId,
+          counts: timeWindowData[appUserId],
+        });
+      }
+      result.push({
+        timeWindowStart: timeWindow.start_time,
+        timeWindowEnd: timeWindow.end_time,
+        appUsers: appUsers,
+      });
+    }
+    return result;
   }
 
   private getTodayStartAndEnd(): {startTime: number; endTime: number} {
@@ -105,11 +178,11 @@ export class AppUserApiRequestsSummariesDaoImpl
     ) {
       return;
     }
-    const yesterdaySummaries =
+    const yesterdayRequestsCounts =
       (await this.requestsCounts.get({
         time_window_ids: yesterdayTimeWindows.map(w => w.id),
       })) ?? [];
-    const usedWindowIds = yesterdaySummaries.map(s => s.time_window_id);
+    const usedWindowIds = yesterdayRequestsCounts.map(s => s.time_window_id);
     const unusedWindows = yesterdayTimeWindows.filter(
       w => !usedWindowIds.includes(w.id)
     );
@@ -150,17 +223,4 @@ export class AppUserApiRequestsSummariesDaoImpl
     });
     await this.timeWindows.add(todayWindows);
   }
-}
-
-export interface AppUserApiRequestsSummary {
-  time_window_start: number;
-  time_window_end: number;
-  app_users: {
-    app_user_id: string;
-    counts: {
-      target: string;
-      subtarget: string | null;
-      count: number;
-    }[];
-  }[];
 }

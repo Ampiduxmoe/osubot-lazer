@@ -182,3 +182,87 @@ export const MODS: CommandArgument<ModArg[]> = {
     return mods;
   },
 };
+
+export const WORD: (word: string) => CommandArgument<string> = word => ({
+  displayName: word,
+  description: `слово ${word}`,
+  get usageExample(): string {
+    return pickRandom([word.toLowerCase(), word.toUpperCase()]);
+  },
+  match: function (token: string): boolean {
+    return token.toLowerCase() === word.toLowerCase();
+  },
+  parse: function (token: string): string {
+    return token;
+  },
+});
+
+export const ANY_WORD: (
+  name: string,
+  description: string
+) => CommandArgument<string> = (name, description) => ({
+  displayName: name,
+  description: description,
+  get usageExample(): string {
+    return pickRandom(['foo', 'bar']);
+  },
+  match: function (token: string): boolean {
+    return /^\w+$/.test(token);
+  },
+  parse: function (token: string): string {
+    return token;
+  },
+});
+
+export const DAY_OFFSET: CommandArgument<number> = {
+  displayName: 'today[±N]',
+  description: 'номер дня относительно сегодня',
+  get usageExample(): string {
+    const randInt = Math.floor(Math.random() * 5);
+    const sign = pickRandom(['+', '-']);
+    const pos = `${sign}${randInt}`;
+    const maybePos = pickRandom(['', pos, pos]);
+    return `today${maybePos}`;
+  },
+  match: function (): boolean {
+    return true;
+  },
+  parse: function (token: string): number {
+    return parseInt(token.replace('today', '')) || 0;
+  },
+};
+
+export const NUMBER: (
+  description: string,
+  min: number | undefined,
+  max: number | undefined
+) => CommandArgument<number> = (description, min, max) => ({
+  displayName: 'N',
+  description: description,
+  get usageExample(): string {
+    const exampleMin = min ?? -999999;
+    const exampleMax = max ?? 999999;
+    const range = exampleMax - exampleMin;
+    const randPos = exampleMin + Math.floor(Math.random() * (range + 1));
+    return `${randPos}`;
+  },
+  match: function (token: string): boolean {
+    const number = parseInt(token);
+    if (isNaN(number)) {
+      return false;
+    }
+    if (min !== undefined && number < min) {
+      return false;
+    }
+    if (max !== undefined && number > max) {
+      return false;
+    }
+    return true;
+  },
+  parse: function (token: string): number {
+    return parseInt(token);
+  },
+});
+
+export const APP_USER_ID = ANY_WORD('ID', 'ID пользователя приложения');
+export const VK_USER_ID = NUMBER('ID пользователя VK', 0, +Infinity);

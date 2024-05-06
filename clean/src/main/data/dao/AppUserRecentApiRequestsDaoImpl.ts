@@ -12,26 +12,7 @@ export class AppUserRecentApiRequestsDaoImpl
     this.requestSummaries = requestSummaries;
   }
 
-  startRequestsCleanups(interval: number) {
-    if (this.requestsCleanupJob !== undefined) {
-      return;
-    }
-    this.requestsCleanupJob = setInterval(
-      async () => await this.convertOldRequestsToSummaries(),
-      interval
-    );
-    console.log('Recent API requests cleanups started');
-  }
-
-  stopRequestsCleanups() {
-    if (this.requestsCleanupJob === undefined) {
-      return;
-    }
-    clearInterval(this.requestsCleanupJob);
-    console.log('Recent API requests cleanups stopped');
-  }
-
-  storedFor = new Timespan().addMinutes(20);
+  minStoreTime = new Timespan().addMinutes(5);
 
   async convertToSummaries(): Promise<void> {
     const requests = this.requests;
@@ -71,9 +52,28 @@ export class AppUserRecentApiRequestsDaoImpl
     },
   };
 
+  startRequestsCleanups(interval: number) {
+    if (this.requestsCleanupJob !== undefined) {
+      return;
+    }
+    this.requestsCleanupJob = setInterval(
+      async () => await this.convertOldRequestsToSummaries(),
+      interval
+    );
+    console.log('Recent API requests cleanups started');
+  }
+
+  stopRequestsCleanups() {
+    if (this.requestsCleanupJob === undefined) {
+      return;
+    }
+    clearInterval(this.requestsCleanupJob);
+    console.log('Recent API requests cleanups stopped');
+  }
+
   private async convertOldRequestsToSummaries(): Promise<void> {
     const now = Date.now();
-    const timeThreshold = now - this.storedFor.totalMiliseconds();
+    const timeThreshold = now - this.minStoreTime.totalMiliseconds();
     const oldRequestsFilter = (requests: AppUserApiRequests): boolean => {
       return requests.time < timeThreshold;
     };

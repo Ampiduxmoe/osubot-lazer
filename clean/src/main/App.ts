@@ -25,6 +25,8 @@ import {AppUserRecentApiRequestsDaoImpl} from './data/dao/AppUserRecentApiReques
 import {AppUserApiRequestsSummariesDaoImpl} from './data/dao/AppUserApiRequestsSummariesDaoImpl';
 import {TimeWindows} from './data/raw/db/tables/TimeWindows';
 import {Timespan} from '../primitives/Timespan';
+import {ApiUsageSummary} from './presentation/vk/commands/ApiUsageSummary';
+import {GetApiUsageSummaryUseCase} from './domain/usecases/get_api_usage_summary/GetApiUsageSummaryUseCase';
 
 export const APP_CODE_NAME = 'osubot-lazer';
 
@@ -104,6 +106,9 @@ export class App {
       cachedOsuIdsDao,
       osuUsersDao
     );
+    const getApiUsageSummaryUseCase = new GetApiUsageSummaryUseCase(
+      requestSummariesDao
+    );
 
     this.vkClient = this.createVkClient({
       group: this.currentVkGroup,
@@ -111,6 +116,7 @@ export class App {
       getAppUserInfoUseCase: getAppUserInfoUseCase,
       setUsernameUseCase: setUsernameUseCase,
       getRecentPlaysUseCase: getRecentPlaysUseCase,
+      getApiUsageSummaryUseCase: getApiUsageSummaryUseCase,
     });
 
     this.startHandlers.push(async () => {
@@ -131,13 +137,15 @@ export class App {
   }
 
   createVkClient(params: VkClientCreationParams): VkClient {
+    const {group} = params;
     const {getOsuUserInfoUseCase} = params;
     const {getAppUserInfoUseCase} = params;
     const {setUsernameUseCase} = params;
     const {getRecentPlaysUseCase} = params;
+    const {getApiUsageSummaryUseCase} = params;
     const vk = new VK({
-      pollingGroupId: params.group.id,
-      token: params.group.token,
+      pollingGroupId: group.id,
+      token: group.token,
     });
     const vkClient = new VkClient(vk);
     const commands = [
@@ -145,8 +153,12 @@ export class App {
       new SetUsername(setUsernameUseCase),
       new UserRecentPlays(getRecentPlaysUseCase, getAppUserInfoUseCase),
     ];
+    const adminCommands = [
+      new ApiUsageSummary([group.owner], getApiUsageSummaryUseCase),
+    ];
     const helpCommand = new Help(commands);
     vkClient.addCommands([helpCommand, ...commands]);
+    vkClient.addCommands(adminCommands);
     return vkClient;
   }
 
@@ -191,4 +203,5 @@ interface VkClientCreationParams {
   getAppUserInfoUseCase: GetAppUserInfoUseCase;
   setUsernameUseCase: SetUsernameUseCase;
   getRecentPlaysUseCase: GetRecentPlaysUseCase;
+  getApiUsageSummaryUseCase: GetApiUsageSummaryUseCase;
 }

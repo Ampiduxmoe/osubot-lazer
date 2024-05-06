@@ -1,6 +1,6 @@
 import {Timespan} from '../../../primitives/Timespan';
 export interface AppUserRecentApiRequestsDao {
-  storedFor: Timespan;
+  minStoreTime: Timespan;
   convertToSummaries(): Promise<void>;
   get(appUserId: string, target: string): Promise<AppUserApiRequests[]>;
   add(requests: AppUserApiRequests): Promise<void>;
