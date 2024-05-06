@@ -5,7 +5,7 @@ import {VkCommand, CommandPrefixes} from './base/VkCommand';
 import {APP_CODE_NAME} from '../../../App';
 import {
   APP_USER_ID,
-  DAY_OFFSET,
+  DATE,
   WORD,
 } from '../../common/arg_processing/CommandArguments';
 import {MainArgsProcessor} from '../../common/arg_processing/MainArgsProcessor';
@@ -30,7 +30,7 @@ export class ApiUsageSummary extends VkCommand<
   commandStructure = [
     {argument: this.WORD_API, isOptional: false},
     {argument: this.WORD_USAGE, isOptional: false},
-    {argument: DAY_OFFSET, isOptional: false},
+    {argument: DATE, isOptional: false},
     {argument: APP_USER_ID, isOptional: true},
   ];
 
@@ -74,39 +74,31 @@ export class ApiUsageSummary extends VkCommand<
     if (argsProcessor.use(this.WORD_USAGE).at(0).extract() === undefined) {
       return fail;
     }
-    const dayOffset = argsProcessor.use(DAY_OFFSET).extract();
+    const date = argsProcessor.use(DATE).extract();
     const appUserId = argsProcessor.use(APP_USER_ID).extract();
     if (argsProcessor.remainingTokens.length > 0) {
       return fail;
     }
-    if (dayOffset === undefined) {
+    if (date === undefined) {
       return fail;
     }
     return CommandMatchResult.ok({
       appUserId: appUserId,
-      dayOffset: dayOffset,
+      date: date,
     });
   }
 
   async process(
     args: ApiUsageSummaryExecutionArgs
   ): Promise<ApiUsageSummaryViewParams> {
-    const {dayOffset, appUserId: appUserId} = args;
+    const {date, appUserId} = args;
 
-    const todayStart = new Date();
-    todayStart.setUTCHours(0, 0, 0, 0);
-    const tomorrowStart = new Date(todayStart.getTime());
-    tomorrowStart.setUTCDate(todayStart.getUTCDate() + 1);
-    const todayEnd = new Date(tomorrowStart.getTime() - 1);
-
-    const targetDayStart = new Date(todayStart.getTime());
-    targetDayStart.setUTCDate(todayStart.getUTCDate() + dayOffset);
-    const targetDayEnd = new Date(todayEnd.getTime());
-    targetDayEnd.setUTCDate(todayEnd.getUTCDate() + dayOffset);
+    const timeStart = date.setUTCHours(0, 0, 0, 0);
+    const timeEnd = date.setUTCHours(23, 59, 59, 999);
 
     const apiUsageSummaryResponse = await this.getApiUsageSummary.execute({
-      timeStart: targetDayStart.getTime(),
-      timeEnd: targetDayEnd.getTime(),
+      timeStart: timeStart,
+      timeEnd: timeEnd,
       appUserId: appUserId,
     });
 
@@ -127,7 +119,7 @@ export class ApiUsageSummary extends VkCommand<
     const firstIntervalSummary = apiUsageSummary[0];
     const lastIntervalSummary = apiUsageSummary[apiUsageSummary.length - 1];
     const startDate = new Date(firstIntervalSummary.timeWindowStart);
-    const endDate = new Date(lastIntervalSummary.timeWindowStart);
+    const endDate = new Date(lastIntervalSummary.timeWindowEnd);
     const rows = apiUsageSummary.map(interval => {
       const intervalStart = new Date(interval.timeWindowStart);
       const intervalDuration = new Timespan().addMilliseconds(
@@ -213,7 +205,7 @@ ${rows.join('\n')}
 }
 
 interface ApiUsageSummaryExecutionArgs {
-  dayOffset: number;
+  date: Date;
   appUserId: string | undefined;
 }
 

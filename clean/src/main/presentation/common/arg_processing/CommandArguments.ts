@@ -232,7 +232,7 @@ export const ANY_STRING: (
 });
 
 export const DAY_OFFSET: CommandArgument<number> = {
-  displayName: 'today[±N]',
+  displayName: 'today{±N}',
   description: 'номер дня относительно сегодня',
   get usageExample(): string {
     const randInt = Math.floor(Math.random() * 5);
@@ -242,10 +242,32 @@ export const DAY_OFFSET: CommandArgument<number> = {
     return `today${maybePos}`;
   },
   match: function (token: string): boolean {
-    return /^today([+-]\d+)?$/i.test(token);
+    return /^today({[+-]\d+})?$/i.test(token);
   },
   parse: function (token: string): number {
-    return parseInt(token.replace('today', '')) || 0;
+    return parseInt(token.replace('today{', '').replace('}', '')) || 0;
+  },
+};
+
+export const DATE: CommandArgument<Date> = {
+  displayName: 'date|today[±N]',
+  description: 'дата в формате ISO8601 или номер дня относительно сегодня',
+  get usageExample(): string {
+    const date = new Date().toISOString().substring(0, 10);
+    return pickRandom([date, DAY_OFFSET.usageExample]);
+  },
+  match: function (token: string): boolean {
+    return /^\d{4}-\d{2}-\d{2}$/.test(token) || DAY_OFFSET.match(token);
+  },
+  parse: function (token: string): Date {
+    if (DAY_OFFSET.match(token)) {
+      const offset = DAY_OFFSET.parse(token);
+      const tmpDate = new Date();
+      tmpDate.setUTCHours(0, 0, 0, 0);
+      tmpDate.setUTCDate(tmpDate.getUTCDate() + offset);
+      return tmpDate;
+    }
+    return new Date(Date.parse(token));
   },
 };
 
