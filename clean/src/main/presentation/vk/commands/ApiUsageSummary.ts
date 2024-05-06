@@ -68,8 +68,12 @@ export class ApiUsageSummary extends VkCommand<
       [...tokens],
       this.commandStructure.map(e => e.argument)
     );
-    argsProcessor.use(this.WORD_API).at(0).extract();
-    argsProcessor.use(this.WORD_USAGE).at(0).extract();
+    if (argsProcessor.use(this.WORD_API).at(0).extract() === undefined) {
+      return fail;
+    }
+    if (argsProcessor.use(this.WORD_USAGE).at(0).extract() === undefined) {
+      return fail;
+    }
     const dayOffset = argsProcessor.use(DAY_OFFSET).extract();
     const appUserId = argsProcessor.use(APP_USER_ID).extract();
     if (argsProcessor.remainingTokens.length > 0) {
@@ -98,7 +102,7 @@ export class ApiUsageSummary extends VkCommand<
     const targetDayStart = new Date(todayStart.getTime());
     targetDayStart.setUTCDate(todayStart.getUTCDate() + dayOffset);
     const targetDayEnd = new Date(todayEnd.getTime());
-    targetDayStart.setUTCDate(todayEnd.getUTCDate() + dayOffset);
+    targetDayEnd.setUTCDate(todayEnd.getUTCDate() + dayOffset);
 
     const apiUsageSummaryResponse = await this.getApiUsageSummary.execute({
       timeStart: targetDayStart.getTime(),

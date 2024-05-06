@@ -241,8 +241,8 @@ export const DAY_OFFSET: CommandArgument<number> = {
     const maybePos = pickRandom(['', pos, pos]);
     return `today${maybePos}`;
   },
-  match: function (): boolean {
-    return true;
+  match: function (token: string): boolean {
+    return /^today([+-]\d+)?$/i.test(token);
   },
   parse: function (token: string): number {
     return parseInt(token.replace('today', '')) || 0;
