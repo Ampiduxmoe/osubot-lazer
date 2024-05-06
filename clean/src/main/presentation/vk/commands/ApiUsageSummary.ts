@@ -92,13 +92,13 @@ export class ApiUsageSummary extends VkCommand<
     const todayStart = new Date();
     todayStart.setUTCHours(0, 0, 0, 0);
     const tomorrowStart = new Date(todayStart.getTime());
-    tomorrowStart.setDate(todayStart.getDate() + 1);
+    tomorrowStart.setUTCDate(todayStart.getUTCDate() + 1);
     const todayEnd = new Date(tomorrowStart.getTime() - 1);
 
     const targetDayStart = new Date(todayStart.getTime());
-    targetDayStart.setDate(todayStart.getDate() + dayOffset);
+    targetDayStart.setUTCDate(todayStart.getUTCDate() + dayOffset);
     const targetDayEnd = new Date(todayEnd.getTime());
-    targetDayStart.setDate(todayEnd.getDate() + dayOffset);
+    targetDayStart.setUTCDate(todayEnd.getUTCDate() + dayOffset);
 
     const apiUsageSummaryResponse = await this.getApiUsageSummary.execute({
       timeStart: targetDayStart.getTime(),

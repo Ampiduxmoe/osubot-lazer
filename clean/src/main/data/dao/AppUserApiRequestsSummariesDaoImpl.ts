@@ -149,7 +149,7 @@ export class AppUserApiRequestsSummariesDaoImpl
     const todayStart = new Date();
     todayStart.setUTCHours(0, 0, 0, 0);
     const tomorrowStart = new Date(todayStart.getTime());
-    tomorrowStart.setDate(todayStart.getDate() + 1);
+    tomorrowStart.setUTCDate(todayStart.getUTCDate() + 1);
     const todayEnd = new Date(tomorrowStart.getTime() - 1);
     return {startTime: todayStart.getTime(), endTime: todayEnd.getTime()};
   }
@@ -158,7 +158,7 @@ export class AppUserApiRequestsSummariesDaoImpl
     const todayStart = new Date();
     todayStart.setUTCHours(0, 0, 0, 0);
     const yesterdayStart = new Date(todayStart.getTime());
-    yesterdayStart.setDate(todayStart.getDate() - 1);
+    yesterdayStart.setUTCDate(todayStart.getUTCDate() - 1);
     const yesterdayEnd = new Date(todayStart.getTime() - 1);
     return {
       startTime: yesterdayStart.getTime(),
