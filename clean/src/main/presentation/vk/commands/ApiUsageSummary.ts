@@ -22,7 +22,7 @@ export class ApiUsageSummary extends VkCommand<
   shortDescription = 'статистика обращений к osu API';
   longDescription = 'Отображает сводку по количеству обращений к API';
 
-  static prefixes = new CommandPrefixes('api usage');
+  static prefixes = new CommandPrefixes();
   prefixes = ApiUsageSummary.prefixes;
 
   private WORD_API = WORD('api');

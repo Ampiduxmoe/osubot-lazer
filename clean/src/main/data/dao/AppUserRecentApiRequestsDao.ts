@@ -21,6 +21,6 @@ export interface AppUserApiRequests {
 }
 
 export const COMMON_REQUEST_SUBTARGETS = {
-  osuUserInfo: 'osu user info',
-  userRecentPlays: 'user recent plays',
+  osuUserInfo: 'user_info',
+  userRecentPlays: 'user_recent_plays',
 };
