@@ -32,23 +32,25 @@ export class AppUserApiRequestsSummariesDaoImpl
   }
 
   async add(requests: AppUserApiRequests): Promise<void> {
-    const {startTime, endTime} = this.getTodayStartAndEnd();
+    const date = new Date(requests.time);
+    const {startTime, endTime} = this.getDayStartAndEnd(date);
     const searchKey = {
       start_time: startTime,
       end_time: endTime,
     };
-    let todayTimeWindows = await this.timeWindows.get(searchKey);
-    if (todayTimeWindows === undefined || todayTimeWindows.length === 0) {
-      // It can skip yesterday cleanup if 0 requests were added today,
-      // but it will do good enough job most of the time.
+    let targetDayWindows = await this.timeWindows.get(searchKey);
+    if (targetDayWindows === undefined || targetDayWindows.length === 0) {
+      // It can skip cleanup on the day before if no requests are added,
+      // but it will be enough to keep database table mostly clean.
       // For remaining windows we can just do it manually in raw SQL once in a while.
-      await this.cleanUpUnusedTimeWindowsForYesterday();
-      await this.createTimeWindowsForToday();
-      todayTimeWindows = await this.timeWindows.get(searchKey);
-      todayTimeWindows = todayTimeWindows!;
+      const dayBefore = new Date(date).setUTCDate(date.getUTCDate() - 1);
+      await this.cleanUpUnusedTimeWindowsForDate(new Date(dayBefore));
+      await this.createTimeWindowsForDate(date);
+      targetDayWindows = await this.timeWindows.get(searchKey);
+      targetDayWindows = targetDayWindows!;
     }
     const targetTime = requests.time;
-    const fittingTimeWindow = todayTimeWindows.find(
+    const fittingTimeWindow = targetDayWindows.find(
       w => w.start_time < targetTime && w.end_time > targetTime
     )!;
     const existingRequestsCounts =
@@ -145,42 +147,31 @@ export class AppUserApiRequestsSummariesDaoImpl
     return result;
   }
 
-  private getTodayStartAndEnd(): {startTime: number; endTime: number} {
-    const today = new Date();
-    const todayStart = today.setUTCHours(0, 0, 0, 0);
-    const todayEnd = today.setUTCHours(23, 59, 59, 999);
-    return {startTime: todayStart, endTime: todayEnd};
+  private getDayStartAndEnd(date: Date): {startTime: number; endTime: number} {
+    const day = new Date(date);
+    const dayStart = day.setUTCHours(0, 0, 0, 0);
+    const dayEnd = day.setUTCHours(23, 59, 59, 999);
+    return {startTime: dayStart, endTime: dayEnd};
   }
 
-  private getYesterdayStartAndEnd(): {startTime: number; endTime: number} {
-    const tmpDate = new Date();
-    tmpDate.setUTCDate(tmpDate.getUTCDate() - 1);
-    const yesterdayStart = tmpDate.setUTCHours(0, 0, 0, 0);
-    const yesterdayEnd = tmpDate.setUTCHours(23, 59, 59, 999);
-    return {
-      startTime: yesterdayStart,
-      endTime: yesterdayEnd,
-    };
-  }
-
-  private async cleanUpUnusedTimeWindowsForYesterday(): Promise<void> {
-    const yesterdayInterval = this.getYesterdayStartAndEnd();
-    const yesterdayTimeWindows = await this.timeWindows.get({
-      start_time: yesterdayInterval.startTime,
-      end_time: yesterdayInterval.endTime,
+  private async cleanUpUnusedTimeWindowsForDate(date: Date): Promise<void> {
+    const targetDayInterval = this.getDayStartAndEnd(date);
+    const targetDayTimeWindows = await this.timeWindows.get({
+      start_time: targetDayInterval.startTime,
+      end_time: targetDayInterval.endTime,
     });
     if (
-      yesterdayTimeWindows === undefined ||
-      yesterdayTimeWindows.length === 0
+      targetDayTimeWindows === undefined ||
+      targetDayTimeWindows.length === 0
     ) {
       return;
     }
-    const yesterdayRequestsCounts =
+    const targetDayRequestsCounts =
       (await this.requestsCounts.get({
-        time_window_ids: yesterdayTimeWindows.map(w => w.id),
+        time_window_ids: targetDayTimeWindows.map(w => w.id),
       })) ?? [];
-    const usedWindowIds = yesterdayRequestsCounts.map(s => s.time_window_id);
-    const unusedWindows = yesterdayTimeWindows.filter(
+    const usedWindowIds = targetDayRequestsCounts.map(s => s.time_window_id);
+    const unusedWindows = targetDayTimeWindows.filter(
       w => !usedWindowIds.includes(w.id)
     );
     await this.timeWindows.delete(unusedWindows);
@@ -189,35 +180,35 @@ export class AppUserApiRequestsSummariesDaoImpl
     );
   }
 
-  private async createTimeWindowsForToday(): Promise<void> {
-    const todayInterval = this.getTodayStartAndEnd();
-    const todayStart = todayInterval.startTime;
-    const todayEnd = todayInterval.endTime;
-    const dayLength = todayEnd - todayStart;
+  private async createTimeWindowsForDate(date: Date): Promise<void> {
+    const targetDayInterval = this.getDayStartAndEnd(date);
+    const targetDayStart = targetDayInterval.startTime;
+    const targetDayEnd = targetDayInterval.endTime;
+    const dayLength = targetDayEnd - targetDayStart;
     const bucketTimeWindowMs = this.bucketTimeWindow.totalMiliseconds();
     const lastIntervalMergeMaxSize = 1.4;
     const smallestPossibleIntervalSize = lastIntervalMergeMaxSize - 1;
     const bucketCount = Math.floor(
       dayLength / bucketTimeWindowMs + (1 - smallestPossibleIntervalSize)
     );
-    const todayWindows: TimeWindow[] = [];
+    const targetDayWindows: TimeWindow[] = [];
     let i: number;
     for (i = 0; i < bucketCount - 1; i++) {
-      const bucketStartTime = todayStart + i * bucketTimeWindowMs;
-      const bucketEndTime = todayStart + (i + 1) * bucketTimeWindowMs - 1;
-      todayWindows.push({
+      const bucketStartTime = targetDayStart + i * bucketTimeWindowMs;
+      const bucketEndTime = targetDayStart + (i + 1) * bucketTimeWindowMs - 1;
+      targetDayWindows.push({
         id: -1,
         start_time: bucketStartTime,
         end_time: bucketEndTime,
       });
     }
-    const lastBucketStartTime = todayStart + i * bucketTimeWindowMs;
-    const lastBucketEndTime = todayEnd;
-    todayWindows.push({
+    const lastBucketStartTime = targetDayStart + i * bucketTimeWindowMs;
+    const lastBucketEndTime = targetDayEnd;
+    targetDayWindows.push({
       id: -1,
       start_time: lastBucketStartTime,
       end_time: lastBucketEndTime,
     });
-    await this.timeWindows.add(todayWindows);
+    await this.timeWindows.add(targetDayWindows);
   }
 }
