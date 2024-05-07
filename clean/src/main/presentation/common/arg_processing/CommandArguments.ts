@@ -262,10 +262,10 @@ export const DATE: CommandArgument<Date> = {
   parse: function (token: string): Date {
     if (DAY_OFFSET.match(token)) {
       const offset = DAY_OFFSET.parse(token);
-      const tmpDate = new Date();
-      tmpDate.setUTCHours(0, 0, 0, 0);
-      tmpDate.setUTCDate(tmpDate.getUTCDate() + offset);
-      return tmpDate;
+      const result = new Date();
+      result.setUTCHours(0, 0, 0, 0);
+      result.setUTCDate(result.getUTCDate() + offset);
+      return result;
     }
     return new Date(Date.parse(token));
   },

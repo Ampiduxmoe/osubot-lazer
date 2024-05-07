@@ -146,23 +146,20 @@ export class AppUserApiRequestsSummariesDaoImpl
   }
 
   private getTodayStartAndEnd(): {startTime: number; endTime: number} {
-    const todayStart = new Date();
-    todayStart.setUTCHours(0, 0, 0, 0);
-    const tomorrowStart = new Date(todayStart.getTime());
-    tomorrowStart.setUTCDate(todayStart.getUTCDate() + 1);
-    const todayEnd = new Date(tomorrowStart.getTime() - 1);
-    return {startTime: todayStart.getTime(), endTime: todayEnd.getTime()};
+    const today = new Date();
+    const todayStart = today.setUTCHours(0, 0, 0, 0);
+    const todayEnd = today.setUTCHours(23, 59, 59, 999);
+    return {startTime: todayStart, endTime: todayEnd};
   }
 
   private getYesterdayStartAndEnd(): {startTime: number; endTime: number} {
-    const todayStart = new Date();
-    todayStart.setUTCHours(0, 0, 0, 0);
-    const yesterdayStart = new Date(todayStart.getTime());
-    yesterdayStart.setUTCDate(todayStart.getUTCDate() - 1);
-    const yesterdayEnd = new Date(todayStart.getTime() - 1);
+    const tmpDate = new Date();
+    tmpDate.setUTCDate(tmpDate.getUTCDate() - 1);
+    const yesterdayStart = tmpDate.setUTCHours(0, 0, 0, 0);
+    const yesterdayEnd = tmpDate.setUTCHours(23, 59, 59, 999);
     return {
-      startTime: yesterdayStart.getTime(),
-      endTime: yesterdayEnd.getTime(),
+      startTime: yesterdayStart,
+      endTime: yesterdayEnd,
     };
   }
 
