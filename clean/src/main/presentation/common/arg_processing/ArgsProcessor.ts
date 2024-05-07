@@ -1,7 +1,7 @@
 import {CommandArgument} from './CommandArgument';
 
 export interface ArgsProcessor {
-  remainingTokens: string[];
+  get remainingTokens(): string[];
   use<T>(arg: CommandArgument<T>): ValueExtractor<T>;
 }
 

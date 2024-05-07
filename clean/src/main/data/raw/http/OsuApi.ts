@@ -4,7 +4,7 @@ import {OsuUserInfo} from './boundary/OsuUserInfo';
 import {RecentScoreInfo} from './boundary/RecentScoreInfo';
 
 export interface OsuApi {
-  server: OsuServer;
+  readonly server: OsuServer;
 
   getUser(
     username: string,

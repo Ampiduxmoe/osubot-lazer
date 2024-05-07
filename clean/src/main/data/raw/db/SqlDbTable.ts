@@ -1,9 +1,9 @@
 import {SqlDb, OperationExecutionResult} from './SqlDb';
 
 export abstract class SqlDbTable<T, TGet> {
-  abstract tableName: string;
+  abstract readonly tableName: string;
 
-  db: SqlDb;
+  readonly db: SqlDb;
   constructor(db: SqlDb) {
     this.db = db;
   }

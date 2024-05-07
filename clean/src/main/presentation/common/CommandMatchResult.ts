@@ -1,8 +1,8 @@
 export class CommandMatchResult<T> {
   /** Whether command should be executed based on current context */
-  isMatch: boolean;
+  readonly isMatch: boolean;
   /** Arguments required to execute command. Must not be undefined if {@link isMatch} is true */
-  commandArgs: T | undefined;
+  readonly commandArgs: T | undefined;
 
   constructor(isMatch: boolean, executionArgs: T | undefined) {
     this.isMatch = isMatch;

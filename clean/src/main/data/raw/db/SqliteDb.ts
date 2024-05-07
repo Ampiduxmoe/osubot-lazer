@@ -2,8 +2,8 @@ import {Database, RunResult} from 'sqlite3';
 import {OperationExecutionResult, SqlDb} from './SqlDb';
 
 export class SqliteDb implements SqlDb {
-  filename: string;
   private sqliteDb: Database;
+  readonly filename: string;
   constructor(filename: string) {
     this.filename = filename;
     this.sqliteDb = new Database(filename);

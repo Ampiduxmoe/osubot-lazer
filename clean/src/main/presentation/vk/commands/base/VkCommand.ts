@@ -4,11 +4,11 @@ import {CommandMatchResult} from '../../../common/CommandMatchResult';
 import {VkOutputMessage} from './VkOutputMessage';
 
 export abstract class VkCommand<TExecutionArgs, TViewParams> {
-  abstract internalName: string;
-  abstract shortDescription: string;
-  abstract longDescription: string;
-  abstract prefixes: CommandPrefixes;
-  abstract commandStructure: CommandStructureElement[];
+  abstract readonly internalName: string;
+  abstract readonly shortDescription: string;
+  abstract readonly longDescription: string;
+  abstract readonly prefixes: CommandPrefixes;
+  abstract readonly commandStructure: CommandStructureElement[];
 
   abstract matchVkMessage(
     ctx: VkMessageContext
@@ -30,6 +30,6 @@ export class CommandPrefixes extends Array<string> {
 }
 
 interface CommandStructureElement {
-  argument: CommandArgument<unknown>;
-  isOptional: boolean;
+  readonly argument: CommandArgument<unknown>;
+  readonly isOptional: boolean;
 }

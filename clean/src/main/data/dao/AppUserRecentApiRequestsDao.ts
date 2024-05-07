@@ -1,11 +1,11 @@
 import {Timespan} from '../../../primitives/Timespan';
 export interface AppUserRecentApiRequestsDao {
-  minStoreTime: Timespan;
+  readonly minStoreTime: Timespan;
   convertToSummaries(): Promise<void>;
   get(appUserId: string, target: string): Promise<AppUserApiRequests[]>;
   add(requests: AppUserApiRequests): Promise<void>;
-  events: {
-    onNewRequests: {
+  readonly events: {
+    readonly onNewRequests: {
       subscribe(listener: (requests: AppUserApiRequests) => void): void;
       unsubscribe(listener: (requests: AppUserApiRequests) => void): void;
     };

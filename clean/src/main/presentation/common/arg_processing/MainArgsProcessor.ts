@@ -4,7 +4,7 @@ import {CommandArgument} from './CommandArgument';
 
 export class MainArgsProcessor implements ArgsProcessor {
   remainingTokens: string[];
-  args: CommandArgument<unknown>[];
+  private args: CommandArgument<unknown>[];
   constructor(tokensRef: string[], args: CommandArgument<unknown>[]) {
     this.remainingTokens = tokensRef;
     this.args = args;

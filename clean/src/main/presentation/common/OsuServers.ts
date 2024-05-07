@@ -1,10 +1,5 @@
 import {OsuServer} from '../../../primitives/OsuServer';
 
-interface ServerWithPrefix {
-  server: OsuServer;
-  prefix: string;
-}
-
 class ServersWithPrefixes extends Array<ServerWithPrefix> {
   constructor(servers: ServerWithPrefix[]) {
     super(...servers);
@@ -19,6 +14,11 @@ class ServersWithPrefixes extends Array<ServerWithPrefix> {
   getPrefixByServer(server: OsuServer): string | undefined {
     return this.find(x => x.server === server)?.prefix;
   }
+}
+
+interface ServerWithPrefix {
+  readonly server: OsuServer;
+  readonly prefix: string;
 }
 
 export const SERVERS: ServersWithPrefixes = new ServersWithPrefixes([

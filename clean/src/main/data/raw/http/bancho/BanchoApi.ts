@@ -11,7 +11,7 @@ export class BanchoApi implements OsuApi {
     this.client = new BanchoClient(ouathClientId, oauthClientSecret);
   }
 
-  server: OsuServer = OsuServer.Bancho;
+  server = OsuServer.Bancho;
 
   async getUser(
     username: string,
