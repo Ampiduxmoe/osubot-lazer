@@ -3,9 +3,9 @@ import {SqlDbTable} from '../SqlDbTable';
 import {
   AppUserApiRequestsCount,
   AppUserApiRequestsCountKey,
-  AppUserApiRequestsTimeUserWithTimeWindowsKey,
-  AppUserApiRequestsTimeWindowsKey,
-  AppUserApiRequestsUserKey,
+  isAppUserApiRequestsUserWithTimeWindowsKey,
+  isAppUserApiRequestsTimeWindowsKey,
+  isAppUserApiRequestsUserKey,
 } from '../entities/AppUserApiRequestsCount';
 
 export class AppUserApiRequestsCounts extends SqlDbTable<
@@ -22,38 +22,28 @@ export class AppUserApiRequestsCounts extends SqlDbTable<
   async get(
     key: AppUserApiRequestsCountKey
   ): Promise<AppUserApiRequestsCount[] | undefined> {
-    const userWithTimeWindowsKey =
-      key as AppUserApiRequestsTimeUserWithTimeWindowsKey;
-    if (
-      userWithTimeWindowsKey.app_user_id !== undefined &&
-      userWithTimeWindowsKey.time_window_ids !== undefined
-    ) {
-      const timeWindowsPlaceholders = userWithTimeWindowsKey.time_window_ids
+    if (isAppUserApiRequestsUserWithTimeWindowsKey(key)) {
+      const timeWindowsPlaceholders = key.time_window_ids
         .map(() => '?')
         .join(',');
       return await this.db.getAll(
         `SELECT * FROM ${this.tableName} WHERE app_user_id = ? AND time_window_id in (${timeWindowsPlaceholders})`,
-        [
-          userWithTimeWindowsKey.app_user_id,
-          ...userWithTimeWindowsKey.time_window_ids,
-        ]
+        [key.app_user_id, ...key.time_window_ids]
       );
     }
-    const timeWindowsKey = key as AppUserApiRequestsTimeWindowsKey;
-    if (timeWindowsKey.time_window_ids !== undefined) {
-      const timeWindowsPlaceholders = userWithTimeWindowsKey.time_window_ids
+    if (isAppUserApiRequestsTimeWindowsKey(key)) {
+      const timeWindowsPlaceholders = key.time_window_ids
         .map(() => '?')
         .join(',');
       return await this.db.getAll(
         `SELECT * FROM ${this.tableName} WHERE time_window_id in (${timeWindowsPlaceholders})`,
-        timeWindowsKey.time_window_ids
+        key.time_window_ids
       );
     }
-    const userKey = key as AppUserApiRequestsUserKey;
-    if (userKey.app_user_id !== undefined) {
+    if (isAppUserApiRequestsUserKey(key)) {
       return await this.db.getAll(
         `SELECT * FROM ${this.tableName} WHERE app_user_id = ?`,
-        [userKey.app_user_id]
+        [key.app_user_id]
       );
     }
     throw Error('Key type detection is not exhaustive');

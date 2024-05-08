@@ -2,9 +2,9 @@ import {OperationExecutionResult} from '../SqlDb';
 import {SqlDbTable} from '../SqlDbTable';
 import {
   TimeWindow,
-  TimeWindowIdsKey,
   TimeWindowKey,
-  TimeWindowIntervalKey,
+  isTimeWindowIdsKey,
+  isTimeWindowIntervalKey,
 } from '../entities/TimeWindow';
 
 export class TimeWindows extends SqlDbTable<TimeWindow[], TimeWindowKey> {
@@ -16,22 +16,17 @@ export class TimeWindows extends SqlDbTable<TimeWindow[], TimeWindowKey> {
     );
   }
   async get(key: TimeWindowKey): Promise<TimeWindow[] | undefined> {
-    const idsKey = key as TimeWindowIdsKey;
-    if (idsKey.ids !== undefined) {
-      const idPlaceholders = idsKey.ids.map(() => '?').join(',');
+    if (isTimeWindowIdsKey(key)) {
+      const idPlaceholders = key.ids.map(() => '?').join(',');
       return await this.db.getAll(
         `SELECT * FROM ${this.tableName} WHERE id in (${idPlaceholders})`,
-        idsKey.ids
+        key.ids
       );
     }
-    const timeIntervalKey = key as TimeWindowIntervalKey;
-    if (
-      timeIntervalKey.start_time !== undefined &&
-      timeIntervalKey.end_time !== undefined
-    ) {
+    if (isTimeWindowIntervalKey(key)) {
       return await this.db.getAll(
         `SELECT * FROM ${this.tableName} WHERE start_time >= ? AND end_time <= ?`,
-        [timeIntervalKey.start_time, timeIntervalKey.end_time]
+        [key.start_time, key.end_time]
       );
     }
     throw Error('Key type detection is not exhaustive');
