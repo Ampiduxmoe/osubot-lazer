@@ -2,7 +2,7 @@
 import {VkMessageContext} from '../VkMessageContext';
 import {CommandMatchResult} from '../../common/CommandMatchResult';
 import {VkOutputMessage} from './base/VkOutputMessage';
-import {CommandPrefixes, VkCommand} from './base/VkCommand';
+import {VkCommand} from './base/VkCommand';
 import {GetRecentPlaysUseCase} from '../../../domain/usecases/get_recent_plays/GetRecentPlaysUseCase';
 import {OsuServer} from '../../../../primitives/OsuServer';
 import {APP_CODE_NAME} from '../../../App';
@@ -29,6 +29,7 @@ import {
 import {MainArgsProcessor} from '../../common/arg_processing/MainArgsProcessor';
 import {Timespan} from '../../../../primitives/Timespan';
 import {ModArg} from '../../common/arg_processing/ModArg';
+import {CommandPrefixes} from '../../common/CommandPrefixes';
 
 export class UserRecentPlays extends VkCommand<
   UserRecentPlaysExecutionArgs,
@@ -52,9 +53,10 @@ export class UserRecentPlays extends VkCommand<
   );
   prefixes = UserRecentPlays.prefixes;
 
+  private COMMAND_PREFIX = new OWN_COMMAND_PREFIX(this.prefixes);
   commandStructure = [
     {argument: SERVER_PREFIX, isOptional: false},
-    {argument: OWN_COMMAND_PREFIX, isOptional: false},
+    {argument: this.COMMAND_PREFIX, isOptional: false},
     {argument: USERNAME, isOptional: true},
     {argument: START_POSITION, isOptional: true},
     {argument: QUANTITY, isOptional: true},
@@ -93,7 +95,8 @@ export class UserRecentPlays extends VkCommand<
       this.commandStructure.map(e => e.argument)
     );
     const server = argsProcessor.use(SERVER_PREFIX).at(0).extract();
-    const commandPrefix = argsProcessor.use(OWN_COMMAND_PREFIX).at(0).extract();
+    // eslint-disable-next-line prettier/prettier
+    const commandPrefix = argsProcessor.use(this.COMMAND_PREFIX).at(0).extract();
     const startPosition = argsProcessor.use(START_POSITION).extract();
     const quantity = argsProcessor.use(QUANTITY).extract();
     const mods = argsProcessor.use(MODS).extract();

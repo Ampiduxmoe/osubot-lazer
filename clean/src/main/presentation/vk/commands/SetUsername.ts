@@ -1,7 +1,7 @@
 import {VkMessageContext} from '../VkMessageContext';
 import {CommandMatchResult} from '../../common/CommandMatchResult';
 import {VkOutputMessage} from './base/VkOutputMessage';
-import {VkCommand, CommandPrefixes} from './base/VkCommand';
+import {VkCommand} from './base/VkCommand';
 import {OsuServer} from '../../../../primitives/OsuServer';
 import {APP_CODE_NAME} from '../../../App';
 import {SetUsernameUseCase} from '../../../domain/usecases/set_username/SetUsernameUseCase';
@@ -12,6 +12,7 @@ import {
   USERNAME,
 } from '../../common/arg_processing/CommandArguments';
 import {MainArgsProcessor} from '../../common/arg_processing/MainArgsProcessor';
+import {CommandPrefixes} from '../../common/CommandPrefixes';
 
 export class SetUsername extends VkCommand<
   SetUsernameExecutionArgs,
@@ -24,9 +25,10 @@ export class SetUsername extends VkCommand<
   static prefixes = new CommandPrefixes('n', 'nickname');
   prefixes = SetUsername.prefixes;
 
+  private COMMAND_PREFIX = new OWN_COMMAND_PREFIX(this.prefixes);
   commandStructure = [
     {argument: SERVER_PREFIX, isOptional: false},
-    {argument: OWN_COMMAND_PREFIX, isOptional: false},
+    {argument: this.COMMAND_PREFIX, isOptional: false},
     {argument: USERNAME, isOptional: false},
   ];
 
@@ -57,7 +59,10 @@ export class SetUsername extends VkCommand<
       this.commandStructure.map(e => e.argument)
     );
     const server = argsProcessor.use(SERVER_PREFIX).at(0).extract();
-    const commandPrefix = argsProcessor.use(OWN_COMMAND_PREFIX).at(0).extract();
+    const commandPrefix = argsProcessor
+      .use(this.COMMAND_PREFIX)
+      .at(0)
+      .extract();
     const usernameParts: string[] = [];
     let usernamePart = argsProcessor.use(USERNAME).extract();
     while (usernamePart !== undefined) {

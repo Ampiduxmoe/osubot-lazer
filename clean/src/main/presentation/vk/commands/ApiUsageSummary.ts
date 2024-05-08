@@ -1,7 +1,7 @@
 import {VkMessageContext} from '../VkMessageContext';
 import {CommandMatchResult} from '../../common/CommandMatchResult';
 import {VkOutputMessage} from './base/VkOutputMessage';
-import {VkCommand, CommandPrefixes} from './base/VkCommand';
+import {VkCommand} from './base/VkCommand';
 import {APP_CODE_NAME} from '../../../App';
 import {
   APP_USER_ID,
@@ -13,6 +13,7 @@ import {GetApiUsageSummaryUseCase} from '../../../domain/usecases/get_api_usage_
 import {TimeIntervalUsageSummary} from '../../../domain/usecases/get_api_usage_summary/GetApiUsageSummaryResponse';
 import {Timespan} from '../../../../primitives/Timespan';
 import {sumBy} from '../../../../primitives/Arrays';
+import {CommandPrefixes} from '../../common/CommandPrefixes';
 
 export class ApiUsageSummary extends VkCommand<
   ApiUsageSummaryExecutionArgs,

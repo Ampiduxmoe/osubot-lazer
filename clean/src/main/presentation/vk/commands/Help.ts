@@ -1,7 +1,7 @@
 import {VkMessageContext} from '../VkMessageContext';
 import {CommandMatchResult} from '../../common/CommandMatchResult';
 import {VkOutputMessage} from './base/VkOutputMessage';
-import {VkCommand, CommandPrefixes} from './base/VkCommand';
+import {VkCommand} from './base/VkCommand';
 import {APP_CODE_NAME} from '../../../App';
 import {
   VK_FOREIGN_COMMAND_PREFIX,
@@ -9,6 +9,7 @@ import {
 } from '../../common/arg_processing/CommandArguments';
 import {pickRandom} from '../../../../primitives/Arrays';
 import {MainArgsProcessor} from '../../common/arg_processing/MainArgsProcessor';
+import {CommandPrefixes} from '../../common/CommandPrefixes';
 
 export class Help extends VkCommand<HelpExecutionArgs, HelpViewParams> {
   internalName = Help.name;
@@ -18,8 +19,9 @@ export class Help extends VkCommand<HelpExecutionArgs, HelpViewParams> {
   static prefixes = new CommandPrefixes('osubot', 'osubot-help');
   prefixes = Help.prefixes;
 
+  private COMMAND_PREFIX = new OWN_COMMAND_PREFIX(this.prefixes);
   commandStructure = [
-    {argument: OWN_COMMAND_PREFIX, isOptional: false},
+    {argument: this.COMMAND_PREFIX, isOptional: false},
     {argument: VK_FOREIGN_COMMAND_PREFIX, isOptional: true},
   ];
 
@@ -47,7 +49,7 @@ export class Help extends VkCommand<HelpExecutionArgs, HelpViewParams> {
       this.commandStructure.map(e => e.argument)
     );
     const ownCommandPrefix = argsProcessor
-      .use(OWN_COMMAND_PREFIX)
+      .use(this.COMMAND_PREFIX)
       .at(0)
       .extract();
     const commandPrefix = argsProcessor
@@ -78,6 +80,7 @@ export class Help extends VkCommand<HelpExecutionArgs, HelpViewParams> {
     }
     if (this.prefixes.matchIgnoringCase(prefixToDescribe)) {
       return {
+        commandPrefixInput: prefixToDescribe,
         command: this,
       };
     }
@@ -144,11 +147,6 @@ ${commandBriefs.join('\n')}
     let hasOptionalArgs = false;
     for (const structureElement of command.commandStructure) {
       const {argument, isOptional} = structureElement;
-      if (argument === OWN_COMMAND_PREFIX) {
-        structureElements.push(command.prefixes.join('|'));
-        usageElements.push(pickRandom(command.prefixes));
-        continue;
-      }
       hasOptionalArgs ||= isOptional;
       const argString = isOptional
         ? `[${argument.displayName}]`
@@ -156,6 +154,9 @@ ${commandBriefs.join('\n')}
       structureElements.push(argString);
       if (!isOptional || pickRandom([true, false])) {
         usageElements.push(argument.usageExample);
+      }
+      if (argument instanceof OWN_COMMAND_PREFIX) {
+        continue;
       }
       // eslint-disable-next-line no-irregular-whitespace
       argDescriptions.push(`　${argString} - ${argument.description}`);

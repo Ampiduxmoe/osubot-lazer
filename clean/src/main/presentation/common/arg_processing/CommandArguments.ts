@@ -6,8 +6,8 @@ import {SetUsername} from '../../vk/commands/SetUsername';
 import {UserInfo} from '../../vk/commands/UserInfo';
 import {UserRecentPlays} from '../../vk/commands/UserRecentPlays';
 import {Help} from '../../vk/commands/Help';
-import {CommandPrefixes} from '../../vk/commands/base/VkCommand';
 import {ModArg} from './ModArg';
+import {CommandPrefixes} from '../CommandPrefixes';
 
 export const SERVER_PREFIX: CommandArgument<OsuServer> = {
   displayName: 'server',
@@ -23,17 +23,25 @@ export const SERVER_PREFIX: CommandArgument<OsuServer> = {
   },
 };
 
-export const OWN_COMMAND_PREFIX: CommandArgument<string> = {
-  displayName: '~',
-  description: '~',
-  usageExample: '~',
-  match: function (): boolean {
+export class OWN_COMMAND_PREFIX implements CommandArgument<string> {
+  displayName: string;
+  description = '~';
+  get usageExample(): string {
+    return pickRandom(this.prefixes);
+  }
+  match(): boolean {
     return true;
-  },
-  parse: function (token: string): string {
+  }
+  parse(token: string): string {
     return token;
-  },
-};
+  }
+
+  private prefixes: CommandPrefixes;
+  constructor(prefixes: CommandPrefixes) {
+    this.prefixes = prefixes;
+    this.displayName = prefixes.join('|');
+  }
+}
 
 export const VK_FOREIGN_COMMAND_PREFIX: CommandArgument<string> = {
   displayName: 'command',
