@@ -6,13 +6,15 @@ export type TimeWindowKey = TimeWindowIdsKey | TimeWindowIntervalKey;
 export function isTimeWindowIdsKey(
   key: TimeWindowKey
 ): key is TimeWindowIdsKey {
-  return 'ids' in key;
+  const typedKey = key as TimeWindowIdsKey;
+  return typedKey.ids !== undefined;
 }
 
 export function isTimeWindowIntervalKey(
   key: TimeWindowKey
 ): key is TimeWindowIntervalKey {
-  return 'start_time' in key && 'end_time' in key;
+  const typedKey = key as TimeWindowIntervalKey;
+  return typedKey.start_time !== undefined && typedKey.end_time !== undefined;
 }
 
 export type TimeWindow = TimeWindowKey & {

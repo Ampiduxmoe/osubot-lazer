@@ -11,19 +11,24 @@ export type AppUserApiRequestsCountKey =
 export function isAppUserApiRequestsTimeWindowsKey(
   key: AppUserApiRequestsCountKey
 ): key is AppUserApiRequestsTimeWindowsKey {
-  return 'time_window_ids' in key;
+  const typedKey = key as AppUserApiRequestsTimeWindowsKey;
+  return typedKey.time_window_ids !== undefined;
 }
 
 export function isAppUserApiRequestsUserKey(
   key: AppUserApiRequestsCountKey
 ): key is AppUserApiRequestsUserKey {
-  return 'app_user_id' in key;
+  const typedKey = key as AppUserApiRequestsUserKey;
+  return typedKey.app_user_id !== undefined;
 }
 
 export function isAppUserApiRequestsUserWithTimeWindowsKey(
   key: AppUserApiRequestsCountKey
 ): key is AppUserApiRequestsUserWithTimeWindowsKey {
-  return 'app_user_id' in key && 'time_window_ids' in key;
+  const typedKey = key as AppUserApiRequestsUserWithTimeWindowsKey;
+  return (
+    typedKey.time_window_ids !== undefined && typedKey.app_user_id !== undefined
+  );
 }
 
 export type AppUserApiRequestsCount = {
