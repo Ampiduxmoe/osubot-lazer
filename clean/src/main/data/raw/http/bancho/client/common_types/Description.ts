@@ -1,6 +1,6 @@
 // references:
 // https://osu.ppy.sh/docs/index.html#group-description
-export interface Description {
+export type Description = {
   html: string;
   markdown: string;
-}
+};

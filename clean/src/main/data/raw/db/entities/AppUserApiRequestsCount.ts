@@ -8,10 +8,10 @@ export type AppUserApiRequestsCountKey =
   | AppUserApiRequestsUserKey
   | AppUserApiRequestsTimeUserWithTimeWindowsKey;
 
-export interface AppUserApiRequestsCount {
+export type AppUserApiRequestsCount = {
   time_window_id: number;
   app_user_id: string;
   target: string;
   subtarget: string | null;
   count: number;
-}
+};

@@ -4,6 +4,6 @@ export interface SqlDb {
   getAll<T>(stmt: string, opts: unknown[]): Promise<T[]>;
 }
 
-export interface OperationExecutionResult {
+export type OperationExecutionResult = {
   isSuccess: boolean;
-}
+};

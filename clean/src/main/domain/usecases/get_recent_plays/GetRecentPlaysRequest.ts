@@ -1,5 +1,5 @@
 import {OsuServer} from '../../../../primitives/OsuServer';
-export interface GetRecentPlaysRequest {
+export type GetRecentPlaysRequest = {
   appUserId: string;
   server: OsuServer;
   username: string;
@@ -10,4 +10,4 @@ export interface GetRecentPlaysRequest {
     acronym: string;
     isOptional: boolean;
   }[];
-}
+};

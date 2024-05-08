@@ -8,7 +8,7 @@ export abstract class VkCommand<TExecutionArgs, TViewParams> {
   abstract readonly shortDescription: string;
   abstract readonly longDescription: string;
   abstract readonly prefixes: CommandPrefixes;
-  abstract readonly commandStructure: CommandStructureElement[];
+  abstract readonly commandStructure: Readonly<CommandStructureElement>[];
 
   abstract matchVkMessage(
     ctx: VkMessageContext
@@ -29,7 +29,7 @@ export class CommandPrefixes extends Array<string> {
   }
 }
 
-interface CommandStructureElement {
-  readonly argument: CommandArgument<unknown>;
-  readonly isOptional: boolean;
-}
+type CommandStructureElement = {
+  argument: CommandArgument<unknown>;
+  isOptional: boolean;
+};

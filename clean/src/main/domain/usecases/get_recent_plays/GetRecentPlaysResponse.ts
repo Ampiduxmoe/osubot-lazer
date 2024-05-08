@@ -1,15 +1,15 @@
-export interface GetRecentPlaysResponse {
+export type GetRecentPlaysResponse = {
   isFailure: boolean;
   recentPlays?: OsuUserRecentPlays;
   failureReason?: 'user not found';
-}
+};
 
-export interface OsuUserRecentPlays {
+export type OsuUserRecentPlays = {
   username: string;
   plays: RecentPlay[];
-}
+};
 
-export interface RecentPlay {
+export type RecentPlay = {
   absolutePosition: number;
   beatmapset: {
     status: BeatmapsetRankStatus;
@@ -56,7 +56,7 @@ export interface RecentPlay {
   countMeh: number;
   countMiss: number;
   grade: ScoreGrade;
-}
+};
 
 export type BeatmapsetRankStatus =
   | 'Graveyard'
@@ -71,30 +71,30 @@ export type ScoreGrade = 'SS' | 'S' | 'A' | 'B' | 'C' | 'D' | 'F';
 
 export type ModSettings = SettingsDT | SettingsDA | SettingsCL;
 
-export interface SettingsDT {
+export type SettingsDT = {
   adjust_pitch?: boolean;
   speed_change?: number;
-}
+};
 
-export interface SettingsHT {
+export type SettingsHT = {
   adjust_pitch?: boolean;
   speed_change?: number;
-}
+};
 
-export interface SettingsDA {
+export type SettingsDA = {
   drain_rate?: number;
   circle_size?: number;
   approach_rate?: number;
   overall_difficulty?: number;
-}
+};
 
-export interface SettingsCL {
+export type SettingsCL = {
   classic_health?: boolean;
   classic_note_lock?: boolean;
   fade_hit_circle_early?: boolean;
   always_play_tail_sample?: boolean;
   no_slider_head_accuracy?: boolean;
-}
+};
 
 export class SettingsDefaults {
   static DT: SettingsDT = {

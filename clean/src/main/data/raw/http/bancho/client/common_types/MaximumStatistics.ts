@@ -1,4 +1,4 @@
-export interface MaximumStatistics {
+export type MaximumStatistics = {
   great: number;
   legacy_combo_increase?: number;
   /* Slider end? */
@@ -13,4 +13,4 @@ export interface MaximumStatistics {
   small_tick_hit?: number;
   /* Slider end? */
   slider_tail_hit?: number;
-}
+};

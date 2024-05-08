@@ -16,10 +16,10 @@ class ServersWithPrefixes extends Array<ServerWithPrefix> {
   }
 }
 
-interface ServerWithPrefix {
-  readonly server: OsuServer;
-  readonly prefix: string;
-}
+type ServerWithPrefix = {
+  server: OsuServer;
+  prefix: string;
+};
 
 export const SERVERS: ServersWithPrefixes = new ServersWithPrefixes([
   {server: OsuServer.Bancho, prefix: 'l'},

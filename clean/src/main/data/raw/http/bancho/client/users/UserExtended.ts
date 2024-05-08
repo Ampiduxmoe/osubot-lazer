@@ -24,7 +24,7 @@ import {UserStatistics} from '../common_types/UserStatistics';
 // https://github.com/ppy/osu-web/blob/59fc72974750e4ab0e721bd07e9b92155458f5a7/app/Transformers/UserTransformer.php
 // https://github.com/ppy/osu-web/blob/59fc72974750e4ab0e721bd07e9b92155458f5a7/app/Transformers/UserCompactTransformer.php
 // https://github.com/ppy/osu-web/blob/59fc72974750e4ab0e721bd07e9b92155458f5a7/app/Models/User.php#L2430
-export interface UserExtended {
+export type UserExtended = {
   // attributes of base 'User'
   avatar_url: string;
   country_code: string;
@@ -100,4 +100,4 @@ export interface UserExtended {
   // deprecated: https://osu.ppy.sh/docs/index.html#breaking-changes
   // ranked_and_approved_beatmapset_count (now ranked_beatmapset_count)
   // unranked_beatmapset_count (now pending_beatmapset_count)
-}
+};

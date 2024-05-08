@@ -1,6 +1,6 @@
 // references:
 // TODO when api docs are good
-export interface ScoreStatisticsLazer extends ScoreStatisticsLegacy {
+export type ScoreStatisticsLazer = ScoreStatisticsLegacy & {
   /* Slider end? */
   ignore_hit?: number;
   /** Spinner bonus */
@@ -15,11 +15,11 @@ export interface ScoreStatisticsLazer extends ScoreStatisticsLegacy {
   slider_tail_hit?: number;
   large_tick_miss?: number;
   small_tick_miss?: number;
-}
+};
 
-export interface ScoreStatisticsLegacy {
+export type ScoreStatisticsLegacy = {
   ok?: number;
   meh?: number;
   miss?: number;
   great?: number;
-}
+};

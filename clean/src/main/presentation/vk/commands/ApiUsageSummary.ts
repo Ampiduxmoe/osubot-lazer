@@ -204,12 +204,12 @@ ${rows.join('\n')}
   }
 }
 
-interface ApiUsageSummaryExecutionArgs {
+type ApiUsageSummaryExecutionArgs = {
   date: Date;
   appUserId: string | undefined;
-}
+};
 
-interface ApiUsageSummaryViewParams {
+type ApiUsageSummaryViewParams = {
   appUserIdInput: string | undefined;
   apiUsageSummary: TimeIntervalUsageSummary[];
-}
+};

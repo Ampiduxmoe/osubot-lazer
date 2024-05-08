@@ -1,4 +1,4 @@
-export interface AppConfig {
+export type AppConfig = {
   osu: {
     bancho: {
       oauth: BanchoOauthCredentials;
@@ -14,15 +14,15 @@ export interface AppConfig {
       default_timeout: number;
     };
   };
-}
+};
 
-export interface VkGroup {
+export type VkGroup = {
   id: number;
   token: string;
   owner: number;
-}
+};
 
-export interface BanchoOauthCredentials {
+export type BanchoOauthCredentials = {
   id: number;
   secret: string;
-}
+};

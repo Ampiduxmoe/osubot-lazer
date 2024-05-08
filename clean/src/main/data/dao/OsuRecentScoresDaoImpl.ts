@@ -136,7 +136,7 @@ export class OsuRecentScoresDaoImpl implements OsuRecentScoresDao {
   }
 }
 
-interface OsuUserIdAndUsername {
+type OsuUserIdAndUsername = {
   id: number;
   username: string;
-}
+};

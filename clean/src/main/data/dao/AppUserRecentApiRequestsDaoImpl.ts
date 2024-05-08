@@ -1,6 +1,9 @@
 import {Timespan} from '../../../primitives/Timespan';
 import {AppUserApiRequestsSummariesDao} from './AppUserApiRequestsSummariesDao';
-import {AppUserRecentApiRequestsDao} from './AppUserRecentApiRequestsDao';
+import {
+  AppUserApiRequests,
+  AppUserRecentApiRequestsDao,
+} from './AppUserRecentApiRequestsDao';
 export class AppUserRecentApiRequestsDaoImpl
   implements AppUserRecentApiRequestsDao
 {
@@ -85,12 +88,4 @@ export class AppUserRecentApiRequestsDaoImpl
     }
     this.requests = remainingRequests;
   }
-}
-
-export interface AppUserApiRequests {
-  time: number;
-  appUserId: string;
-  target: string;
-  subtarget?: string;
-  count: number;
 }

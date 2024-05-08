@@ -184,12 +184,12 @@ ${optionalsHint}
   }
 }
 
-interface HelpExecutionArgs {
+type HelpExecutionArgs = {
   commandPrefix: string | undefined;
-}
+};
 
-interface HelpViewParams {
+type HelpViewParams = {
   commandList?: VkCommand<unknown, unknown>[];
   commandPrefixInput?: string;
   command?: VkCommand<unknown, unknown>;
-}
+};

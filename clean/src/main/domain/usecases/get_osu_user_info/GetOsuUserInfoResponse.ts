@@ -1,8 +1,8 @@
-export interface GetOsuUserInfoResponse {
+export type GetOsuUserInfoResponse = {
   userInfo: OsuUserInfo | undefined;
-}
+};
 
-interface OsuUserInfo {
+type OsuUserInfo = {
   userId: number;
   username: string;
   accuracy: number;
@@ -15,4 +15,4 @@ interface OsuUserInfo {
   playcount: number;
   playtimeSeconds: number;
   level: number;
-}
+};

@@ -1,11 +1,11 @@
 import {OsuRuleset} from '../../../../primitives/OsuRuleset';
 
-export interface GetAppUserInfoResponse {
+export type GetAppUserInfoResponse = {
   userInfo: AppUserInfo | undefined;
-}
+};
 
-interface AppUserInfo {
+type AppUserInfo = {
   osuId: number;
   username: string;
   ruleset: OsuRuleset;
-}
+};

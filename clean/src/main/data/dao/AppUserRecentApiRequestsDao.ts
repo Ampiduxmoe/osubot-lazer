@@ -12,13 +12,13 @@ export interface AppUserRecentApiRequestsDao {
   };
 }
 
-export interface AppUserApiRequests {
+export type AppUserApiRequests = {
   time: number;
   appUserId: string;
   target: string;
   subtarget?: string;
   count: number;
-}
+};
 
 export const COMMON_REQUEST_SUBTARGETS = {
   osuUserInfo: 'user_info',

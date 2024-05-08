@@ -268,19 +268,19 @@ https://osu.ppy.sh/u/${userId}
   }
 }
 
-interface UserInfoExecutionArgs {
+type UserInfoExecutionArgs = {
   server: OsuServer;
   username: string | undefined;
   vkUserId: number;
-}
+};
 
-interface UserInfoViewParams {
+type UserInfoViewParams = {
   server: OsuServer;
   usernameInput: string | undefined;
   userInfo: OsuUserInfo | undefined;
-}
+};
 
-interface OsuUserInfo {
+type OsuUserInfo = {
   username: string;
   rankGlobal: number | null;
   rankGlobalHighest: number | undefined;
@@ -295,4 +295,4 @@ interface OsuUserInfo {
   pp: number;
   accuracy: number;
   userId: number;
-}
+};

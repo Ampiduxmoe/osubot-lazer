@@ -1,4 +1,4 @@
-export interface RecentScoreInfo {
+export type RecentScoreInfo = {
   id: number;
   userId: number;
   mods: {
@@ -57,4 +57,4 @@ export interface RecentScoreInfo {
     id: number;
     username: string;
   };
-}
+};

@@ -2,7 +2,7 @@
 // https://osu.ppy.sh/docs/index.html#userstatistics
 // https://github.com/ppy/osu-web/blob/59fc72974750e4ab0e721bd07e9b92155458f5a7/app/Transformers/UserCompactTransformer.php#L416
 // https://github.com/ppy/osu-web/blob/59fc72974750e4ab0e721bd07e9b92155458f5a7/app/Models/User.php#L191
-export interface UserStatistics {
+export type UserStatistics = {
   count_100: number;
   count_300: number;
   count_50: number;
@@ -37,4 +37,4 @@ export interface UserStatistics {
   };
   // TODO: mania variants (https://github.com/ppy/osu-web/blob/59fc72974750e4ab0e721bd07e9b92155458f5a7/app/Models/UserStatistics/Mania4k.php)
   // variants?: {}[]
-}
+};

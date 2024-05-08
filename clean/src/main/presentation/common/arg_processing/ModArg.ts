@@ -1,4 +1,4 @@
-export interface ModArg {
-  readonly acronym: string;
-  readonly isOptional: boolean;
-}
+export type ModArg = {
+  acronym: string;
+  isOptional: boolean;
+};

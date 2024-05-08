@@ -172,14 +172,14 @@ export class SetUsername extends VkCommand<
   }
 }
 
-interface SetUsernameExecutionArgs {
+type SetUsernameExecutionArgs = {
   vkUserId: number;
   server: OsuServer;
   username: string | undefined;
-}
+};
 
-interface SetUsernameViewParams {
+type SetUsernameViewParams = {
   server: OsuServer;
   usernameInput: string | undefined;
   username: string | undefined;
-}
+};

@@ -1,4 +1,4 @@
-export interface ScoreSimulationInfo {
+export type ScoreSimulationInfo = {
   score: {
     mods: string[];
     accuracy: number;
@@ -28,4 +28,4 @@ export interface ScoreSimulationInfo {
     approachRate: number;
     overallDifficulty: number;
   };
-}
+};

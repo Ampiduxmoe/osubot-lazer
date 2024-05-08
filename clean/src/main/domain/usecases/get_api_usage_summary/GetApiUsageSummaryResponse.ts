@@ -1,8 +1,8 @@
-export interface GetApiUsageSummaryResponse {
+export type GetApiUsageSummaryResponse = {
   usageSummary: TimeIntervalUsageSummary[];
-}
+};
 
-export interface TimeIntervalUsageSummary {
+export type TimeIntervalUsageSummary = {
   timeWindowStart: number;
   timeWindowEnd: number;
   appUsers: {
@@ -13,4 +13,4 @@ export interface TimeIntervalUsageSummary {
       count: number;
     }[];
   }[];
-}
+};

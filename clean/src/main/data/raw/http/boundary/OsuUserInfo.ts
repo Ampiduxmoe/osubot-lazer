@@ -1,4 +1,4 @@
-export interface OsuUserInfo {
+export type OsuUserInfo = {
   id: number;
   username: string;
   countryCode: string;
@@ -16,4 +16,4 @@ export interface OsuUserInfo {
   playtime: number;
   pp: number;
   accuracy: number;
-}
+};

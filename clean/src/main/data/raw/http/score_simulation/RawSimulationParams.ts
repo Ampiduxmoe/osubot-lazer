@@ -1,4 +1,4 @@
-export interface RawScoreSimulationParams {
+export type RawScoreSimulationParams = {
   beatmap_id: number;
   mods: string[];
   combo: number | null;
@@ -11,12 +11,12 @@ export interface RawScoreSimulationParams {
     od?: number;
     hp?: number;
   };
-}
+};
 
-export interface RawScoreSimulationParamsDt extends RawScoreSimulationParams {
+export type RawScoreSimulationParamsDt = RawScoreSimulationParams & {
   dt_rate: number;
-}
+};
 
-export interface RawScoreSimulationParamsHt extends RawScoreSimulationParams {
+export type RawScoreSimulationParamsHt = RawScoreSimulationParams & {
   ht_rate: number;
-}
+};

@@ -1,4 +1,4 @@
-export interface RawScoreSimulationResult {
+export type RawScoreSimulationResult = {
   score: {
     ruleset_id: number;
     beatmap_id: number;
@@ -33,4 +33,4 @@ export interface RawScoreSimulationResult {
     approach_rate: number;
     overall_difficulty: number;
   };
-}
+};

@@ -197,11 +197,11 @@ function isProduction(fallbackValue: boolean): boolean {
   }
 }
 
-interface VkClientCreationParams {
+type VkClientCreationParams = {
   group: VkGroup;
   getOsuUserInfoUseCase: GetOsuUserInfoUseCase;
   getAppUserInfoUseCase: GetAppUserInfoUseCase;
   setUsernameUseCase: SetUsernameUseCase;
   getRecentPlaysUseCase: GetRecentPlaysUseCase;
   getApiUsageSummaryUseCase: GetApiUsageSummaryUseCase;
-}
+};

@@ -1,4 +1,4 @@
-export interface BeatmapsetCovers {
+export type BeatmapsetCovers = {
   cover: string;
   'cover@2x': string;
   card: string;
@@ -7,4 +7,4 @@ export interface BeatmapsetCovers {
   'list@2x': string;
   slimcover: string;
   'slimcover@2x': string;
-}
+};

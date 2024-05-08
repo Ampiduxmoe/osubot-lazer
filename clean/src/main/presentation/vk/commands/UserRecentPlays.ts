@@ -441,7 +441,7 @@ ${pp}pp　 ${mapUrlShort}
   }
 }
 
-interface UserRecentPlaysExecutionArgs {
+type UserRecentPlaysExecutionArgs = {
   vkUserId: number;
   server: OsuServer;
   passesOnly: boolean;
@@ -449,11 +449,11 @@ interface UserRecentPlaysExecutionArgs {
   startPosition: number | undefined;
   quantity: number | undefined;
   mods: ModArg[] | undefined;
-}
+};
 
-interface UserRecentPlaysViewParams {
+type UserRecentPlaysViewParams = {
   server: OsuServer;
   passesOnly: boolean;
   usernameInput: string | undefined;
   recentPlays: OsuUserRecentPlays | undefined;
-}
+};

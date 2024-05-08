@@ -9,7 +9,7 @@ export interface AppUserApiRequestsSummariesDao {
   ): Promise<AppUserApiRequestsSummary[]>;
 }
 
-export interface AppUserApiRequestsSummary {
+export type AppUserApiRequestsSummary = {
   timeWindowStart: number;
   timeWindowEnd: number;
   appUsers: {
@@ -20,4 +20,4 @@ export interface AppUserApiRequestsSummary {
       count: number;
     }[];
   }[];
-}
+};
