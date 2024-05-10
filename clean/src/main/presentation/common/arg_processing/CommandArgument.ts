@@ -1,6 +1,6 @@
 export interface CommandArgument<T> {
   readonly displayName: string;
-  readonly description: string;
+  readonly description: string | undefined;
   readonly usageExample: string;
   match(token: string): boolean;
   parse(token: string): T;

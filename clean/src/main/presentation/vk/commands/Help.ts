@@ -155,7 +155,7 @@ ${commandBriefs.join('\n')}
       if (!isOptional || pickRandom([true, false])) {
         usageElements.push(argument.usageExample);
       }
-      if (argument instanceof OWN_COMMAND_PREFIX) {
+      if (argument.description === undefined) {
         continue;
       }
       // eslint-disable-next-line no-irregular-whitespace

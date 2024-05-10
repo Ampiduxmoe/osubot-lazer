@@ -25,7 +25,7 @@ export const SERVER_PREFIX: CommandArgument<OsuServer> = {
 
 export class OWN_COMMAND_PREFIX implements CommandArgument<string> {
   displayName: string;
-  description = '~';
+  description = undefined;
   get usageExample(): string {
     return pickRandom(this.prefixes);
   }
