@@ -165,7 +165,7 @@ ${commandBriefs.join('\n')}
     const structureString = structureElements.join('　');
     const usageString = usageElements.join(' ');
     const optionalsHint = hasOptionalArgs
-      ? 'Аргументы в [квадратных скобках] указывать не обязательно\n'
+      ? '\nАргументы в [квадратных скобках] указывать не обязательно\n'
       : '';
     const text = `
 Команда ${commandPrefixInput.toLowerCase()}

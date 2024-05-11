@@ -148,7 +148,7 @@ export const QUANTITY: CommandArgument<number> = {
 export const MODS: CommandArgument<ModArg[]> = {
   displayName: '+mods',
   description:
-    'список модов (одной строкой без пробелов); в скобках указываются допустимые, но не обязательные моды',
+    'список модов; если мод указан в скобках, то его наличие допускается, но не является необходимым',
   get usageExample(): string {
     const maybeHd = pickRandom(['hd', 'HD', '(hd)', '(HD)', '']);
     const dtOrHr = pickRandom(['dt', 'DT', 'hr', 'HR']);
