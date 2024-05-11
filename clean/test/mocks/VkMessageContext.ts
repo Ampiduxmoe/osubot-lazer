@@ -25,3 +25,20 @@ export function createWithOnlyText(params: {
     },
   };
 }
+
+export function createWithPayload(params: {
+  senderId: number;
+  text: string;
+  payload: unknown;
+}): FakeVkMessageContext {
+  return {
+    senderId: params.senderId,
+    text: params.text,
+    hasText: true,
+    messagePayload: params.payload,
+    hasMessagePayload: true,
+    reply: async () => {
+      return {} as MessageContext<ContextDefaultState>;
+    },
+  };
+}
