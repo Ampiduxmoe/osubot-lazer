@@ -121,6 +121,9 @@ export class ApiUsageSummary extends VkCommand<
     const lastIntervalSummary = apiUsageSummary[apiUsageSummary.length - 1];
     const startDate = new Date(firstIntervalSummary.timeWindowStart);
     const endDate = new Date(lastIntervalSummary.timeWindowEnd);
+    const byUser: {
+      [userId: string]: number;
+    } = {};
     const rows = apiUsageSummary.map(interval => {
       const intervalStart = new Date(interval.timeWindowStart);
       const intervalDuration = new Timespan().addMilliseconds(
@@ -149,6 +152,12 @@ export class ApiUsageSummary extends VkCommand<
             subtarget: requestCount.subtarget ?? '~',
             count: requestCount.count,
           });
+
+          const userId = user.appUserId;
+          if (byUser[userId] === undefined) {
+            byUser[userId] = 0;
+          }
+          byUser[userId] += requestCount.count;
         }
       }
       const allTargets = Object.keys(byTarget).sort();
@@ -175,10 +184,16 @@ export class ApiUsageSummary extends VkCommand<
         .join('\n');
       return `${totalString}\n${detailsText}`;
     });
+    const userContributionRows = Object.keys(byUser)
+      .map(userId => ({userId: userId, count: byUser[userId]}))
+      .sort((a, b) => b.count - a.count)
+      .map(x => `${x.userId}: ${x.count}`);
     const text = `
 ${startDate.toISOString()} - ${endDate.toISOString()}
 
 ${rows.join('\n')}
+
+${userContributionRows.join('\n')}
     `.trim();
 
     return {
