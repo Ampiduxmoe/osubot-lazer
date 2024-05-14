@@ -2,13 +2,16 @@
 import {UserInfo} from '../../src/main/presentation/vk/commands/UserInfo';
 import {GetAppUserInfoUseCase} from '../../src/main/domain/usecases/get_app_user_info/GetAppUserInfoUseCase';
 import {GetOsuUserInfoUseCase} from '../../src/main/domain/usecases/get_osu_user_info/GetOsuUserInfoUseCase';
-import {FakeOsuUsersDao} from '../mocks/OsuUsersDao';
-import {FakeAppUsersDao} from '../mocks/AppUsersDao';
+import {FakeOsuUsersDao, getFakeOsuUsers} from '../mocks/OsuUsersDao';
+import {FakeAppUsersDao, getFakeAppUsers} from '../mocks/AppUsersDao';
 import {createWithOnlyText, createWithPayload} from '../mocks/VkMessageContext';
 import {VkMessageContext} from '../../src/main/presentation/vk/VkMessageContext';
 import assert = require('assert');
 import {SERVERS} from '../../src/main/presentation/common/OsuServers';
 import {APP_CODE_NAME} from '../../src/main/App';
+import {OsuServer} from '../../src/primitives/OsuServer';
+import {VkIdConverter} from '../../src/main/presentation/vk/VkIdConverter';
+import {OsuRuleset} from '../../src/primitives/OsuRuleset';
 
 describe('UserInfo', function () {
   const osuUsers = new FakeOsuUsersDao();
@@ -146,6 +149,67 @@ describe('UserInfo', function () {
           assert.equal(matchResult.commandArgs?.username, username);
         }
       }
+    });
+  });
+
+  describe('#process()', function () {
+    it('should return OsuUserInfo as undefined when there is no user with specified username', async function () {
+      const usernameInput = 'alskdjfhg';
+      const viewParams = await userInfoCommand.process({
+        server: OsuServer.Bancho,
+        username: usernameInput,
+        vkUserId: -1,
+      });
+      assert.equal(viewParams.server, OsuServer.Bancho);
+      assert.equal(viewParams.usernameInput, usernameInput);
+      assert.equal(viewParams.userInfo, undefined);
+    });
+    it('should return OsuUserInfo as undefined when there is no AppUser associated with sender VK id', async function () {
+      const viewParams = await userInfoCommand.process({
+        server: OsuServer.Bancho,
+        username: undefined,
+        vkUserId: -1,
+      });
+      assert.equal(viewParams.server, OsuServer.Bancho);
+      assert.equal(viewParams.usernameInput, undefined);
+      assert.equal(viewParams.userInfo, undefined);
+    });
+    it('should return OsuUserInfo when there is user with specified username', async function () {
+      const server = OsuServer.Bancho;
+      const ruleset = OsuRuleset.osu;
+      const osuUser = getFakeOsuUsers(server, ruleset)[0];
+      if (osuUser === undefined) {
+        throw Error('Bad fake data');
+      }
+      const usernameVariants = [
+        osuUser.username,
+        osuUser.username.toLowerCase(),
+        osuUser.username.toUpperCase(),
+      ];
+      for (const username of usernameVariants) {
+        const viewParams = await userInfoCommand.process({
+          server: OsuServer.Bancho,
+          username: username,
+          vkUserId: -1,
+        });
+        assert.equal(viewParams.server, OsuServer.Bancho);
+        assert.equal(viewParams.usernameInput, username);
+        assert.equal(viewParams.userInfo?.username, osuUser.username);
+      }
+    });
+    it('should return OsuUserInfo when there is AppUser associated with sender VK id', async function () {
+      const appUser = getFakeAppUsers().find(u => u.id.includes('vk'));
+      if (appUser === undefined) {
+        throw Error('Bad fake data');
+      }
+      const viewParams = await userInfoCommand.process({
+        server: OsuServer.Bancho,
+        username: undefined,
+        vkUserId: VkIdConverter.appUserIdToVkUserId(appUser.id),
+      });
+      assert.equal(viewParams.server, OsuServer.Bancho);
+      assert.equal(viewParams.usernameInput, undefined);
+      assert.equal(viewParams.userInfo?.username, appUser.username);
     });
   });
 });
