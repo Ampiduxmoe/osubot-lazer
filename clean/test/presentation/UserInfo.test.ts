@@ -212,4 +212,90 @@ describe('UserInfo', function () {
       assert.equal(viewParams.userInfo?.username, appUser.username);
     });
   });
+
+  describe('#createOutputMessage()', function () {
+    it('should return "username not bound" message if username is not specified and there is no username bound to this VK account', function () {
+      const server = OsuServer.Bancho;
+      const outputMessage = userInfoCommand.createOutputMessage({
+        server: server,
+        usernameInput: undefined,
+        userInfo: undefined,
+      });
+      assert.equal(
+        outputMessage.text,
+        userInfoCommand.createUsernameNotBoundMessage(server).text
+      );
+    });
+    it('should return "user not found" message if username is specified and there is no information about corresponding user', function () {
+      const server = OsuServer.Bancho;
+      const usernameInput = 'loremipsum';
+      const outputMessage = userInfoCommand.createOutputMessage({
+        server: server,
+        usernameInput: usernameInput,
+        userInfo: undefined,
+      });
+      assert.equal(
+        outputMessage.text,
+        userInfoCommand.createUserNotFoundMessage(server, usernameInput).text
+      );
+    });
+    it('should return "user info" message if username is not specified but there is bound account info', function () {
+      const server = OsuServer.Bancho;
+      const usernameInput = undefined;
+      const userInfo = {
+        username: 'CoolGuy',
+        rankGlobal: 777,
+        rankGlobalHighest: 666,
+        rankGlobalHighestDate: '1970-01-01T00:00:00.000Z',
+        countryCode: 'FAKE',
+        rankCountry: 55,
+        playcount: 99999,
+        lvl: 101,
+        playtimeDays: 20,
+        playtimeHours: 10,
+        playtimeMinutes: 0,
+        pp: 19727,
+        accuracy: 99.25,
+        userId: 123,
+      };
+      const outputMessage = userInfoCommand.createOutputMessage({
+        server: server,
+        usernameInput: usernameInput,
+        userInfo: userInfo,
+      });
+      assert.equal(
+        outputMessage.text,
+        userInfoCommand.createUserInfoMessage(server, userInfo).text
+      );
+    });
+    it('should return "user info" message if username is specified and there is corresponding account info', function () {
+      const server = OsuServer.Bancho;
+      const usernameInput = 'loremipsum';
+      const userInfo = {
+        username: 'LoremIpsum',
+        rankGlobal: 777,
+        rankGlobalHighest: 666,
+        rankGlobalHighestDate: '1970-01-01T00:00:00.000Z',
+        countryCode: 'FAKE',
+        rankCountry: 55,
+        playcount: 99999,
+        lvl: 101,
+        playtimeDays: 20,
+        playtimeHours: 10,
+        playtimeMinutes: 0,
+        pp: 19727,
+        accuracy: 99.25,
+        userId: 123,
+      };
+      const outputMessage = userInfoCommand.createOutputMessage({
+        server: server,
+        usernameInput: usernameInput,
+        userInfo: userInfo,
+      });
+      assert.equal(
+        outputMessage.text,
+        userInfoCommand.createUserInfoMessage(server, userInfo).text
+      );
+    });
+  });
 });

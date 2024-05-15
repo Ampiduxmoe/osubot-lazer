@@ -174,17 +174,18 @@ export class UserInfo extends VkCommand<
   }
 
   createOutputMessage(params: UserInfoViewParams): VkOutputMessage {
-    const userInfo = params.userInfo;
+    const {server, usernameInput, userInfo} = params;
     if (userInfo === undefined) {
-      if (params.usernameInput === undefined) {
-        return this.createUsernameNotBoundMessage(params.server);
+      if (usernameInput === undefined) {
+        return this.createUsernameNotBoundMessage(server);
       }
-      return this.createUserNotFoundMessage(
-        params.server,
-        params.usernameInput
-      );
+      return this.createUserNotFoundMessage(server, usernameInput);
     }
-    const serverString = OsuServer[params.server];
+    return this.createUserInfoMessage(server, userInfo);
+  }
+
+  createUserInfoMessage(server: OsuServer, userInfo: OsuUserInfo) {
+    const serverString = OsuServer[server];
     const {username} = userInfo;
     const rankGlobal = userInfo.rankGlobal || '--';
     const countryCode = userInfo.countryCode;
@@ -213,7 +214,7 @@ Accuracy: ${accuracy}%
 https://osu.ppy.sh/u/${userId}
     `.trim();
 
-    const serverPrefix = SERVERS.getPrefixByServer(params.server);
+    const serverPrefix = SERVERS.getPrefixByServer(server);
     const bestPlaysPrefix = 't'; // TODO: use UserBestPlays.prefixes
     const recentPlaysPrefix = UserRecentPlays.recentPlaysPrefixes[0];
     const recentPassesPrefix = UserRecentPlays.recentPassesPrefixes[0];
