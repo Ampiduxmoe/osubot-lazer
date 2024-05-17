@@ -98,7 +98,7 @@ const getFakeBanchoTaikoUsers: () => OsuUser[] = () => [
   })),
 ];
 const getFakeBanchoManiaUsers: () => OsuUser[] = () => [
-  ...[12, 13, 14, 15, 16].map(n => ({
+  ...[10, 11, 12, 13, 14].map(n => ({
     id: n,
     username: getFakeOsuUserUsername(n),
     countryCode: 'FAKE',
