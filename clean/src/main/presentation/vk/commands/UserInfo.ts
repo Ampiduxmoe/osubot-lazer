@@ -17,6 +17,7 @@ import {
 } from '../../common/arg_processing/CommandArguments';
 import {MainArgsProcessor} from '../../common/arg_processing/MainArgsProcessor';
 import {CommandPrefixes} from '../../common/CommandPrefixes';
+import {OsuRuleset} from '../../../../primitives/OsuRuleset';
 
 export class UserInfo extends VkCommand<
   UserInfoExecutionArgs,
@@ -120,6 +121,7 @@ export class UserInfo extends VkCommand<
       appUserId: VkIdConverter.vkUserIdToAppUserId(args.vkUserId),
       server: args.server,
       username: username,
+      ruleset: OsuRuleset.osu,
     });
     const userInfo = userInfoResponse.userInfo;
     if (userInfo === undefined) {

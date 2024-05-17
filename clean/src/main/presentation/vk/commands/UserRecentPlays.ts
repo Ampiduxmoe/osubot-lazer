@@ -30,6 +30,7 @@ import {MainArgsProcessor} from '../../common/arg_processing/MainArgsProcessor';
 import {Timespan} from '../../../../primitives/Timespan';
 import {ModArg} from '../../common/arg_processing/ModArg';
 import {CommandPrefixes} from '../../common/CommandPrefixes';
+import {OsuRuleset} from '../../../../primitives/OsuRuleset';
 
 export class UserRecentPlays extends VkCommand<
   UserRecentPlaysExecutionArgs,
@@ -158,6 +159,7 @@ export class UserRecentPlays extends VkCommand<
       appUserId: VkIdConverter.vkUserIdToAppUserId(args.vkUserId),
       server: args.server,
       username: username,
+      ruleset: OsuRuleset.osu,
       includeFails: !args.passesOnly,
       startPosition: startPosition,
       quantity: quantity,

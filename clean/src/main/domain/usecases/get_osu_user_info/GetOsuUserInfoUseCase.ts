@@ -2,7 +2,6 @@ import {UseCase} from '../UseCase';
 import {GetOsuUserInfoRequest} from './GetOsuUserInfoRequest';
 import {GetOsuUserInfoResponse} from './GetOsuUserInfoResponse';
 import {OsuUsersDao} from '../../../data/dao/OsuUsersDao';
-import {OsuRuleset} from '../../../../primitives/OsuRuleset';
 
 export class GetOsuUserInfoUseCase
   implements UseCase<GetOsuUserInfoRequest, GetOsuUserInfoResponse>
@@ -19,7 +18,7 @@ export class GetOsuUserInfoUseCase
       params.appUserId,
       params.username,
       params.server,
-      OsuRuleset.osu
+      params.ruleset
     );
     if (user === undefined) {
       return {

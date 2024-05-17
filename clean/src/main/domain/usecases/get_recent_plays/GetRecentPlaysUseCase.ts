@@ -70,7 +70,7 @@ export class GetRecentPlaysUseCase
       params.mods,
       params.quantity,
       params.startPosition,
-      OsuRuleset.osu
+      params.ruleset
     );
     const recentPlayPromises = rawRecentScores.map(async s => {
       const mods = s.mods.map(s => s.acronym);
