@@ -1,14 +1,14 @@
 # osubot-lazer
 A bot that allows you to show everyone your plays/profile/etc right in the group chat of [VK](https://vk.com/).
-It is inspired by [osubot by OctopuSSX](https://github.com/OctoDumb/osubot-old) (no longer maintained) and its minimalistic straight-to-the-point output.
+It is inspired by [osubot by OctopuSSX](https://github.com/OctoDumb/osubot-old) (no longer maintained) and its minimalistic straight-to-the-point output. The end goal of this project is to provide better and more up-to-date experience for all original features while also adding a lot of new useful options and tools. 
 
-Note that this project is still in the deep development stage and a lot of the original features are not implemented yet. After being quickly prototyped for local usage of new features for me and my friends, it is currently being rewritten (see [clean](https://github.com/Ampiduxmoe/osubot-lazer/tree/master/clean) folder) to make further development more smooth. Once version in this folder reaches feature parity with the prototype, it will replace contents of the root folder. Before this moment root folder will act as a collection of implementation references, mainly because it is very convenient.
+*Note that this project is still in the deep development stage and a lot of the original features are not implemented yet. After being quickly prototyped for local usage of some very needed features for me and my friends, it is currently being rewritten (see [clean](https://github.com/Ampiduxmoe/osubot-lazer/tree/master/clean) folder) to make further development more smooth. Once version in this folder reaches feature parity with the prototype, it will replace contents of the root folder. Before this moment root folder will act as a collection of implementation references, mainly because it is very convenient.*
 
-### Why it's not a fork
+### So why not just fork the original?
 The way original bot was written does not really support easy expansion in the directions I want. For example addition of Telegram client, update of Performance Points calculation or implementation of something like "Top plays of the week" for chat groups is not feasible without rewriting most of the codebase. I have a lot of new features in mind, so it is in my best interest to build a more robust and maintainable bot from the ground up.
 
 # What's different
-Though it is still early in development, [bot](https://vk.com/club224713087) has some notable changes and features you might be interested in if you used [the old one](https://vk.com/sosubot).
+Though it is still early in development, [bot](https://vk.com/club224713087) already has some notable changes and features you might be interested in if you used [the old one](https://vk.com/sosubot).
 ### Changes
 - Responses have less clutter and are easier to read.
   
@@ -34,7 +34,7 @@ Most notably:
 
 If there is a feature from the old bot you use frequently that is not in this list, [message](https://vk.com/ampi0) or [mail](mailto:ampiduxmoe@gmail.com) me so I can bump it on my priority list and include it here.
 ### Priorities
-1. Making [Bancho](https://osu.ppy.sh/wiki/en/Bancho_%28server%29) users experience as feature-rich as possible.
+1. Making [Bancho](https://osu.ppy.sh/wiki/en/Bancho_%28server%29) users experience as feature-rich as possible, focusing on the standard mode first.
 2. Adding [Telegram](https://telegram.org/) support.
 3. Adding unofficial servers support.
 ### Developer side of things
