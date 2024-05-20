@@ -1,44 +1,22 @@
-import {Database, RunResult} from 'sqlite3';
+import sqlite3 from 'better-sqlite3';
 import {OperationExecutionResult, SqlDb} from './SqlDb';
 
 export class SqliteDb implements SqlDb {
-  private sqliteDb: Database;
+  private sqliteDb: sqlite3.Database;
   readonly filename: string;
   constructor(filename: string) {
     this.filename = filename;
-    this.sqliteDb = new Database(filename);
+    this.sqliteDb = new sqlite3(filename);
+    this.sqliteDb.pragma('journal_mode = WAL');
   }
-  run(stmt: string, opts: unknown[]): Promise<OperationExecutionResult> {
-    return new Promise((resolve, reject) => {
-      this.sqliteDb.run(stmt, opts, (_: RunResult, e: Error) => {
-        if (e) {
-          reject(e);
-        } else {
-          resolve({isSuccess: true});
-        }
-      });
-    });
+  async run(stmt: string, opts: unknown[]): Promise<OperationExecutionResult> {
+    this.sqliteDb.prepare(stmt).run(...opts);
+    return {isSuccess: true};
   }
-  get<T>(stmt: string, opts: unknown[]): Promise<T | undefined> {
-    return new Promise<T>((resolve, reject) => {
-      this.sqliteDb.get<T>(stmt, opts, (e, row) => {
-        if (e) {
-          reject(e);
-        } else {
-          resolve(row);
-        }
-      });
-    });
+  async get<T>(stmt: string, opts: unknown[]): Promise<T | undefined> {
+    return this.sqliteDb.prepare<unknown[], T>(stmt).get(...opts);
   }
-  getAll<T>(stmt: string, opts: unknown[]): Promise<T[]> {
-    return new Promise<T[]>((resolve, reject) => {
-      this.sqliteDb.all<T>(stmt, opts, (e, rows) => {
-        if (e) {
-          reject(e);
-        } else {
-          resolve(rows);
-        }
-      });
-    });
+  async getAll<T>(stmt: string, opts: unknown[]): Promise<T[]> {
+    return this.sqliteDb.prepare<unknown[], T>(stmt).all(...opts);
   }
 }

@@ -5,6 +5,7 @@
     "outDir": "build",
     "noImplicitAny": true,
     "skipLibCheck": true,
+    "esModuleInterop": true,
   },
   "include": [
     "*.ts",
