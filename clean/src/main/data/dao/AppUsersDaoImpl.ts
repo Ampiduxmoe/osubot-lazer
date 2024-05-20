@@ -1,29 +1,39 @@
 import {OsuServer} from '../../../primitives/OsuServer';
 import {SqlDbTable} from '../raw/db/SqlDbTable';
-import {AppUserInfo, AppUserInfoKey} from '../raw/db/entities/AppUserInfo';
-import {AppUser, AppUsersDao} from './AppUsersDao';
+import {AppUser, AppUserKey} from '../raw/db/entities/AppUser';
+import {AppUserInfo, AppUsersDao} from './AppUsersDao';
 
 export class AppUsersDaoImpl implements AppUsersDao {
-  private appUsersTable: SqlDbTable<AppUserInfo, AppUserInfoKey>;
-  constructor(appUsersTable: SqlDbTable<AppUserInfo, AppUserInfoKey>) {
+  private appUsersTable: SqlDbTable<AppUser, AppUserKey>;
+  constructor(appUsersTable: SqlDbTable<AppUser, AppUserKey>) {
     this.appUsersTable = appUsersTable;
   }
-  async get(id: string, server: OsuServer): Promise<AppUser | undefined> {
-    return await this.appUsersTable.get({
+  async get(id: string, server: OsuServer): Promise<AppUserInfo | undefined> {
+    const appUser = await this.appUsersTable.get({
       id: id,
       server: server,
     });
-  }
-  async addOrUpdate(appUser: AppUser): Promise<void> {
-    const appUserInfo: AppUserInfo = {
+    if (appUser === undefined) {
+      return undefined;
+    }
+    return {
       id: appUser.id,
       server: appUser.server,
-      osu_id: appUser.osu_id,
+      osuId: appUser.osu_id,
+      username: appUser.username,
+      ruleset: appUser.ruleset,
+    };
+  }
+  async addOrUpdate(appUser: AppUserInfo): Promise<void> {
+    const appUserInfo: AppUser = {
+      id: appUser.id,
+      server: appUser.server,
+      osu_id: appUser.osuId,
       username: appUser.username,
       ruleset: appUser.ruleset,
     };
     const existingAppUserInfo = await this.appUsersTable.get(
-      appUserInfo as AppUserInfoKey
+      appUserInfo as AppUserKey
     );
     if (existingAppUserInfo === undefined) {
       await this.appUsersTable.add(appUserInfo);

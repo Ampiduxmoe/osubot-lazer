@@ -22,7 +22,7 @@ export class GetAppUserInfoUseCase
     }
     return {
       userInfo: {
-        osuId: user.osu_id,
+        osuId: user.osuId,
         username: user.username,
         ruleset: user.ruleset,
       },

@@ -31,7 +31,7 @@ export class SetUsernameUseCase
     this.appUsers.addOrUpdate({
       id: params.appUserId,
       server: params.server,
-      osu_id: osuUser.id,
+      osuId: osuUser.id,
       username: osuUser.username,
       ruleset: OsuRuleset.osu,
     });

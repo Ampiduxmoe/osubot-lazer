@@ -26,7 +26,7 @@ describe('GetAppUserInfoUseCase', function () {
         server: existingUser.server,
       };
       const result = await usecase.execute(request);
-      assert.equal(result.userInfo?.osuId, existingUser.osu_id);
+      assert.equal(result.userInfo?.osuId, existingUser.osuId);
       assert.equal(result.userInfo?.username, existingUser.username);
     });
   });

@@ -1,9 +1,15 @@
+import {OsuRuleset} from '../../../primitives/OsuRuleset';
 import {OsuServer} from '../../../primitives/OsuServer';
-import {AppUserInfo} from '../raw/db/entities/AppUserInfo';
 
-export type AppUser = AppUserInfo;
+export type AppUserInfo = {
+  id: string;
+  server: OsuServer;
+  osuId: number;
+  username: string;
+  ruleset: OsuRuleset;
+};
 
 export interface AppUsersDao {
-  get(id: string, server: OsuServer): Promise<AppUser | undefined>;
-  addOrUpdate(appUser: AppUser): Promise<void>;
+  get(id: string, server: OsuServer): Promise<AppUserInfo | undefined>;
+  addOrUpdate(appUser: AppUserInfo): Promise<void>;
 }
