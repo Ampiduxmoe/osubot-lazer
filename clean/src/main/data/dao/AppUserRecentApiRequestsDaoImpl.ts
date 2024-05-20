@@ -4,6 +4,7 @@ import {
   AppUserApiRequests,
   AppUserRecentApiRequestsDao,
 } from './AppUserRecentApiRequestsDao';
+
 export class AppUserRecentApiRequestsDaoImpl
   implements AppUserRecentApiRequestsDao
 {

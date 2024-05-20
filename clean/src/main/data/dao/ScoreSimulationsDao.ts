@@ -1,7 +1,5 @@
 import {ScoreSimulationInfo} from '../raw/http/boundary/ScoreSimulationInfo';
 
-export type SimulatedScore = ScoreSimulationInfo;
-
 export interface ScoreSimulationsDao {
   get(
     beatmapId: number,
@@ -22,3 +20,8 @@ export interface ScoreSimulationsDao {
     }
   ): Promise<SimulatedScore>;
 }
+
+export type SimulatedScore = Pick<
+  ScoreSimulationInfo,
+  keyof ScoreSimulationInfo
+>;

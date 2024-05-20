@@ -2,10 +2,6 @@ import {RecentScoreInfo} from '../raw/http/boundary/RecentScoreInfo';
 import {OsuServer} from '../../../primitives/OsuServer';
 import {OsuRuleset} from '../../../primitives/OsuRuleset';
 
-export type RecentScore = RecentScoreInfo & {
-  absolutePosision: number;
-};
-
 export interface OsuRecentScoresDao {
   get(
     appUserId: string,
@@ -21,3 +17,7 @@ export interface OsuRecentScoresDao {
     ruleset: OsuRuleset
   ): Promise<RecentScore[]>;
 }
+
+export type RecentScore = RecentScoreInfo & {
+  absolutePosision: number;
+};
