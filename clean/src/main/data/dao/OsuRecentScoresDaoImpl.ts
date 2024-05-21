@@ -6,22 +6,19 @@ import {
 } from '../raw/db/entities/OsuIdAndUsername';
 import {OsuRecentScoresDao, RecentScore} from './OsuRecentScoresDao';
 import {OsuApi} from '../raw/http/OsuAPI';
-import {SqlDbTable} from '../raw/db/SqlDbTable';
 import {
   AppUserRecentApiRequestsDao,
   COMMON_REQUEST_SUBTARGETS,
 } from './AppUserRecentApiRequestsDao';
+import {OsuIdsAndUsernames} from '../raw/db/tables/OsuIdsAndUsernames';
 
 export class OsuRecentScoresDaoImpl implements OsuRecentScoresDao {
   private apis: OsuApi[];
-  private osuIdsAndUsernamesTable: SqlDbTable<
-    OsuIdAndUsername,
-    OsuIdAndUsernameKey
-  >;
+  private osuIdsAndUsernamesTable: OsuIdsAndUsernames;
   private recentApiRequests: AppUserRecentApiRequestsDao;
   constructor(
     apis: OsuApi[],
-    osuIdsAndUsernamesTable: SqlDbTable<OsuIdAndUsername, OsuIdAndUsernameKey>,
+    osuIdsAndUsernamesTable: OsuIdsAndUsernames,
     recentApiRequests: AppUserRecentApiRequestsDao
   ) {
     this.apis = apis;

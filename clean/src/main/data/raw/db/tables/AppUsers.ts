@@ -2,8 +2,11 @@ import {OperationExecutionResult} from '../SqlDb';
 import {SqlDbTable} from '../SqlDbTable';
 import {AppUser, AppUserKey} from '../entities/AppUser';
 
-export class AppUsers extends SqlDbTable<AppUser, AppUserKey> {
+export abstract class AppUsers extends SqlDbTable<AppUser, AppUserKey> {
   tableName = 'app_users';
+}
+
+export class AppUsersImpl extends AppUsers {
   async createTable(): Promise<OperationExecutionResult> {
     return await this.db.run(
       `CREATE TABLE IF NOT EXISTS ${this.tableName} (id TEXT, server INTEGER, osu_id INTEGER, username TEXT, ruleset INTEGER)`,

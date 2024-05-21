@@ -1,11 +1,11 @@
 import {OsuServer} from '../../../primitives/OsuServer';
-import {SqlDbTable} from '../raw/db/SqlDbTable';
 import {AppUser, AppUserKey} from '../raw/db/entities/AppUser';
+import {AppUsers} from '../raw/db/tables/AppUsers';
 import {AppUserInfo, AppUsersDao} from './AppUsersDao';
 
 export class AppUsersDaoImpl implements AppUsersDao {
-  private appUsersTable: SqlDbTable<AppUser, AppUserKey>;
-  constructor(appUsersTable: SqlDbTable<AppUser, AppUserKey>) {
+  private appUsersTable: AppUsers;
+  constructor(appUsersTable: AppUsers) {
     this.appUsersTable = appUsersTable;
   }
   async get(id: string, server: OsuServer): Promise<AppUserInfo | undefined> {

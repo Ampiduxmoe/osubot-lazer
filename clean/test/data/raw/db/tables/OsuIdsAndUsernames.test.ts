@@ -5,13 +5,13 @@ import {
   OsuIdAndUsername,
   OsuIdAndUsernameKey,
 } from '../../../../../src/main/data/raw/db/entities/OsuIdAndUsername';
-import {OsuIdsAndUsernames} from '../../../../../src/main/data/raw/db/tables/OsuIdsAndUsernames';
+import {OsuIdsAndUsernamesImpl} from '../../../../../src/main/data/raw/db/tables/OsuIdsAndUsernames';
 import {OsuServer} from '../../../../../src/primitives/OsuServer';
 import {describeBaseTableMethods} from './GenericTableTest';
 
-describe('OsuIdsAndUsernames', function () {
+describe('OsuIdsAndUsernamesImpl', function () {
   const db = new SqliteDb(':memory:');
-  const table = new OsuIdsAndUsernames(db);
+  const table = new OsuIdsAndUsernamesImpl(db);
   const firstEntity: OsuIdAndUsername = {
     username: 'Username',
     server: OsuServer.Bancho,

@@ -1,10 +1,7 @@
 import {Timespan} from '../../../primitives/Timespan';
-import {SqlDbTable} from '../raw/db/SqlDbTable';
-import {
-  AppUserApiRequestsCount,
-  AppUserApiRequestsCountKey,
-} from '../raw/db/entities/AppUserApiRequestsCount';
-import {TimeWindow, TimeWindowKey} from '../raw/db/entities/TimeWindow';
+import {TimeWindow} from '../raw/db/entities/TimeWindow';
+import {AppUserApiRequestsCounts} from '../raw/db/tables/AppUserApiRequestsCounts';
+import {TimeWindows} from '../raw/db/tables/TimeWindows';
 import {
   AppUserApiRequestsSummariesDao,
   AppUserApiRequestsSummary,
@@ -15,66 +12,59 @@ export class AppUserApiRequestsSummariesDaoImpl
   implements AppUserApiRequestsSummariesDao
 {
   private bucketTimeWindow = new Timespan().addMinutes(20);
-  private requestsCounts: SqlDbTable<
-    AppUserApiRequestsCount[],
-    AppUserApiRequestsCountKey
-  >;
-  private timeWindows: SqlDbTable<TimeWindow[], TimeWindowKey>;
+  private requestsCounts: AppUserApiRequestsCounts;
+  private timeWindows: TimeWindows;
   constructor(
-    requestsCounts: SqlDbTable<
-      AppUserApiRequestsCount[],
-      AppUserApiRequestsCountKey
-    >,
-    timeWindows: SqlDbTable<TimeWindow[], TimeWindowKey>
+    requestsCounts: AppUserApiRequestsCounts,
+    timeWindows: TimeWindows
   ) {
     this.requestsCounts = requestsCounts;
     this.timeWindows = timeWindows;
   }
 
   async add(requests: AppUserApiRequests): Promise<void> {
-    const date = new Date(requests.time);
-    const {startTime, endTime} = this.getDayStartAndEnd(date);
-    const searchKey = {
-      start_time: startTime,
-      end_time: endTime,
-    };
-    let targetDayWindows = await this.timeWindows.get(searchKey);
-    if (targetDayWindows === undefined || targetDayWindows.length === 0) {
+    const requestsTime = requests.time;
+    const requestsDate = new Date(requestsTime);
+    const {startTime, endTime} = this.getDayStartAndEnd(requestsDate);
+    let targetDayWindows = await this.timeWindows.getAllByTimeInterval(
+      startTime,
+      endTime
+    );
+    if (targetDayWindows.length === 0) {
       // It can skip cleanup on the day before if no requests are added,
       // but it will be enough to keep database table mostly clean.
       // For remaining windows we can just do it manually in raw SQL once in a while.
-      const dayBefore = new Date(date).setUTCDate(date.getUTCDate() - 1);
-      await this.cleanUpUnusedTimeWindowsForDate(new Date(dayBefore));
-      await this.createTimeWindowsForDate(date);
-      targetDayWindows = await this.timeWindows.get(searchKey);
-      targetDayWindows = targetDayWindows!;
+      const timeForDayBefore = new Date(requestsDate).setUTCDate(
+        requestsDate.getUTCDate() - 1
+      );
+      await this.cleanUpUnusedTimeWindowsForDate(new Date(timeForDayBefore));
+      await this.createTimeWindowsForDate(requestsDate);
+      targetDayWindows = await this.timeWindows.getAllByTimeInterval(
+        startTime,
+        endTime
+      );
     }
-    const targetTime = requests.time;
     const fittingTimeWindow = targetDayWindows.find(
-      w => w.start_time < targetTime && w.end_time > targetTime
+      w => w.start_time < requestsTime && w.end_time > requestsTime
     )!;
-    const existingRequestsCounts =
-      (await this.requestsCounts.get({
-        time_window_ids: [fittingTimeWindow.id],
-        app_user_id: requests.appUserId,
-      })) ?? [];
-    const requestCount = existingRequestsCounts.find(
-      s => s.target === requests.target && s.subtarget === requests.subtarget
-    );
-    if (requestCount === undefined) {
-      this.requestsCounts.add([
-        {
-          time_window_id: fittingTimeWindow.id,
-          app_user_id: requests.appUserId,
-          target: requests.target,
-          subtarget: requests.subtarget ?? null,
-          count: requests.count,
-        },
-      ]);
+    const existingRequestsCount = await this.requestsCounts.get({
+      time_window_id: fittingTimeWindow.id,
+      app_user_id: requests.appUserId,
+      target: requests.target,
+      subtarget: requests.subtarget ?? null,
+    });
+    if (existingRequestsCount !== undefined) {
+      existingRequestsCount.count += requests.count;
+      this.requestsCounts.update(existingRequestsCount);
       return;
     }
-    requestCount.count += requests.count;
-    this.requestsCounts.update([requestCount]);
+    this.requestsCounts.add({
+      time_window_id: fittingTimeWindow.id,
+      app_user_id: requests.appUserId,
+      target: requests.target,
+      subtarget: requests.subtarget ?? null,
+      count: requests.count,
+    });
   }
 
   async get(
@@ -82,18 +72,22 @@ export class AppUserApiRequestsSummariesDaoImpl
     timeEnd: number,
     targetAppUserId: string | undefined
   ): Promise<AppUserApiRequestsSummary[]> {
-    const timeWindows = await this.timeWindows.get({
-      start_time: timeStart,
-      end_time: timeEnd,
-    });
-    if (timeWindows === undefined || timeWindows.length === 0) {
+    const timeWindows = await this.timeWindows.getAllByTimeInterval(
+      timeStart,
+      timeEnd
+    );
+    if (timeWindows.length === 0) {
       return [];
     }
     const requestsCounts =
-      (await this.requestsCounts.get({
-        time_window_ids: timeWindows.map(w => w.id),
-        app_user_id: targetAppUserId,
-      })) ?? [];
+      targetAppUserId === undefined
+        ? await this.requestsCounts.getAllByTimeWindows(
+            timeWindows.map(w => w.id)
+          )
+        : await this.requestsCounts.getAllByAppUserAndTimeWindows(
+            targetAppUserId,
+            timeWindows.map(w => w.id)
+          );
     const byTimeWindows: {
       [timeWindowId: number]: {
         [appUserId: string]: {
@@ -156,10 +150,10 @@ export class AppUserApiRequestsSummariesDaoImpl
 
   private async cleanUpUnusedTimeWindowsForDate(date: Date): Promise<void> {
     const targetDayInterval = this.getDayStartAndEnd(date);
-    const targetDayTimeWindows = await this.timeWindows.get({
-      start_time: targetDayInterval.startTime,
-      end_time: targetDayInterval.endTime,
-    });
+    const targetDayTimeWindows = await this.timeWindows.getAllByTimeInterval(
+      targetDayInterval.startTime,
+      targetDayInterval.endTime
+    );
     if (
       targetDayTimeWindows === undefined ||
       targetDayTimeWindows.length === 0
@@ -167,14 +161,14 @@ export class AppUserApiRequestsSummariesDaoImpl
       return;
     }
     const targetDayRequestsCounts =
-      (await this.requestsCounts.get({
-        time_window_ids: targetDayTimeWindows.map(w => w.id),
-      })) ?? [];
+      await this.requestsCounts.getAllByTimeWindows(
+        targetDayTimeWindows.map(w => w.id)
+      );
     const usedWindowIds = targetDayRequestsCounts.map(s => s.time_window_id);
     const unusedWindows = targetDayTimeWindows.filter(
       w => !usedWindowIds.includes(w.id)
     );
-    await this.timeWindows.delete(unusedWindows);
+    await this.timeWindows.deleteAll(unusedWindows);
     console.log(
       `Successfully deleted ${unusedWindows.length} of unused requests time windows`
     );
@@ -209,6 +203,6 @@ export class AppUserApiRequestsSummariesDaoImpl
       start_time: lastBucketStartTime,
       end_time: lastBucketEndTime,
     });
-    await this.timeWindows.add(targetDayWindows);
+    await this.timeWindows.addAll(targetDayWindows);
   }
 }

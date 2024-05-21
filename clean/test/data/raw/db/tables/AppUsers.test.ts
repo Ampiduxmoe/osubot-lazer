@@ -1,6 +1,6 @@
 /* eslint-disable prefer-arrow-callback */
 import {SqliteDb} from '../../../../../src/main/data/raw/db/SqliteDb';
-import {AppUsers} from '../../../../../src/main/data/raw/db/tables/AppUsers';
+import {AppUsersImpl} from '../../../../../src/main/data/raw/db/tables/AppUsers';
 import {
   AppUser,
   AppUserKey,
@@ -9,9 +9,9 @@ import {OsuRuleset} from '../../../../../src/primitives/OsuRuleset';
 import {OsuServer} from '../../../../../src/primitives/OsuServer';
 import {describeBaseTableMethods} from './GenericTableTest';
 
-describe('AppUsers', function () {
+describe('AppUsersImpl', function () {
   const db = new SqliteDb(':memory:');
-  const table = new AppUsers(db);
+  const table = new AppUsersImpl(db);
   const firstEntity: AppUser = {
     id: 'Some app id',
     server: OsuServer.Bancho,

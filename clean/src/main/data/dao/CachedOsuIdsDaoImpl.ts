@@ -1,19 +1,10 @@
 import {OsuServer} from '../../../primitives/OsuServer';
-import {SqlDbTable} from '../raw/db/SqlDbTable';
-import {
-  OsuIdAndUsername,
-  OsuIdAndUsernameKey,
-} from '../raw/db/entities/OsuIdAndUsername';
+import {OsuIdsAndUsernames} from '../raw/db/tables/OsuIdsAndUsernames';
 import {CachedOsuId, CachedOsuIdsDao} from './CachedOsuIdsDao';
 
 export class CachedOsuIdsDaoImpl implements CachedOsuIdsDao {
-  private osuIdsAndUsernamesTable: SqlDbTable<
-    OsuIdAndUsername,
-    OsuIdAndUsernameKey
-  >;
-  constructor(
-    osuIdsAndUsernamesTable: SqlDbTable<OsuIdAndUsername, OsuIdAndUsernameKey>
-  ) {
+  private osuIdsAndUsernamesTable: OsuIdsAndUsernames;
+  constructor(osuIdsAndUsernamesTable: OsuIdsAndUsernames) {
     this.osuIdsAndUsernamesTable = osuIdsAndUsernamesTable;
   }
   async get(

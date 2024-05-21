@@ -7,12 +7,16 @@ import {
 import {Cacheable} from '../entities/Cacheable';
 import {Timespan} from '../../../../../primitives/Timespan';
 
-export class OsuIdsAndUsernames extends SqlDbTable<
+export abstract class OsuIdsAndUsernames extends SqlDbTable<
   OsuIdAndUsername,
   OsuIdAndUsernameKey
 > {
-  readonly expireTimeDays: number = 7;
   tableName = 'osu_ids_and_usernames';
+
+  readonly expireTimeDays: number = 7;
+}
+
+export class OsuIdsAndUsernamesImpl extends OsuIdsAndUsernames {
   async createTable(): Promise<OperationExecutionResult> {
     return await this.db.run(
       `CREATE TABLE IF NOT EXISTS ${this.tableName} (id INTEGER, username TEXT, server INTEGER, creation_time INTEGER, expires_at INTEGER)`,

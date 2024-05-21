@@ -3,16 +3,29 @@ import {SqlDbTable} from '../SqlDbTable';
 import {
   AppUserApiRequestsCount,
   AppUserApiRequestsCountKey,
-  isAppUserApiRequestsUserWithTimeWindowsKey,
-  isAppUserApiRequestsTimeWindowsKey,
-  isAppUserApiRequestsUserKey,
 } from '../entities/AppUserApiRequestsCount';
 
-export class AppUserApiRequestsCounts extends SqlDbTable<
-  AppUserApiRequestsCount[],
+export abstract class AppUserApiRequestsCounts extends SqlDbTable<
+  AppUserApiRequestsCount,
   AppUserApiRequestsCountKey
 > {
-  tableName = 'app_user_api_requests_summaries';
+  tableName = 'app_user_api_requests_counts';
+
+  abstract getAllByUser(
+    app_user_id: string
+  ): Promise<AppUserApiRequestsCount[]>;
+
+  abstract getAllByTimeWindows(
+    time_window_ids: number[]
+  ): Promise<AppUserApiRequestsCount[]>;
+
+  abstract getAllByAppUserAndTimeWindows(
+    app_user_id: string,
+    time_window_ids: number[]
+  ): Promise<AppUserApiRequestsCount[]>;
+}
+
+export class AppUserApiRequestsCountsImpl extends AppUserApiRequestsCounts {
   async createTable(): Promise<OperationExecutionResult> {
     return await this.db.run(
       `CREATE TABLE IF NOT EXISTS ${this.tableName} (time_window_id INTEGER, app_user_id TEXT, target TEXT, subtarget TEXT, count INTEGER)`,
@@ -21,64 +34,13 @@ export class AppUserApiRequestsCounts extends SqlDbTable<
   }
   async get(
     key: AppUserApiRequestsCountKey
-  ): Promise<AppUserApiRequestsCount[] | undefined> {
-    if (isAppUserApiRequestsUserWithTimeWindowsKey(key)) {
-      const timeWindowsPlaceholders = key.time_window_ids
-        .map(() => '?')
-        .join(',');
-      return await this.db.getAll(
-        `SELECT * FROM ${this.tableName} WHERE app_user_id = ? AND time_window_id in (${timeWindowsPlaceholders})`,
-        [key.app_user_id, ...key.time_window_ids]
-      );
-    }
-    if (isAppUserApiRequestsTimeWindowsKey(key)) {
-      const timeWindowsPlaceholders = key.time_window_ids
-        .map(() => '?')
-        .join(',');
-      return await this.db.getAll(
-        `SELECT * FROM ${this.tableName} WHERE time_window_id in (${timeWindowsPlaceholders})`,
-        key.time_window_ids
-      );
-    }
-    if (isAppUserApiRequestsUserKey(key)) {
-      return await this.db.getAll(
-        `SELECT * FROM ${this.tableName} WHERE app_user_id = ?`,
-        [key.app_user_id]
-      );
-    }
-    throw Error('Key type detection is not exhaustive');
+  ): Promise<AppUserApiRequestsCount | undefined> {
+    return await this.db.get(
+      `SELECT * FROM ${this.tableName} WHERE time_window_id = ? AND app_user_id = ? AND target = ? AND subtarget = ? LIMIT 1`,
+      [key.time_window_id, key.app_user_id, key.target, key.subtarget]
+    );
   }
-  async add(
-    value: AppUserApiRequestsCount[]
-  ): Promise<OperationExecutionResult> {
-    // TODO transaction
-    for (const v of value) {
-      await this.addOne(v);
-    }
-    return {isSuccess: true};
-  }
-  async update(
-    value: AppUserApiRequestsCount[]
-  ): Promise<OperationExecutionResult> {
-    // TODO transaction
-    for (const v of value) {
-      await this.updateOne(v);
-    }
-    return {isSuccess: true};
-  }
-  async delete(
-    value: AppUserApiRequestsCount[]
-  ): Promise<OperationExecutionResult> {
-    // TODO transaction
-    for (const v of value) {
-      await this.deleteOne(v);
-    }
-    return {isSuccess: true};
-  }
-
-  private async addOne(
-    value: AppUserApiRequestsCount
-  ): Promise<OperationExecutionResult> {
+  async add(value: AppUserApiRequestsCount): Promise<OperationExecutionResult> {
     return await this.db.run(
       `INSERT INTO ${this.tableName} (time_window_id, app_user_id, target, subtarget, count) VALUES (?, ?, ?, ?, ?)`,
       [
@@ -90,7 +52,7 @@ export class AppUserApiRequestsCounts extends SqlDbTable<
       ]
     );
   }
-  private async updateOne(
+  async update(
     value: AppUserApiRequestsCount
   ): Promise<OperationExecutionResult> {
     return await this.db.run(
@@ -104,12 +66,37 @@ export class AppUserApiRequestsCounts extends SqlDbTable<
       ]
     );
   }
-  private async deleteOne(
+  async delete(
     value: AppUserApiRequestsCount
   ): Promise<OperationExecutionResult> {
     return await this.db.run(
       `DELETE FROM ${this.tableName} WHERE time_window_id = ? AND app_user_id = ? AND target = ? AND subtarget = ?`,
       [value.time_window_id, value.app_user_id, value.target, value.subtarget]
+    );
+  }
+  async getAllByUser(app_user_id: string): Promise<AppUserApiRequestsCount[]> {
+    return await this.db.getAll(
+      `SELECT * FROM ${this.tableName} WHERE app_user_id = ?`,
+      [app_user_id]
+    );
+  }
+  async getAllByTimeWindows(
+    time_window_ids: number[]
+  ): Promise<AppUserApiRequestsCount[]> {
+    const timeWindowsPlaceholders = time_window_ids.map(() => '?').join(',');
+    return await this.db.getAll(
+      `SELECT * FROM ${this.tableName} WHERE time_window_id in (${timeWindowsPlaceholders})`,
+      time_window_ids
+    );
+  }
+  async getAllByAppUserAndTimeWindows(
+    app_user_id: string,
+    time_window_ids: number[]
+  ): Promise<AppUserApiRequestsCount[]> {
+    const timeWindowsPlaceholders = time_window_ids.map(() => '?').join(',');
+    return await this.db.getAll(
+      `SELECT * FROM ${this.tableName} WHERE app_user_id = ? AND time_window_id in (${timeWindowsPlaceholders})`,
+      [app_user_id, ...time_window_ids]
     );
   }
 }

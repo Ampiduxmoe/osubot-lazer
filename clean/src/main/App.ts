@@ -9,12 +9,12 @@ import {UserRecentPlays} from './presentation/vk/commands/UserRecentPlays';
 import {UserInfo} from './presentation/vk/commands/UserInfo';
 import {SetUsername} from './presentation/vk/commands/SetUsername';
 import {SetUsernameUseCase} from './domain/usecases/set_username/SetUsernameUseCase';
-import {AppUsers} from './data/raw/db/tables/AppUsers';
+import {AppUsersImpl} from './data/raw/db/tables/AppUsers';
 import {SqliteDb} from './data/raw/db/SqliteDb';
 import {SqlDb} from './data/raw/db/SqlDb';
 import {GetAppUserInfoUseCase} from './domain/usecases/get_app_user_info/GetAppUserInfoUseCase';
-import {OsuIdsAndUsernames} from './data/raw/db/tables/OsuIdsAndUsernames';
-import {AppUserApiRequestsCounts} from './data/raw/db/tables/AppUserApiRequestsCounts';
+import {OsuIdsAndUsernamesImpl} from './data/raw/db/tables/OsuIdsAndUsernames';
+import {AppUserApiRequestsCountsImpl} from './data/raw/db/tables/AppUserApiRequestsCounts';
 import {AppUsersDaoImpl} from './data/dao/AppUsersDaoImpl';
 import {OsuRecentScoresDaoImpl} from './data/dao/OsuRecentScoresDaoImpl';
 import {CachedOsuIdsDaoImpl} from './data/dao/CachedOsuIdsDaoImpl';
@@ -23,7 +23,7 @@ import {ScoreSimulationsDaoImpl} from './data/dao/ScoreSimulationsDaoImpl';
 import {OsutoolsSimulationApi} from './data/raw/http/score_simulation/OsutoolsSImulationApi';
 import {AppUserRecentApiRequestsDaoImpl} from './data/dao/AppUserRecentApiRequestsDaoImpl';
 import {AppUserApiRequestsSummariesDaoImpl} from './data/dao/AppUserApiRequestsSummariesDaoImpl';
-import {TimeWindows} from './data/raw/db/tables/TimeWindows';
+import {TimeWindowsImpl} from './data/raw/db/tables/TimeWindows';
 import {Timespan} from '../primitives/Timespan';
 import {ApiUsageSummary} from './presentation/vk/commands/ApiUsageSummary';
 import {GetApiUsageSummaryUseCase} from './domain/usecases/get_api_usage_summary/GetApiUsageSummaryUseCase';
@@ -64,10 +64,10 @@ export class App {
 
     const osuApiList = [banchoApi];
 
-    const requestsCounts = new AppUserApiRequestsCounts(this.db);
-    const timeWindows = new TimeWindows(this.db);
-    const osuIdsAndUsernames = new OsuIdsAndUsernames(this.db);
-    const appUsers = new AppUsers(this.db);
+    const requestsCounts = new AppUserApiRequestsCountsImpl(this.db);
+    const timeWindows = new TimeWindowsImpl(this.db);
+    const osuIdsAndUsernames = new OsuIdsAndUsernamesImpl(this.db);
+    const appUsers = new AppUsersImpl(this.db);
 
     const allDbTables = [
       requestsCounts,
