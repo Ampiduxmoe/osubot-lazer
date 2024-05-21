@@ -43,7 +43,7 @@ export function describeBaseTableMethods<
       assert.equal(await thisTableExists(), true);
     });
   });
-  describe('table operations', function () {
+  describe('basic operations', function () {
     const getRowCount: () => Promise<number> = async () => {
       return (await db.getAll<unknown>(`SELECT * FROM ${table.tableName}`, []))
         .length;

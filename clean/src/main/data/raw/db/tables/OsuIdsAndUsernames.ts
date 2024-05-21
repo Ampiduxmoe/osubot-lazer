@@ -11,7 +11,7 @@ export class OsuIdsAndUsernames extends SqlDbTable<
   OsuIdAndUsername,
   OsuIdAndUsernameKey
 > {
-  private expireTimeDays = 7;
+  readonly expireTimeDays: number = 7;
   tableName = 'osu_ids_and_usernames';
   async createTable(): Promise<OperationExecutionResult> {
     return await this.db.run(
