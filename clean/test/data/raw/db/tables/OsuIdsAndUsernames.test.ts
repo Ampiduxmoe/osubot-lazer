@@ -17,9 +17,9 @@ describe('OsuIdsAndUsernamesImpl', function () {
     server: OsuServer.Bancho,
     id: 0,
   };
-  const firstEntityVariant: OsuIdAndUsername = {
-    username: 'Username',
-    server: OsuServer.Bancho,
+  const firstEntityUpdated: OsuIdAndUsername = {
+    username: firstEntity.username,
+    server: firstEntity.server,
     id: 999,
   };
   const secondEntity: OsuIdAndUsername = {
@@ -27,7 +27,7 @@ describe('OsuIdsAndUsernamesImpl', function () {
     server: OsuServer.Bancho,
     id: 1,
   };
-  const thirdEntity = {
+  const thirdEntity: OsuIdAndUsername = {
     username: 'Username #3',
     server: OsuServer.Bancho,
     id: 2,
@@ -35,22 +35,28 @@ describe('OsuIdsAndUsernamesImpl', function () {
   describeBaseTableMethods({
     db: db,
     table: table,
-    testEntities: {
-      first: {
+    testEntities: [
+      {
         value: firstEntity,
         key: firstEntity as OsuIdAndUsernameKey,
       },
-      firstVariant: {
-        value: firstEntityVariant,
-        key: firstEntityVariant as OsuIdAndUsernameKey,
-      },
-      second: {
+      {
         value: secondEntity,
         key: secondEntity as OsuIdAndUsernameKey,
       },
-      third: {
+      {
         value: thirdEntity,
         key: thirdEntity as OsuIdAndUsernameKey,
+      },
+    ],
+    options: {
+      updateEntity: {
+        index: 0,
+        updateValue: firstEntityUpdated,
+      },
+      entityToDelete: {
+        index: 1,
+        deletionKey: secondEntity as OsuIdAndUsernameKey,
       },
     },
   });

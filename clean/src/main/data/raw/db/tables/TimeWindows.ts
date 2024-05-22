@@ -3,8 +3,8 @@ import {SqlDbTable} from '../SqlDbTable';
 import {TimeWindow, TimeWindowKey} from '../entities/TimeWindow';
 
 export abstract class TimeWindows extends SqlDbTable<
-  TimeWindow,
-  TimeWindowKey
+  TimeWindowKey,
+  TimeWindow
 > {
   tableName = 'time_windows';
 
@@ -17,7 +17,7 @@ export abstract class TimeWindows extends SqlDbTable<
 
   abstract addAll(values: TimeWindow[]): Promise<OperationExecutionResult>;
 
-  abstract deleteAll(values: TimeWindow[]): Promise<OperationExecutionResult>;
+  abstract deleteAll(keys: TimeWindowKey[]): Promise<OperationExecutionResult>;
 }
 
 export class TimeWindowsImpl extends TimeWindows {
@@ -28,9 +28,10 @@ export class TimeWindowsImpl extends TimeWindows {
     );
   }
   async get(key: TimeWindowKey): Promise<TimeWindow | undefined> {
-    return await this.db.get(`SELECT * FROM ${this.tableName} WHERE id = ?`, [
-      key.id,
-    ]);
+    return await this.db.get(
+      `SELECT * FROM ${this.tableName} WHERE id = ? LIMIT 1`,
+      [key.id]
+    );
   }
   async add(value: TimeWindow): Promise<OperationExecutionResult> {
     return await this.db.run(
@@ -44,9 +45,9 @@ export class TimeWindowsImpl extends TimeWindows {
       [value.start_time, value.end_time, value.id]
     );
   }
-  async delete(value: TimeWindow): Promise<OperationExecutionResult> {
+  async delete(key: TimeWindowKey): Promise<OperationExecutionResult> {
     return await this.db.run(`DELETE FROM ${this.tableName} WHERE id = ?`, [
-      value.id,
+      key.id,
     ]);
   }
   async getAllByIds(ids: number[]): Promise<TimeWindow[]> {
@@ -73,9 +74,9 @@ export class TimeWindowsImpl extends TimeWindows {
       valuesUnwrapped
     );
   }
-  async deleteAll(values: TimeWindow[]): Promise<OperationExecutionResult> {
-    const idPlaceholders = values.map(() => '?').join(',');
-    const ids = values.map(x => x.id);
+  async deleteAll(keys: TimeWindowKey[]): Promise<OperationExecutionResult> {
+    const idPlaceholders = keys.map(() => '?').join(',');
+    const ids = keys.map(x => x.id);
     return await this.db.run(
       `DELETE FROM ${this.tableName} WHERE id in (${idPlaceholders})`,
       ids

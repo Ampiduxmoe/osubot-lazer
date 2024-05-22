@@ -1,6 +1,9 @@
 import {SqlDb, OperationExecutionResult} from './SqlDb';
 
-export abstract class SqlDbTable<T, TGet> {
+export abstract class SqlDbTable<
+  TEntityKey extends object,
+  TEntity extends TEntityKey,
+> {
   abstract readonly tableName: string;
 
   readonly db: SqlDb;
@@ -26,8 +29,8 @@ export abstract class SqlDbTable<T, TGet> {
 
   abstract createTable(): Promise<OperationExecutionResult>;
 
-  abstract get(key: TGet): Promise<T | undefined>;
-  abstract add(value: T): Promise<OperationExecutionResult>;
-  abstract update(value: T): Promise<OperationExecutionResult>;
-  abstract delete(value: T): Promise<OperationExecutionResult>;
+  abstract get(key: TEntityKey): Promise<TEntity | undefined>;
+  abstract add(value: TEntity): Promise<OperationExecutionResult>;
+  abstract update(value: TEntity): Promise<OperationExecutionResult>;
+  abstract delete(key: TEntityKey): Promise<OperationExecutionResult>;
 }

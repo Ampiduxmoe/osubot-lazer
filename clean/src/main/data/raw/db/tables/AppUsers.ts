@@ -2,7 +2,7 @@ import {OperationExecutionResult} from '../SqlDb';
 import {SqlDbTable} from '../SqlDbTable';
 import {AppUser, AppUserKey} from '../entities/AppUser';
 
-export abstract class AppUsers extends SqlDbTable<AppUser, AppUserKey> {
+export abstract class AppUsers extends SqlDbTable<AppUserKey, AppUser> {
   tableName = 'app_users';
 }
 
@@ -31,10 +31,10 @@ export class AppUsersImpl extends AppUsers {
       [value.osu_id, value.username, value.ruleset, value.id, value.server]
     );
   }
-  async delete(value: AppUser): Promise<OperationExecutionResult> {
+  async delete(key: AppUserKey): Promise<OperationExecutionResult> {
     return await this.db.run(
       `DELETE FROM ${this.tableName} WHERE id = ? AND server = ?`,
-      [value.id, value.server]
+      [key.id, key.server]
     );
   }
 }

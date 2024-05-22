@@ -6,8 +6,8 @@ import {
 } from '../entities/AppUserApiRequestsCount';
 
 export abstract class AppUserApiRequestsCounts extends SqlDbTable<
-  AppUserApiRequestsCount,
-  AppUserApiRequestsCountKey
+  AppUserApiRequestsCountKey,
+  AppUserApiRequestsCount
 > {
   tableName = 'app_user_api_requests_counts';
 
@@ -67,11 +67,11 @@ export class AppUserApiRequestsCountsImpl extends AppUserApiRequestsCounts {
     );
   }
   async delete(
-    value: AppUserApiRequestsCount
+    key: AppUserApiRequestsCountKey
   ): Promise<OperationExecutionResult> {
     return await this.db.run(
       `DELETE FROM ${this.tableName} WHERE time_window_id = ? AND app_user_id = ? AND target = ? AND subtarget = ?`,
-      [value.time_window_id, value.app_user_id, value.target, value.subtarget]
+      [key.time_window_id, key.app_user_id, key.target, key.subtarget]
     );
   }
   async getAllByUser(app_user_id: string): Promise<AppUserApiRequestsCount[]> {

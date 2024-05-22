@@ -3,31 +3,33 @@ import assert from 'assert';
 import {SqlDb} from '../../../../../src/main/data/raw/db/SqlDb';
 import {SqlDbTable} from '../../../../../src/main/data/raw/db/SqlDbTable';
 
-type TestEntity<TEntity, TEntityKey> = {
+type TestEntity<TEntityKey extends object, TEntity extends TEntityKey> = {
   value: TEntity;
   key: TEntityKey;
 };
 
 export function describeBaseTableMethods<
-  TEntity extends object,
-  TEntityKey,
+  TEntityKey extends object,
+  TEntity extends TEntityKey,
 >(params: {
   db: SqlDb;
-  table: SqlDbTable<TEntity, TEntityKey>;
-  testEntities: {
-    first: TestEntity<TEntity, TEntityKey>;
-    firstVariant: TestEntity<TEntity, TEntityKey>;
-    second: TestEntity<TEntity, TEntityKey>;
-    third: TestEntity<TEntity, TEntityKey>;
+  table: SqlDbTable<TEntityKey, TEntity>;
+  testEntities: TestEntity<TEntityKey, TEntity>[];
+  options: {
+    updateEntity: {
+      index: number;
+      updateValue: TEntity;
+    };
+    entityToDelete: {
+      index: number;
+      deletionKey: TEntityKey;
+    };
   };
 }) {
-  const {db, table} = params;
-  const {
-    first: firstEntity,
-    firstVariant: firstEntityVariant,
-    second: secondEntity,
-    third: thirdEntity,
-  } = params.testEntities;
+  const {db, table, testEntities, options} = params;
+  if (testEntities.length < 3) {
+    throw Error('At leas 3 entities are required for successfull test');
+  }
   describe('#createTable()', function () {
     it('should successfully create a table ', async function () {
       const thisTableExists: () => Promise<boolean> = async () => {
@@ -52,42 +54,129 @@ export function describeBaseTableMethods<
       assert.equal(await getRowCount(), 0);
     });
     it('should be one row after one entity is added through #add()', async function () {
-      await table.add(firstEntity.value);
+      await table.add(testEntities[0].value);
       assert.equal(await getRowCount(), 1);
     });
     it('#get() should correctly return added entity', async function () {
-      const row = await table.get(firstEntity.key);
-      if (row === undefined) {
-        throw Error('Error getting database object');
-      }
-      const entityKeys = Object.keys(firstEntity.value) as (keyof TEntity)[];
-      for (const key of entityKeys) {
-        assert.equal(row[key], firstEntity.value[key]);
-      }
+      const row = await table.get(testEntities[0].key);
+      assert.notEqual(row, undefined);
+      assertTwoTestEntitiesAreEqual({
+        firstObject: {
+          value: row!,
+          key: row! as TEntityKey,
+        },
+        secondObject: {
+          value: testEntities[0].value,
+          key: testEntities[0].key,
+        },
+        idFields: Object.keys(testEntities[0].key) as (keyof TEntityKey)[],
+      });
     });
-    it('should be three rows after two more entities are added', async function () {
-      await table.add(secondEntity.value);
-      await table.add(thirdEntity.value);
-      assert.equal(await getRowCount(), 3);
-    });
-    it('#update() should correctly update first entity', async function () {
-      await table.update(firstEntityVariant.value);
-      const updatedRow = await table.get(firstEntity.key);
-      if (updatedRow === undefined) {
-        throw Error('Error getting database object');
+    const maxEntityCount = testEntities.length;
+    const entitiesToAdd = maxEntityCount - 1;
+    it(`should be ${maxEntityCount} rows after ${entitiesToAdd} more entities are added`, async function () {
+      for (let i = 1; i < maxEntityCount; i++) {
+        await table.add(testEntities[i].value);
       }
-      const entityKeys = Object.keys(firstEntity.value) as (keyof TEntity)[];
-      for (const key of entityKeys) {
-        assert.equal(updatedRow[key], firstEntityVariant.value[key]);
-      }
+      assert.equal(await getRowCount(), maxEntityCount);
     });
-    it('#delete() should correctly delete second entity', async function () {
-      await table.delete(secondEntity.value);
-      const row = await table.get(secondEntity.key);
+    const updateIndex = options.updateEntity.index;
+    it(`#update() should correctly update entity[${updateIndex}]`, async function () {
+      const updateValue = options.updateEntity.updateValue;
+      await table.update(updateValue);
+      const updatedRow = await table.get(
+        testEntities[options.updateEntity.index].key
+      );
+      assert.notEqual(updatedRow, undefined);
+      assertTwoTestEntitiesAreEqual({
+        firstObject: {
+          value: updatedRow!,
+          key: updatedRow! as TEntityKey,
+        },
+        secondObject: {
+          value: updateValue,
+          key: updateValue as TEntityKey,
+        },
+        idFields: Object.keys(updateValue) as (keyof TEntityKey)[],
+      });
+    });
+    const deletionIndex = options.entityToDelete.index;
+    it(`#delete() should correctly delete entity[${deletionIndex}]`, async function () {
+      const deletionKey = options.entityToDelete.deletionKey;
+      await table.delete(deletionKey);
+      const row = await table.get(deletionKey);
       assert.equal(row, undefined);
     });
-    it('should be two rows in the end', async function () {
-      assert.equal(await getRowCount(), 2);
+    const finalEntityCountGoal = maxEntityCount - 1;
+    it(`should be ${finalEntityCountGoal} rows in the end`, async function () {
+      assert.equal(await getRowCount(), finalEntityCountGoal);
     });
+  });
+}
+
+function assertTestEntitiesEquality<
+  TKey extends object,
+  T extends TKey,
+>(params: {
+  firstObject: TestEntity<TKey, T>;
+  secondObject: TestEntity<TKey, T>;
+  idFields: (keyof TKey)[];
+  skipIdFields: boolean;
+  skipNonIdFields: boolean;
+}) {
+  if (params.skipIdFields && params.skipNonIdFields) {
+    return;
+  }
+  const {firstObject, secondObject, idFields} = params;
+  const entityFields = Object.keys(firstObject.value).filter(
+    k => k in secondObject.value
+  ) as (keyof T)[];
+  for (const field of entityFields) {
+    if ((idFields as (keyof T)[]).includes(field)) {
+      if (params.skipIdFields) {
+        continue;
+      }
+      const keyField = field as keyof TKey;
+      assert.equal(firstObject.key[keyField], secondObject.key[keyField]);
+      continue;
+    }
+    if (params.skipNonIdFields) {
+      continue;
+    }
+    assert.equal(firstObject.value[field], secondObject.value[field]);
+  }
+}
+
+export function assertTwoTestEntitiesAreEqual<
+  TKey extends object,
+  T extends TKey,
+>(params: {
+  firstObject: TestEntity<TKey, T>;
+  secondObject: TestEntity<TKey, T>;
+  idFields: (keyof TKey)[];
+}) {
+  assertTestEntitiesEquality({
+    firstObject: params.firstObject,
+    secondObject: params.secondObject,
+    idFields: params.idFields,
+    skipIdFields: false,
+    skipNonIdFields: false,
+  });
+}
+
+export function assertTwoTestEntitiesAreEqualWithoutIds<
+  TKey extends object,
+  T extends TKey,
+>(params: {
+  firstObject: TestEntity<TKey, T>;
+  secondObject: TestEntity<TKey, T>;
+  idFields: (keyof TKey)[];
+}) {
+  assertTestEntitiesEquality({
+    firstObject: params.firstObject,
+    secondObject: params.secondObject,
+    idFields: params.idFields,
+    skipIdFields: false,
+    skipNonIdFields: false,
   });
 }

@@ -8,8 +8,8 @@ import {Cacheable} from '../entities/Cacheable';
 import {Timespan} from '../../../../../primitives/Timespan';
 
 export abstract class OsuIdsAndUsernames extends SqlDbTable<
-  OsuIdAndUsername,
-  OsuIdAndUsernameKey
+  OsuIdAndUsernameKey,
+  OsuIdAndUsername
 > {
   tableName = 'osu_ids_and_usernames';
 
@@ -53,10 +53,10 @@ export class OsuIdsAndUsernamesImpl extends OsuIdsAndUsernames {
       [value.id, value.username, value.server]
     );
   }
-  async delete(value: OsuIdAndUsername): Promise<OperationExecutionResult> {
+  async delete(key: OsuIdAndUsernameKey): Promise<OperationExecutionResult> {
     return await this.db.run(
       `DELETE FROM ${this.tableName} WHERE username = ? COLLATE NOCASE AND server = ?`,
-      [value.username, value.server]
+      [key.username, key.server]
     );
   }
 }

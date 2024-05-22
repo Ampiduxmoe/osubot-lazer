@@ -19,7 +19,7 @@ describe('AppUsersImpl', function () {
     username: 'Username',
     ruleset: OsuRuleset.osu,
   };
-  const firstEntityVariant: AppUser = {
+  const firstEntityUpdated: AppUser = {
     id: firstEntity.id,
     server: firstEntity.server,
     osu_id: 999,
@@ -33,7 +33,7 @@ describe('AppUsersImpl', function () {
     username: 'Username #2',
     ruleset: OsuRuleset.taiko,
   };
-  const thirdEntity = {
+  const thirdEntity: AppUser = {
     id: 'Some app id #3',
     server: OsuServer.Bancho,
     osu_id: 2,
@@ -43,22 +43,28 @@ describe('AppUsersImpl', function () {
   describeBaseTableMethods({
     db: db,
     table: table,
-    testEntities: {
-      first: {
+    testEntities: [
+      {
         value: firstEntity,
         key: firstEntity as AppUserKey,
       },
-      firstVariant: {
-        value: firstEntityVariant,
-        key: firstEntityVariant as AppUserKey,
-      },
-      second: {
+      {
         value: secondEntity,
         key: secondEntity as AppUserKey,
       },
-      third: {
+      {
         value: thirdEntity,
         key: thirdEntity as AppUserKey,
+      },
+    ],
+    options: {
+      updateEntity: {
+        index: 0,
+        updateValue: firstEntityUpdated,
+      },
+      entityToDelete: {
+        index: 1,
+        deletionKey: secondEntity as AppUserKey,
       },
     },
   });
