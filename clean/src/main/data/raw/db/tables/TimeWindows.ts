@@ -15,7 +15,11 @@ export abstract class TimeWindows extends SqlDbTable<
     end_time: number
   ): Promise<TimeWindow[]>;
 
-  abstract addAll(values: TimeWindow[]): Promise<OperationExecutionResult>;
+  abstract addWithoutId(value: TimeWindow): Promise<OperationExecutionResult>;
+
+  abstract addAllWithoutIds(
+    values: TimeWindow[]
+  ): Promise<OperationExecutionResult>;
 
   abstract deleteAll(keys: TimeWindowKey[]): Promise<OperationExecutionResult>;
 }
@@ -35,8 +39,8 @@ export class TimeWindowsImpl extends TimeWindows {
   }
   async add(value: TimeWindow): Promise<OperationExecutionResult> {
     return await this.db.run(
-      `INSERT INTO ${this.tableName} (start_time, end_time) VALUES (?, ?)`,
-      [value.start_time, value.end_time]
+      `INSERT INTO ${this.tableName} (id, start_time, end_time) VALUES (?, ?, ?)`,
+      [value.id, value.start_time, value.end_time]
     );
   }
   async update(value: TimeWindow): Promise<OperationExecutionResult> {
@@ -66,7 +70,15 @@ export class TimeWindowsImpl extends TimeWindows {
       [start_time, end_time]
     );
   }
-  async addAll(values: TimeWindow[]): Promise<OperationExecutionResult> {
+  async addWithoutId(value: TimeWindow): Promise<OperationExecutionResult> {
+    return await this.db.run(
+      `INSERT INTO ${this.tableName} (start_time, end_time) VALUES (?, ?)`,
+      [value.start_time, value.end_time]
+    );
+  }
+  async addAllWithoutIds(
+    values: TimeWindow[]
+  ): Promise<OperationExecutionResult> {
     const valuePlaceholders = values.map(() => '(?, ?)').join(', ');
     const valuesUnwrapped = values.map(x => [x.start_time, x.end_time]).flat();
     return await this.db.run(

@@ -58,7 +58,7 @@ describe('AppUsersImpl', function () {
       },
     ],
     options: {
-      updateEntity: {
+      entityToUpdate: {
         index: 0,
         updateValue: firstEntityUpdated,
       },

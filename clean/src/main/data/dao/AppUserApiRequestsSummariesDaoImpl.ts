@@ -203,6 +203,6 @@ export class AppUserApiRequestsSummariesDaoImpl
       start_time: lastBucketStartTime,
       end_time: lastBucketEndTime,
     });
-    await this.timeWindows.addAll(targetDayWindows);
+    await this.timeWindows.addAllWithoutIds(targetDayWindows);
   }
 }

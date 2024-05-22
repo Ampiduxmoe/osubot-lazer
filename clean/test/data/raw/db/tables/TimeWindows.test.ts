@@ -15,24 +15,24 @@ describe('TimeWindowsImpl', function () {
   const db = new SqliteDb(':memory:');
   const table = new TimeWindowsImpl(db);
   const firstEntity: TimeWindow = {
-    id: -1,
-    start_time: 10,
-    end_time: 19,
+    id: 1,
+    start_time: 0,
+    end_time: 9,
   };
   const firstEntityUpdated: TimeWindow = {
     id: 1,
+    start_time: 10,
+    end_time: 19,
+  };
+  const secondEntity: TimeWindow = {
+    id: 2,
     start_time: 20,
     end_time: 29,
   };
-  const secondEntity: TimeWindow = {
-    id: -1,
+  const thirdEntity: TimeWindow = {
+    id: 3,
     start_time: 30,
     end_time: 39,
-  };
-  const thirdEntity: TimeWindow = {
-    id: -1,
-    start_time: 40,
-    end_time: 49,
   };
   describeBaseTableMethods({
     db: db,
@@ -40,30 +40,39 @@ describe('TimeWindowsImpl', function () {
     testEntities: [
       {
         value: firstEntity,
-        key: {id: 1},
+        key: firstEntity as TimeWindowKey,
       },
       {
         value: secondEntity,
-        key: {id: 2},
+        key: secondEntity as TimeWindowKey,
       },
       {
         value: thirdEntity,
-        key: {id: 3},
+        key: thirdEntity as TimeWindowKey,
       },
     ],
     options: {
-      updateEntity: {
+      entityToUpdate: {
         index: 0,
         updateValue: firstEntityUpdated,
       },
       entityToDelete: {
         index: 1,
-        deletionKey: {id: 2},
+        deletionKey: secondEntity as TimeWindowKey,
       },
     },
   });
   describe('table-specific operations', async function () {
-    it('should correctly return multiple rows on #getAllByIds() call', async function () {
+    it('should correctly add one row through #addWithoutId()', async function () {
+      await table.addWithoutId({
+        id: -1,
+        start_time: -10,
+        end_time: -1,
+      });
+      const row = await table.get({id: 4});
+      assert.notEqual(row, undefined);
+    });
+    it('#getAllByIds() should correctly return multiple rows', async function () {
       const rows = await table.getAllByIds([1, 3]);
       assert.equal(rows.length, 2);
       for (const referenceEntity of [firstEntityUpdated, thirdEntity]) {
@@ -88,23 +97,23 @@ describe('TimeWindowsImpl', function () {
         });
       }
     });
-    const newIds = [4, 5, 6, 7, 8];
+    const newIds = [5, 6, 7, 8, 9];
     const newTimeWindows = newIds.map(n => ({
       id: -1,
       start_time: n * 10,
       end_time: n * 10 + 9,
     }));
-    it('should correctly add multiple rows on #addAll() call', async function () {
-      await table.addAll(newTimeWindows);
+    it('should correctly add multiple rows on #addAllWithoutIds() call', async function () {
+      await table.addAllWithoutIds(newTimeWindows);
       const rows = await table.getAllByIds(newIds);
       assert.equal(rows.length, newIds.length);
     });
-    it('should correctly return multiple rows on #getAllByTimeInterval() call', async function () {
-      const startTime = 4 * 10 + 5;
-      const endTime = 8 * 10 + 5;
+    it('should correctly return multiple rows when using #getAllByTimeInterval()', async function () {
+      const startTime = 5 * 10 + 5;
+      const endTime = 9 * 10 + 5;
       const rows = await table.getAllByTimeInterval(startTime, endTime);
       assert.equal(rows.length, 3);
-      const referenceIds = [5, 6, 7];
+      const referenceIds = [6, 7, 8];
       const referenceEntities = referenceIds.map(
         refId => newTimeWindows[newIds.indexOf(refId)]
       );
@@ -126,8 +135,8 @@ describe('TimeWindowsImpl', function () {
         });
       }
     });
-    it('should correctly delete multiple rows on #deleteAll() call', async function () {
-      const timeWindowsToDelete = [4, 6, 8].map(n => ({id: n}));
+    it('#deleteAll() should correctly delete multiple rows', async function () {
+      const timeWindowsToDelete = [5, 7, 9].map(n => ({id: n}));
       await table.deleteAll(timeWindowsToDelete);
       const rows = await table.getAllByIds(newIds);
       assert.equal(rows.length, newIds.length - timeWindowsToDelete.length);

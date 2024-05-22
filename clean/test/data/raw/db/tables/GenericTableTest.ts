@@ -16,7 +16,7 @@ export function describeBaseTableMethods<
   table: SqlDbTable<TEntityKey, TEntity>;
   testEntities: TestEntity<TEntityKey, TEntity>[];
   options: {
-    updateEntity: {
+    entityToUpdate: {
       index: number;
       updateValue: TEntity;
     };
@@ -80,13 +80,11 @@ export function describeBaseTableMethods<
       }
       assert.equal(await getRowCount(), maxEntityCount);
     });
-    const updateIndex = options.updateEntity.index;
+    const updateIndex = options.entityToUpdate.index;
     it(`#update() should correctly update entity[${updateIndex}]`, async function () {
-      const updateValue = options.updateEntity.updateValue;
+      const updateValue = options.entityToUpdate.updateValue;
       await table.update(updateValue);
-      const updatedRow = await table.get(
-        testEntities[options.updateEntity.index].key
-      );
+      const updatedRow = await table.get(testEntities[updateIndex].key);
       assert.notEqual(updatedRow, undefined);
       assertTwoTestEntitiesAreEqual({
         firstObject: {
@@ -104,7 +102,7 @@ export function describeBaseTableMethods<
     it(`#delete() should correctly delete entity[${deletionIndex}]`, async function () {
       const deletionKey = options.entityToDelete.deletionKey;
       await table.delete(deletionKey);
-      const row = await table.get(deletionKey);
+      const row = await table.get(testEntities[deletionIndex].key);
       assert.equal(row, undefined);
     });
     const finalEntityCountGoal = maxEntityCount - 1;
@@ -148,23 +146,6 @@ function assertTestEntitiesEquality<
 }
 
 export function assertTwoTestEntitiesAreEqual<
-  TKey extends object,
-  T extends TKey,
->(params: {
-  firstObject: TestEntity<TKey, T>;
-  secondObject: TestEntity<TKey, T>;
-  idFields: (keyof TKey)[];
-}) {
-  assertTestEntitiesEquality({
-    firstObject: params.firstObject,
-    secondObject: params.secondObject,
-    idFields: params.idFields,
-    skipIdFields: false,
-    skipNonIdFields: false,
-  });
-}
-
-export function assertTwoTestEntitiesAreEqualWithoutIds<
   TKey extends object,
   T extends TKey,
 >(params: {

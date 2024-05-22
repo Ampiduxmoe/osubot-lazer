@@ -50,7 +50,7 @@ describe('OsuIdsAndUsernamesImpl', function () {
       },
     ],
     options: {
-      updateEntity: {
+      entityToUpdate: {
         index: 0,
         updateValue: firstEntityUpdated,
       },
