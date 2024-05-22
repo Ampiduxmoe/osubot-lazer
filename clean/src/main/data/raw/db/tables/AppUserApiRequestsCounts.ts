@@ -11,10 +11,6 @@ export abstract class AppUserApiRequestsCounts extends SqlDbTable<
 > {
   tableName = 'app_user_api_requests_counts';
 
-  abstract getAllByUser(
-    app_user_id: string
-  ): Promise<AppUserApiRequestsCount[]>;
-
   abstract getAllByTimeWindows(
     time_window_ids: number[]
   ): Promise<AppUserApiRequestsCount[]>;
@@ -72,12 +68,6 @@ export class AppUserApiRequestsCountsImpl extends AppUserApiRequestsCounts {
     return await this.db.run(
       `DELETE FROM ${this.tableName} WHERE time_window_id = ? AND app_user_id = ? AND target = ? AND subtarget = ?`,
       [key.time_window_id, key.app_user_id, key.target, key.subtarget]
-    );
-  }
-  async getAllByUser(app_user_id: string): Promise<AppUserApiRequestsCount[]> {
-    return await this.db.getAll(
-      `SELECT * FROM ${this.tableName} WHERE app_user_id = ?`,
-      [app_user_id]
     );
   }
   async getAllByTimeWindows(
