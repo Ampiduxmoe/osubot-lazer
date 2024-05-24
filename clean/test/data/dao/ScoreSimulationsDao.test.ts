@@ -1,6 +1,5 @@
 /* eslint-disable prefer-arrow-callback */
-
-import assert = require('assert');
+import assert from 'assert';
 import {ScoreSimulationsDaoImpl} from '../../../src/main/data/dao/ScoreSimulationsDaoImpl';
 import {FakeScoreSimulationApi} from '../../mocks/ScoreSimulationApi';
 

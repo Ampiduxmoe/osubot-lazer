@@ -1,11 +1,11 @@
 /* eslint-disable prefer-arrow-callback */
+import assert from 'assert';
 import {FakeOsuUsersDao} from '../../mocks/OsuUsersDao';
 import {GetOsuUserInfoUseCase} from '../../../src/main/domain/usecases/get_osu_user_info/GetOsuUserInfoUseCase';
 import {GetOsuUserInfoRequest} from '../../../src/main/domain/usecases/get_osu_user_info/GetOsuUserInfoRequest';
 import {OsuServer} from '../../../src/primitives/OsuServer';
 import {getFakeOsuUserUsername} from '../../mocks/OsuUsers';
 import {OsuRuleset} from '../../../src/primitives/OsuRuleset';
-import assert = require('assert');
 
 describe('GetOsuUserInfoUseCase', function () {
   const osuUsers = new FakeOsuUsersDao();
