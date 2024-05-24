@@ -1,34 +1,46 @@
-import {OsuUser, OsuUsersDao} from '../../src/main/data/dao/OsuUsersDao';
-import {OsuRuleset} from '../../src/primitives/OsuRuleset';
-import {OsuServer} from '../../src/primitives/OsuServer';
-import {getFakeOsuUserUsername} from './Generators';
+import {OsuApi} from '../../../../../src/main/data/raw/http/OsuAPI';
+import {OsuUserInfo} from '../../../../../src/main/data/raw/http/boundary/OsuUserInfo';
+import {RecentScoreInfo} from '../../../../../src/main/data/raw/http/boundary/RecentScoreInfo';
+import {OsuRuleset} from '../../../../../src/primitives/OsuRuleset';
+import {OsuServer} from '../../../../../src/primitives/OsuServer';
+import {
+  getFakeOsuUserUsername,
+  getFakeRecentScoreInfos,
+} from '../../../Generators';
 
-export class FakeOsuUsersDao implements OsuUsersDao {
-  async getByUsername(
-    _appUserId: string,
+export class FakeBanchoApi implements OsuApi {
+  server = OsuServer.Bancho;
+  async getUser(
     username: string,
-    server: OsuServer,
     ruleset: OsuRuleset
-  ): Promise<OsuUser | undefined> {
-    return getFakeOsuUsers(server, ruleset).find(
-      u => u.username.toLowerCase() === username.toLowerCase()
-    );
+  ): Promise<OsuUserInfo | undefined> {
+    const users = getFakeBanchoUsers(ruleset);
+    return users.find(u => u.username.toLowerCase() === username.toLowerCase());
+  }
+  async getRecentPlays(
+    osuUserId: number,
+    includeFails: boolean,
+    quantity: number,
+    startPosition: number,
+    ruleset: OsuRuleset
+  ): Promise<RecentScoreInfo[]> {
+    const users = getFakeBanchoUsers(ruleset);
+    const user = users.find(u => u.id === osuUserId);
+    if (user === undefined) {
+      return [];
+    }
+    return getFakeRecentScoreInfos(osuUserId)
+      .filter(x => {
+        if (includeFails) {
+          return true;
+        }
+        return x.passed;
+      })
+      .slice(startPosition - 1, startPosition - 1 + quantity);
   }
 }
 
-export const getFakeOsuUsers: (
-  server: OsuServer,
-  ruleset: OsuRuleset
-) => OsuUser[] = (server, ruleset) => {
-  switch (server) {
-    case OsuServer.Bancho:
-      return getFakeBanchoUsers(ruleset);
-    default:
-      throw Error('Switch case is not exhaustive');
-  }
-};
-
-const getFakeBanchoUsers: (ruleset: OsuRuleset) => OsuUser[] = ruleset => {
+const getFakeBanchoUsers: (ruleset: OsuRuleset) => OsuUserInfo[] = ruleset => {
   switch (ruleset) {
     case OsuRuleset.osu:
       return getFakeBanchoStdUsers();
@@ -43,7 +55,7 @@ const getFakeBanchoUsers: (ruleset: OsuRuleset) => OsuUser[] = ruleset => {
   }
 };
 
-const getFakeBanchoStdUsers: () => OsuUser[] = () => [
+const getFakeBanchoStdUsers: () => OsuUserInfo[] = () => [
   ...[1, 2, 3, 4, 5].map(n => ({
     id: n,
     username: getFakeOsuUserUsername(n),
@@ -61,7 +73,7 @@ const getFakeBanchoStdUsers: () => OsuUser[] = () => [
     accuracy: 1 - n / 100,
   })),
 ];
-const getFakeBanchoCtbUsers: () => OsuUser[] = () => [
+const getFakeBanchoCtbUsers: () => OsuUserInfo[] = () => [
   ...[4, 5, 6, 7, 8].map(n => ({
     id: n,
     username: getFakeOsuUserUsername(n),
@@ -79,7 +91,7 @@ const getFakeBanchoCtbUsers: () => OsuUser[] = () => [
     accuracy: 1 - n / 100,
   })),
 ];
-const getFakeBanchoTaikoUsers: () => OsuUser[] = () => [
+const getFakeBanchoTaikoUsers: () => OsuUserInfo[] = () => [
   ...[7, 8, 9, 10, 11].map(n => ({
     id: n,
     username: getFakeOsuUserUsername(n),
@@ -97,7 +109,7 @@ const getFakeBanchoTaikoUsers: () => OsuUser[] = () => [
     accuracy: 1 - n / 100,
   })),
 ];
-const getFakeBanchoManiaUsers: () => OsuUser[] = () => [
+const getFakeBanchoManiaUsers: () => OsuUserInfo[] = () => [
   ...[10, 11, 12, 13, 14].map(n => ({
     id: n,
     username: getFakeOsuUserUsername(n),

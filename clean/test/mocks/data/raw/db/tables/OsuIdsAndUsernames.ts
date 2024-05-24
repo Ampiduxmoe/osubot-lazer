@@ -1,9 +1,9 @@
-import {OperationExecutionResult} from '../../src/main/data/raw/db/SqlDb';
+import {OperationExecutionResult} from '../../../../../../src/main/data/raw/db/SqlDb';
 import {
   OsuIdAndUsernameKey,
   OsuIdAndUsername,
-} from '../../src/main/data/raw/db/entities/OsuIdAndUsername';
-import {OsuIdsAndUsernames} from '../../src/main/data/raw/db/tables/OsuIdsAndUsernames';
+} from '../../../../../../src/main/data/raw/db/entities/OsuIdAndUsername';
+import {OsuIdsAndUsernames} from '../../../../../../src/main/data/raw/db/tables/OsuIdsAndUsernames';
 
 export class FakeOsuIdsAndUsernames extends OsuIdsAndUsernames {
   private idsAndUsernames: OsuIdAndUsername[] = [];

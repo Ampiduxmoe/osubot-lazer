@@ -4,7 +4,10 @@ import {GetAppUserInfoRequest} from '../../../src/main/domain/usecases/get_app_u
 import {GetAppUserInfoUseCase} from '../../../src/main/domain/usecases/get_app_user_info/GetAppUserInfoUseCase';
 import {VkIdConverter} from '../../../src/main/presentation/vk/VkIdConverter';
 import {OsuServer} from '../../../src/primitives/OsuServer';
-import {FakeAppUsersDao, getFakeAppUsers} from '../../mocks/AppUsersDao';
+import {
+  FakeAppUsersDao,
+  getFakeAppUsers,
+} from '../../mocks/data/dao/AppUsersDao';
 
 describe('GetAppUserInfoUseCase', function () {
   const osuUsers = new FakeAppUsersDao();

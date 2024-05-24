@@ -2,9 +2,12 @@
 import {UserInfo} from '../../src/main/presentation/vk/commands/UserInfo';
 import {GetAppUserInfoUseCase} from '../../src/main/domain/usecases/get_app_user_info/GetAppUserInfoUseCase';
 import {GetOsuUserInfoUseCase} from '../../src/main/domain/usecases/get_osu_user_info/GetOsuUserInfoUseCase';
-import {FakeOsuUsersDao, getFakeOsuUsers} from '../mocks/OsuUsersDao';
-import {FakeAppUsersDao, getFakeAppUsers} from '../mocks/AppUsersDao';
-import {createWithOnlyText, createWithPayload} from '../mocks/VkMessageContext';
+import {FakeOsuUsersDao, getFakeOsuUsers} from '../mocks/data/dao/OsuUsersDao';
+import {FakeAppUsersDao, getFakeAppUsers} from '../mocks/data/dao/AppUsersDao';
+import {
+  createWithOnlyText,
+  createWithPayload,
+} from '../mocks/presentation/VkMessageContext';
 import {VkMessageContext} from '../../src/main/presentation/vk/VkMessageContext';
 import assert = require('assert');
 import {SERVERS} from '../../src/main/presentation/common/OsuServers';

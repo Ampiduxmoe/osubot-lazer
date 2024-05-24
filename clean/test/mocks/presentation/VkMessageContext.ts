@@ -1,5 +1,5 @@
 import {ContextDefaultState, MessageContext} from 'vk-io';
-import {VkMessageContext} from '../../src/main/presentation/vk/VkMessageContext';
+import {VkMessageContext} from '../../../src/main/presentation/vk/VkMessageContext';
 export type FakeVkMessageContext = Pick<
   VkMessageContext,
   | 'senderId'

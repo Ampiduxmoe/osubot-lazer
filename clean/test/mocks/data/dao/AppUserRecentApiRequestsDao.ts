@@ -1,8 +1,8 @@
 import {
   AppUserApiRequests,
   AppUserRecentApiRequestsDao,
-} from '../../src/main/data/dao/AppUserRecentApiRequestsDao';
-import {Timespan} from '../../src/primitives/Timespan';
+} from '../../../../src/main/data/dao/AppUserRecentApiRequestsDao';
+import {Timespan} from '../../../../src/primitives/Timespan';
 
 export class FakeAppUserRecentApiRequestsDao
   implements AppUserRecentApiRequestsDao

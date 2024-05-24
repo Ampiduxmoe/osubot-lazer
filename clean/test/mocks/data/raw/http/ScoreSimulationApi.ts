@@ -1,6 +1,6 @@
-import {ScoreSimulationApi} from '../../src/main/data/raw/http/ScoreSimulationApi';
-import {ScoreSimulationInfo} from '../../src/main/data/raw/http/boundary/ScoreSimulationInfo';
-import {maxBy, minBy, sumBy} from '../../src/primitives/Arrays';
+import {ScoreSimulationApi} from '../../../../../src/main/data/raw/http/ScoreSimulationApi';
+import {ScoreSimulationInfo} from '../../../../../src/main/data/raw/http/boundary/ScoreSimulationInfo';
+import {maxBy, minBy, sumBy} from '../../../../../src/primitives/Arrays';
 export class FakeScoreSimulationApi implements ScoreSimulationApi {
   async simulate(
     beatmapId: number,

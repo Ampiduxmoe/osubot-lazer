@@ -1,8 +1,11 @@
-import {AppUserInfo, AppUsersDao} from '../../src/main/data/dao/AppUsersDao';
-import {VkIdConverter} from '../../src/main/presentation/vk/VkIdConverter';
-import {OsuRuleset} from '../../src/primitives/OsuRuleset';
-import {OsuServer} from '../../src/primitives/OsuServer';
-import {getFakeOsuUserUsername} from './Generators';
+import {
+  AppUserInfo,
+  AppUsersDao,
+} from '../../../../src/main/data/dao/AppUsersDao';
+import {VkIdConverter} from '../../../../src/main/presentation/vk/VkIdConverter';
+import {OsuRuleset} from '../../../../src/primitives/OsuRuleset';
+import {OsuServer} from '../../../../src/primitives/OsuServer';
+import {getFakeOsuUserUsername} from '../../Generators';
 
 export class FakeAppUsersDao implements AppUsersDao {
   private appUsers = getFakeAppUsers();
