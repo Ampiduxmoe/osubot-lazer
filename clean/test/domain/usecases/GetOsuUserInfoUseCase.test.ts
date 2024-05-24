@@ -4,7 +4,7 @@ import {FakeOsuUsersDao} from '../../mocks/OsuUsersDao';
 import {GetOsuUserInfoUseCase} from '../../../src/main/domain/usecases/get_osu_user_info/GetOsuUserInfoUseCase';
 import {GetOsuUserInfoRequest} from '../../../src/main/domain/usecases/get_osu_user_info/GetOsuUserInfoRequest';
 import {OsuServer} from '../../../src/primitives/OsuServer';
-import {getFakeOsuUserUsername} from '../../mocks/OsuUsers';
+import {getFakeOsuUserUsername} from '../../mocks/Generators';
 import {OsuRuleset} from '../../../src/primitives/OsuRuleset';
 
 describe('GetOsuUserInfoUseCase', function () {

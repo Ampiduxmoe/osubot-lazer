@@ -16,7 +16,7 @@ import {OsuIdsAndUsernames} from '../raw/db/tables/OsuIdsAndUsernames';
 export class OsuUsersDaoImpl implements OsuUsersDao {
   private apis: OsuApi[];
   private osuIdsAndUsernamesTable: OsuIdsAndUsernames;
-  recentApiRequests: AppUserRecentApiRequestsDao;
+  private recentApiRequests: AppUserRecentApiRequestsDao;
   constructor(
     apis: OsuApi[],
     osuIdsAndUsernamesTable: OsuIdsAndUsernames,

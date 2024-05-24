@@ -8,6 +8,7 @@ describe('Data', function () {
     require('./data/raw/db/tables/TimeWindows.test');
   });
   describe('DAOs', function () {
+    require('./data/dao/OsuUsersDao.test');
     require('./data/dao/ScoreSimulationsDao.test');
   });
 });
