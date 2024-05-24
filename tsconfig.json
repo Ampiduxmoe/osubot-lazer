@@ -9,6 +9,7 @@
   },
   "include": [
     "*.ts",
+    "./clean/test/**/*.test.ts",
     "./clean/test/Tests.ts"
   ]
 }
