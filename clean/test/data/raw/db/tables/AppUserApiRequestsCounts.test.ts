@@ -1,6 +1,9 @@
 /* eslint-disable prefer-arrow-callback */
 import {SqliteDb} from '../../../../../src/main/data/raw/db/SqliteDb';
-import {AppUserApiRequestsCountsImpl} from '../../../../../src/main/data/raw/db/tables/AppUserApiRequestsCounts';
+import {
+  AppUserApiRequestsCounts,
+  AppUserApiRequestsCountsImpl,
+} from '../../../../../src/main/data/raw/db/tables/AppUserApiRequestsCounts';
 import {
   assertTwoTestEntitiesAreEqual,
   describeBaseTableMethods,
@@ -11,9 +14,9 @@ import {
 } from '../../../../../src/main/data/raw/db/entities/AppUserApiRequestsCount';
 import assert from 'assert';
 
-describe('AppUserApiRequestsCountsImpl', function () {
+describe('AppUserApiRequestsCounts', function () {
   const db = new SqliteDb(':memory:');
-  const table = new AppUserApiRequestsCountsImpl(db);
+  const table: AppUserApiRequestsCounts = new AppUserApiRequestsCountsImpl(db);
   const firstEntity: AppUserApiRequestsCount = {
     time_window_id: 1,
     app_user_id: 'appUserId1',

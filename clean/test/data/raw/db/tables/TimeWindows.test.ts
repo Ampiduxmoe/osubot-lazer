@@ -5,15 +5,18 @@ import {
   TimeWindow,
   TimeWindowKey,
 } from '../../../../../src/main/data/raw/db/entities/TimeWindow';
-import {TimeWindowsImpl} from '../../../../../src/main/data/raw/db/tables/TimeWindows';
+import {
+  TimeWindows,
+  TimeWindowsImpl,
+} from '../../../../../src/main/data/raw/db/tables/TimeWindows';
 import {
   assertTwoTestEntitiesAreEqual,
   describeBaseTableMethods,
 } from './GenericTableTest';
 
-describe('TimeWindowsImpl', function () {
+describe('TimeWindows', function () {
   const db = new SqliteDb(':memory:');
-  const table = new TimeWindowsImpl(db);
+  const table: TimeWindows = new TimeWindowsImpl(db);
   const firstEntity: TimeWindow = {
     id: 1,
     start_time: 0,

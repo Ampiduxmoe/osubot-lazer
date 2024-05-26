@@ -1,23 +1,42 @@
 /* eslint-disable prefer-arrow-callback */
 import assert from 'assert';
 import {OsuRecentScoresDaoImpl} from '../../../src/main/data/dao/OsuRecentScoresDaoImpl';
-import {FakeOsuIdsAndUsernames} from '../../mocks/data/raw/db/tables/OsuIdsAndUsernames';
 import {FakeBanchoApi} from '../../mocks/data/raw/http/BanchoApi';
-import {FakeAppUserRecentApiRequestsDao} from '../../mocks/data/dao/AppUserRecentApiRequestsDao';
 import {SqliteDb} from '../../../src/main/data/raw/db/SqliteDb';
 import {OsuServer} from '../../../src/primitives/OsuServer';
 import {OsuRuleset} from '../../../src/primitives/OsuRuleset';
+import {OsuIdsAndUsernamesImpl} from '../../../src/main/data/raw/db/tables/OsuIdsAndUsernames';
+import {AppUserApiRequestsCountsImpl} from '../../../src/main/data/raw/db/tables/AppUserApiRequestsCounts';
+import {TimeWindowsImpl} from '../../../src/main/data/raw/db/tables/TimeWindows';
+import {AppUserApiRequestsSummariesDaoImpl} from '../../../src/main/data/dao/AppUserApiRequestsSummariesDaoImpl';
+import {AppUserRecentApiRequestsDaoImpl} from '../../../src/main/data/dao/AppUserRecentApiRequestsDaoImpl';
+import {SqlDbTable} from '../../../src/main/data/raw/db/SqlDbTable';
+import {OsuRecentScoresDao} from '../../../src/main/data/dao/OsuRecentScoresDao';
 
-describe('OsuRecentScoresDaoImpl', function () {
-  const apis = [new FakeBanchoApi()];
-  const db = new SqliteDb(':memory:');
-  const idsAndUsernames = new FakeOsuIdsAndUsernames(db);
-  const recentApiRequests = new FakeAppUserRecentApiRequestsDao();
-  const dao = new OsuRecentScoresDaoImpl(
-    apis,
-    idsAndUsernames,
-    recentApiRequests
-  );
+describe('OsuRecentScoresDao', function () {
+  let tables: SqlDbTable<object, object>[];
+  let dao: OsuRecentScoresDao;
+  {
+    const apis = [new FakeBanchoApi()];
+    const db = new SqliteDb(':memory:');
+    const idsAndUsernames = new OsuIdsAndUsernamesImpl(db);
+    const appUserApiRequestsCounts = new AppUserApiRequestsCountsImpl(db);
+    const timeWindows = new TimeWindowsImpl(db);
+    const requestsSummariesDao = new AppUserApiRequestsSummariesDaoImpl(
+      appUserApiRequestsCounts,
+      timeWindows
+    );
+    const recentApiRequests = new AppUserRecentApiRequestsDaoImpl(
+      requestsSummariesDao
+    );
+    tables = [idsAndUsernames, appUserApiRequestsCounts];
+    dao = new OsuRecentScoresDaoImpl(apis, idsAndUsernames, recentApiRequests);
+  }
+
+  before(async function () {
+    await Promise.all(tables.map(t => t.createTable()));
+  });
+
   describe('#get()', function () {
     it('should return empty array when user does not exist', async function () {
       const appUserId = 'fake-app-user-id';

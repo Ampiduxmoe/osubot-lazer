@@ -1,26 +1,50 @@
 /* eslint-disable prefer-arrow-callback */
 import assert from 'assert';
 import {OsuUsersDaoImpl} from '../../../src/main/data/dao/OsuUsersDaoImpl';
-import {FakeOsuIdsAndUsernames} from '../../mocks/data/raw/db/tables/OsuIdsAndUsernames';
 import {FakeBanchoApi} from '../../mocks/data/raw/http/BanchoApi';
-import {FakeAppUserRecentApiRequestsDao} from '../../mocks/data/dao/AppUserRecentApiRequestsDao';
 import {SqliteDb} from '../../../src/main/data/raw/db/SqliteDb';
 import {getFakeOsuUserUsername} from '../../mocks/Generators';
 import {OsuServer} from '../../../src/primitives/OsuServer';
 import {OsuRuleset} from '../../../src/primitives/OsuRuleset';
+import {OsuIdsAndUsernamesImpl} from '../../../src/main/data/raw/db/tables/OsuIdsAndUsernames';
+import {AppUserRecentApiRequestsDaoImpl} from '../../../src/main/data/dao/AppUserRecentApiRequestsDaoImpl';
+import {AppUserApiRequestsCountsImpl} from '../../../src/main/data/raw/db/tables/AppUserApiRequestsCounts';
+import {TimeWindowsImpl} from '../../../src/main/data/raw/db/tables/TimeWindows';
+import {AppUserApiRequestsSummariesDaoImpl} from '../../../src/main/data/dao/AppUserApiRequestsSummariesDaoImpl';
+import {OsuUsersDao} from '../../../src/main/data/dao/OsuUsersDao';
+import {SqlDbTable} from '../../../src/main/data/raw/db/SqlDbTable';
 
-describe('OsuUsersDaoImpl', function () {
-  const apis = [new FakeBanchoApi()];
-  const db = new SqliteDb(':memory:');
-  const idsAndUsernames = new FakeOsuIdsAndUsernames(db);
-  const recentApiRequests = new FakeAppUserRecentApiRequestsDao();
-  const dao = new OsuUsersDaoImpl(apis, idsAndUsernames, recentApiRequests);
-  describe('#get()', function () {
+describe('OsuUsersDao', async function () {
+  let tables: SqlDbTable<object, object>[];
+  let dao: OsuUsersDao;
+  {
+    const apis = [new FakeBanchoApi()];
+    const db = new SqliteDb(':memory:');
+    const idsAndUsernames = new OsuIdsAndUsernamesImpl(db);
+    const appUserApiRequestsCounts = new AppUserApiRequestsCountsImpl(db);
+    const timeWindows = new TimeWindowsImpl(db);
+    const requestsSummariesDao = new AppUserApiRequestsSummariesDaoImpl(
+      appUserApiRequestsCounts,
+      timeWindows
+    );
+    const recentApiRequests = new AppUserRecentApiRequestsDaoImpl(
+      requestsSummariesDao
+    );
+
+    tables = [idsAndUsernames];
+    dao = new OsuUsersDaoImpl(apis, idsAndUsernames, recentApiRequests);
+  }
+
+  before(async function () {
+    await Promise.all(tables.map(t => t.createTable()));
+  });
+
+  describe('#getByUsername()', function () {
     it('should return undefined when user does not exist', async function () {
       const appUserId = 'fake-app-user-id';
       const result = await dao.getByUsername(
         appUserId,
-        getFakeOsuUserUsername(NaN),
+        'this username should not exist',
         OsuServer.Bancho,
         OsuRuleset.osu
       );
@@ -28,9 +52,13 @@ describe('OsuUsersDaoImpl', function () {
     });
     it('should return OsuUser when user exists', async function () {
       const appUserId = 'fake-app-user-id';
+      const username = getFakeOsuUserUsername(1);
+      if (username === undefined) {
+        throw Error('All osu user ids used in this test should be valid');
+      }
       const result = await dao.getByUsername(
         appUserId,
-        getFakeOsuUserUsername(1),
+        username,
         OsuServer.Bancho,
         OsuRuleset.osu
       );

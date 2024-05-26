@@ -1,27 +1,62 @@
 /* eslint-disable prefer-arrow-callback */
 import assert from 'assert';
-import {FakeOsuUsersDao} from '../../mocks/data/dao/OsuUsersDao';
 import {GetOsuUserInfoUseCase} from '../../../src/main/domain/usecases/get_osu_user_info/GetOsuUserInfoUseCase';
 import {GetOsuUserInfoRequest} from '../../../src/main/domain/usecases/get_osu_user_info/GetOsuUserInfoRequest';
 import {OsuServer} from '../../../src/primitives/OsuServer';
 import {getFakeOsuUserUsername} from '../../mocks/Generators';
 import {OsuRuleset} from '../../../src/primitives/OsuRuleset';
+import {OsuUsersDaoImpl} from '../../../src/main/data/dao/OsuUsersDaoImpl';
+import {FakeBanchoApi} from '../../mocks/data/raw/http/BanchoApi';
+import {SqliteDb} from '../../../src/main/data/raw/db/SqliteDb';
+import {OsuIdsAndUsernamesImpl} from '../../../src/main/data/raw/db/tables/OsuIdsAndUsernames';
+import {AppUserRecentApiRequestsDaoImpl} from '../../../src/main/data/dao/AppUserRecentApiRequestsDaoImpl';
+import {AppUserApiRequestsSummariesDaoImpl} from '../../../src/main/data/dao/AppUserApiRequestsSummariesDaoImpl';
+import {AppUserApiRequestsCountsImpl} from '../../../src/main/data/raw/db/tables/AppUserApiRequestsCounts';
+import {TimeWindowsImpl} from '../../../src/main/data/raw/db/tables/TimeWindows';
+import {SqlDbTable} from '../../../src/main/data/raw/db/SqlDbTable';
 
 describe('GetOsuUserInfoUseCase', function () {
-  const osuUsers = new FakeOsuUsersDao();
-  const usecase = new GetOsuUserInfoUseCase(osuUsers);
+  let tables: SqlDbTable<object, object>[];
+  let usecase: GetOsuUserInfoUseCase;
+  {
+    const apis = [new FakeBanchoApi()];
+    const db = new SqliteDb(':memory:');
+    const idsAndUsernames = new OsuIdsAndUsernamesImpl(db);
+    const appUserApiRequestsCounts = new AppUserApiRequestsCountsImpl(db);
+    const timeWindows = new TimeWindowsImpl(db);
+    const requestsSummariesDao = new AppUserApiRequestsSummariesDaoImpl(
+      appUserApiRequestsCounts,
+      timeWindows
+    );
+    const recentApiRequestsDao = new AppUserRecentApiRequestsDaoImpl(
+      requestsSummariesDao
+    );
+    const osuUsersDao = new OsuUsersDaoImpl(
+      apis,
+      idsAndUsernames,
+      recentApiRequestsDao
+    );
+
+    tables = [idsAndUsernames, appUserApiRequestsCounts, timeWindows];
+    usecase = new GetOsuUserInfoUseCase(osuUsersDao);
+  }
+
+  before(async function () {
+    await Promise.all(tables.map(t => t.createTable()));
+  });
+
+  // https://stackoverflow.com/a/48768775
+  const enumKeys: (e: object) => string[] = e =>
+    Object.keys(e).filter(x => {
+      return isNaN(Number(x));
+    });
+  const servers = enumKeys(OsuServer) as (keyof typeof OsuServer)[];
+  const rulesets = enumKeys(OsuRuleset) as (keyof typeof OsuRuleset)[];
   describe('#execute()', function () {
     it('should return OsuUserInfo as undefined when user does not exist', async function () {
-      const username = 'this username does should not exist';
-      // https://stackoverflow.com/a/48768775
-      const enumKeys: (e: object) => string[] = e =>
-        Object.keys(e).filter(x => {
-          return isNaN(Number(x));
-        });
-      const allServers = enumKeys(OsuServer) as (keyof typeof OsuServer)[];
-      const allRulesets = enumKeys(OsuRuleset) as (keyof typeof OsuRuleset)[];
-      for (const server of allServers) {
-        for (const ruleset of allRulesets) {
+      const username = 'this username should not exist';
+      for (const server of servers) {
+        for (const ruleset of rulesets) {
           const request: GetOsuUserInfoRequest = {
             appUserId: 'should be irrelevant',
             server: OsuServer[server],
@@ -34,32 +69,19 @@ describe('GetOsuUserInfoUseCase', function () {
       }
     });
     it('should return correct OsuUserInfo when user exists', async function () {
-      const usersThatShouldExist: {
-        username: string;
-        server: OsuServer;
-        ruleset: OsuRuleset;
-      }[] = [
-        {
-          username: getFakeOsuUserUsername(1),
-          server: OsuServer.Bancho,
-          ruleset: OsuRuleset.osu,
-        },
-        {
-          username: getFakeOsuUserUsername(4),
-          server: OsuServer.Bancho,
-          ruleset: OsuRuleset.ctb,
-        },
-        {
-          username: getFakeOsuUserUsername(7),
-          server: OsuServer.Bancho,
-          ruleset: OsuRuleset.taiko,
-        },
-        {
-          username: getFakeOsuUserUsername(10),
-          server: OsuServer.Bancho,
-          ruleset: OsuRuleset.mania,
-        },
-      ];
+      const usersThatShouldExist = [1, 2, 3].flatMap(n => {
+        const username = getFakeOsuUserUsername(n);
+        if (username === undefined) {
+          throw Error('All osu user ids used in this test should be valid');
+        }
+        return servers.flatMap(server =>
+          rulesets.map(ruleset => ({
+            username: username,
+            server: OsuServer[server],
+            ruleset: OsuRuleset[ruleset],
+          }))
+        );
+      });
       for (const user of usersThatShouldExist) {
         const request: GetOsuUserInfoRequest = {
           appUserId: 'should be irrelevant',
@@ -73,6 +95,9 @@ describe('GetOsuUserInfoUseCase', function () {
     });
     it('should ignore username string case', async function () {
       const originalUsername = getFakeOsuUserUsername(1);
+      if (originalUsername === undefined) {
+        throw Error('All osu user ids used in this test should be valid');
+      }
       const usernameVariants = [
         originalUsername,
         originalUsername.toLowerCase(),
