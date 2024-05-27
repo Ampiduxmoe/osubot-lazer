@@ -18,7 +18,7 @@ export class AppUserRecentApiRequestsDaoImpl
 
   minStoreTime = new Timespan().addMinutes(5);
 
-  async convertToSummaries(): Promise<void> {
+  async cleanUp(): Promise<void> {
     const requests = this.requests;
     this.requests = [];
     for (const r of requests) {

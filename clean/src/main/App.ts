@@ -132,7 +132,7 @@ export class App {
     });
     this.stopHandlers.push(async () => {
       recentApiRequestsDao.stopRequestsCleanups();
-      await recentApiRequestsDao.convertToSummaries();
+      await recentApiRequestsDao.cleanUp();
     });
   }
 
