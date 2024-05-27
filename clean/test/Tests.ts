@@ -8,6 +8,7 @@ describe('Data', function () {
     require('./data/raw/db/tables/TimeWindows.test');
   });
   describe('DAOs', function () {
+    require('./data/dao/AppUserApiRequestsSummariesDao.test');
     require('./data/dao/AppUserRecentApiRequestsDao.test');
     require('./data/dao/AppUsersDao.test');
     require('./data/dao/CachedOsuIdsDao.test');
