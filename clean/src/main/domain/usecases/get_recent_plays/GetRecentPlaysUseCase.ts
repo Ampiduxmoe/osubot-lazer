@@ -12,44 +12,49 @@ import {
   OsuRecentScoresDao,
   RecentScore,
 } from '../../../data/dao/OsuRecentScoresDao';
-import {CachedOsuIdsDao} from '../../../data/dao/CachedOsuIdsDao';
+import {CachedOsuUsersDao} from '../../../data/dao/CachedOsuUsersDao';
 import {OsuUsersDao} from '../../../data/dao/OsuUsersDao';
 import {OsuRuleset} from '../../../../primitives/OsuRuleset';
 import {ScoreSimulationsDao} from '../../../data/dao/ScoreSimulationsDao';
 import {BeatmapStats} from '../../entities/BeatmapStats';
+import {OsuServer} from '../../../../primitives/OsuServer';
 
 export class GetRecentPlaysUseCase
   implements UseCase<GetRecentPlaysRequest, GetRecentPlaysResponse>
 {
   recentScores: OsuRecentScoresDao;
   scoreSimulations: ScoreSimulationsDao;
-  cachedOsuIds: CachedOsuIdsDao;
+  cachedOsuUsers: CachedOsuUsersDao;
   osuUsers: OsuUsersDao;
   constructor(
     recentScores: OsuRecentScoresDao,
     scoreSimulations: ScoreSimulationsDao,
-    cachedOsuIds: CachedOsuIdsDao,
+    cachedOsuUsers: CachedOsuUsersDao,
     osuUsers: OsuUsersDao
   ) {
     this.recentScores = recentScores;
     this.scoreSimulations = scoreSimulations;
-    this.cachedOsuIds = cachedOsuIds;
+    this.cachedOsuUsers = cachedOsuUsers;
     this.osuUsers = osuUsers;
   }
   async execute(
     params: GetRecentPlaysRequest
   ): Promise<GetRecentPlaysResponse> {
-    const username = params.username;
-    const server = params.server;
-    const osuIdAndUsername = await this.cachedOsuIds.get(username, server);
-    let osuId = osuIdAndUsername?.id;
-    let caseCorrectUsername = osuIdAndUsername?.username;
-    if (osuId === undefined || caseCorrectUsername === undefined) {
+    const {appUserId, username, server, ruleset} = params;
+    const userSnapshot = await this.cachedOsuUsers.get(username, server);
+    let osuId = userSnapshot?.id;
+    let caseCorrectUsername = userSnapshot?.username;
+    let mode = ruleset ?? userSnapshot?.preferredMode;
+    if (
+      osuId === undefined ||
+      caseCorrectUsername === undefined ||
+      mode === undefined
+    ) {
       const osuUser = await this.osuUsers.getByUsername(
-        params.appUserId,
+        appUserId,
         username,
         server,
-        OsuRuleset.osu
+        undefined
       );
       if (osuUser === undefined) {
         return {
@@ -59,19 +64,70 @@ export class GetRecentPlaysUseCase
       }
       osuId = osuUser.id;
       caseCorrectUsername = osuUser.username;
+      mode ??= osuUser.preferredMode;
     }
-    osuId = osuId!;
-    caseCorrectUsername = caseCorrectUsername!;
+    switch (mode) {
+      case OsuRuleset.osu:
+        return await this.executeForOsu(
+          appUserId,
+          server,
+          caseCorrectUsername,
+          osuId,
+          params.includeFails,
+          params.startPosition,
+          params.quantity,
+          params.mods
+        );
+      case OsuRuleset.taiko:
+        throw Error('Not implemented'); // TODO
+      case OsuRuleset.ctb:
+        throw Error('Not implemented'); // TODO
+      case OsuRuleset.mania:
+        throw Error('Not implemented'); // TODO
+      default:
+        throw Error('Switch case is not exhaustive!');
+    }
+  }
+
+  async executeForOsu(
+    appUserId: string,
+    server: OsuServer,
+    username: string,
+    osuId: number,
+    includeFails: boolean,
+    startPosition: number,
+    quantity: number,
+    mods: {
+      acronym: string;
+      isOptional: boolean;
+    }[]
+  ): Promise<GetRecentPlaysResponse> {
+    const ruleset = OsuRuleset.osu;
     const rawRecentScores = await this.recentScores.get(
-      params.appUserId,
+      appUserId,
       osuId,
       server,
-      params.includeFails,
-      params.mods,
-      params.quantity,
-      params.startPosition,
-      params.ruleset
+      includeFails,
+      mods,
+      quantity,
+      startPosition,
+      ruleset
     );
+    const starsChangingMods = [
+      'ez', // Easy
+      'ht', // Half Time
+      'dc', // Daycore
+      'hr', // Hard Rock
+      'dt', // Double Time
+      'nc', // Nightcore
+      'fl', // Flashlight
+      'rx', // Relax
+      'tp', // Target Practice
+      'da', // Difficulty Adjust
+      'rd', // Random
+      'wu', // Wind Up
+      'wd', // Wind Down
+    ];
     const recentPlayPromises = rawRecentScores.map(async s => {
       const mods = s.mods.map(s => s.acronym);
       const map = s.beatmap;
@@ -84,8 +140,8 @@ export class GetRecentPlaysUseCase
       const fullPlayMisses = Math.floor(totalToHitRatio * counts.miss);
       const fullPlayMehs = Math.floor(totalToHitRatio * counts.meh);
       const fullPlayGoods = Math.floor(totalToHitRatio * counts.ok);
-      const simulationParams = getSimulationParams(s);
-      const scoreSimulation = await this.scoreSimulations.get(
+      const simulationParams = getSimulationParamsOsu(s);
+      const scoreSimulation = await this.scoreSimulations.getForOsu(
         s.beatmap.id,
         mods,
         s.maxCombo,
@@ -109,6 +165,21 @@ export class GetRecentPlaysUseCase
       } else if (mods.find(m => m.toLowerCase() === 'ez')) {
         moddedBeatmapStats.applyEzMod();
       }
+
+      if (mods.find(m => m.toLowerCase() === 'tp')) {
+        moddedBeatmapStats.applyTpMod();
+      }
+
+      if (mods.find(m => ['ht', 'dc'].includes(m.toLowerCase()))) {
+        moddedBeatmapStats.applyHtMod(simulationParams?.htRate);
+      } else if (mods.find(m => ['dt', 'nc'].includes(m.toLowerCase()))) {
+        moddedBeatmapStats.applyDtMod(simulationParams?.dtRate);
+      }
+
+      const hasStarsChangingMods =
+        mods.find(m => starsChangingMods.find(x => x === m.toLowerCase())) !==
+        undefined;
+
       const osuUserRecentScore: RecentPlay = {
         absolutePosition: s.absolutePosision,
         beatmapset: {
@@ -127,27 +198,28 @@ export class GetRecentPlaysUseCase
           cs: s.beatmap.cs,
           od: s.beatmap.od,
           hp: s.beatmap.hp,
-          maxCombo: scoreSimulation.difficultyAttributes.maxCombo,
+          maxCombo: scoreSimulation?.difficultyAttributes.maxCombo,
           url: s.beatmap.url,
           countCircles: s.beatmap.countCircles,
           countSliders: s.beatmap.countSliders,
           countSpinners: s.beatmap.countSpinners,
         },
         mods: s.mods,
-        stars: scoreSimulation.difficultyAttributes.starRating,
-        ar: scoreSimulation.difficultyAttributes.approachRate,
+        stars: hasStarsChangingMods
+          ? scoreSimulation?.difficultyAttributes.starRating
+          : s.beatmap.difficultyRating,
+        ar: moddedBeatmapStats.ar,
         cs: moddedBeatmapStats.cs,
-        od: scoreSimulation.difficultyAttributes.overallDifficulty,
+        od: moddedBeatmapStats.od,
         hp: moddedBeatmapStats.hp,
         passed: s.passed,
         totalScore: s.totalScore,
         combo: s.maxCombo,
         accuracy: s.accuracy,
         pp: {
-          value:
-            s.pp === null ? scoreSimulation.performanceAttributes.pp : s.pp,
-          ifFc: NaN,
-          ifSs: NaN,
+          value: s.pp ?? scoreSimulation?.performanceAttributes.pp,
+          ifFc: undefined,
+          ifSs: undefined,
         },
         countGreat: s.statistics.great,
         countOk: s.statistics.ok,
@@ -159,7 +231,7 @@ export class GetRecentPlaysUseCase
     });
     const recentPlays = await Promise.all(recentPlayPromises);
     if (recentPlays.length === 1) {
-      const simulatedPpValues = await getFcAndSsValues(
+      const simulatedPpValues = await getOsuFcAndSsValues(
         rawRecentScores[0],
         this.scoreSimulations
       );
@@ -171,20 +243,21 @@ export class GetRecentPlaysUseCase
     }
     return {
       isFailure: false,
+      ruleset: ruleset,
       recentPlays: {
-        username: caseCorrectUsername,
+        username: username,
         plays: recentPlays,
       },
     };
   }
 }
 
-async function getFcAndSsValues(
+async function getOsuFcAndSsValues(
   score: RecentScore,
   dao: ScoreSimulationsDao
 ): Promise<{
-  fc: number;
-  ss: number;
+  fc: number | undefined;
+  ss: number | undefined;
 }> {
   const mods = score.mods.map(s => s.acronym);
   const map = score.beatmap;
@@ -194,18 +267,33 @@ async function getFcAndSsValues(
   const totalToHitRatio = objectsTotal / hitcountsTotal;
   const fullPlayMehs = Math.floor(totalToHitRatio * counts.meh);
   const fullPlayGoods = Math.floor(totalToHitRatio * counts.ok);
-  const simulationParams = getSimulationParams(score);
+  const simulationParams = getSimulationParamsOsu(score);
 
-  // eslint-disable-next-line prettier/prettier
-  const fcPromise = dao.get(map.id, mods, null, 0, fullPlayMehs, fullPlayGoods, simulationParams);
-  const ssPromise = dao.get(map.id, mods, null, 0, 0, 0, simulationParams);
+  const fcPromise = dao.getForOsu(
+    map.id,
+    mods,
+    null,
+    0,
+    fullPlayMehs,
+    fullPlayGoods,
+    simulationParams
+  );
+  const ssPromise = dao.getForOsu(
+    map.id,
+    mods,
+    null,
+    0,
+    0,
+    0,
+    simulationParams
+  );
   return {
-    fc: (await fcPromise).performanceAttributes.pp,
-    ss: (await ssPromise).performanceAttributes.pp,
+    fc: (await fcPromise)?.performanceAttributes.pp,
+    ss: (await ssPromise)?.performanceAttributes.pp,
   };
 }
 
-interface SimulationParams {
+interface SimulationParamsOsu {
   dtRate?: number;
   htRate?: number;
   difficultyAdjust?: {
@@ -215,8 +303,10 @@ interface SimulationParams {
     hp?: number;
   };
 }
-function getSimulationParams(score: RecentScore): SimulationParams | undefined {
-  let simulationParams: SimulationParams | undefined = undefined;
+function getSimulationParamsOsu(
+  score: RecentScore
+): SimulationParamsOsu | undefined {
+  let simulationParams: SimulationParamsOsu | undefined = undefined;
   const dt = score.mods.find(m => m.acronym.toLowerCase() === 'dt');
   if (dt !== undefined && dt.settings !== undefined) {
     const dtRate = (dt.settings as SettingsDT).speed_change;

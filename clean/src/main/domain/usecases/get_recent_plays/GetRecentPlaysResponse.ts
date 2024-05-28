@@ -1,7 +1,10 @@
+import {OsuRuleset} from '../../../../primitives/OsuRuleset';
+
 export type GetRecentPlaysResponse = {
   isFailure: boolean;
-  recentPlays?: OsuUserRecentPlays;
   failureReason?: 'user not found';
+  recentPlays?: OsuUserRecentPlays;
+  ruleset?: OsuRuleset;
 };
 
 export type OsuUserRecentPlays = {
@@ -27,7 +30,7 @@ export type RecentPlay = {
     cs: number;
     od: number;
     hp: number;
-    maxCombo: number;
+    maxCombo: number | undefined;
     url: string;
     countCircles: number;
     countSliders: number;
@@ -37,7 +40,7 @@ export type RecentPlay = {
     acronym: string;
     settings?: ModSettings | object;
   }[];
-  stars: number;
+  stars: number | undefined;
   ar: number;
   cs: number;
   od: number;
@@ -47,9 +50,9 @@ export type RecentPlay = {
   combo: number;
   accuracy: number;
   pp: {
-    value: number;
-    ifFc: number;
-    ifSs: number;
+    value: number | undefined;
+    ifFc: number | undefined;
+    ifSs: number | undefined;
   };
   countGreat: number;
   countOk: number;

@@ -14,7 +14,7 @@ export interface OsuRecentScoresDao {
     }[],
     quantity: number,
     startPosition: number,
-    ruleset: OsuRuleset
+    ruleset: OsuRuleset | undefined
   ): Promise<RecentScore[]>;
 }
 

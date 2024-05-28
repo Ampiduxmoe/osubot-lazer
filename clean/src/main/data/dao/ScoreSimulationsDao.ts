@@ -1,7 +1,7 @@
 import {ScoreSimulationInfo} from '../raw/http/boundary/ScoreSimulationInfo';
 
 export interface ScoreSimulationsDao {
-  get(
+  getForOsu(
     beatmapId: number,
     mods: string[],
     combo: number | null,
@@ -18,10 +18,14 @@ export interface ScoreSimulationsDao {
         hp?: number;
       };
     }
-  ): Promise<SimulatedScore>;
+  ): Promise<SimulatedScoreOsu | undefined>;
+
+  getForTaiko(): Promise<undefined>;
+  getForCtb(): Promise<undefined>;
+  getForMania(): Promise<undefined>;
 }
 
-export type SimulatedScore = Pick<
+export type SimulatedScoreOsu = Pick<
   ScoreSimulationInfo,
   keyof ScoreSimulationInfo
 >;

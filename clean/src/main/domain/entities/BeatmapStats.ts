@@ -27,6 +27,47 @@ export class BeatmapStats {
     this.od = this.od / 2;
     this.hp = this.hp / 2;
   }
+  applyTpMod() {
+    this.ar = this.ar / 2;
+  }
+  applyDtMod(speed: number | undefined) {
+    const targetSpeed = speed ?? 1.5;
+    this.applySpeed(targetSpeed);
+  }
+  applyHtMod(speed: number | undefined) {
+    const targetSpeed = speed ?? 0.75;
+    this.applySpeed(targetSpeed);
+  }
+
+  applySpeed(speed: number) {
+    const newApproachDuration = this.approachRateToMs(this.ar) / speed;
+    this.ar = this.msToApproachRate(newApproachDuration);
+
+    const newHitWindowMs = this.overallDifficultyToMs(this.od) / speed;
+    this.od = this.msToOverallDifficulty(newHitWindowMs);
+  }
+
+  private approachRateToMs(ar: number) {
+    if (ar <= 5) {
+      return 1800 - ar * 120;
+    } else {
+      const remainder = ar - 5;
+      return 1200 - remainder * 150;
+    }
+  }
+  private msToApproachRate(ms: number) {
+    if (ms >= 1200) {
+      return (1800 - ms) / 120;
+    } else {
+      return (1200 - ms) / 150 + 5;
+    }
+  }
+  private overallDifficultyToMs(od: number) {
+    return 80 - 6 * od;
+  }
+  private msToOverallDifficulty(ms: number) {
+    return (80 - ms) / 6;
+  }
 }
 
 export interface DifficultyAdjustSettings {

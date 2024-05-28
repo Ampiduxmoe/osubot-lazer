@@ -2,28 +2,28 @@ import {OsuServer} from '../../../primitives/OsuServer';
 import {OsuUser, OsuUsersDao} from './OsuUsersDao';
 import {OsuApi} from '../raw/http/OsuAPI';
 import {
-  OsuIdAndUsername,
-  OsuIdAndUsernameKey,
-} from '../raw/db/entities/OsuIdAndUsername';
+  OsuUserSnapshot,
+  OsuUserSnapshotKey,
+} from '../raw/db/entities/OsuUserSnapshot';
 import {OsuRuleset} from '../../../primitives/OsuRuleset';
 import {OsuUserInfo} from '../raw/http/boundary/OsuUserInfo';
 import {
   AppUserRecentApiRequestsDao,
   COMMON_REQUEST_SUBTARGETS,
 } from './AppUserRecentApiRequestsDao';
-import {OsuIdsAndUsernames} from '../raw/db/tables/OsuIdsAndUsernames';
+import {OsuUserSnapshots} from '../raw/db/tables/OsuUserSnapshots';
 
 export class OsuUsersDaoImpl implements OsuUsersDao {
   private apis: OsuApi[];
-  private osuIdsAndUsernamesTable: OsuIdsAndUsernames;
+  private osuUserSnapshotsTable: OsuUserSnapshots;
   private recentApiRequests: AppUserRecentApiRequestsDao;
   constructor(
     apis: OsuApi[],
-    osuIdsAndUsernamesTable: OsuIdsAndUsernames,
+    osuUserSnapshotsTable: OsuUserSnapshots,
     recentApiRequests: AppUserRecentApiRequestsDao
   ) {
     this.apis = apis;
-    this.osuIdsAndUsernamesTable = osuIdsAndUsernamesTable;
+    this.osuUserSnapshotsTable = osuUserSnapshotsTable;
     this.recentApiRequests = recentApiRequests;
   }
   async getByUsername(
@@ -54,18 +54,19 @@ export class OsuUsersDaoImpl implements OsuUsersDao {
     osuUserInfo: OsuUserInfo,
     server: OsuServer
   ): Promise<void> {
-    const newOsuIdAndUsername: OsuIdAndUsername = {
+    const newSnapshot: OsuUserSnapshot = {
       username: osuUserInfo.username,
       server: server,
       id: osuUserInfo.id,
+      preferred_mode: osuUserInfo.preferredMode,
     };
-    const existingIdAndUsername = await this.osuIdsAndUsernamesTable.get(
-      newOsuIdAndUsername as OsuIdAndUsernameKey
+    const existingIdAndUsername = await this.osuUserSnapshotsTable.get(
+      newSnapshot as OsuUserSnapshotKey
     );
     if (existingIdAndUsername === undefined) {
-      await this.osuIdsAndUsernamesTable.add(newOsuIdAndUsername);
+      await this.osuUserSnapshotsTable.add(newSnapshot);
     } else {
-      await this.osuIdsAndUsernamesTable.update(newOsuIdAndUsername);
+      await this.osuUserSnapshotsTable.update(newSnapshot);
     }
   }
 }

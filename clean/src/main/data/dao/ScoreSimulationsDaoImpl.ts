@@ -1,12 +1,16 @@
 import {ScoreSimulationApi} from '../raw/http/ScoreSimulationApi';
-import {ScoreSimulationsDao, SimulatedScore} from './ScoreSimulationsDao';
+import {ScoreSimulationInfo} from '../raw/http/boundary/ScoreSimulationInfo';
+import {ScoreSimulationsDao, SimulatedScoreOsu} from './ScoreSimulationsDao';
 
 export class ScoreSimulationsDaoImpl implements ScoreSimulationsDao {
+  private apiHealthCheckJob: NodeJS.Timeout | undefined = undefined;
+  private isApiAvailable = true;
+
   private api: ScoreSimulationApi;
   constructor(api: ScoreSimulationApi) {
     this.api = api;
   }
-  async get(
+  async getForOsu(
     beatmapId: number,
     mods: string[],
     combo: number | null,
@@ -23,16 +27,25 @@ export class ScoreSimulationsDaoImpl implements ScoreSimulationsDao {
         hp?: number;
       };
     }
-  ): Promise<SimulatedScore> {
-    const scoreSimulation = await this.api.simulate(
-      beatmapId,
-      mods,
-      combo,
-      misses,
-      mehs,
-      goods,
-      simulationParams
-    );
+  ): Promise<SimulatedScoreOsu | undefined> {
+    if (!this.isApiAvailable) {
+      return undefined;
+    }
+    let scoreSimulation: ScoreSimulationInfo;
+    try {
+      scoreSimulation = await this.api.simulateOsu(
+        beatmapId,
+        mods,
+        combo,
+        misses,
+        mehs,
+        goods,
+        simulationParams
+      );
+    } catch {
+      this.isApiAvailable = false;
+      return undefined;
+    }
     const isRequestWithHidden = mods.find(s => s.toLowerCase() === 'hd');
     const isResponseWithHidden = scoreSimulation.score.mods.find(
       m => m.toLowerCase() === 'hd'
@@ -62,5 +75,38 @@ export class ScoreSimulationsDaoImpl implements ScoreSimulationsDao {
       scoreSimulation.score.mods = [...scoreSimulation.score.mods, 'HD'];
     }
     return scoreSimulation;
+  }
+
+  async getForTaiko(): Promise<undefined> {
+    return undefined;
+  }
+  async getForCtb(): Promise<undefined> {
+    return undefined;
+  }
+  async getForMania(): Promise<undefined> {
+    return undefined;
+  }
+
+  startApiHealthChecks(interval: number) {
+    if (this.apiHealthCheckJob !== undefined) {
+      return;
+    }
+    this.apiHealthCheckJob = setInterval(async () => {
+      try {
+        await this.api.status();
+        this.isApiAvailable = true;
+      } catch {
+        this.isApiAvailable = false;
+      }
+    }, interval);
+    console.log('Score simulation API health checks started');
+  }
+
+  stopApiHealthChecks() {
+    if (this.apiHealthCheckJob === undefined) {
+      return;
+    }
+    clearInterval(this.apiHealthCheckJob);
+    console.log('Score simulation API health checks stopped');
   }
 }

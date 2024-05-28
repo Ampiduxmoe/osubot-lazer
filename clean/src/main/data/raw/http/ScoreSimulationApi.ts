@@ -1,6 +1,8 @@
 import {ScoreSimulationInfo} from './boundary/ScoreSimulationInfo';
 export interface ScoreSimulationApi {
-  simulate(
+  status(): Promise<string>;
+
+  simulateOsu(
     beatmapId: number,
     mods: string[],
     combo: number | null,

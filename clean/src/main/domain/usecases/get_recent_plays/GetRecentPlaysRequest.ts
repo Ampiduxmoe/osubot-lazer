@@ -4,7 +4,7 @@ export type GetRecentPlaysRequest = {
   appUserId: string;
   server: OsuServer;
   username: string;
-  ruleset: OsuRuleset;
+  ruleset: OsuRuleset | undefined;
   includeFails: boolean;
   startPosition: number;
   quantity: number;

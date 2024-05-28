@@ -1,28 +1,24 @@
 import {OsuServer} from '../../../primitives/OsuServer';
 import {OsuRuleset} from '../../../primitives/OsuRuleset';
-import {
-  OsuIdAndUsername,
-  OsuIdAndUsernameKey,
-} from '../raw/db/entities/OsuIdAndUsername';
 import {OsuRecentScoresDao, RecentScore} from './OsuRecentScoresDao';
 import {OsuApi} from '../raw/http/OsuAPI';
 import {
   AppUserRecentApiRequestsDao,
   COMMON_REQUEST_SUBTARGETS,
 } from './AppUserRecentApiRequestsDao';
-import {OsuIdsAndUsernames} from '../raw/db/tables/OsuIdsAndUsernames';
+import {OsuUserSnapshots} from '../raw/db/tables/OsuUserSnapshots';
 
 export class OsuRecentScoresDaoImpl implements OsuRecentScoresDao {
   private apis: OsuApi[];
-  private osuIdsAndUsernamesTable: OsuIdsAndUsernames;
+  private osuUserSnapshotsTable: OsuUserSnapshots;
   private recentApiRequests: AppUserRecentApiRequestsDao;
   constructor(
     apis: OsuApi[],
-    osuIdsAndUsernamesTable: OsuIdsAndUsernames,
+    osuUserSnapshotsTable: OsuUserSnapshots,
     recentApiRequests: AppUserRecentApiRequestsDao
   ) {
     this.apis = apis;
-    this.osuIdsAndUsernamesTable = osuIdsAndUsernamesTable;
+    this.osuUserSnapshotsTable = osuUserSnapshotsTable;
     this.recentApiRequests = recentApiRequests;
   }
   async get(
@@ -36,7 +32,7 @@ export class OsuRecentScoresDaoImpl implements OsuRecentScoresDao {
     }[],
     quantity: number,
     startPosition: number,
-    ruleset: OsuRuleset
+    ruleset: OsuRuleset | undefined
   ): Promise<RecentScore[]> {
     const api = this.apis.find(api => api.server === server);
     if (api === undefined) {
@@ -75,11 +71,11 @@ export class OsuRecentScoresDaoImpl implements OsuRecentScoresDao {
     );
     if (scoreInfos.length > 0) {
       const scoreInfo = scoreInfos[0];
-      const userIdAndUsername = {
-        id: scoreInfo.user.id,
-        username: scoreInfo.user.username,
-      };
-      await this.cacheUserId(userIdAndUsername, server);
+      await this.cacheOsuUser(
+        scoreInfo.user.username,
+        server,
+        scoreInfo.user.id
+      );
     }
     const recentScores = scoreInfos.map((s, i) => {
       const recentScore = s as RecentScore;
@@ -113,27 +109,18 @@ export class OsuRecentScoresDaoImpl implements OsuRecentScoresDao {
     return filteredScores;
   }
 
-  private async cacheUserId(
-    osuUserInfo: OsuUserIdAndUsername,
-    server: OsuServer
+  private async cacheOsuUser(
+    username: string,
+    server: OsuServer,
+    id: number
   ): Promise<void> {
-    const newOsuIdAndUsername: OsuIdAndUsername = {
-      username: osuUserInfo.username,
+    const existingIdAndUsername = await this.osuUserSnapshotsTable.get({
+      username: username,
       server: server,
-      id: osuUserInfo.id,
-    };
-    const existingIdAndUsername = await this.osuIdsAndUsernamesTable.get(
-      newOsuIdAndUsername as OsuIdAndUsernameKey
-    );
-    if (existingIdAndUsername === undefined) {
-      await this.osuIdsAndUsernamesTable.add(newOsuIdAndUsername);
-    } else {
-      await this.osuIdsAndUsernamesTable.update(newOsuIdAndUsername);
+    });
+    if (existingIdAndUsername !== undefined) {
+      existingIdAndUsername.id = id;
+      await this.osuUserSnapshotsTable.update(existingIdAndUsername);
     }
   }
 }
-
-type OsuUserIdAndUsername = {
-  id: number;
-  username: string;
-};

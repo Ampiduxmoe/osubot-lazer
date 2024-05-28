@@ -16,6 +16,6 @@ export interface OsuApi {
     includeFails: boolean,
     quantity: number,
     startPosition: number,
-    ruleset: OsuRuleset
+    ruleset: OsuRuleset | undefined
   ): Promise<RecentScoreInfo[]>;
 }

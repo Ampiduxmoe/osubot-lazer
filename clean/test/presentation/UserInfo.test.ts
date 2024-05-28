@@ -14,7 +14,7 @@ import {OsuServer} from '../../src/primitives/OsuServer';
 import {OsuRuleset} from '../../src/primitives/OsuRuleset';
 import {FakeBanchoApi} from '../mocks/data/raw/http/BanchoApi';
 import {SqliteDb} from '../../src/main/data/raw/db/SqliteDb';
-import {OsuIdsAndUsernamesImpl} from '../../src/main/data/raw/db/tables/OsuIdsAndUsernames';
+import {OsuUserSnapshotsImpl} from '../../src/main/data/raw/db/tables/OsuUserSnapshots';
 import {AppUserApiRequestsCountsImpl} from '../../src/main/data/raw/db/tables/AppUserApiRequestsCounts';
 import {TimeWindowsImpl} from '../../src/main/data/raw/db/tables/TimeWindows';
 import {AppUserApiRequestsSummariesDaoImpl} from '../../src/main/data/dao/AppUserApiRequestsSummariesDaoImpl';
@@ -37,7 +37,7 @@ describe('UserInfo', function () {
   {
     const apis = [new FakeBanchoApi()];
     const db = new SqliteDb(':memory:');
-    const idsAndUsernames = new OsuIdsAndUsernamesImpl(db);
+    const idsAndUsernames = new OsuUserSnapshotsImpl(db);
     const appUserApiRequestsCounts = new AppUserApiRequestsCountsImpl(db);
     const timeWindows = new TimeWindowsImpl(db);
     appUsers = new AppUsersImpl(db);
@@ -223,56 +223,100 @@ describe('UserInfo', function () {
   describe('#process()', function () {
     it('should return OsuUserInfo as undefined when there is no user with specified username', async function () {
       const usernameInput = 'alskdjfhg';
+      const server = OsuServer.Bancho;
+      const mode = OsuRuleset.osu;
       const viewParams = await command.process({
-        server: OsuServer.Bancho,
+        server: server,
+        mode: mode,
         username: usernameInput,
         vkUserId: -1,
       });
-      assert.equal(viewParams.server, OsuServer.Bancho);
+      assert.equal(viewParams.server, server);
+      assert.equal(viewParams.mode, mode);
       assert.equal(viewParams.usernameInput, usernameInput);
       assert.equal(viewParams.userInfo, undefined);
     });
     it('should return OsuUserInfo as undefined when there is no AppUser associated with sender VK id', async function () {
+      const server = OsuServer.Bancho;
+      const mode = OsuRuleset.osu;
       const viewParams = await command.process({
-        server: OsuServer.Bancho,
+        server: server,
+        mode: mode,
         username: undefined,
         vkUserId: -1,
       });
-      assert.equal(viewParams.server, OsuServer.Bancho);
+      assert.equal(viewParams.server, server);
+      assert.equal(viewParams.mode, mode);
       assert.equal(viewParams.usernameInput, undefined);
       assert.equal(viewParams.userInfo, undefined);
     });
     it('should return OsuUserInfo when there is user with specified username', async function () {
       const server = OsuServer.Bancho;
-      const ruleset = OsuRuleset.osu;
-      const osuUser = getFakeOsuUserInfo(1, ruleset);
-      if (osuUser === undefined) {
-        throw Error('All osu user ids used in this test should be valid');
+      const osuUsers = [1, 3, 5, 7, 9].map(n =>
+        getFakeOsuUserInfo(n, undefined)
+      );
+      for (const osuUser of osuUsers) {
+        if (osuUser === undefined) {
+          throw Error('All osu user ids used in this test should be valid');
+        }
+        const usernameVariants = [
+          osuUser.username,
+          osuUser.username.toLowerCase(),
+          osuUser.username.toUpperCase(),
+        ];
+        for (const username of usernameVariants) {
+          const viewParams = await command.process({
+            server: server,
+            mode: undefined,
+            username: username,
+            vkUserId: -1,
+          });
+          assert.equal(viewParams.server, server);
+          assert.equal(viewParams.mode, osuUser.preferredMode);
+          assert.equal(viewParams.usernameInput, username);
+          assert.equal(viewParams.userInfo?.username, osuUser.username);
+        }
       }
-      const usernameVariants = [
-        osuUser.username,
-        osuUser.username.toLowerCase(),
-        osuUser.username.toUpperCase(),
-      ];
-      for (const username of usernameVariants) {
-        const viewParams = await command.process({
-          server: server,
-          username: username,
-          vkUserId: -1,
-        });
-        assert.equal(viewParams.server, server);
-        assert.equal(viewParams.usernameInput, username);
-        assert.equal(viewParams.userInfo?.username, osuUser.username);
+    });
+    it('should correctly return OsuUserInfo for specified mode', async function () {
+      const server = OsuServer.Bancho;
+      const ruleset = OsuRuleset.taiko;
+      const osuUsers = [1, 3, 5, 7, 9].map(n =>
+        getFakeOsuUserInfo(n, undefined)
+      );
+      for (const osuUser of osuUsers) {
+        if (osuUser === undefined) {
+          throw Error('All osu user ids used in this test should be valid');
+        }
+        const usernameVariants = [
+          osuUser.username,
+          osuUser.username.toLowerCase(),
+          osuUser.username.toUpperCase(),
+        ];
+        for (const username of usernameVariants) {
+          const viewParams = await command.process({
+            server: server,
+            mode: ruleset,
+            username: username,
+            vkUserId: -1,
+          });
+          assert.equal(viewParams.server, server);
+          assert.equal(viewParams.mode, ruleset);
+          assert.equal(viewParams.usernameInput, username);
+          assert.equal(viewParams.userInfo?.username, osuUser.username);
+        }
       }
     });
     it('should return OsuUserInfo when there is AppUser associated with sender VK id', async function () {
       const appUser = existingAppAndOsuUser.appUser;
       const viewParams = await command.process({
         server: appUser.server,
+        mode: undefined,
         username: undefined,
         vkUserId: VkIdConverter.appUserIdToVkUserId(appUser.id),
       });
-      assert.equal(viewParams.server, OsuServer.Bancho);
+      assert.equal(viewParams.server, appUser.server);
+      assert.equal(viewParams.mode, appUser.ruleset);
       assert.equal(viewParams.usernameInput, undefined);
       assert.equal(viewParams.userInfo?.username, appUser.username);
     });
@@ -282,6 +326,7 @@ describe('UserInfo', function () {
       const server = OsuServer.Bancho;
       const outputMessage = command.createOutputMessage({
         server: server,
+        mode: undefined,
         usernameInput: undefined,
         userInfo: undefined,
       });
@@ -295,6 +340,7 @@ describe('UserInfo', function () {
       const usernameInput = 'loremipsum';
       const outputMessage = command.createOutputMessage({
         server: server,
+        mode: undefined,
         usernameInput: usernameInput,
         userInfo: undefined,
       });
@@ -305,6 +351,7 @@ describe('UserInfo', function () {
     });
     it('should return "user info" message if username is not specified but there is bound account info', function () {
       const server = OsuServer.Bancho;
+      const mode = OsuRuleset.ctb;
       const usernameInput = undefined;
       const userInfo = {
         username: 'CoolGuy',
@@ -324,16 +371,18 @@ describe('UserInfo', function () {
       };
       const outputMessage = command.createOutputMessage({
         server: server,
+        mode: mode,
         usernameInput: usernameInput,
         userInfo: userInfo,
       });
       assert.equal(
         outputMessage.text,
-        command.createUserInfoMessage(server, userInfo).text
+        command.createUserInfoMessage(server, mode, userInfo).text
       );
     });
     it('should return "user info" message if username is specified and there is corresponding account info', function () {
       const server = OsuServer.Bancho;
+      const mode = OsuRuleset.ctb;
       const usernameInput = 'loremipsum';
       const userInfo = {
         username: 'LoremIpsum',
@@ -353,12 +402,13 @@ describe('UserInfo', function () {
       };
       const outputMessage = command.createOutputMessage({
         server: server,
+        mode: mode,
         usernameInput: usernameInput,
         userInfo: userInfo,
       });
       assert.equal(
         outputMessage.text,
-        command.createUserInfoMessage(server, userInfo).text
+        command.createUserInfoMessage(server, mode, userInfo).text
       );
     });
   });

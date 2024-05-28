@@ -13,11 +13,11 @@ import {AppUsersImpl} from './data/raw/db/tables/AppUsers';
 import {SqliteDb} from './data/raw/db/SqliteDb';
 import {SqlDb} from './data/raw/db/SqlDb';
 import {GetAppUserInfoUseCase} from './domain/usecases/get_app_user_info/GetAppUserInfoUseCase';
-import {OsuIdsAndUsernamesImpl} from './data/raw/db/tables/OsuIdsAndUsernames';
+import {OsuUserSnapshotsImpl} from './data/raw/db/tables/OsuUserSnapshots';
 import {AppUserApiRequestsCountsImpl} from './data/raw/db/tables/AppUserApiRequestsCounts';
 import {AppUsersDaoImpl} from './data/dao/AppUsersDaoImpl';
 import {OsuRecentScoresDaoImpl} from './data/dao/OsuRecentScoresDaoImpl';
-import {CachedOsuIdsDaoImpl} from './data/dao/CachedOsuIdsDaoImpl';
+import {CachedOsuUsersDaoImpl} from './data/dao/CachedOsuUsersDaoImpl';
 import {Help} from './presentation/vk/commands/Help';
 import {ScoreSimulationsDaoImpl} from './data/dao/ScoreSimulationsDaoImpl';
 import {OsutoolsSimulationApi} from './data/raw/http/score_simulation/OsutoolsSImulationApi';
@@ -66,13 +66,13 @@ export class App {
 
     const requestsCounts = new AppUserApiRequestsCountsImpl(this.db);
     const timeWindows = new TimeWindowsImpl(this.db);
-    const osuIdsAndUsernames = new OsuIdsAndUsernamesImpl(this.db);
+    const osuUserSnapshots = new OsuUserSnapshotsImpl(this.db);
     const appUsers = new AppUsersImpl(this.db);
 
     const allDbTables = [
       requestsCounts,
       timeWindows,
-      osuIdsAndUsernames,
+      osuUserSnapshots,
       appUsers,
     ];
 
@@ -85,17 +85,17 @@ export class App {
     );
     const osuUsersDao = new OsuUsersDaoImpl(
       osuApiList,
-      osuIdsAndUsernames,
+      osuUserSnapshots,
       recentApiRequestsDao
     );
     const appUsersDao = new AppUsersDaoImpl(appUsers);
     const recentScoresDao = new OsuRecentScoresDaoImpl(
       osuApiList,
-      osuIdsAndUsernames,
+      osuUserSnapshots,
       recentApiRequestsDao
     );
     const scoreSimulationsDao = new ScoreSimulationsDaoImpl(scoreSiulationApi);
-    const cachedOsuIdsDao = new CachedOsuIdsDaoImpl(osuIdsAndUsernames);
+    const cachedOsuUsersDao = new CachedOsuUsersDaoImpl(osuUserSnapshots);
 
     const getOsuUserInfoUseCase = new GetOsuUserInfoUseCase(osuUsersDao);
     const getAppUserInfoUseCase = new GetAppUserInfoUseCase(appUsersDao);
@@ -103,7 +103,7 @@ export class App {
     const getRecentPlaysUseCase = new GetRecentPlaysUseCase(
       recentScoresDao,
       scoreSimulationsDao,
-      cachedOsuIdsDao,
+      cachedOsuUsersDao,
       osuUsersDao
     );
     const getApiUsageSummaryUseCase = new GetApiUsageSummaryUseCase(
@@ -129,9 +129,13 @@ export class App {
       recentApiRequestsDao.startRequestsCleanups(
         new Timespan().addMinutes(1).totalMiliseconds()
       );
+      scoreSimulationsDao.startApiHealthChecks(
+        config.bot.score_simulation.default_timeout
+      );
     });
     this.stopHandlers.push(async () => {
       recentApiRequestsDao.stopRequestsCleanups();
+      scoreSimulationsDao.stopApiHealthChecks();
       await recentApiRequestsDao.cleanUp();
     });
   }

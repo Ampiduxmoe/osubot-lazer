@@ -29,6 +29,7 @@ export class GetOsuUserInfoUseCase
       userInfo: {
         userId: user.id,
         username: user.username,
+        preferredMode: user.preferredMode,
         accuracy: user.accuracy,
         pp: user.pp,
         rankGlobal: user.rankGlobal,

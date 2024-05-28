@@ -2,38 +2,43 @@
 import assert from 'assert';
 import {SqliteDb} from '../../../../../src/main/data/raw/db/SqliteDb';
 import {
-  OsuIdAndUsername,
-  OsuIdAndUsernameKey,
-} from '../../../../../src/main/data/raw/db/entities/OsuIdAndUsername';
+  OsuUserSnapshot,
+  OsuUserSnapshotKey,
+} from '../../../../../src/main/data/raw/db/entities/OsuUserSnapshot';
 import {
-  OsuIdsAndUsernames,
-  OsuIdsAndUsernamesImpl,
-} from '../../../../../src/main/data/raw/db/tables/OsuIdsAndUsernames';
+  OsuUserSnapshots,
+  OsuUserSnapshotsImpl,
+} from '../../../../../src/main/data/raw/db/tables/OsuUserSnapshots';
 import {OsuServer} from '../../../../../src/primitives/OsuServer';
 import {describeBaseTableMethods} from './GenericTableTest';
+import {OsuRuleset} from '../../../../../src/primitives/OsuRuleset';
 
-describe('OsuIdsAndUsernames', function () {
+describe('OsuUserSnapshots', function () {
   const db = new SqliteDb(':memory:');
-  const table: OsuIdsAndUsernames = new OsuIdsAndUsernamesImpl(db);
-  const firstEntity: OsuIdAndUsername = {
+  const table: OsuUserSnapshots = new OsuUserSnapshotsImpl(db);
+  const firstEntity: OsuUserSnapshot = {
     username: 'Username',
     server: OsuServer.Bancho,
     id: 0,
+    preferred_mode: OsuRuleset.mania,
   };
-  const firstEntityUpdated: OsuIdAndUsername = {
+  const firstEntityUpdated: OsuUserSnapshot = {
     username: firstEntity.username,
     server: firstEntity.server,
     id: 999,
+    preferred_mode: OsuRuleset.osu,
   };
-  const secondEntity: OsuIdAndUsername = {
+  const secondEntity: OsuUserSnapshot = {
     username: 'Username #2',
     server: OsuServer.Bancho,
     id: 1,
+    preferred_mode: OsuRuleset.taiko,
   };
-  const thirdEntity: OsuIdAndUsername = {
+  const thirdEntity: OsuUserSnapshot = {
     username: 'Username #3',
     server: OsuServer.Bancho,
     id: 2,
+    preferred_mode: OsuRuleset.ctb,
   };
   describeBaseTableMethods({
     db: db,
@@ -41,15 +46,15 @@ describe('OsuIdsAndUsernames', function () {
     testEntities: [
       {
         value: firstEntity,
-        key: firstEntity as OsuIdAndUsernameKey,
+        key: firstEntity as OsuUserSnapshotKey,
       },
       {
         value: secondEntity,
-        key: secondEntity as OsuIdAndUsernameKey,
+        key: secondEntity as OsuUserSnapshotKey,
       },
       {
         value: thirdEntity,
-        key: thirdEntity as OsuIdAndUsernameKey,
+        key: thirdEntity as OsuUserSnapshotKey,
       },
     ],
     options: {
@@ -59,7 +64,7 @@ describe('OsuIdsAndUsernames', function () {
       },
       entityToDelete: {
         index: 1,
-        deletionKey: secondEntity as OsuIdAndUsernameKey,
+        deletionKey: secondEntity as OsuUserSnapshotKey,
       },
     },
   });
@@ -70,7 +75,7 @@ describe('OsuIdsAndUsernames', function () {
         `UPDATE ${table.tableName} SET expires_at = ? WHERE id = ?`,
         [now, thirdEntity.id]
       );
-      const row = await table.get(thirdEntity as OsuIdAndUsernameKey);
+      const row = await table.get(thirdEntity as OsuUserSnapshotKey);
       assert.equal(row, undefined);
     });
     it('expired entity should be deleted from table after calling #get()', async function () {

@@ -2,7 +2,11 @@ import {ScoreSimulationApi} from '../../../../../src/main/data/raw/http/ScoreSim
 import {ScoreSimulationInfo} from '../../../../../src/main/data/raw/http/boundary/ScoreSimulationInfo';
 import {maxBy, minBy, sumBy} from '../../../../../src/primitives/Arrays';
 export class FakeScoreSimulationApi implements ScoreSimulationApi {
-  async simulate(
+  async status(): Promise<string> {
+    return 'ok';
+  }
+
+  async simulateOsu(
     beatmapId: number,
     mods: string[],
     combo: number | null,

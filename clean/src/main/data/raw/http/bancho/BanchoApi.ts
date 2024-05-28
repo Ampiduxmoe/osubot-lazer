@@ -49,7 +49,7 @@ export class BanchoApi implements OsuApi {
     includeFails: boolean,
     quantity: number,
     startPosition: number,
-    ruleset: OsuRuleset
+    ruleset: OsuRuleset | undefined
   ): Promise<RecentScoreInfo[]> {
     const scores = await this.client.users.getRecentScores(
       osuUserId,

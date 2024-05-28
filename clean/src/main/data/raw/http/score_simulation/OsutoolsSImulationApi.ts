@@ -23,7 +23,10 @@ export class OsutoolsSimulationApi implements ScoreSimulationApi {
       },
     });
   }
-  async simulate(
+  async status(): Promise<string> {
+    return (await this.httpClient.get('/status')).data;
+  }
+  async simulateOsu(
     beatmapId: number,
     mods: string[],
     combo: number | null,
@@ -41,7 +44,7 @@ export class OsutoolsSimulationApi implements ScoreSimulationApi {
       };
     }
   ): Promise<ScoreSimulationInfo> {
-    let url = '/';
+    let url = '/osu/';
     const body: RawScoreSimulationParams = {
       beatmap_id: beatmapId,
       mods: mods,

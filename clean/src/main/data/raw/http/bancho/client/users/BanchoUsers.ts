@@ -41,29 +41,41 @@ export class BanchoUsers {
     includeFails: boolean,
     quantity: number,
     startPosition: number,
-    ruleset: OsuRuleset
+    ruleset: OsuRuleset | undefined
   ): Promise<RecentScore[]> {
     const type: UserScoresType = 'recent';
+    const rulesetName = ruleset === undefined ? 'default' : OsuRuleset[ruleset];
     console.log(
-      `Trying to fetch Bancho '${type}' scores for ${userId} (${OsuRuleset[ruleset]})`
+      `Trying to fetch Bancho '${type}' scores for ${userId} (${rulesetName})`
     );
     const httpClient = await this.getHttpClient();
-    const playmode = rulesetToPlaymode(ruleset);
+    const playmode =
+      ruleset === undefined ? undefined : rulesetToPlaymode(ruleset);
     const url = `${this.url}/${userId}/scores/${type}`;
+    const params: {
+      legacy_only?: 0 | 1;
+      include_fails?: 0 | 1;
+      mode?: 'osu' | 'taiko' | 'fruits' | 'mania';
+      limit?: number;
+      offset?: number;
+    } = {
+      legacy_only: 0,
+      include_fails: includeFails ? 1 : 0,
+      limit: quantity,
+      offset: startPosition - 1,
+    };
+    if (playmode !== undefined) {
+      params.mode = playmode;
+    }
     const response = await httpClient.get(url, {
       headers: {
         'x-api-version': 20220705,
       },
-      params: {
-        include_fails: includeFails ? 1 : 0,
-        mode: playmode,
-        limit: quantity,
-        offset: startPosition - 1,
-      },
+      params: params,
     });
     const scores: RecentScore[] = response.data;
     console.log(
-      `Successfully fetched Bancho '${type}' scores for ${userId} (${OsuRuleset[ruleset]})`
+      `Successfully fetched Bancho '${type}' scores for ${userId} (${rulesetName})`
     );
     return scores;
   }

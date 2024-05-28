@@ -6,7 +6,7 @@ import {SqliteDb} from '../../../src/main/data/raw/db/SqliteDb';
 import {getFakeOsuUserUsername} from '../../mocks/Generators';
 import {OsuServer} from '../../../src/primitives/OsuServer';
 import {OsuRuleset} from '../../../src/primitives/OsuRuleset';
-import {OsuIdsAndUsernamesImpl} from '../../../src/main/data/raw/db/tables/OsuIdsAndUsernames';
+import {OsuUserSnapshotsImpl} from '../../../src/main/data/raw/db/tables/OsuUserSnapshots';
 import {AppUserRecentApiRequestsDaoImpl} from '../../../src/main/data/dao/AppUserRecentApiRequestsDaoImpl';
 import {AppUserApiRequestsCountsImpl} from '../../../src/main/data/raw/db/tables/AppUserApiRequestsCounts';
 import {TimeWindowsImpl} from '../../../src/main/data/raw/db/tables/TimeWindows';
@@ -20,7 +20,7 @@ describe('OsuUsersDao', async function () {
   {
     const apis = [new FakeBanchoApi()];
     const db = new SqliteDb(':memory:');
-    const idsAndUsernames = new OsuIdsAndUsernamesImpl(db);
+    const idsAndUsernames = new OsuUserSnapshotsImpl(db);
     const appUserApiRequestsCounts = new AppUserApiRequestsCountsImpl(db);
     const timeWindows = new TimeWindowsImpl(db);
     const requestsSummariesDao = new AppUserApiRequestsSummariesDaoImpl(

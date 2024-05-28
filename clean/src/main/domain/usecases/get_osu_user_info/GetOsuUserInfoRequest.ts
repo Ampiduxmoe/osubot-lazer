@@ -5,5 +5,5 @@ export type GetOsuUserInfoRequest = {
   appUserId: string;
   server: OsuServer;
   username: string;
-  ruleset: OsuRuleset;
+  ruleset: OsuRuleset | undefined;
 };

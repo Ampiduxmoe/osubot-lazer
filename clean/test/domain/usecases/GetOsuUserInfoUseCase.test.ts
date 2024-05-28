@@ -8,7 +8,7 @@ import {ALL_OSU_RULESETS, OsuRuleset} from '../../../src/primitives/OsuRuleset';
 import {OsuUsersDaoImpl} from '../../../src/main/data/dao/OsuUsersDaoImpl';
 import {FakeBanchoApi} from '../../mocks/data/raw/http/BanchoApi';
 import {SqliteDb} from '../../../src/main/data/raw/db/SqliteDb';
-import {OsuIdsAndUsernamesImpl} from '../../../src/main/data/raw/db/tables/OsuIdsAndUsernames';
+import {OsuUserSnapshotsImpl} from '../../../src/main/data/raw/db/tables/OsuUserSnapshots';
 import {AppUserRecentApiRequestsDaoImpl} from '../../../src/main/data/dao/AppUserRecentApiRequestsDaoImpl';
 import {AppUserApiRequestsSummariesDaoImpl} from '../../../src/main/data/dao/AppUserApiRequestsSummariesDaoImpl';
 import {AppUserApiRequestsCountsImpl} from '../../../src/main/data/raw/db/tables/AppUserApiRequestsCounts';
@@ -21,7 +21,7 @@ describe('GetOsuUserInfoUseCase', function () {
   {
     const apis = [new FakeBanchoApi()];
     const db = new SqliteDb(':memory:');
-    const idsAndUsernames = new OsuIdsAndUsernamesImpl(db);
+    const idsAndUsernames = new OsuUserSnapshotsImpl(db);
     const appUserApiRequestsCounts = new AppUserApiRequestsCountsImpl(db);
     const timeWindows = new TimeWindowsImpl(db);
     const requestsSummariesDao = new AppUserApiRequestsSummariesDaoImpl(

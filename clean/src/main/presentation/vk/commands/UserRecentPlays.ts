@@ -25,6 +25,7 @@ import {
   SERVER_PREFIX,
   START_POSITION,
   USERNAME,
+  MODE,
 } from '../../common/arg_processing/CommandArguments';
 import {MainArgsProcessor} from '../../common/arg_processing/MainArgsProcessor';
 import {Timespan} from '../../../../primitives/Timespan';
@@ -62,6 +63,7 @@ export class UserRecentPlays extends VkCommand<
     {argument: START_POSITION, isOptional: true},
     {argument: QUANTITY, isOptional: true},
     {argument: MODS, isOptional: true},
+    {argument: MODE, isOptional: true},
   ];
 
   getRecentPlays: GetRecentPlaysUseCase;
@@ -101,6 +103,7 @@ export class UserRecentPlays extends VkCommand<
     const startPosition = argsProcessor.use(START_POSITION).extract();
     const quantity = argsProcessor.use(QUANTITY).extract();
     const mods = argsProcessor.use(MODS).extract();
+    const mode = argsProcessor.use(MODE).extract();
     const usernameParts: string[] = [];
     let usernamePart = argsProcessor.use(USERNAME).extract();
     while (usernamePart !== undefined) {
@@ -129,6 +132,7 @@ export class UserRecentPlays extends VkCommand<
       startPosition: startPosition,
       quantity: quantity,
       mods: mods,
+      mode: mode,
     });
   }
 
@@ -136,6 +140,7 @@ export class UserRecentPlays extends VkCommand<
     args: UserRecentPlaysExecutionArgs
   ): Promise<UserRecentPlaysViewParams> {
     let username = args.username;
+    let mode = args.mode;
     if (username === undefined) {
       const appUserInfoResponse = await this.getAppUserInfo.execute({
         id: VkIdConverter.vkUserIdToAppUserId(args.vkUserId),
@@ -145,12 +150,14 @@ export class UserRecentPlays extends VkCommand<
       if (boundUser === undefined) {
         return {
           server: args.server,
+          mode: args.mode,
           passesOnly: args.passesOnly,
           usernameInput: undefined,
           recentPlays: undefined,
         };
       }
       username = boundUser.username;
+      mode ??= boundUser.ruleset;
     }
     const mods = args.mods ?? [];
     const startPosition = clamp(args.startPosition ?? 1, 1, 100);
@@ -159,7 +166,7 @@ export class UserRecentPlays extends VkCommand<
       appUserId: VkIdConverter.vkUserIdToAppUserId(args.vkUserId),
       server: args.server,
       username: username,
-      ruleset: OsuRuleset.osu,
+      ruleset: mode,
       includeFails: !args.passesOnly,
       startPosition: startPosition,
       quantity: quantity,
@@ -171,6 +178,7 @@ export class UserRecentPlays extends VkCommand<
         case 'user not found':
           return {
             server: args.server,
+            mode: mode,
             passesOnly: args.passesOnly,
             usernameInput: args.username,
             recentPlays: undefined,
@@ -181,6 +189,7 @@ export class UserRecentPlays extends VkCommand<
     }
     return {
       server: args.server,
+      mode: recentPlaysResult.ruleset!,
       passesOnly: args.passesOnly,
       usernameInput: args.username,
       recentPlays: recentPlaysResult.recentPlays!,
@@ -188,7 +197,7 @@ export class UserRecentPlays extends VkCommand<
   }
 
   createOutputMessage(params: UserRecentPlaysViewParams): VkOutputMessage {
-    const {server, passesOnly, recentPlays} = params;
+    const {server, mode, passesOnly, recentPlays} = params;
     if (recentPlays === undefined) {
       if (params.usernameInput === undefined) {
         return this.createUsernameNotBoundMessage(params.server);
@@ -200,10 +209,16 @@ export class UserRecentPlays extends VkCommand<
     }
     const {username} = recentPlays;
     if (recentPlays.plays.length === 0) {
-      return this.createNoRecentPlaysMessage(server, passesOnly, username);
+      return this.createNoRecentPlaysMessage(
+        server,
+        mode!,
+        passesOnly,
+        username
+      );
     }
 
     const serverString = OsuServer[params.server];
+    const modeString = OsuRuleset[mode!];
     const oneScore = recentPlays.plays.length === 1;
     const passesString = oneScore ? 'Последний пасс' : 'Последние пассы';
     const scoresString = oneScore ? 'Последний скор' : 'Последние скоры';
@@ -214,10 +229,23 @@ export class UserRecentPlays extends VkCommand<
           : this.shortScoreDescription(p, i)
       )
       .join('\n');
+    const couldNotGetSomeStatsMessage =
+      recentPlays.plays.find(play =>
+        [
+          play.stars,
+          play.pp.value,
+          play.pp.ifFc,
+          play.pp.ifSs,
+          play.beatmap.maxCombo,
+        ].includes(undefined)
+      ) !== undefined
+        ? '\n(Не удалось получить некоторые параметры плея)'
+        : '';
     const text = `
-[Server: ${serverString}]
+[Server: ${serverString}, Mode: ${modeString}]
 ${passesOnly ? passesString : scoresString} ${username}
 ${scoresText}
+${couldNotGetSomeStatsMessage}
     `.trim();
     return {
       text: text,
@@ -277,7 +305,7 @@ ${scoresText}
     const lengthString = `${z0}${totalLength.minutes}:${z1}${totalLength.seconds}`;
     const drainString = `${z2}${drainLength.minutes}:${z3}${drainLength.seconds}`;
     const bpm = round(map.bpm * speed, 2);
-    const sr = play.stars.toFixed(2);
+    const sr = play.stars?.toFixed(2) ?? '—';
     const modAcronyms = play.mods.map(m => m.acronym);
     let modsString = modAcronyms.join('');
     const defaultSpeeds = [
@@ -298,12 +326,12 @@ ${scoresText}
     const hp = round(play.hp, 2);
     const {totalScore} = play;
     const combo = play.combo;
-    const max_combo = play.beatmap.maxCombo;
+    const max_combo = play.beatmap.maxCombo ?? '—';
     const comboString = `${combo}x/${max_combo}x`;
     const acc = (play.accuracy * 100).toFixed(2);
-    const pp = play.pp.value.toFixed(2);
-    const ppFc = play.pp.ifFc.toFixed(2);
-    const ppSs = play.pp.ifSs.toFixed(2);
+    const pp = play.pp.value?.toFixed(2) ?? '—';
+    const ppFc = play.pp.ifFc?.toFixed(2) ?? '—';
+    const ppSs = play.pp.ifSs?.toFixed(2) ?? '—';
     const hitcountsString = `${play.countGreat}/${play.countOk}/${play.countMeh}/${play.countMiss}`;
     const {grade} = play;
     const hitcountsTotal =
@@ -352,7 +380,7 @@ Beatmap: ${mapUrlShort}
     const maybeAbsPos = absPos === relPos ? '' : `\\${absPos}`;
     const {title} = mapset;
     const diffname = map.difficultyName;
-    const sr = play.stars.toFixed(2);
+    const sr = play.stars?.toFixed(2) ?? '—';
     const modAcronyms = play.mods.map(m => m.acronym);
     let modsString = modAcronyms.join('');
     const defaultSpeeds = [
@@ -368,10 +396,10 @@ Beatmap: ${mapUrlShort}
       modsPlusSign = '+';
     }
     const combo = play.combo;
-    const max_combo = play.beatmap.maxCombo;
+    const max_combo = play.beatmap.maxCombo ?? '—';
     const comboString = `${combo}x/${max_combo}x`;
     const acc = (play.accuracy * 100).toFixed(2);
-    const pp = play.pp.value.toFixed(2);
+    const pp = play.pp.value?.toFixed(2) ?? '—';
     const {grade} = play;
     const hitcountsTotal =
       play.countGreat + play.countOk + play.countMeh + play.countMiss;
@@ -419,14 +447,16 @@ ${pp}pp　 ${mapUrlShort}
 
   createNoRecentPlaysMessage(
     server: OsuServer,
+    mode: OsuRuleset,
     passesOnly: boolean,
     username: string
   ): VkOutputMessage {
     const serverString = OsuServer[server];
+    const modeString = OsuRuleset[mode];
     const serverPrefix = SERVERS.getPrefixByServer(server);
     const recentPlaysPrefix = UserRecentPlays.recentPlaysPrefixes[0];
     const text = `
-[Server: ${serverString}]
+[Server: ${serverString}, Mode: ${modeString}]
 Нет последних ${passesOnly ? 'пассов' : 'скоров'}
     `.trim();
     return {
@@ -437,7 +467,7 @@ ${pp}pp　 ${mapUrlShort}
             [
               {
                 text: `Последние скоры ${username}`,
-                command: `${serverPrefix} ${recentPlaysPrefix} ${username}`,
+                command: `${serverPrefix} ${recentPlaysPrefix} ${username} mode=${modeString}`,
               },
             ],
           ]
@@ -454,10 +484,12 @@ type UserRecentPlaysExecutionArgs = {
   startPosition: number | undefined;
   quantity: number | undefined;
   mods: ModArg[] | undefined;
+  mode: OsuRuleset | undefined;
 };
 
 type UserRecentPlaysViewParams = {
   server: OsuServer;
+  mode: OsuRuleset | undefined;
   passesOnly: boolean;
   usernameInput: string | undefined;
   recentPlays: OsuUserRecentPlays | undefined;

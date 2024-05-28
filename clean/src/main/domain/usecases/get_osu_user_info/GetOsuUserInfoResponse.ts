@@ -1,3 +1,5 @@
+import {OsuRuleset} from '../../../../primitives/OsuRuleset';
+
 export type GetOsuUserInfoResponse = {
   userInfo: OsuUserInfo | undefined;
 };
@@ -5,6 +7,7 @@ export type GetOsuUserInfoResponse = {
 type OsuUserInfo = {
   userId: number;
   username: string;
+  preferredMode: OsuRuleset;
   accuracy: number;
   pp: number;
   rankGlobal: number | null;

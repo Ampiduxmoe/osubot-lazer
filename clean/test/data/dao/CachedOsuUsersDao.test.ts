@@ -1,19 +1,20 @@
 /* eslint-disable prefer-arrow-callback */
 import assert from 'assert';
-import {CachedOsuIdsDaoImpl} from '../../../src/main/data/dao/CachedOsuIdsDaoImpl';
+import {CachedOsuUsersDaoImpl} from '../../../src/main/data/dao/CachedOsuUsersDaoImpl';
 import {SqliteDb} from '../../../src/main/data/raw/db/SqliteDb';
 import {getFakeOsuUserUsername} from '../../mocks/Generators';
 import {OsuServer} from '../../../src/primitives/OsuServer';
-import {OsuIdsAndUsernamesImpl} from '../../../src/main/data/raw/db/tables/OsuIdsAndUsernames';
-import {CachedOsuIdsDao} from '../../../src/main/data/dao/CachedOsuIdsDao';
-import {OsuIdAndUsername} from '../../../src/main/data/raw/db/entities/OsuIdAndUsername';
+import {OsuUserSnapshotsImpl} from '../../../src/main/data/raw/db/tables/OsuUserSnapshots';
+import {CachedOsuUsersDao} from '../../../src/main/data/dao/CachedOsuUsersDao';
+import {OsuUserSnapshot} from '../../../src/main/data/raw/db/entities/OsuUserSnapshot';
+import {OsuRuleset} from '../../../src/primitives/OsuRuleset';
 
-describe('CachedOsuIdsDao', function () {
+describe('CachedOsuUsersDao', function () {
   const db = new SqliteDb(':memory:');
-  const idsAndUsernames = new OsuIdsAndUsernamesImpl(db);
-  const dao: CachedOsuIdsDao = new CachedOsuIdsDaoImpl(idsAndUsernames);
+  const idsAndUsernames = new OsuUserSnapshotsImpl(db);
+  const dao: CachedOsuUsersDao = new CachedOsuUsersDaoImpl(idsAndUsernames);
 
-  const exampleIdAndUsername: OsuIdAndUsername = {
+  const exampleUserSnapshot: OsuUserSnapshot = {
     username:
       getFakeOsuUserUsername(123) ??
       (() => {
@@ -21,11 +22,12 @@ describe('CachedOsuIdsDao', function () {
       })(),
     server: OsuServer.Bancho,
     id: 123,
+    preferred_mode: OsuRuleset.mania,
   };
 
   before(async function () {
     await idsAndUsernames.createTable();
-    await idsAndUsernames.add(exampleIdAndUsername);
+    await idsAndUsernames.add(exampleUserSnapshot);
   });
 
   describe('#get()', function () {
@@ -36,10 +38,10 @@ describe('CachedOsuIdsDao', function () {
       );
       assert.equal(result, undefined);
     });
-    it('should return CachedOsuId when corresponding entry exists', async function () {
+    it('should return CachedOsuUser when corresponding entry exists', async function () {
       const result = await dao.get(
-        exampleIdAndUsername.username,
-        OsuServer.Bancho
+        exampleUserSnapshot.username,
+        exampleUserSnapshot.server
       );
       assert.notEqual(result, undefined);
     });

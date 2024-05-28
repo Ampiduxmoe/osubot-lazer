@@ -11,6 +11,7 @@ import {UserRecentPlays} from './UserRecentPlays';
 import {GetAppUserInfoUseCase} from '../../../domain/usecases/get_app_user_info/GetAppUserInfoUseCase';
 import {VkIdConverter} from '../VkIdConverter';
 import {
+  MODE,
   OWN_COMMAND_PREFIX,
   SERVER_PREFIX,
   USERNAME,
@@ -35,6 +36,7 @@ export class UserInfo extends VkCommand<
     {argument: SERVER_PREFIX, isOptional: false},
     {argument: this.COMMAND_PREFIX, isOptional: false},
     {argument: USERNAME, isOptional: true},
+    {argument: MODE, isOptional: true},
   ];
 
   getOsuUserInfo: GetOsuUserInfoUseCase;
@@ -73,6 +75,7 @@ export class UserInfo extends VkCommand<
       .use(this.COMMAND_PREFIX)
       .at(0)
       .extract();
+    const mode = argsProcessor.use(MODE).extract();
     const usernameParts: string[] = [];
     let usernamePart = argsProcessor.use(USERNAME).extract();
     while (usernamePart !== undefined) {
@@ -96,12 +99,14 @@ export class UserInfo extends VkCommand<
     return CommandMatchResult.ok({
       server: server,
       username: username,
+      mode: mode,
       vkUserId: ctx.senderId,
     });
   }
 
   async process(args: UserInfoExecutionArgs): Promise<UserInfoViewParams> {
     let username = args.username;
+    let mode = args.mode;
     if (username === undefined) {
       const appUserInfoResponse = await this.getAppUserInfo.execute({
         id: VkIdConverter.vkUserIdToAppUserId(args.vkUserId),
@@ -111,22 +116,25 @@ export class UserInfo extends VkCommand<
       if (boundUser === undefined) {
         return {
           server: args.server,
+          mode: args.mode,
           usernameInput: undefined,
           userInfo: undefined,
         };
       }
       username = boundUser.username;
+      mode ??= boundUser.ruleset;
     }
     const userInfoResponse = await this.getOsuUserInfo.execute({
       appUserId: VkIdConverter.vkUserIdToAppUserId(args.vkUserId),
       server: args.server,
       username: username,
-      ruleset: OsuRuleset.osu,
+      ruleset: mode,
     });
     const userInfo = userInfoResponse.userInfo;
     if (userInfo === undefined) {
       return {
         server: args.server,
+        mode: args.mode,
         usernameInput: args.username,
         userInfo: undefined,
       };
@@ -151,10 +159,10 @@ export class UserInfo extends VkCommand<
         rankHighestDateInLocalFormat = `${dayFormatted}.${monthFormatted}.${year}`;
       }
     }
-
     const playtime = new Timespan().addSeconds(userInfo.playtimeSeconds);
     return {
       server: args.server,
+      mode: mode ?? userInfo.preferredMode,
       usernameInput: args.username,
       userInfo: {
         username: userInfo.username,
@@ -176,22 +184,27 @@ export class UserInfo extends VkCommand<
   }
 
   createOutputMessage(params: UserInfoViewParams): VkOutputMessage {
-    const {server, usernameInput, userInfo} = params;
+    const {server, mode, usernameInput, userInfo} = params;
     if (userInfo === undefined) {
       if (usernameInput === undefined) {
         return this.createUsernameNotBoundMessage(server);
       }
       return this.createUserNotFoundMessage(server, usernameInput);
     }
-    return this.createUserInfoMessage(server, userInfo);
+    return this.createUserInfoMessage(server, mode!, userInfo);
   }
 
-  createUserInfoMessage(server: OsuServer, userInfo: OsuUserInfo) {
+  createUserInfoMessage(
+    server: OsuServer,
+    mode: OsuRuleset,
+    userInfo: OsuUserInfo
+  ) {
     const serverString = OsuServer[server];
+    const modeString = OsuRuleset[mode];
     const {username} = userInfo;
-    const rankGlobal = userInfo.rankGlobal || '--';
+    const rankGlobal = userInfo.rankGlobal || '—';
     const countryCode = userInfo.countryCode;
-    const rankCountry = userInfo.rankCountry || '--';
+    const rankCountry = userInfo.rankCountry || '—';
     const {rankGlobalHighest, rankGlobalHighestDate} = userInfo;
     const {playcount, lvl} = userInfo;
     const {playtimeDays, playtimeHours, playtimeMinutes} = userInfo;
@@ -205,7 +218,7 @@ export class UserInfo extends VkCommand<
         : `\nPeak rank: #${rankGlobalHighest} (${rankGlobalHighestDate})`;
 
     const text = `
-[Server: ${serverString}]
+[Server: ${serverString}, Mode: ${modeString}]
 Player: ${username} (STD)
 Rank: #${rankGlobal} (${countryCode} #${rankCountry})${maybePeakRankString}
 Playcount: ${playcount} (Lv${lvl})
@@ -227,19 +240,19 @@ https://osu.ppy.sh/u/${userId}
         [
           {
             text: `Топ скоры ${username}`,
-            command: `${serverPrefix} ${bestPlaysPrefix} ${username}`,
+            command: `${serverPrefix} ${bestPlaysPrefix} ${username} mode=${modeString}`,
           },
         ],
         [
           {
             text: `Последний скор ${username}`,
-            command: `${serverPrefix} ${recentPlaysPrefix} ${username}`,
+            command: `${serverPrefix} ${recentPlaysPrefix} ${username} mode=${modeString}`,
           },
         ],
         [
           {
             text: `Последний пасс ${username}`,
-            command: `${serverPrefix} ${recentPassesPrefix} ${username}`,
+            command: `${serverPrefix} ${recentPassesPrefix} ${username} mode=${modeString}`,
           },
         ],
       ],
@@ -279,11 +292,13 @@ https://osu.ppy.sh/u/${userId}
 type UserInfoExecutionArgs = {
   server: OsuServer;
   username: string | undefined;
+  mode: OsuRuleset | undefined;
   vkUserId: number;
 };
 
 type UserInfoViewParams = {
   server: OsuServer;
+  mode: OsuRuleset | undefined;
   usernameInput: string | undefined;
   userInfo: OsuUserInfo | undefined;
 };
