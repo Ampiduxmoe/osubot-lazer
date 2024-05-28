@@ -1,5 +1,6 @@
 import {OsuUserInfo} from '../../src/main/data/raw/http/boundary/OsuUserInfo';
 import {RecentScoreInfo} from '../../src/main/data/raw/http/boundary/RecentScoreInfo';
+import {minBy} from '../../src/primitives/Arrays';
 import {OsuRuleset} from '../../src/primitives/OsuRuleset';
 
 export function getFakeOsuUserUsername(osuId: number): string | undefined {
@@ -19,24 +20,31 @@ export function getFakeOsuUserId(username: string) {
 
 export function getFakeOsuUserInfo(
   osuId: number,
-  ruleset: OsuRuleset
+  ruleset: OsuRuleset | undefined
 ): OsuUserInfo | undefined {
   const username = getFakeOsuUserUsername(osuId);
   if (username === undefined) {
     return undefined;
   }
-  const rulesetFavoriteNumber = {
+  const rulesetFavoriteNumbers: Record<OsuRuleset, number> = {
     [OsuRuleset.osu]: 2,
     [OsuRuleset.taiko]: 4,
     [OsuRuleset.ctb]: 6,
     [OsuRuleset.mania]: 8,
-  }[ruleset];
+  };
   const lastOsuIdDigit = osuId % 10;
+  const preferredMode = minBy(
+    ruleset => 1 - Math.abs(lastOsuIdDigit - rulesetFavoriteNumbers[ruleset]),
+    Object.keys(rulesetFavoriteNumbers).map(x => Number(x)) as OsuRuleset[]
+  )!;
+  const rulesetFavoriteNumber =
+    rulesetFavoriteNumbers[ruleset ?? preferredMode];
   const rulesetProficiencyFactor =
     1 - Math.abs(lastOsuIdDigit - rulesetFavoriteNumber) / 10;
   return {
     id: osuId,
     username: username,
+    preferredMode: preferredMode,
     countryCode: 'FAKE',
     rankGlobal: (osuId * 100) / rulesetProficiencyFactor,
     rankGlobalHighest: {

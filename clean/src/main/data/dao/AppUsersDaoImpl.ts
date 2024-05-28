@@ -24,21 +24,21 @@ export class AppUsersDaoImpl implements AppUsersDao {
       ruleset: appUser.ruleset,
     };
   }
-  async addOrUpdate(appUser: AppUserInfo): Promise<void> {
-    const appUserInfo: AppUser = {
-      id: appUser.id,
-      server: appUser.server,
-      osu_id: appUser.osuId,
-      username: appUser.username,
-      ruleset: appUser.ruleset,
+  async addOrUpdate(appUserInfo: AppUserInfo): Promise<void> {
+    const appUser: AppUser = {
+      id: appUserInfo.id,
+      server: appUserInfo.server,
+      osu_id: appUserInfo.osuId,
+      username: appUserInfo.username,
+      ruleset: appUserInfo.ruleset,
     };
     const existingAppUserInfo = await this.appUsersTable.get(
-      appUserInfo as AppUserKey
+      appUser as AppUserKey
     );
     if (existingAppUserInfo === undefined) {
-      await this.appUsersTable.add(appUserInfo);
+      await this.appUsersTable.add(appUser);
     } else {
-      await this.appUsersTable.update(appUserInfo);
+      await this.appUsersTable.update(appUser);
     }
   }
 }

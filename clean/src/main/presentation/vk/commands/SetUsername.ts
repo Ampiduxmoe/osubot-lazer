@@ -7,12 +7,14 @@ import {APP_CODE_NAME} from '../../../App';
 import {SetUsernameUseCase} from '../../../domain/usecases/set_username/SetUsernameUseCase';
 import {VkIdConverter} from '../VkIdConverter';
 import {
+  MODE,
   OWN_COMMAND_PREFIX,
   SERVER_PREFIX,
   USERNAME,
 } from '../../common/arg_processing/CommandArguments';
 import {MainArgsProcessor} from '../../common/arg_processing/MainArgsProcessor';
 import {CommandPrefixes} from '../../common/CommandPrefixes';
+import {OsuRuleset} from '../../../../primitives/OsuRuleset';
 
 export class SetUsername extends VkCommand<
   SetUsernameExecutionArgs,
@@ -30,6 +32,7 @@ export class SetUsername extends VkCommand<
     {argument: SERVER_PREFIX, isOptional: false},
     {argument: this.COMMAND_PREFIX, isOptional: false},
     {argument: USERNAME, isOptional: false},
+    {argument: MODE, isOptional: true},
   ];
 
   setUsername: SetUsernameUseCase;
@@ -63,6 +66,7 @@ export class SetUsername extends VkCommand<
       .use(this.COMMAND_PREFIX)
       .at(0)
       .extract();
+    const mode = argsProcessor.use(MODE).extract();
     const usernameParts: string[] = [];
     let usernamePart = argsProcessor.use(USERNAME).extract();
     while (usernamePart !== undefined) {
@@ -87,6 +91,7 @@ export class SetUsername extends VkCommand<
       vkUserId: ctx.senderId,
       server: server,
       username: username,
+      mode: mode,
     });
   }
 
@@ -98,12 +103,14 @@ export class SetUsername extends VkCommand<
         server: args.server,
         usernameInput: undefined,
         username: undefined,
+        mode: args.mode,
       };
     }
     const result = await this.setUsername.execute({
       appUserId: VkIdConverter.vkUserIdToAppUserId(args.vkUserId),
       server: args.server,
       username: args.username,
+      mode: args.mode,
     });
     if (result.isFailure) {
       const internalFailureReason = result.failureReason!;
@@ -113,38 +120,29 @@ export class SetUsername extends VkCommand<
             server: args.server,
             usernameInput: args.username,
             username: undefined,
+            mode: args.mode,
           };
         default:
           throw Error('Switch case is not exhaustive');
       }
     }
-    const username = result.username!;
     return {
       server: args.server,
       usernameInput: args.username,
-      username: username,
+      username: result.username!,
+      mode: result.mode!,
     };
   }
 
   createOutputMessage(params: SetUsernameViewParams): VkOutputMessage {
-    const {server, usernameInput, username} = params;
+    const {server, usernameInput, username, mode} = params;
     if (username === undefined) {
       if (usernameInput === undefined) {
         return this.createUsernameNotSpecifiedMessage(server);
       }
       return this.createUserNotFoundMessage(server, usernameInput);
     }
-    const serverString = OsuServer[server];
-    const text = `
-[Server: ${serverString}]
-Установлен ник ${username}
-    `.trim();
-
-    return {
-      text: text,
-      attachment: undefined,
-      buttons: undefined,
-    };
+    return this.createUsernameSetMessage(server, username, mode!);
   }
 
   createUsernameNotSpecifiedMessage(server: OsuServer): VkOutputMessage {
@@ -175,16 +173,36 @@ export class SetUsername extends VkCommand<
       buttons: undefined,
     };
   }
+
+  createUsernameSetMessage(
+    server: OsuServer,
+    username: string,
+    mode: OsuRuleset
+  ) {
+    const serverString = OsuServer[server];
+    const modeString = OsuRuleset[mode];
+    const text = `
+[Server: ${serverString}]
+Установлен ник ${username} (режим: ${modeString})
+    `.trim();
+    return {
+      text: text,
+      attachment: undefined,
+      buttons: undefined,
+    };
+  }
 }
 
 type SetUsernameExecutionArgs = {
   vkUserId: number;
   server: OsuServer;
   username: string | undefined;
+  mode: OsuRuleset | undefined;
 };
 
 type SetUsernameViewParams = {
   server: OsuServer;
   usernameInput: string | undefined;
   username: string | undefined;
+  mode: OsuRuleset | undefined;
 };

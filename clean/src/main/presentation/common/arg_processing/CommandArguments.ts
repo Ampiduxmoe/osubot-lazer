@@ -8,6 +8,7 @@ import {UserRecentPlays} from '../../vk/commands/UserRecentPlays';
 import {Help} from '../../vk/commands/Help';
 import {ModArg} from './ModArg';
 import {CommandPrefixes} from '../CommandPrefixes';
+import {ALL_OSU_RULESETS, OsuRuleset} from '../../../../primitives/OsuRuleset';
 
 export const SERVER_PREFIX: CommandArgument<OsuServer> = {
   displayName: 'server',
@@ -178,16 +179,37 @@ export const MODS: CommandArgument<ModArg[]> = {
       );
     }
     const requiredMods =
-      // eslint-disable-next-line prettier/prettier
-      noOptionalModsString
-        .match(/.{2}/g)
-        ?.flat()
-        ?.filter(uniquesFilter) ?? [];
+      noOptionalModsString.match(/.{2}/g)?.flat()?.filter(uniquesFilter) ?? [];
     const mods: ModArg[] = [
       ...optionalMods.map(m => ({acronym: m, isOptional: true})),
       ...requiredMods.map(m => ({acronym: m, isOptional: false})),
     ];
     return mods;
+  },
+};
+
+export const MODE: CommandArgument<OsuRuleset> = {
+  displayName: 'mode=?',
+  description:
+    'режим игры; возможные значения: ' +
+    ALL_OSU_RULESETS.map(x => `"${x}"`).join(', '),
+  get usageExample(): string {
+    return 'mode=' + pickRandom(ALL_OSU_RULESETS);
+  },
+  match: function (token: string): boolean {
+    const modeRegex = new RegExp(
+      `^${ALL_OSU_RULESETS.map(x => 'mode=' + x).join('|')}$`,
+      'i'
+    );
+    return modeRegex.test(token);
+  },
+  parse: function (token: string): OsuRuleset {
+    const modeName = token.replace('mode=', '');
+    const ruleset = OsuRuleset[modeName as keyof typeof OsuRuleset];
+    if (ruleset === undefined) {
+      throw Error('Token should be a valid OsuRuleset key');
+    }
+    return ruleset;
   },
 };
 

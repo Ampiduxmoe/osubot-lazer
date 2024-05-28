@@ -30,7 +30,7 @@ export class OsuUsersDaoImpl implements OsuUsersDao {
     appUserId: string,
     username: string,
     server: OsuServer,
-    ruleset: OsuRuleset
+    ruleset: OsuRuleset | undefined
   ): Promise<OsuUser | undefined> {
     const api = this.apis.find(api => api.server === server);
     if (api === undefined) {

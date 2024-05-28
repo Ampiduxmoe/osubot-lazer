@@ -13,7 +13,7 @@ export class FakeBanchoApi implements OsuApi {
   server = OsuServer.Bancho;
   async getUser(
     username: string,
-    ruleset: OsuRuleset
+    ruleset: OsuRuleset | undefined
   ): Promise<OsuUserInfo | undefined> {
     const userId = getFakeOsuUserId(username);
     if (userId === undefined) {

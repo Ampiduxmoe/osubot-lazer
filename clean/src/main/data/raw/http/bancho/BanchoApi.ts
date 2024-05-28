@@ -4,6 +4,7 @@ import {BanchoClient} from './client/BanchoClient';
 import {OsuRuleset} from '../../../../../primitives/OsuRuleset';
 import {OsuUserInfo} from '../boundary/OsuUserInfo';
 import {RecentScoreInfo} from '../boundary/RecentScoreInfo';
+import {Playmode} from './client/common_types/Playmode';
 
 export class BanchoApi implements OsuApi {
   private client: BanchoClient;
@@ -15,7 +16,7 @@ export class BanchoApi implements OsuApi {
 
   async getUser(
     username: string,
-    ruleset: OsuRuleset
+    ruleset: OsuRuleset | undefined
   ): Promise<OsuUserInfo | undefined> {
     const user = await this.client.users.getByUsername(username, ruleset);
     if (user === undefined) {
@@ -24,14 +25,15 @@ export class BanchoApi implements OsuApi {
     return {
       id: user.id,
       username: user.username,
+      preferredMode: playmodeToRuleset(user.playmode),
       countryCode: user.country_code,
       rankGlobal: user.statistics.global_rank || null,
       rankGlobalHighest:
         user.rank_highest === null
           ? undefined
           : {
-              value: user.rank_highest!.rank,
-              date: String(user.rank_highest!.updated_at),
+              value: user.rank_highest.rank,
+              date: String(user.rank_highest.updated_at),
             },
       rankCountry: user.statistics.country_rank || null,
       playcount: user.statistics.play_count,
@@ -62,10 +64,10 @@ export class BanchoApi implements OsuApi {
         userId: s.user_id,
         mods: s.mods,
         statistics: {
-          great: s.statistics.great || 0,
-          ok: s.statistics.ok || 0,
-          meh: s.statistics.meh || 0,
-          miss: s.statistics.miss || 0,
+          great: s.statistics.great ?? 0,
+          ok: s.statistics.ok ?? 0,
+          meh: s.statistics.meh ?? 0,
+          miss: s.statistics.miss ?? 0,
         },
         rank: s.rank,
         accuracy: s.accuracy,
@@ -109,5 +111,20 @@ export class BanchoApi implements OsuApi {
       };
       return scoreInfo;
     });
+  }
+}
+
+function playmodeToRuleset(playmode: Playmode): OsuRuleset {
+  switch (playmode) {
+    case 'osu':
+      return OsuRuleset.osu;
+    case 'taiko':
+      return OsuRuleset.taiko;
+    case 'fruits':
+      return OsuRuleset.ctb;
+    case 'mania':
+      return OsuRuleset.mania;
+    default:
+      throw Error('Unknown playmode');
   }
 }

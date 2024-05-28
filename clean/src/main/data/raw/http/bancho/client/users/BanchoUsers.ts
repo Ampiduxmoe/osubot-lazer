@@ -13,13 +13,12 @@ export class BanchoUsers {
 
   async getByUsername(
     username: string,
-    ruleset: OsuRuleset
+    ruleset: OsuRuleset | undefined
   ): Promise<UserExtended | undefined> {
-    console.log(
-      `Trying to fetch Bancho user ${username} (${OsuRuleset[ruleset]})`
-    );
+    const rulesetName = ruleset === undefined ? 'default' : OsuRuleset[ruleset];
+    console.log(`Trying to fetch Bancho user ${username} (${rulesetName})`);
     const httpClient = await this.getHttpClient();
-    const playmode = rulesetToPlaymode(ruleset);
+    const playmode = ruleset === undefined ? '' : rulesetToPlaymode(ruleset);
     const url = `${this.url}/${username}/${playmode}`;
     const response = await httpClient.get(url, {
       params: {
@@ -32,7 +31,7 @@ export class BanchoUsers {
     }
     const rawUser: UserExtended = response.data;
     console.log(
-      `Successfully fetched Bancho user ${username} (${OsuRuleset[ruleset]})`
+      `Successfully fetched Bancho user ${username} (${rulesetName})`
     );
     return rawUser;
   }

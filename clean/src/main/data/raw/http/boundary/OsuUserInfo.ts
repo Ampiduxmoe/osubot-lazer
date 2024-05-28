@@ -1,6 +1,9 @@
+import {OsuRuleset} from '../../../../../primitives/OsuRuleset';
+
 export type OsuUserInfo = {
   id: number;
   username: string;
+  preferredMode: OsuRuleset;
   countryCode: string;
   rankGlobal: number | null;
   rankGlobalHighest:

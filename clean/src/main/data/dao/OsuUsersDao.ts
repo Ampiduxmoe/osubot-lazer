@@ -7,7 +7,7 @@ export interface OsuUsersDao {
     appUserId: string,
     username: string,
     server: OsuServer,
-    ruleset: OsuRuleset
+    ruleset: OsuRuleset | undefined
   ): Promise<OsuUser | undefined>;
 }
 

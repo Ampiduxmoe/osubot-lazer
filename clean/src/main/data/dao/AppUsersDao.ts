@@ -3,7 +3,7 @@ import {OsuServer} from '../../../primitives/OsuServer';
 
 export interface AppUsersDao {
   get(id: string, server: OsuServer): Promise<AppUserInfo | undefined>;
-  addOrUpdate(appUser: AppUserInfo): Promise<void>;
+  addOrUpdate(appUserInfo: AppUserInfo): Promise<void>;
 }
 
 export type AppUserInfo = {

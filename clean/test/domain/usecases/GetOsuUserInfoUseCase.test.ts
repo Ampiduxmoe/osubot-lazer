@@ -2,9 +2,9 @@
 import assert from 'assert';
 import {GetOsuUserInfoUseCase} from '../../../src/main/domain/usecases/get_osu_user_info/GetOsuUserInfoUseCase';
 import {GetOsuUserInfoRequest} from '../../../src/main/domain/usecases/get_osu_user_info/GetOsuUserInfoRequest';
-import {OsuServer} from '../../../src/primitives/OsuServer';
+import {ALL_OSU_SERVERS, OsuServer} from '../../../src/primitives/OsuServer';
 import {getFakeOsuUserUsername} from '../../mocks/Generators';
-import {OsuRuleset} from '../../../src/primitives/OsuRuleset';
+import {ALL_OSU_RULESETS, OsuRuleset} from '../../../src/primitives/OsuRuleset';
 import {OsuUsersDaoImpl} from '../../../src/main/data/dao/OsuUsersDaoImpl';
 import {FakeBanchoApi} from '../../mocks/data/raw/http/BanchoApi';
 import {SqliteDb} from '../../../src/main/data/raw/db/SqliteDb';
@@ -45,13 +45,8 @@ describe('GetOsuUserInfoUseCase', function () {
     await Promise.all(tables.map(t => t.createTable()));
   });
 
-  // https://stackoverflow.com/a/48768775
-  const enumKeys: (e: object) => string[] = e =>
-    Object.keys(e).filter(x => {
-      return isNaN(Number(x));
-    });
-  const servers = enumKeys(OsuServer) as (keyof typeof OsuServer)[];
-  const rulesets = enumKeys(OsuRuleset) as (keyof typeof OsuRuleset)[];
+  const servers = ALL_OSU_SERVERS;
+  const rulesets = ALL_OSU_RULESETS;
   describe('#execute()', function () {
     it('should return OsuUserInfo as undefined when user does not exist', async function () {
       const username = 'this username should not exist';

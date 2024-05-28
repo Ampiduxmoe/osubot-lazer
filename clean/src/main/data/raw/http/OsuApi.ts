@@ -8,7 +8,7 @@ export interface OsuApi {
 
   getUser(
     username: string,
-    ruleset: OsuRuleset
+    ruleset: OsuRuleset | undefined
   ): Promise<OsuUserInfo | undefined>;
 
   getRecentPlays(

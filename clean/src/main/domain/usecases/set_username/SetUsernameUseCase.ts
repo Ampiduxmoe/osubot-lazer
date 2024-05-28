@@ -2,7 +2,6 @@ import {UseCase} from '../UseCase';
 import {SetUsernameRequest} from './SetUsernameRequest';
 import {SetUsernameResponse} from './SetUsernameResponse';
 import {OsuUsersDao} from '../../../data/dao/OsuUsersDao';
-import {OsuRuleset} from '../../../../primitives/OsuRuleset';
 import {AppUsersDao} from '../../../data/dao/AppUsersDao';
 
 export class SetUsernameUseCase
@@ -20,7 +19,7 @@ export class SetUsernameUseCase
       params.appUserId,
       params.username,
       params.server,
-      OsuRuleset.osu
+      params.mode
     );
     if (osuUser === undefined) {
       return {
@@ -28,16 +27,18 @@ export class SetUsernameUseCase
         failureReason: 'user not found',
       };
     }
+    const mode = params.mode ?? osuUser.preferredMode;
     this.appUsers.addOrUpdate({
       id: params.appUserId,
       server: params.server,
       osuId: osuUser.id,
       username: osuUser.username,
-      ruleset: OsuRuleset.osu,
+      ruleset: mode,
     });
     return {
       isFailure: false,
       username: osuUser.username,
+      mode: mode,
     };
   }
 }
