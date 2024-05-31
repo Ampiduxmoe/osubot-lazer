@@ -1,4 +1,4 @@
-export type RawScoreSimulationResult = {
+export type RawScoreSimulationResultOsu = {
   score: {
     ruleset_id: number;
     beatmap_id: number;

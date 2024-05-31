@@ -1,4 +1,7 @@
-import {ScoreSimulationInfo} from '../raw/http/boundary/ScoreSimulationInfo';
+import {ScoreSimulationInfoCtb} from '../raw/http/boundary/ScoreSimulationInfoCtb';
+import {ScoreSimulationInfoMania} from '../raw/http/boundary/ScoreSimulationInfoMania';
+import {ScoreSimulationInfoOsu} from '../raw/http/boundary/ScoreSimulationInfoOsu';
+import {ScoreSimulationInfoTaiko} from '../raw/http/boundary/ScoreSimulationInfoTaiko';
 
 export interface ScoreSimulationsDao {
   getForOsu(
@@ -20,12 +23,38 @@ export interface ScoreSimulationsDao {
     }
   ): Promise<SimulatedScoreOsu | undefined>;
 
-  getForTaiko(): Promise<undefined>;
-  getForCtb(): Promise<undefined>;
-  getForMania(): Promise<undefined>;
+  getForTaiko(
+    beatmapId: number,
+    mods: string[]
+  ): Promise<SimulatedScoreTaiko | undefined>;
+
+  getForCtb(
+    beatmapId: number,
+    mods: string[]
+  ): Promise<SimulatedScoreCtb | undefined>;
+
+  getForMania(
+    beatmapId: number,
+    mods: string[]
+  ): Promise<SimulatedScoreMania | undefined>;
 }
 
 export type SimulatedScoreOsu = Pick<
-  ScoreSimulationInfo,
-  keyof ScoreSimulationInfo
+  ScoreSimulationInfoOsu,
+  keyof ScoreSimulationInfoOsu
+>;
+
+export type SimulatedScoreTaiko = Pick<
+  ScoreSimulationInfoTaiko,
+  keyof ScoreSimulationInfoTaiko
+>;
+
+export type SimulatedScoreCtb = Pick<
+  ScoreSimulationInfoCtb,
+  keyof ScoreSimulationInfoCtb
+>;
+
+export type SimulatedScoreMania = Pick<
+  ScoreSimulationInfoMania,
+  keyof ScoreSimulationInfoMania
 >;

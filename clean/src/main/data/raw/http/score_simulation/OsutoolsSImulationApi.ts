@@ -1,13 +1,20 @@
 import axios, {AxiosInstance} from 'axios';
 import {ScoreSimulationApi} from '../ScoreSimulationApi';
-import {ScoreSimulationInfo} from '../boundary/ScoreSimulationInfo';
-import {RawScoreSimulationResult} from './RawScoreSimulationResult';
+import {ScoreSimulationInfoOsu} from '../boundary/ScoreSimulationInfoOsu';
+import {RawScoreSimulationResultOsu} from './RawScoreSimulationResultOsu';
 import {round} from '../../../../../primitives/Numbers';
 import {
-  RawScoreSimulationParams,
-  RawScoreSimulationParamsDt,
-  RawScoreSimulationParamsHt,
-} from './RawSimulationParams';
+  RawScoreSimulationParamsOsu,
+  RawScoreSimulationParamsOsuDt,
+  RawScoreSimulationParamsOsuHt,
+} from './RawSimulationParamsOsu';
+import {ScoreSimulationInfoTaiko} from '../boundary/ScoreSimulationInfoTaiko';
+import {ScoreSimulationInfoCtb} from '../boundary/ScoreSimulationInfoCtb';
+import {ScoreSimulationInfoMania} from '../boundary/ScoreSimulationInfoMania';
+import {RawScoreSimulationParamsTaiko} from './RawSimulationParamsTaiko';
+import {RawScoreSimulationResultCompact} from './RawScoreSimulationResultCompact';
+import {RawScoreSimulationParamsCtb} from './RawSimulationParamsCtb';
+import {RawScoreSimulationParamsMania} from './RawSimulationParamsMania';
 
 export class OsutoolsSimulationApi implements ScoreSimulationApi {
   private httpClient: AxiosInstance;
@@ -43,9 +50,9 @@ export class OsutoolsSimulationApi implements ScoreSimulationApi {
         hp?: number;
       };
     }
-  ): Promise<ScoreSimulationInfo> {
+  ): Promise<ScoreSimulationInfoOsu> {
     let url = '/osu/';
-    const body: RawScoreSimulationParams = {
+    const body: RawScoreSimulationParamsOsu = {
       beatmap_id: beatmapId,
       mods: mods,
       combo: combo,
@@ -59,14 +66,14 @@ export class OsutoolsSimulationApi implements ScoreSimulationApi {
       simulationParams.dtRate !== undefined
     ) {
       url = url + 'dt';
-      (body as RawScoreSimulationParamsDt).dt_rate = simulationParams.dtRate;
+      (body as RawScoreSimulationParamsOsuDt).dt_rate = simulationParams.dtRate;
     } else if (
       mods.find(m => m.toLowerCase() === 'ht') !== undefined &&
       simulationParams !== undefined &&
       simulationParams.htRate !== undefined
     ) {
       url = url + 'ht';
-      (body as RawScoreSimulationParamsHt).ht_rate = simulationParams.htRate;
+      (body as RawScoreSimulationParamsOsuHt).ht_rate = simulationParams.htRate;
     }
     if (
       mods.find(m => m.toLowerCase() === 'da') !== undefined &&
@@ -90,7 +97,7 @@ export class OsutoolsSimulationApi implements ScoreSimulationApi {
     }
     console.log(`Trying to get score simulation (${JSON.stringify(body)})...`);
     const response = await this.httpClient.post(url, body);
-    const simulationResult: RawScoreSimulationResult = response.data;
+    const simulationResult: RawScoreSimulationResultOsu = response.data;
     const {score, performance_attributes, difficulty_attributes} =
       simulationResult;
     return {
@@ -122,6 +129,72 @@ export class OsutoolsSimulationApi implements ScoreSimulationApi {
         sliderFactor: difficulty_attributes.slider_factor,
         approachRate: difficulty_attributes.approach_rate,
         overallDifficulty: difficulty_attributes.overall_difficulty,
+      },
+    };
+  }
+
+  async simulateTaikoDefault(
+    beatmapId: number,
+    mods: string[]
+  ): Promise<ScoreSimulationInfoTaiko> {
+    const url = '/taiko/';
+    const body: RawScoreSimulationParamsTaiko = {
+      beatmap_id: beatmapId,
+      mods: mods,
+      misses: 0,
+      goods: 0,
+    };
+    console.log(`Trying to get score simulation (${JSON.stringify(body)})...`);
+    const response = await this.httpClient.post(url, body);
+    const simulationResult: RawScoreSimulationResultCompact = response.data;
+    return {
+      difficultyAttributes: {
+        starRating: simulationResult.difficulty_attributes.star_rating,
+        maxCombo: simulationResult.difficulty_attributes.max_combo,
+      },
+    };
+  }
+
+  async simulateCtbDefault(
+    beatmapId: number,
+    mods: string[]
+  ): Promise<ScoreSimulationInfoCtb> {
+    const url = '/ctb/';
+    const body: RawScoreSimulationParamsCtb = {
+      beatmap_id: beatmapId,
+      mods: mods,
+      misses: 0,
+      droplets: 0,
+      tiny_droplets: 0,
+    };
+    console.log(`Trying to get score simulation (${JSON.stringify(body)})...`);
+    const response = await this.httpClient.post(url, body);
+    const simulationResult: RawScoreSimulationResultCompact = response.data;
+    return {
+      difficultyAttributes: {
+        starRating: simulationResult.difficulty_attributes.star_rating,
+        maxCombo: simulationResult.difficulty_attributes.max_combo,
+      },
+    };
+  }
+
+  async simulateManiaDefault(
+    beatmapId: number,
+    mods: string[]
+  ): Promise<ScoreSimulationInfoMania> {
+    const url = '/mania/';
+    const body: RawScoreSimulationParamsMania = {
+      beatmap_id: beatmapId,
+      mods: mods,
+      score: 1e6,
+    };
+    console.log(`Trying to get score simulation (${JSON.stringify(body)})...`);
+    const response = await this.httpClient.post(url, body);
+    const simulationResult: RawScoreSimulationResultCompact = response.data;
+    return {
+      difficultyAttributes: {
+        starRating: simulationResult.difficulty_attributes.star_rating,
+        maxCombo: simulationResult.difficulty_attributes.max_combo,
       },
     };
   }

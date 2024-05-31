@@ -1,10 +1,7 @@
 import {MaximumStatistics} from '../common_types/MaximumStatistics';
 import {Mod} from '../common_types/Mod';
 import {ScoreGrade} from '../common_types/ScoreGrade';
-import {
-  ScoreStatisticsLazer,
-  ScoreStatisticsLegacy,
-} from '../common_types/ScoreStatistics';
+import {ScoreStatistics} from '../common_types/ScoreStatistics';
 import {ScoreType} from '../common_types/ScoreType';
 import {ISO8601Timestamp} from '../common_types/ISO8601Timestamp';
 import {Playmode} from '../common_types/Playmode';
@@ -25,7 +22,7 @@ export type RecentScore = {
 
   maximum_statistics: MaximumStatistics;
   mods: Mod[];
-  statistics: ScoreStatisticsLazer | ScoreStatisticsLegacy;
+  statistics: ScoreStatistics;
   beatmap_id: number;
   best_id: number | null;
   id: number;

@@ -1,5 +1,6 @@
 export type MaximumStatistics = {
-  great: number;
+  great?: number;
+  perfect?: number;
   legacy_combo_increase?: number;
   /* Slider end? */
   ignore_hit?: number;

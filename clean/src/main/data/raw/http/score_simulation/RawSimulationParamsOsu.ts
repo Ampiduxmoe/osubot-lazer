@@ -1,4 +1,4 @@
-export type RawScoreSimulationParams = {
+export type RawScoreSimulationParamsOsu = {
   beatmap_id: number;
   mods: string[];
   combo: number | null;
@@ -13,10 +13,10 @@ export type RawScoreSimulationParams = {
   };
 };
 
-export type RawScoreSimulationParamsDt = RawScoreSimulationParams & {
+export type RawScoreSimulationParamsOsuDt = RawScoreSimulationParamsOsu & {
   dt_rate: number;
 };
 
-export type RawScoreSimulationParamsHt = RawScoreSimulationParams & {
+export type RawScoreSimulationParamsOsuHt = RawScoreSimulationParamsOsu & {
   ht_rate: number;
 };

@@ -7,6 +7,9 @@ import {
   SettingsDT,
   SettingsHT,
   SettingsDA,
+  RecentPlayStatisticsTaiko,
+  RecentPlayStatisticsMania,
+  RecentPlayStatisticsCtb,
 } from './GetRecentPlaysResponse';
 import {
   OsuRecentScoresDao,
@@ -79,11 +82,38 @@ export class GetRecentPlaysUseCase
           params.mods
         );
       case OsuRuleset.taiko:
-        throw Error('Not implemented'); // TODO
+        return await this.executeForTaiko(
+          appUserId,
+          server,
+          caseCorrectUsername,
+          osuId,
+          params.includeFails,
+          params.startPosition,
+          params.quantity,
+          params.mods
+        );
       case OsuRuleset.ctb:
-        throw Error('Not implemented'); // TODO
+        return await this.executeForCtb(
+          appUserId,
+          server,
+          caseCorrectUsername,
+          osuId,
+          params.includeFails,
+          params.startPosition,
+          params.quantity,
+          params.mods
+        );
       case OsuRuleset.mania:
-        throw Error('Not implemented'); // TODO
+        return await this.executeForMania(
+          appUserId,
+          server,
+          caseCorrectUsername,
+          osuId,
+          params.includeFails,
+          params.startPosition,
+          params.quantity,
+          params.mods
+        );
       default:
         throw Error('Switch case is not exhaustive!');
     }
@@ -131,7 +161,12 @@ export class GetRecentPlaysUseCase
     const recentPlayPromises = rawRecentScores.map(async s => {
       const mods = s.mods.map(s => s.acronym);
       const map = s.beatmap;
-      const counts = s.statistics;
+      const counts = {
+        great: s.statistics.great ?? 0,
+        ok: s.statistics.ok ?? 0,
+        meh: s.statistics.meh ?? 0,
+        miss: s.statistics.miss ?? 0,
+      };
       const hitcountsTotal =
         counts.great + counts.ok + counts.meh + counts.miss;
       const objectsTotal =
@@ -221,10 +256,12 @@ export class GetRecentPlaysUseCase
           ifFc: undefined,
           ifSs: undefined,
         },
-        countGreat: s.statistics.great,
-        countOk: s.statistics.ok,
-        countMeh: s.statistics.meh,
-        countMiss: s.statistics.miss,
+        statistics: {
+          countGreat: counts.great,
+          countOk: counts.ok,
+          countMeh: counts.meh,
+          countMiss: counts.miss,
+        },
         grade: s.rank,
       };
       return osuUserRecentScore;
@@ -250,6 +287,141 @@ export class GetRecentPlaysUseCase
       },
     };
   }
+
+  async executeForTaiko(
+    appUserId: string,
+    server: OsuServer,
+    username: string,
+    osuId: number,
+    includeFails: boolean,
+    startPosition: number,
+    quantity: number,
+    mods: {
+      acronym: string;
+      isOptional: boolean;
+    }[]
+  ): Promise<GetRecentPlaysResponse> {
+    const ruleset = OsuRuleset.taiko;
+    const rawRecentScores = await this.recentScores.get(
+      appUserId,
+      osuId,
+      server,
+      includeFails,
+      mods,
+      quantity,
+      startPosition,
+      ruleset
+    );
+    const recentPlayPromises = rawRecentScores.map(async s => {
+      const mods = s.mods.map(s => s.acronym);
+      const scoreSimulation = await this.scoreSimulations.getForTaiko(
+        s.beatmap.id,
+        mods
+      );
+      const maxCombo = scoreSimulation?.difficultyAttributes.maxCombo;
+      const stars = scoreSimulation?.difficultyAttributes.starRating;
+      return recentScoreToRecentPlay(s, ruleset, maxCombo, stars);
+    });
+    const recentPlays = await Promise.all(recentPlayPromises);
+    return {
+      isFailure: false,
+      ruleset: ruleset,
+      recentPlays: {
+        username: username,
+        plays: recentPlays,
+      },
+    };
+  }
+
+  async executeForCtb(
+    appUserId: string,
+    server: OsuServer,
+    username: string,
+    osuId: number,
+    includeFails: boolean,
+    startPosition: number,
+    quantity: number,
+    mods: {
+      acronym: string;
+      isOptional: boolean;
+    }[]
+  ): Promise<GetRecentPlaysResponse> {
+    const ruleset = OsuRuleset.ctb;
+    const rawRecentScores = await this.recentScores.get(
+      appUserId,
+      osuId,
+      server,
+      includeFails,
+      mods,
+      quantity,
+      startPosition,
+      ruleset
+    );
+    const recentPlayPromises = rawRecentScores.map(async s => {
+      const mods = s.mods.map(s => s.acronym);
+      const scoreSimulation = await this.scoreSimulations.getForCtb(
+        s.beatmap.id,
+        mods
+      );
+      const maxCombo = scoreSimulation?.difficultyAttributes.maxCombo;
+      const stars = scoreSimulation?.difficultyAttributes.starRating;
+      return recentScoreToRecentPlay(s, ruleset, maxCombo, stars);
+    });
+    const recentPlays = await Promise.all(recentPlayPromises);
+    return {
+      isFailure: false,
+      ruleset: ruleset,
+      recentPlays: {
+        username: username,
+        plays: recentPlays,
+      },
+    };
+  }
+
+  async executeForMania(
+    appUserId: string,
+    server: OsuServer,
+    username: string,
+    osuId: number,
+    includeFails: boolean,
+    startPosition: number,
+    quantity: number,
+    mods: {
+      acronym: string;
+      isOptional: boolean;
+    }[]
+  ): Promise<GetRecentPlaysResponse> {
+    const ruleset = OsuRuleset.mania;
+    const rawRecentScores = await this.recentScores.get(
+      appUserId,
+      osuId,
+      server,
+      includeFails,
+      mods,
+      quantity,
+      startPosition,
+      ruleset
+    );
+    const recentPlayPromises = rawRecentScores.map(async s => {
+      const mods = s.mods.map(s => s.acronym);
+      const scoreSimulation = await this.scoreSimulations.getForMania(
+        s.beatmap.id,
+        mods
+      );
+      const maxCombo = scoreSimulation?.difficultyAttributes.maxCombo;
+      const stars = scoreSimulation?.difficultyAttributes.starRating;
+      return recentScoreToRecentPlay(s, ruleset, maxCombo, stars);
+    });
+    const recentPlays = await Promise.all(recentPlayPromises);
+    return {
+      isFailure: false,
+      ruleset: ruleset,
+      recentPlays: {
+        username: username,
+        plays: recentPlays,
+      },
+    };
+  }
 }
 
 async function getOsuFcAndSsValues(
@@ -261,7 +433,12 @@ async function getOsuFcAndSsValues(
 }> {
   const mods = score.mods.map(s => s.acronym);
   const map = score.beatmap;
-  const counts = score.statistics;
+  const counts = {
+    great: score.statistics.great ?? 0,
+    ok: score.statistics.ok ?? 0,
+    meh: score.statistics.meh ?? 0,
+    miss: score.statistics.miss ?? 0,
+  };
   const hitcountsTotal = counts.great + counts.ok + counts.meh + counts.miss;
   const objectsTotal = map.countCircles + map.countSliders + map.countSpinners;
   const totalToHitRatio = objectsTotal / hitcountsTotal;
@@ -353,4 +530,88 @@ function extractBeatmapsetRankStatus(score: RecentScore): BeatmapsetRankStatus {
     default:
       throw Error('Unkown beatmapset status');
   }
+}
+
+// general function for taiko, ctb and mania modes
+function recentScoreToRecentPlay(
+  s: RecentScore,
+  ruleset: OsuRuleset,
+  maxCombo: number | undefined,
+  stars: number | undefined
+): RecentPlay {
+  let statistics:
+    | RecentPlayStatisticsTaiko
+    | RecentPlayStatisticsCtb
+    | RecentPlayStatisticsMania;
+  if (ruleset === OsuRuleset.taiko) {
+    const taikoStatistics: RecentPlayStatisticsTaiko = {
+      countGreat: s.statistics.great ?? 0,
+      countOk: s.statistics.ok ?? 0,
+      countMiss: s.statistics.miss ?? 0,
+    };
+    statistics = taikoStatistics;
+  } else if (ruleset === OsuRuleset.ctb) {
+    const ctbStatistics: RecentPlayStatisticsCtb = {
+      countGreat: s.statistics.great ?? 0,
+      countLargeTickHit: s.statistics.largeTickHit ?? 0,
+      countSmallTickHit: s.statistics.smallTickHit ?? 0,
+      countSmallTickMiss: s.statistics.smallTickMiss ?? 0,
+      countMiss: s.statistics.miss ?? 0,
+    };
+    statistics = ctbStatistics;
+  } else if (ruleset === OsuRuleset.mania) {
+    const maniaStatistics: RecentPlayStatisticsMania = {
+      countPerfect: s.statistics.perfect ?? 0,
+      countGreat: s.statistics.great ?? 0,
+      countGood: s.statistics.good ?? 0,
+      countOk: s.statistics.ok ?? 0,
+      countMeh: s.statistics.meh ?? 0,
+      countMiss: s.statistics.miss ?? 0,
+    };
+    statistics = maniaStatistics;
+  } else {
+    throw Error('This method should not be used for other modes');
+  }
+  return {
+    absolutePosition: s.absolutePosision,
+    beatmapset: {
+      status: extractBeatmapsetRankStatus(s),
+      artist: s.beatmapset.artist,
+      title: s.beatmapset.title,
+      creator: s.beatmapset.creator,
+    },
+    beatmap: {
+      difficultyName: s.beatmap.version,
+      totalLength: s.beatmap.totalLength,
+      drainLength: s.beatmap.hitLength,
+      bpm: s.beatmap.bpm,
+      stars: s.beatmap.difficultyRating,
+      ar: s.beatmap.ar,
+      cs: s.beatmap.cs,
+      od: s.beatmap.od,
+      hp: s.beatmap.hp,
+      maxCombo: maxCombo,
+      url: s.beatmap.url,
+      countCircles: s.beatmap.countCircles,
+      countSliders: s.beatmap.countSliders,
+      countSpinners: s.beatmap.countSpinners,
+    },
+    mods: s.mods,
+    stars: stars ?? s.beatmap.difficultyRating,
+    ar: s.beatmap.ar,
+    cs: s.beatmap.cs,
+    od: s.beatmap.od,
+    hp: s.beatmap.hp,
+    passed: s.passed,
+    totalScore: s.totalScore,
+    combo: s.maxCombo,
+    accuracy: s.accuracy,
+    pp: {
+      value: s.pp ?? undefined,
+      ifFc: undefined,
+      ifSs: undefined,
+    },
+    statistics: statistics,
+    grade: s.rank,
+  };
 }

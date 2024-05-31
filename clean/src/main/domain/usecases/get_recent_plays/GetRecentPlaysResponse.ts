@@ -54,10 +54,7 @@ export type RecentPlay = {
     ifFc: number | undefined;
     ifSs: number | undefined;
   };
-  countGreat: number;
-  countOk: number;
-  countMeh: number;
-  countMiss: number;
+  statistics: RecentPlayStatistics;
   grade: ScoreGrade;
 };
 
@@ -69,6 +66,42 @@ export type BeatmapsetRankStatus =
   | 'Approved'
   | 'Qualified'
   | 'Loved';
+
+export type RecentPlayStatistics =
+  | RecentPlayStatisticsOsu
+  | RecentPlayStatisticsTaiko
+  | RecentPlayStatisticsCtb
+  | RecentPlayStatisticsMania;
+
+export type RecentPlayStatisticsOsu = {
+  countGreat: number;
+  countOk: number;
+  countMeh: number;
+  countMiss: number;
+};
+
+export type RecentPlayStatisticsTaiko = {
+  countGreat: number;
+  countOk: number;
+  countMiss: number;
+};
+
+export type RecentPlayStatisticsCtb = {
+  countGreat: number;
+  countLargeTickHit: number;
+  countSmallTickHit: number;
+  countSmallTickMiss: number;
+  countMiss: number;
+};
+
+export type RecentPlayStatisticsMania = {
+  countPerfect: number;
+  countGreat: number;
+  countGood: number;
+  countOk: number;
+  countMeh: number;
+  countMiss: number;
+};
 
 export type ScoreGrade = 'SS' | 'S' | 'A' | 'B' | 'C' | 'D' | 'F';
 

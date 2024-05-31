@@ -1,4 +1,4 @@
-export type ScoreSimulationInfo = {
+export type ScoreSimulationInfoOsu = {
   score: {
     mods: string[];
     accuracy: number;

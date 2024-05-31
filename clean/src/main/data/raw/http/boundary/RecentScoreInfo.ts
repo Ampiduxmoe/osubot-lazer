@@ -6,10 +6,15 @@ export type RecentScoreInfo = {
     settings?: object;
   }[];
   statistics: {
-    great: number;
-    ok: number;
-    meh: number;
-    miss: number;
+    great?: number; // osu300, taiko300, ctb300, mania300
+    ok?: number; // osu100, taiko100, mania100
+    meh?: number; // osu50, mania50
+    miss?: number; // osuMiss, taikoMiss, ctbMiss, maniaMiss
+    largeTickHit?: number; // ctb banana or something
+    smallTickHit?: number; // ctb small fruit or something
+    smallTickMiss?: number; // ctb small fruit miss or something
+    perfect?: number; // maniaPerfect300
+    good?: number; // mania200
   };
   rank: 'SS' | 'S' | 'A' | 'B' | 'C' | 'D' | 'F';
   accuracy: number;

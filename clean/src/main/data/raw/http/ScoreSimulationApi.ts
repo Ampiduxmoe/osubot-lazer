@@ -1,4 +1,7 @@
-import {ScoreSimulationInfo} from './boundary/ScoreSimulationInfo';
+import {ScoreSimulationInfoOsu} from './boundary/ScoreSimulationInfoOsu';
+import {ScoreSimulationInfoTaiko} from './boundary/ScoreSimulationInfoTaiko';
+import {ScoreSimulationInfoCtb} from './boundary/ScoreSimulationInfoCtb';
+import {ScoreSimulationInfoMania} from './boundary/ScoreSimulationInfoMania';
 export interface ScoreSimulationApi {
   status(): Promise<string>;
 
@@ -19,5 +22,20 @@ export interface ScoreSimulationApi {
         hp?: number;
       };
     }
-  ): Promise<ScoreSimulationInfo>;
+  ): Promise<ScoreSimulationInfoOsu>;
+
+  simulateTaikoDefault(
+    beatmapId: number,
+    mods: string[]
+  ): Promise<ScoreSimulationInfoTaiko>;
+
+  simulateCtbDefault(
+    beatmapId: number,
+    mods: string[]
+  ): Promise<ScoreSimulationInfoCtb>;
+
+  simulateManiaDefault(
+    beatmapId: number,
+    mods: string[]
+  ): Promise<ScoreSimulationInfoMania>;
 }
