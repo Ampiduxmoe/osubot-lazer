@@ -11,8 +11,8 @@ import {OsuRuleset} from '../../../src/primitives/OsuRuleset';
 
 describe('CachedOsuUsersDao', function () {
   const db = new SqliteDb(':memory:');
-  const idsAndUsernames = new OsuUserSnapshotsImpl(db);
-  const dao: CachedOsuUsersDao = new CachedOsuUsersDaoImpl(idsAndUsernames);
+  const osuUserSnapshots = new OsuUserSnapshotsImpl(db);
+  const dao: CachedOsuUsersDao = new CachedOsuUsersDaoImpl(osuUserSnapshots);
 
   const exampleUserSnapshot: OsuUserSnapshot = {
     username:
@@ -26,8 +26,8 @@ describe('CachedOsuUsersDao', function () {
   };
 
   before(async function () {
-    await idsAndUsernames.createTable();
-    await idsAndUsernames.add(exampleUserSnapshot);
+    await osuUserSnapshots.createTable();
+    await osuUserSnapshots.add(exampleUserSnapshot);
   });
 
   describe('#get()', function () {

@@ -37,7 +37,7 @@ describe('UserInfo', function () {
   {
     const apis = [new FakeBanchoApi()];
     const db = new SqliteDb(':memory:');
-    const idsAndUsernames = new OsuUserSnapshotsImpl(db);
+    const osuUserSnapshots = new OsuUserSnapshotsImpl(db);
     const appUserApiRequestsCounts = new AppUserApiRequestsCountsImpl(db);
     const timeWindows = new TimeWindowsImpl(db);
     appUsers = new AppUsersImpl(db);
@@ -50,7 +50,7 @@ describe('UserInfo', function () {
     );
     const osuUsersDao = new OsuUsersDaoImpl(
       apis,
-      idsAndUsernames,
+      osuUserSnapshots,
       recentApiRequestsDao
     );
     const appUsersDao = new AppUsersDaoImpl(appUsers);
@@ -58,7 +58,12 @@ describe('UserInfo', function () {
     const getOsuUserInfo = new GetOsuUserInfoUseCase(osuUsersDao);
     const getAppUserInfo = new GetAppUserInfoUseCase(appUsersDao);
 
-    tables = [idsAndUsernames, appUserApiRequestsCounts, timeWindows, appUsers];
+    tables = [
+      osuUserSnapshots,
+      appUserApiRequestsCounts,
+      timeWindows,
+      appUsers,
+    ];
     command = new UserInfo(getOsuUserInfo, getAppUserInfo);
   }
 

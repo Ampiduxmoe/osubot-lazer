@@ -21,7 +21,7 @@ describe('GetOsuUserInfoUseCase', function () {
   {
     const apis = [new FakeBanchoApi()];
     const db = new SqliteDb(':memory:');
-    const idsAndUsernames = new OsuUserSnapshotsImpl(db);
+    const osuUserSnapshots = new OsuUserSnapshotsImpl(db);
     const appUserApiRequestsCounts = new AppUserApiRequestsCountsImpl(db);
     const timeWindows = new TimeWindowsImpl(db);
     const requestsSummariesDao = new AppUserApiRequestsSummariesDaoImpl(
@@ -33,11 +33,11 @@ describe('GetOsuUserInfoUseCase', function () {
     );
     const osuUsersDao = new OsuUsersDaoImpl(
       apis,
-      idsAndUsernames,
+      osuUserSnapshots,
       recentApiRequestsDao
     );
 
-    tables = [idsAndUsernames, appUserApiRequestsCounts, timeWindows];
+    tables = [osuUserSnapshots, appUserApiRequestsCounts, timeWindows];
     usecase = new GetOsuUserInfoUseCase(osuUsersDao);
   }
 

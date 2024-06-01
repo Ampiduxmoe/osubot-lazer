@@ -19,7 +19,7 @@ describe('OsuRecentScoresDao', function () {
   {
     const apis = [new FakeBanchoApi()];
     const db = new SqliteDb(':memory:');
-    const idsAndUsernames = new OsuUserSnapshotsImpl(db);
+    const osuUserSnapshots = new OsuUserSnapshotsImpl(db);
     const appUserApiRequestsCounts = new AppUserApiRequestsCountsImpl(db);
     const timeWindows = new TimeWindowsImpl(db);
     const requestsSummariesDao = new AppUserApiRequestsSummariesDaoImpl(
@@ -29,8 +29,8 @@ describe('OsuRecentScoresDao', function () {
     const recentApiRequests = new AppUserRecentApiRequestsDaoImpl(
       requestsSummariesDao
     );
-    tables = [idsAndUsernames, appUserApiRequestsCounts];
-    dao = new OsuRecentScoresDaoImpl(apis, idsAndUsernames, recentApiRequests);
+    tables = [osuUserSnapshots, appUserApiRequestsCounts];
+    dao = new OsuRecentScoresDaoImpl(apis, osuUserSnapshots, recentApiRequests);
   }
 
   before(async function () {

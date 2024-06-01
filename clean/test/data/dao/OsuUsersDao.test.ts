@@ -20,7 +20,7 @@ describe('OsuUsersDao', async function () {
   {
     const apis = [new FakeBanchoApi()];
     const db = new SqliteDb(':memory:');
-    const idsAndUsernames = new OsuUserSnapshotsImpl(db);
+    const osuUserSnapshots = new OsuUserSnapshotsImpl(db);
     const appUserApiRequestsCounts = new AppUserApiRequestsCountsImpl(db);
     const timeWindows = new TimeWindowsImpl(db);
     const requestsSummariesDao = new AppUserApiRequestsSummariesDaoImpl(
@@ -31,8 +31,8 @@ describe('OsuUsersDao', async function () {
       requestsSummariesDao
     );
 
-    tables = [idsAndUsernames];
-    dao = new OsuUsersDaoImpl(apis, idsAndUsernames, recentApiRequests);
+    tables = [osuUserSnapshots];
+    dao = new OsuUsersDaoImpl(apis, osuUserSnapshots, recentApiRequests);
   }
 
   before(async function () {
