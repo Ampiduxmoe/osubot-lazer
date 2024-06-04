@@ -173,7 +173,7 @@ describe('UserInfo', function () {
       for (const serverAndPrefix of SERVERS) {
         for (const prefix of command.prefixes) {
           const username = 'username';
-          const goodText = `${serverAndPrefix.prefix} ${prefix} ${username}`;
+          const goodText = `${serverAndPrefix.prefix} ${prefix} ${username} mode=mania`;
           const msg = createWithOnlyText({
             senderId: 1,
             text: goodText,
@@ -208,7 +208,7 @@ describe('UserInfo', function () {
       for (const serverAndPrefix of SERVERS) {
         for (const prefix of command.prefixes) {
           const username = 'username';
-          const goodText = `${serverAndPrefix.prefix} ${prefix} ${username}`;
+          const goodText = `${serverAndPrefix.prefix} ${prefix} ${username} mode=ctb`;
           const msg = createWithPayload({
             senderId: 1,
             text: 'lorem ipsum',
