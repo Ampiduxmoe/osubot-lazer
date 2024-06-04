@@ -221,12 +221,26 @@ export class UserRecentPlays extends VkCommand<
         username
       );
     }
+    return this.createRecentPlaysMessage(
+      recentPlays,
+      server,
+      mode!,
+      passesOnly
+    );
+  }
 
-    const serverString = OsuServer[params.server];
-    const modeString = OsuRuleset[mode!];
+  createRecentPlaysMessage(
+    recentPlays: OsuUserRecentPlays,
+    server: OsuServer,
+    mode: OsuRuleset,
+    passesOnly: boolean
+  ): VkOutputMessage {
+    const serverString = OsuServer[server];
+    const modeString = OsuRuleset[mode];
     const oneScore = recentPlays.plays.length === 1;
     const passesString = oneScore ? 'Последний пасс' : 'Последние пассы';
     const scoresString = oneScore ? 'Последний скор' : 'Последние скоры';
+    const username = recentPlays.username;
     const scoresText = recentPlays.plays
       .map((p, i) =>
         oneScore
