@@ -48,7 +48,7 @@ describe('OsuUsersDao', async function () {
         OsuServer.Bancho,
         OsuRuleset.osu
       );
-      assert.equal(result, undefined);
+      assert.strictEqual(result, undefined);
     });
     it('should return OsuUser when user exists', async function () {
       const appUserId = 'fake-app-user-id';
@@ -62,7 +62,7 @@ describe('OsuUsersDao', async function () {
         OsuServer.Bancho,
         OsuRuleset.osu
       );
-      assert.notEqual(result, undefined);
+      assert.notStrictEqual(result, undefined);
     });
   });
 });

@@ -47,7 +47,7 @@ describe('GetAppUserInfoUseCase', function () {
         server: OsuServer.Bancho,
       };
       const result = await usecase.execute(request);
-      assert.equal(result.userInfo, undefined);
+      assert.strictEqual(result.userInfo, undefined);
     });
     it('should return correct AppUserInfo when user exists', async function () {
       const request: GetAppUserInfoRequest = {
@@ -55,11 +55,11 @@ describe('GetAppUserInfoUseCase', function () {
         server: existingAppUser.server,
       };
       const result = await usecase.execute(request);
-      assert.notEqual(result.userInfo, undefined);
+      assert.notStrictEqual(result.userInfo, undefined);
       const resultUserInfo = result.userInfo!;
-      assert.equal(resultUserInfo.osuId, existingAppUser.osu_id);
-      assert.equal(resultUserInfo.ruleset, existingAppUser.ruleset);
-      assert.equal(resultUserInfo.username, existingAppUser.username);
+      assert.strictEqual(resultUserInfo.osuId, existingAppUser.osu_id);
+      assert.strictEqual(resultUserInfo.ruleset, existingAppUser.ruleset);
+      assert.strictEqual(resultUserInfo.username, existingAppUser.username);
     });
   });
 });

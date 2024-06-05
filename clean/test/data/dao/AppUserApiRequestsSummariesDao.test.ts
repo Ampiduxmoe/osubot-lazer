@@ -43,7 +43,7 @@ describe('AppUserApiRequestsSummariesDao', function () {
         999999999999,
         exampleAppUserApiRequests.appUserId
       );
-      assert.equal(result.length, 0);
+      assert.strictEqual(result.length, 0);
     });
     it('should return AppUserApiRequestsSummary when corresponding entry exists', async function () {
       const result = await dao.get(
@@ -51,13 +51,16 @@ describe('AppUserApiRequestsSummariesDao', function () {
         999999999999,
         exampleAppUserApiRequests.appUserId
       );
-      assert.equal(result.length, 1);
-      assert.equal(result[0].appUsers.length, 1);
-      assert.equal(result[0].appUsers[0].counts.length, 1);
+      assert.strictEqual(result.length, 1);
+      assert.strictEqual(result[0].appUsers.length, 1);
+      assert.strictEqual(result[0].appUsers[0].counts.length, 1);
       const requests = result[0].appUsers[0].counts[0];
-      assert.equal(requests.count, exampleAppUserApiRequests.count);
-      assert.equal(requests.target, exampleAppUserApiRequests.target);
-      assert.equal(requests.subtarget, exampleAppUserApiRequests.subtarget);
+      assert.strictEqual(requests.count, exampleAppUserApiRequests.count);
+      assert.strictEqual(requests.target, exampleAppUserApiRequests.target);
+      assert.strictEqual(
+        requests.subtarget,
+        exampleAppUserApiRequests.subtarget
+      );
     });
   });
   describe('#add()', function () {
@@ -68,9 +71,9 @@ describe('AppUserApiRequestsSummariesDao', function () {
         999999999999,
         exampleAppUserApiRequests.appUserId
       );
-      assert.equal(result.length, 1);
+      assert.strictEqual(result.length, 1);
       const requests = result[0].appUsers[0].counts[0];
-      assert.equal(requests.count, exampleAppUserApiRequests.count * 2);
+      assert.strictEqual(requests.count, exampleAppUserApiRequests.count * 2);
     });
     it('should correctly stack counts to existing time window', async function () {
       exampleAppUserApiRequests.subtarget = 'new subtarget';
@@ -80,12 +83,12 @@ describe('AppUserApiRequestsSummariesDao', function () {
         999999999999,
         exampleAppUserApiRequests.appUserId
       );
-      assert.equal(result.length, 1);
-      assert.equal(result[0].appUsers[0].counts.length, 2);
+      assert.strictEqual(result.length, 1);
+      assert.strictEqual(result[0].appUsers[0].counts.length, 2);
       const requests = result[0].appUsers[0].counts.find(
         x => x.subtarget === exampleAppUserApiRequests.subtarget
       );
-      assert.notEqual(requests, undefined);
+      assert.notStrictEqual(requests, undefined);
     });
     it('should correctly add counts to different time window', async function () {
       exampleAppUserApiRequests.time = 321321321321;
@@ -95,7 +98,7 @@ describe('AppUserApiRequestsSummariesDao', function () {
         999999999999,
         exampleAppUserApiRequests.appUserId
       );
-      assert.equal(result.length, 2);
+      assert.strictEqual(result.length, 2);
     });
   });
 });

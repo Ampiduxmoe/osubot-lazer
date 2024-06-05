@@ -51,17 +51,20 @@ describe('AppUserRecentApiRequestsDao', function () {
         'app user id that does not exist',
         'target that does not exist'
       );
-      assert.equal(result.length, 0);
+      assert.strictEqual(result.length, 0);
     });
     it('should return AppUserApiRequests when corresponding entry exists', async function () {
       const result = await dao.get(
         exampleAppUserApiRequests.appUserId,
         exampleAppUserApiRequests.target
       );
-      assert.equal(result.length, 1);
-      assert.equal(result[0].subtarget, exampleAppUserApiRequests.subtarget);
-      assert.equal(result[0].time, exampleAppUserApiRequests.time);
-      assert.equal(result[0].count, exampleAppUserApiRequests.count);
+      assert.strictEqual(result.length, 1);
+      assert.strictEqual(
+        result[0].subtarget,
+        exampleAppUserApiRequests.subtarget
+      );
+      assert.strictEqual(result[0].time, exampleAppUserApiRequests.time);
+      assert.strictEqual(result[0].count, exampleAppUserApiRequests.count);
     });
   });
   describe('#add()', function () {
@@ -71,8 +74,8 @@ describe('AppUserRecentApiRequestsDao', function () {
         exampleAppUserApiRequests.appUserId,
         exampleAppUserApiRequests.target
       );
-      assert.equal(result.length, 2);
-      assert.equal(
+      assert.strictEqual(result.length, 2);
+      assert.strictEqual(
         result[0].count + result[1].count,
         exampleAppUserApiRequests.count * 2
       );
@@ -85,7 +88,7 @@ describe('AppUserRecentApiRequestsDao', function () {
         exampleAppUserApiRequests.appUserId,
         exampleAppUserApiRequests.target
       );
-      assert.equal(result.length, 0);
+      assert.strictEqual(result.length, 0);
     });
   });
   describe('#events.onNewRequests.subscrube()', function () {
@@ -95,15 +98,15 @@ describe('AppUserRecentApiRequestsDao', function () {
         localRequestsCount += requests.count;
       });
       await dao.add(exampleAppUserApiRequests);
-      assert.equal(localRequestsCount, exampleAppUserApiRequests.count);
-      assert.equal(exampleSubscribeCallbackInvokeCount, 3);
+      assert.strictEqual(localRequestsCount, exampleAppUserApiRequests.count);
+      assert.strictEqual(exampleSubscribeCallbackInvokeCount, 3);
     });
   });
   describe('#events.onNewRequests.unsubscrube()', function () {
     it('after calling unsubscribe on callback it should not be called anymore', async function () {
       dao.events.onNewRequests.unsubscribe(exampleSubscribeCallback);
       await dao.add(exampleAppUserApiRequests);
-      assert.equal(exampleSubscribeCallbackInvokeCount, 3);
+      assert.strictEqual(exampleSubscribeCallbackInvokeCount, 3);
     });
   });
 });

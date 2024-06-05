@@ -73,18 +73,18 @@ describe('TimeWindows', function () {
         end_time: -1,
       });
       const row = await table.get({id: 4});
-      assert.notEqual(row, undefined);
+      assert.notStrictEqual(row, undefined);
     });
     it('#getAllByIds() should correctly return multiple rows', async function () {
       const rows = await table.getAllByIds([1, 3]);
-      assert.equal(rows.length, 2);
+      assert.strictEqual(rows.length, 2);
       for (const referenceEntity of [firstEntityUpdated, thirdEntity]) {
         const entityMatch = rows.find(
           x =>
             x.start_time === referenceEntity.start_time &&
             x.end_time === referenceEntity.end_time
         );
-        assert.notEqual(entityMatch, undefined);
+        assert.notStrictEqual(entityMatch, undefined);
         const referenceId =
           referenceEntity.start_time === firstEntityUpdated.start_time ? 1 : 3;
         assertTwoTestEntitiesAreEqual({
@@ -109,13 +109,13 @@ describe('TimeWindows', function () {
     it('should correctly add multiple rows on #addAllWithoutIds() call', async function () {
       await table.addAllWithoutIds(newTimeWindows);
       const rows = await table.getAllByIds(newIds);
-      assert.equal(rows.length, newIds.length);
+      assert.strictEqual(rows.length, newIds.length);
     });
     it('should correctly return multiple rows when using #getAllByTimeInterval()', async function () {
       const startTime = 5 * 10 + 5;
       const endTime = 9 * 10 + 5;
       const rows = await table.getAllByTimeInterval(startTime, endTime);
-      assert.equal(rows.length, 3);
+      assert.strictEqual(rows.length, 3);
       const referenceIds = [6, 7, 8];
       const referenceEntities = referenceIds.map(
         refId => newTimeWindows[newIds.indexOf(refId)]
@@ -124,7 +124,7 @@ describe('TimeWindows', function () {
         const referenceEntityId =
           referenceIds[referenceEntities.indexOf(referenceEntity)];
         const entityMatch = rows.find(x => x.id === referenceEntityId);
-        assert.notEqual(entityMatch, undefined);
+        assert.notStrictEqual(entityMatch, undefined);
         assertTwoTestEntitiesAreEqual({
           firstObject: {
             value: entityMatch!,
@@ -142,9 +142,12 @@ describe('TimeWindows', function () {
       const timeWindowsToDelete = [5, 7, 9].map(n => ({id: n}));
       await table.deleteAll(timeWindowsToDelete);
       const rows = await table.getAllByIds(newIds);
-      assert.equal(rows.length, newIds.length - timeWindowsToDelete.length);
+      assert.strictEqual(
+        rows.length,
+        newIds.length - timeWindowsToDelete.length
+      );
       for (const deletedWindow of timeWindowsToDelete) {
-        assert.equal(
+        assert.strictEqual(
           rows.find(x => x.id === deletedWindow.id),
           undefined
         );

@@ -126,7 +126,7 @@ describe('UserRecentPlays', function () {
         text: '',
       }) as VkMessageContext;
       const matchResult = command.matchVkMessage(msg);
-      assert.equal(matchResult.isMatch, false);
+      assert.strictEqual(matchResult.isMatch, false);
     });
     it('should not match unrelated message', function () {
       const unrelatedWords = ['x', 'lorem', 'ipsum', 'dolor', 'sit', 'amet'];
@@ -136,7 +136,7 @@ describe('UserRecentPlays', function () {
           text: unrelatedWords.slice(0, i + 1).join(' '),
         }) as VkMessageContext;
         const matchResult = command.matchVkMessage(msg);
-        assert.equal(matchResult.isMatch, false);
+        assert.strictEqual(matchResult.isMatch, false);
       }
     });
     it('should not match when message has redundant words', function () {
@@ -148,7 +148,7 @@ describe('UserRecentPlays', function () {
           text: text + ' ][ lorem ! ipsum',
         }) as VkMessageContext;
         const matchResult = command.matchVkMessage(msg);
-        assert.equal(matchResult.isMatch, false);
+        assert.strictEqual(matchResult.isMatch, false);
       }
     });
     it('should not match unrelated payload', function () {
@@ -161,7 +161,7 @@ describe('UserRecentPlays', function () {
           payload: text,
         }) as VkMessageContext;
         const matchResult = command.matchVkMessage(msg);
-        assert.equal(matchResult.isMatch, false);
+        assert.strictEqual(matchResult.isMatch, false);
       }
     });
     it('should not match incorrect payload', function () {
@@ -177,7 +177,7 @@ describe('UserRecentPlays', function () {
           },
         }) as VkMessageContext;
         const matchResult = command.matchVkMessage(msg);
-        assert.equal(matchResult.isMatch, false);
+        assert.strictEqual(matchResult.isMatch, false);
       }
     });
     it('should match short form', function () {
@@ -189,9 +189,12 @@ describe('UserRecentPlays', function () {
             text: goodText,
           }) as VkMessageContext;
           const matchResult = command.matchVkMessage(msg);
-          assert.equal(matchResult.isMatch, true);
-          assert.equal(matchResult.commandArgs?.server, serverAndPrefix.server);
-          assert.equal(matchResult.commandArgs?.username, undefined);
+          assert.strictEqual(matchResult.isMatch, true);
+          assert.strictEqual(
+            matchResult.commandArgs?.server,
+            serverAndPrefix.server
+          );
+          assert.strictEqual(matchResult.commandArgs?.username, undefined);
         }
       }
     });
@@ -205,9 +208,12 @@ describe('UserRecentPlays', function () {
             text: goodText,
           }) as VkMessageContext;
           const matchResult = command.matchVkMessage(msg);
-          assert.equal(matchResult.isMatch, true);
-          assert.equal(matchResult.commandArgs?.server, serverAndPrefix.server);
-          assert.equal(matchResult.commandArgs?.username, username);
+          assert.strictEqual(matchResult.isMatch, true);
+          assert.strictEqual(
+            matchResult.commandArgs?.server,
+            serverAndPrefix.server
+          );
+          assert.strictEqual(matchResult.commandArgs?.username, username);
         }
       }
     });
@@ -224,9 +230,12 @@ describe('UserRecentPlays', function () {
             },
           }) as VkMessageContext;
           const matchResult = command.matchVkMessage(msg);
-          assert.equal(matchResult.isMatch, true);
-          assert.equal(matchResult.commandArgs?.server, serverAndPrefix.server);
-          assert.equal(matchResult.commandArgs?.username, undefined);
+          assert.strictEqual(matchResult.isMatch, true);
+          assert.strictEqual(
+            matchResult.commandArgs?.server,
+            serverAndPrefix.server
+          );
+          assert.strictEqual(matchResult.commandArgs?.username, undefined);
         }
       }
     });
@@ -244,9 +253,12 @@ describe('UserRecentPlays', function () {
             },
           }) as VkMessageContext;
           const matchResult = command.matchVkMessage(msg);
-          assert.equal(matchResult.isMatch, true);
-          assert.equal(matchResult.commandArgs?.server, serverAndPrefix.server);
-          assert.equal(matchResult.commandArgs?.username, username);
+          assert.strictEqual(matchResult.isMatch, true);
+          assert.strictEqual(
+            matchResult.commandArgs?.server,
+            serverAndPrefix.server
+          );
+          assert.strictEqual(matchResult.commandArgs?.username, username);
         }
       }
     });
@@ -270,11 +282,11 @@ describe('UserRecentPlays', function () {
         ],
         mode: mode,
       });
-      assert.equal(viewParams.server, server);
-      assert.equal(viewParams.mode, mode);
-      assert.equal(viewParams.passesOnly, passesOnly);
-      assert.equal(viewParams.usernameInput, usernameInput);
-      assert.equal(viewParams.recentPlays, undefined);
+      assert.strictEqual(viewParams.server, server);
+      assert.strictEqual(viewParams.mode, mode);
+      assert.strictEqual(viewParams.passesOnly, passesOnly);
+      assert.strictEqual(viewParams.usernameInput, usernameInput);
+      assert.strictEqual(viewParams.recentPlays, undefined);
     });
     it('should return OsuUserRecentPlays as undefined when there is no AppUser associated with sender VK id', async function () {
       const server = OsuServer.Bancho;
@@ -293,11 +305,11 @@ describe('UserRecentPlays', function () {
         ],
         mode: mode,
       });
-      assert.equal(viewParams.server, server);
-      assert.equal(viewParams.mode, mode);
-      assert.equal(viewParams.passesOnly, passesOnly);
-      assert.equal(viewParams.usernameInput, undefined);
-      assert.equal(viewParams.recentPlays, undefined);
+      assert.strictEqual(viewParams.server, server);
+      assert.strictEqual(viewParams.mode, mode);
+      assert.strictEqual(viewParams.passesOnly, passesOnly);
+      assert.strictEqual(viewParams.usernameInput, undefined);
+      assert.strictEqual(viewParams.recentPlays, undefined);
     });
     it('should return OsuUserRecentPlays when there is user with specified username', async function () {
       const server = OsuServer.Bancho;
@@ -328,11 +340,11 @@ describe('UserRecentPlays', function () {
             ],
             mode: undefined,
           });
-          assert.equal(viewParams.server, server);
-          assert.equal(viewParams.mode, osuUser.preferredMode);
-          assert.equal(viewParams.passesOnly, passesOnly);
-          assert.equal(viewParams.usernameInput, username);
-          assert.notEqual(viewParams.recentPlays?.plays.length, 0);
+          assert.strictEqual(viewParams.server, server);
+          assert.strictEqual(viewParams.mode, osuUser.preferredMode);
+          assert.strictEqual(viewParams.passesOnly, passesOnly);
+          assert.strictEqual(viewParams.usernameInput, username);
+          assert.notStrictEqual(viewParams.recentPlays?.plays.length, 0);
         }
       }
     });
@@ -361,11 +373,14 @@ describe('UserRecentPlays', function () {
             ],
             mode: OsuRuleset[mode],
           });
-          assert.equal(viewParams.server, server);
-          assert.equal(viewParams.mode, OsuRuleset[mode]);
-          assert.equal(viewParams.passesOnly, passesOnly);
-          assert.equal(viewParams.usernameInput, osuUser.username);
-          assert.equal(viewParams.recentPlays?.username, osuUser.username);
+          assert.strictEqual(viewParams.server, server);
+          assert.strictEqual(viewParams.mode, OsuRuleset[mode]);
+          assert.strictEqual(viewParams.passesOnly, passesOnly);
+          assert.strictEqual(viewParams.usernameInput, osuUser.username);
+          assert.strictEqual(
+            viewParams.recentPlays?.username,
+            osuUser.username
+          );
         }
       }
     });
@@ -385,12 +400,12 @@ describe('UserRecentPlays', function () {
         ],
         mode: undefined,
       });
-      assert.equal(viewParams.server, appUser.server);
-      assert.equal(viewParams.mode, appUser.ruleset);
-      assert.equal(viewParams.passesOnly, passesOnly);
-      assert.equal(viewParams.usernameInput, undefined);
-      assert.equal(viewParams.recentPlays?.username, appUser.username);
-      assert.notEqual(viewParams.recentPlays?.plays.length, 0);
+      assert.strictEqual(viewParams.server, appUser.server);
+      assert.strictEqual(viewParams.mode, appUser.ruleset);
+      assert.strictEqual(viewParams.passesOnly, passesOnly);
+      assert.strictEqual(viewParams.usernameInput, undefined);
+      assert.strictEqual(viewParams.recentPlays?.username, appUser.username);
+      assert.notStrictEqual(viewParams.recentPlays?.plays.length, 0);
     });
   });
   describe('#createOutputMessage()', function () {
@@ -404,7 +419,7 @@ describe('UserRecentPlays', function () {
         usernameInput: undefined,
         recentPlays: undefined,
       });
-      assert.equal(
+      assert.strictEqual(
         outputMessage.text,
         command.createUsernameNotBoundMessage(server).text
       );
@@ -420,7 +435,7 @@ describe('UserRecentPlays', function () {
         usernameInput: usernameInput,
         recentPlays: undefined,
       });
-      assert.equal(
+      assert.strictEqual(
         outputMessage.text,
         command.createUserNotFoundMessage(server, usernameInput).text
       );
@@ -441,7 +456,7 @@ describe('UserRecentPlays', function () {
         usernameInput: usernameInput,
         recentPlays: recentPlays,
       });
-      assert.equal(
+      assert.strictEqual(
         outputMessage.text,
         command.createRecentPlaysMessage(recentPlays, server, mode, passesOnly)
           .text
@@ -463,7 +478,7 @@ describe('UserRecentPlays', function () {
         usernameInput: usernameInput,
         recentPlays: recentPlays,
       });
-      assert.equal(
+      assert.strictEqual(
         outputMessage.text,
         command.createRecentPlaysMessage(recentPlays, server, mode, passesOnly)
           .text

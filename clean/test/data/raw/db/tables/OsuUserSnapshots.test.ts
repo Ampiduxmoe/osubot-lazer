@@ -76,14 +76,14 @@ describe('OsuUserSnapshots', function () {
         [now, thirdEntity.id]
       );
       const row = await table.get(thirdEntity as OsuUserSnapshotKey);
-      assert.equal(row, undefined);
+      assert.strictEqual(row, undefined);
     });
     it('expired entity should be deleted from table after calling #get()', async function () {
       const row = await db.get<unknown>(
         `SELECT * from ${table.tableName} WHERE id = ?`,
         [thirdEntity.id]
       );
-      assert.equal(row, undefined);
+      assert.strictEqual(row, undefined);
     });
   });
 });

@@ -101,7 +101,7 @@ describe('AppUserApiRequestsCounts', function () {
       const referenceEntities = [firstEntityUpdated, fourthEntity, fifthEntity];
       for (const referenceEntity of referenceEntities) {
         const entityMatch = rows.find(x => x.count === referenceEntity.count);
-        assert.notEqual(entityMatch, undefined);
+        assert.notStrictEqual(entityMatch, undefined);
         assertTwoTestEntitiesAreEqual({
           firstObject: {
             value: entityMatch!,
@@ -123,7 +123,7 @@ describe('AppUserApiRequestsCounts', function () {
       const referenceEntities = [firstEntityUpdated, fourthEntity];
       for (const referenceEntity of referenceEntities) {
         const entityMatch = rows.find(x => x.count === referenceEntity.count);
-        assert.notEqual(entityMatch, undefined);
+        assert.notStrictEqual(entityMatch, undefined);
         assertTwoTestEntitiesAreEqual({
           firstObject: {
             value: entityMatch!,

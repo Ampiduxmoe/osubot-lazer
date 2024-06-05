@@ -85,7 +85,7 @@ describe('GetRecentPlaysUseCase', function () {
             ],
           };
           const result = await usecase.execute(request);
-          assert.equal(result.recentPlays, undefined);
+          assert.strictEqual(result.recentPlays, undefined);
         }
       }
     });
@@ -120,8 +120,8 @@ describe('GetRecentPlaysUseCase', function () {
           ],
         };
         const result = await usecase.execute(request);
-        assert.notEqual(result.recentPlays, undefined);
-        assert.equal(result.ruleset, user.ruleset);
+        assert.notStrictEqual(result.recentPlays, undefined);
+        assert.strictEqual(result.ruleset, user.ruleset);
       }
     });
     it('should return correct game mode when it is specified', async function () {
@@ -155,8 +155,8 @@ describe('GetRecentPlaysUseCase', function () {
           ],
         };
         const result = await usecase.execute(request);
-        assert.notEqual(result.recentPlays, undefined);
-        assert.equal(result.ruleset, user.ruleset);
+        assert.notStrictEqual(result.recentPlays, undefined);
+        assert.strictEqual(result.ruleset, user.ruleset);
       }
     });
   });

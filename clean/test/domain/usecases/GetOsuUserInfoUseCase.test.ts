@@ -59,7 +59,7 @@ describe('GetOsuUserInfoUseCase', function () {
             ruleset: OsuRuleset[ruleset],
           };
           const result = await usecase.execute(request);
-          assert.equal(result.userInfo, undefined);
+          assert.strictEqual(result.userInfo, undefined);
         }
       }
     });
@@ -85,7 +85,7 @@ describe('GetOsuUserInfoUseCase', function () {
           ruleset: user.ruleset,
         };
         const result = await usecase.execute(request);
-        assert.equal(result.userInfo?.username, user.username);
+        assert.strictEqual(result.userInfo?.username, user.username);
       }
     });
     it('should ignore username string case', async function () {
@@ -106,7 +106,7 @@ describe('GetOsuUserInfoUseCase', function () {
           ruleset: OsuRuleset.osu,
         };
         const result = await usecase.execute(request);
-        assert.equal(result.userInfo?.username, originalUsername);
+        assert.strictEqual(result.userInfo?.username, originalUsername);
       }
     });
   });

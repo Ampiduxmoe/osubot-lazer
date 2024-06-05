@@ -50,7 +50,7 @@ describe('OsuRecentScoresDao', function () {
         1,
         OsuRuleset.osu
       );
-      assert.equal(result.length, 0);
+      assert.strictEqual(result.length, 0);
     });
     it('should return RecentScore[] of non-zero length when user exists and has recent scores', async function () {
       const appUserId = 'fake-app-user-id';
@@ -64,8 +64,8 @@ describe('OsuRecentScoresDao', function () {
         1,
         OsuRuleset.osu
       );
-      assert.notEqual(result, undefined);
-      assert.notEqual(result.length, 0);
+      assert.notStrictEqual(result, undefined);
+      assert.notStrictEqual(result.length, 0);
     });
   });
 });

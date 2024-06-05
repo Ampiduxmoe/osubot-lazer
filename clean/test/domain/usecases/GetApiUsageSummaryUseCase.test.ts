@@ -69,7 +69,7 @@ describe('GetApiUsageSummaryUseCase', function () {
         appUserId: undefined,
       };
       const result = await usecase.execute(request);
-      assert.equal(result.usageSummary.length, 0);
+      assert.strictEqual(result.usageSummary.length, 0);
     });
     it('should return TimeIntervalUsageSummary of non-zero length when there are are matching entries', async function () {
       const request: GetApiUsageSummaryRequest = {
@@ -78,7 +78,7 @@ describe('GetApiUsageSummaryUseCase', function () {
         appUserId: undefined,
       };
       const result = await usecase.execute(request);
-      assert.notEqual(result.usageSummary.length, 0);
+      assert.notStrictEqual(result.usageSummary.length, 0);
     });
     it('should correctly return user summary when app user id is specified', async function () {
       const request: GetApiUsageSummaryRequest = {
@@ -87,9 +87,9 @@ describe('GetApiUsageSummaryUseCase', function () {
         appUserId: exampleRequestsCount1.app_user_id,
       };
       const result = await usecase.execute(request);
-      assert.equal(result.usageSummary.length, 1);
-      assert.equal(result.usageSummary[0].appUsers.length, 1);
-      assert.equal(
+      assert.strictEqual(result.usageSummary.length, 1);
+      assert.strictEqual(result.usageSummary[0].appUsers.length, 1);
+      assert.strictEqual(
         result.usageSummary[0].appUsers[0].appUserId,
         exampleRequestsCount1.app_user_id
       );

@@ -40,9 +40,9 @@ export function describeBaseTableMethods<
           )) !== undefined
         );
       };
-      assert.equal(await thisTableExists(), false);
+      assert.strictEqual(await thisTableExists(), false);
       await table.createTable();
-      assert.equal(await thisTableExists(), true);
+      assert.strictEqual(await thisTableExists(), true);
     });
   });
   describe('basic operations', function () {
@@ -51,15 +51,15 @@ export function describeBaseTableMethods<
         .length;
     };
     it('should be zero rows when table is empty', async function () {
-      assert.equal(await getRowCount(), 0);
+      assert.strictEqual(await getRowCount(), 0);
     });
     it('should be one row after one entity is added through #add()', async function () {
       await table.add(testEntities[0].value);
-      assert.equal(await getRowCount(), 1);
+      assert.strictEqual(await getRowCount(), 1);
     });
     it('#get() should correctly return added entity', async function () {
       const row = await table.get(testEntities[0].key);
-      assert.notEqual(row, undefined);
+      assert.notStrictEqual(row, undefined);
       assertTwoTestEntitiesAreEqual({
         firstObject: {
           value: row!,
@@ -78,14 +78,14 @@ export function describeBaseTableMethods<
       for (let i = 1; i < maxEntityCount; i++) {
         await table.add(testEntities[i].value);
       }
-      assert.equal(await getRowCount(), maxEntityCount);
+      assert.strictEqual(await getRowCount(), maxEntityCount);
     });
     const updateIndex = options.entityToUpdate.index;
     it(`#update() should correctly update entity[${updateIndex}]`, async function () {
       const updateValue = options.entityToUpdate.updateValue;
       await table.update(updateValue);
       const updatedRow = await table.get(testEntities[updateIndex].key);
-      assert.notEqual(updatedRow, undefined);
+      assert.notStrictEqual(updatedRow, undefined);
       assertTwoTestEntitiesAreEqual({
         firstObject: {
           value: updatedRow!,
@@ -103,11 +103,11 @@ export function describeBaseTableMethods<
       const deletionKey = options.entityToDelete.deletionKey;
       await table.delete(deletionKey);
       const row = await table.get(testEntities[deletionIndex].key);
-      assert.equal(row, undefined);
+      assert.strictEqual(row, undefined);
     });
     const finalEntityCountGoal = maxEntityCount - 1;
     it(`should be ${finalEntityCountGoal} rows in the end`, async function () {
-      assert.equal(await getRowCount(), finalEntityCountGoal);
+      assert.strictEqual(await getRowCount(), finalEntityCountGoal);
     });
   });
 }
@@ -135,13 +135,13 @@ function assertTestEntitiesEquality<
         continue;
       }
       const keyField = field as keyof TKey;
-      assert.equal(firstObject.key[keyField], secondObject.key[keyField]);
+      assert.strictEqual(firstObject.key[keyField], secondObject.key[keyField]);
       continue;
     }
     if (params.skipNonIdFields) {
       continue;
     }
-    assert.equal(firstObject.value[field], secondObject.value[field]);
+    assert.strictEqual(firstObject.value[field], secondObject.value[field]);
   }
 }
 

@@ -63,7 +63,7 @@ describe('SetUsernameUseCase', function () {
             mode: OsuRuleset[ruleset],
           };
           const result = await usecase.execute(request);
-          assert.equal(result.username, undefined);
+          assert.strictEqual(result.username, undefined);
         }
       }
     });
@@ -88,7 +88,7 @@ describe('SetUsernameUseCase', function () {
             mode: OsuRuleset.taiko,
           };
           const result = await usecase.execute(request);
-          assert.equal(result.username, user.username);
+          assert.strictEqual(result.username, user.username);
         }
       }
     });
@@ -114,8 +114,8 @@ describe('SetUsernameUseCase', function () {
           mode: undefined,
         };
         const result = await usecase.execute(request);
-        assert.notEqual(result.username, undefined);
-        assert.equal(result.mode, user.ruleset);
+        assert.notStrictEqual(result.username, undefined);
+        assert.strictEqual(result.mode, user.ruleset);
       }
     });
     it('should return correct game mode when it is specified', async function () {
@@ -140,8 +140,8 @@ describe('SetUsernameUseCase', function () {
           mode: user.ruleset,
         };
         const result = await usecase.execute(request);
-        assert.notEqual(result.username, undefined);
-        assert.equal(result.mode, user.ruleset);
+        assert.notStrictEqual(result.username, undefined);
+        assert.strictEqual(result.mode, user.ruleset);
       }
     });
   });

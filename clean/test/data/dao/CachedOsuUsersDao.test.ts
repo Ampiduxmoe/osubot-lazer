@@ -36,14 +36,14 @@ describe('CachedOsuUsersDao', function () {
         'this username should not exist',
         OsuServer.Bancho
       );
-      assert.equal(result, undefined);
+      assert.strictEqual(result, undefined);
     });
     it('should return CachedOsuUser when corresponding entry exists', async function () {
       const result = await dao.get(
         exampleUserSnapshot.username,
         exampleUserSnapshot.server
       );
-      assert.notEqual(result, undefined);
+      assert.notStrictEqual(result, undefined);
     });
   });
 });

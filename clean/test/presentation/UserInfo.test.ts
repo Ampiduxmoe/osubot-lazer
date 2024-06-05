@@ -100,7 +100,7 @@ describe('UserInfo', function () {
         text: '',
       }) as VkMessageContext;
       const matchResult = command.matchVkMessage(msg);
-      assert.equal(matchResult.isMatch, false);
+      assert.strictEqual(matchResult.isMatch, false);
     });
     it('should not match unrelated message', function () {
       const unrelatedWords = ['x', 'lorem', 'ipsum', 'dolor', 'sit', 'amet'];
@@ -110,7 +110,7 @@ describe('UserInfo', function () {
           text: unrelatedWords.slice(0, i + 1).join(' '),
         }) as VkMessageContext;
         const matchResult = command.matchVkMessage(msg);
-        assert.equal(matchResult.isMatch, false);
+        assert.strictEqual(matchResult.isMatch, false);
       }
     });
     it('should not match when message has redundant words', function () {
@@ -122,7 +122,7 @@ describe('UserInfo', function () {
           text: text + ' ][ lorem ! ipsum',
         }) as VkMessageContext;
         const matchResult = command.matchVkMessage(msg);
-        assert.equal(matchResult.isMatch, false);
+        assert.strictEqual(matchResult.isMatch, false);
       }
     });
     it('should not match unrelated payload', function () {
@@ -135,7 +135,7 @@ describe('UserInfo', function () {
           payload: text,
         }) as VkMessageContext;
         const matchResult = command.matchVkMessage(msg);
-        assert.equal(matchResult.isMatch, false);
+        assert.strictEqual(matchResult.isMatch, false);
       }
     });
     it('should not match incorrect payload', function () {
@@ -151,7 +151,7 @@ describe('UserInfo', function () {
           },
         }) as VkMessageContext;
         const matchResult = command.matchVkMessage(msg);
-        assert.equal(matchResult.isMatch, false);
+        assert.strictEqual(matchResult.isMatch, false);
       }
     });
     it('should match short form', function () {
@@ -163,9 +163,12 @@ describe('UserInfo', function () {
             text: goodText,
           }) as VkMessageContext;
           const matchResult = command.matchVkMessage(msg);
-          assert.equal(matchResult.isMatch, true);
-          assert.equal(matchResult.commandArgs?.server, serverAndPrefix.server);
-          assert.equal(matchResult.commandArgs?.username, undefined);
+          assert.strictEqual(matchResult.isMatch, true);
+          assert.strictEqual(
+            matchResult.commandArgs?.server,
+            serverAndPrefix.server
+          );
+          assert.strictEqual(matchResult.commandArgs?.username, undefined);
         }
       }
     });
@@ -179,9 +182,12 @@ describe('UserInfo', function () {
             text: goodText,
           }) as VkMessageContext;
           const matchResult = command.matchVkMessage(msg);
-          assert.equal(matchResult.isMatch, true);
-          assert.equal(matchResult.commandArgs?.server, serverAndPrefix.server);
-          assert.equal(matchResult.commandArgs?.username, username);
+          assert.strictEqual(matchResult.isMatch, true);
+          assert.strictEqual(
+            matchResult.commandArgs?.server,
+            serverAndPrefix.server
+          );
+          assert.strictEqual(matchResult.commandArgs?.username, username);
         }
       }
     });
@@ -198,9 +204,12 @@ describe('UserInfo', function () {
             },
           }) as VkMessageContext;
           const matchResult = command.matchVkMessage(msg);
-          assert.equal(matchResult.isMatch, true);
-          assert.equal(matchResult.commandArgs?.server, serverAndPrefix.server);
-          assert.equal(matchResult.commandArgs?.username, undefined);
+          assert.strictEqual(matchResult.isMatch, true);
+          assert.strictEqual(
+            matchResult.commandArgs?.server,
+            serverAndPrefix.server
+          );
+          assert.strictEqual(matchResult.commandArgs?.username, undefined);
         }
       }
     });
@@ -218,9 +227,12 @@ describe('UserInfo', function () {
             },
           }) as VkMessageContext;
           const matchResult = command.matchVkMessage(msg);
-          assert.equal(matchResult.isMatch, true);
-          assert.equal(matchResult.commandArgs?.server, serverAndPrefix.server);
-          assert.equal(matchResult.commandArgs?.username, username);
+          assert.strictEqual(matchResult.isMatch, true);
+          assert.strictEqual(
+            matchResult.commandArgs?.server,
+            serverAndPrefix.server
+          );
+          assert.strictEqual(matchResult.commandArgs?.username, username);
         }
       }
     });
@@ -236,10 +248,10 @@ describe('UserInfo', function () {
         username: usernameInput,
         vkUserId: -1,
       });
-      assert.equal(viewParams.server, server);
-      assert.equal(viewParams.mode, mode);
-      assert.equal(viewParams.usernameInput, usernameInput);
-      assert.equal(viewParams.userInfo, undefined);
+      assert.strictEqual(viewParams.server, server);
+      assert.strictEqual(viewParams.mode, mode);
+      assert.strictEqual(viewParams.usernameInput, usernameInput);
+      assert.strictEqual(viewParams.userInfo, undefined);
     });
     it('should return OsuUserInfo as undefined when there is no AppUser associated with sender VK id', async function () {
       const server = OsuServer.Bancho;
@@ -250,10 +262,10 @@ describe('UserInfo', function () {
         username: undefined,
         vkUserId: -1,
       });
-      assert.equal(viewParams.server, server);
-      assert.equal(viewParams.mode, mode);
-      assert.equal(viewParams.usernameInput, undefined);
-      assert.equal(viewParams.userInfo, undefined);
+      assert.strictEqual(viewParams.server, server);
+      assert.strictEqual(viewParams.mode, mode);
+      assert.strictEqual(viewParams.usernameInput, undefined);
+      assert.strictEqual(viewParams.userInfo, undefined);
     });
     it('should return OsuUserInfo when there is user with specified username', async function () {
       const server = OsuServer.Bancho;
@@ -276,10 +288,10 @@ describe('UserInfo', function () {
             username: username,
             vkUserId: -1,
           });
-          assert.equal(viewParams.server, server);
-          assert.equal(viewParams.mode, osuUser.preferredMode);
-          assert.equal(viewParams.usernameInput, username);
-          assert.equal(viewParams.userInfo?.username, osuUser.username);
+          assert.strictEqual(viewParams.server, server);
+          assert.strictEqual(viewParams.mode, osuUser.preferredMode);
+          assert.strictEqual(viewParams.usernameInput, username);
+          assert.strictEqual(viewParams.userInfo?.username, osuUser.username);
         }
       }
     });
@@ -305,10 +317,10 @@ describe('UserInfo', function () {
             username: username,
             vkUserId: -1,
           });
-          assert.equal(viewParams.server, server);
-          assert.equal(viewParams.mode, ruleset);
-          assert.equal(viewParams.usernameInput, username);
-          assert.equal(viewParams.userInfo?.username, osuUser.username);
+          assert.strictEqual(viewParams.server, server);
+          assert.strictEqual(viewParams.mode, ruleset);
+          assert.strictEqual(viewParams.usernameInput, username);
+          assert.strictEqual(viewParams.userInfo?.username, osuUser.username);
         }
       }
     });
@@ -320,10 +332,10 @@ describe('UserInfo', function () {
         username: undefined,
         vkUserId: VkIdConverter.appUserIdToVkUserId(appUser.id),
       });
-      assert.equal(viewParams.server, appUser.server);
-      assert.equal(viewParams.mode, appUser.ruleset);
-      assert.equal(viewParams.usernameInput, undefined);
-      assert.equal(viewParams.userInfo?.username, appUser.username);
+      assert.strictEqual(viewParams.server, appUser.server);
+      assert.strictEqual(viewParams.mode, appUser.ruleset);
+      assert.strictEqual(viewParams.usernameInput, undefined);
+      assert.strictEqual(viewParams.userInfo?.username, appUser.username);
     });
   });
   describe('#createOutputMessage()', function () {
@@ -335,7 +347,7 @@ describe('UserInfo', function () {
         usernameInput: undefined,
         userInfo: undefined,
       });
-      assert.equal(
+      assert.strictEqual(
         outputMessage.text,
         command.createUsernameNotBoundMessage(server).text
       );
@@ -349,7 +361,7 @@ describe('UserInfo', function () {
         usernameInput: usernameInput,
         userInfo: undefined,
       });
-      assert.equal(
+      assert.strictEqual(
         outputMessage.text,
         command.createUserNotFoundMessage(server, usernameInput).text
       );
@@ -380,7 +392,7 @@ describe('UserInfo', function () {
         usernameInput: usernameInput,
         userInfo: userInfo,
       });
-      assert.equal(
+      assert.strictEqual(
         outputMessage.text,
         command.createUserInfoMessage(server, mode, userInfo).text
       );
@@ -411,7 +423,7 @@ describe('UserInfo', function () {
         usernameInput: usernameInput,
         userInfo: userInfo,
       });
-      assert.equal(
+      assert.strictEqual(
         outputMessage.text,
         command.createUserInfoMessage(server, mode, userInfo).text
       );

@@ -12,7 +12,7 @@ describe('ScoreSimulationsDao', function () {
       const result = await dao.getForOsu(34567, ['HD', 'NF'], null, 2, 4, 9, {
         difficultyAdjust: {ar: 8},
       });
-      assert.notEqual(
+      assert.notStrictEqual(
         result?.score &&
           result.difficultyAttributes &&
           result.performanceAttributes,
