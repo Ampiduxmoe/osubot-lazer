@@ -18,4 +18,11 @@ export interface OsuApi {
     startPosition: number,
     ruleset: OsuRuleset | undefined
   ): Promise<RecentScoreInfo[]>;
+
+  getUserBest(
+    osuUserId: number,
+    quantity: number,
+    startPosition: number,
+    ruleset: OsuRuleset | undefined
+  ): Promise<RecentScoreInfo[]>;
 }

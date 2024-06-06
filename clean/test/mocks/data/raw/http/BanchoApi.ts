@@ -1,12 +1,14 @@
 import {OsuApi} from '../../../../../src/main/data/raw/http/OsuAPI';
 import {OsuUserInfo} from '../../../../../src/main/data/raw/http/boundary/OsuUserInfo';
 import {RecentScoreInfo} from '../../../../../src/main/data/raw/http/boundary/RecentScoreInfo';
+import {UserBestScoreInfo} from '../../../../../src/main/data/raw/http/boundary/UserBestScoreInfo';
 import {OsuRuleset} from '../../../../../src/primitives/OsuRuleset';
 import {OsuServer} from '../../../../../src/primitives/OsuServer';
 import {
   getFakeOsuUserId,
   getFakeOsuUserInfo,
   getFakeRecentScoreInfos,
+  getFakeUserBestScoreInfos,
 } from '../../../Generators';
 
 export class FakeBanchoApi implements OsuApi {
@@ -26,7 +28,7 @@ export class FakeBanchoApi implements OsuApi {
     includeFails: boolean,
     quantity: number,
     startPosition: number,
-    ruleset: OsuRuleset
+    ruleset: OsuRuleset | undefined
   ): Promise<RecentScoreInfo[]> {
     return getFakeRecentScoreInfos(osuUserId, ruleset)
       .filter(x => {
@@ -36,5 +38,16 @@ export class FakeBanchoApi implements OsuApi {
         return x.passed;
       })
       .slice(startPosition - 1, startPosition - 1 + quantity);
+  }
+  async getUserBest(
+    osuUserId: number,
+    quantity: number,
+    startPosition: number,
+    ruleset: OsuRuleset | undefined
+  ): Promise<UserBestScoreInfo[]> {
+    return getFakeUserBestScoreInfos(osuUserId, ruleset).slice(
+      startPosition - 1,
+      startPosition - 1 + quantity
+    );
   }
 }

@@ -13,6 +13,7 @@ describe('Data', function () {
     require('./data/dao/AppUsersDao.test');
     require('./data/dao/CachedOsuUsersDao.test');
     require('./data/dao/OsuRecentScoresDao.test');
+    require('./data/dao/OsuUserBestScoresDao.test');
     require('./data/dao/OsuUsersDao.test');
     require('./data/dao/ScoreSimulationsDao.test');
   });

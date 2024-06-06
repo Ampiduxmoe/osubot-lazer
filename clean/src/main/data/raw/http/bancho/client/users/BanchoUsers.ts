@@ -3,6 +3,7 @@ import {OsuRuleset} from '../../../../../../../primitives/OsuRuleset';
 import {UserExtended} from './UserExtended';
 import {Playmode} from '../common_types/Playmode';
 import {RecentScore} from './RecentScore';
+import {BestScore} from './BestScore';
 
 export class BanchoUsers {
   private url = '/users';
@@ -74,6 +75,47 @@ export class BanchoUsers {
       params: params,
     });
     const scores: RecentScore[] = response.data;
+    console.log(
+      `Successfully fetched Bancho '${type}' scores for ${userId} (${rulesetName})`
+    );
+    return scores;
+  }
+
+  async getBestScores(
+    userId: number,
+    quantity: number,
+    startPosition: number,
+    ruleset: OsuRuleset | undefined
+  ): Promise<BestScore[]> {
+    const type: UserScoresType = 'best';
+    const rulesetName = ruleset === undefined ? 'default' : OsuRuleset[ruleset];
+    console.log(
+      `Trying to fetch Bancho '${type}' scores for ${userId} (${rulesetName})`
+    );
+    const httpClient = await this.getHttpClient();
+    const playmode =
+      ruleset === undefined ? undefined : rulesetToPlaymode(ruleset);
+    const url = `${this.url}/${userId}/scores/${type}`;
+    const params: {
+      legacy_only?: 0 | 1;
+      mode?: 'osu' | 'taiko' | 'fruits' | 'mania';
+      limit?: number;
+      offset?: number;
+    } = {
+      legacy_only: 0,
+      limit: quantity,
+      offset: startPosition - 1,
+    };
+    if (playmode !== undefined) {
+      params.mode = playmode;
+    }
+    const response = await httpClient.get(url, {
+      headers: {
+        'x-api-version': 20220705,
+      },
+      params: params,
+    });
+    const scores: BestScore[] = response.data;
     console.log(
       `Successfully fetched Bancho '${type}' scores for ${userId} (${rulesetName})`
     );

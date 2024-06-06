@@ -5,6 +5,9 @@ import {OsuRuleset} from '../../../../../primitives/OsuRuleset';
 import {OsuUserInfo} from '../boundary/OsuUserInfo';
 import {RecentScoreInfo} from '../boundary/RecentScoreInfo';
 import {Playmode} from './client/common_types/Playmode';
+import {RecentScore} from './client/users/RecentScore';
+import {BestScore} from './client/users/BestScore';
+import {UserBestScoreInfo} from '../boundary/UserBestScoreInfo';
 
 export class BanchoApi implements OsuApi {
   private client: BanchoClient;
@@ -59,62 +62,24 @@ export class BanchoApi implements OsuApi {
       ruleset
     );
     return scores.map(s => {
-      const scoreInfo: RecentScoreInfo = {
-        id: s.id,
-        userId: s.user_id,
-        mods: s.mods,
-        statistics: {
-          great: s.statistics.great,
-          ok: s.statistics.ok,
-          meh: s.statistics.meh,
-          miss: s.statistics.miss,
-          largeTickHit: s.statistics.large_tick_hit,
-          smallTickHit: s.statistics.small_tick_hit,
-          smallTickMiss: s.statistics.small_tick_miss,
-          perfect: s.statistics.perfect,
-          good: s.statistics.good,
-        },
-        rank: s.rank,
-        accuracy: s.accuracy,
-        startedAt: s.started_at as string | null,
-        endedAt: s.ended_at as string,
-        isPerfectCombo: s.is_perfect_combo,
-        maxCombo: s.max_combo,
-        passed: s.passed,
-        pp: s.pp,
-        totalScore: s.total_score,
-        beatmap: {
-          id: s.beatmap.id,
-          userId: s.beatmap.user_id,
-          version: s.beatmap.version,
-          totalLength: s.beatmap.total_length,
-          hitLength: s.beatmap.hit_length,
-          difficultyRating: s.beatmap.difficulty_rating,
-          bpm: s.beatmap.bpm,
-          ar: s.beatmap.ar,
-          cs: s.beatmap.cs,
-          od: s.beatmap.accuracy,
-          hp: s.beatmap.drain,
-          countCircles: s.beatmap.count_circles,
-          countSliders: s.beatmap.count_sliders,
-          countSpinners: s.beatmap.count_spinners,
-          url: s.beatmap.url,
-        },
-        beatmapset: {
-          id: s.beatmapset.id,
-          userId: s.beatmapset.user_id,
-          creator: s.beatmapset.creator,
-          artist: s.beatmapset.artist,
-          title: s.beatmapset.title,
-          coverUrl: s.beatmapset.covers.cover,
-          status: s.beatmapset.status,
-        },
-        user: {
-          id: s.user.id,
-          username: s.user.username,
-        },
-      };
-      return scoreInfo;
+      return recentScoreInternalToExternal(s);
+    });
+  }
+
+  async getUserBest(
+    osuUserId: number,
+    quantity: number,
+    startPosition: number,
+    ruleset: OsuRuleset | undefined
+  ): Promise<RecentScoreInfo[]> {
+    const scores = await this.client.users.getBestScores(
+      osuUserId,
+      quantity,
+      startPosition,
+      ruleset
+    );
+    return scores.map(s => {
+      return userBestScoreInternalToExternal(s);
     });
   }
 }
@@ -132,4 +97,120 @@ function playmodeToRuleset(playmode: Playmode): OsuRuleset {
     default:
       throw Error('Unknown playmode');
   }
+}
+
+function recentScoreInternalToExternal(score: RecentScore): RecentScoreInfo {
+  return {
+    id: score.id,
+    userId: score.user_id,
+    mods: score.mods,
+    statistics: {
+      great: score.statistics.great,
+      ok: score.statistics.ok,
+      meh: score.statistics.meh,
+      miss: score.statistics.miss,
+      largeTickHit: score.statistics.large_tick_hit,
+      smallTickHit: score.statistics.small_tick_hit,
+      smallTickMiss: score.statistics.small_tick_miss,
+      perfect: score.statistics.perfect,
+      good: score.statistics.good,
+    },
+    rank: score.rank,
+    accuracy: score.accuracy,
+    startedAt: score.started_at as string | null,
+    endedAt: score.ended_at as string,
+    isPerfectCombo: score.is_perfect_combo,
+    maxCombo: score.max_combo,
+    passed: score.passed,
+    pp: score.pp,
+    totalScore: score.total_score,
+    beatmap: {
+      id: score.beatmap.id,
+      userId: score.beatmap.user_id,
+      version: score.beatmap.version,
+      totalLength: score.beatmap.total_length,
+      hitLength: score.beatmap.hit_length,
+      difficultyRating: score.beatmap.difficulty_rating,
+      bpm: score.beatmap.bpm,
+      ar: score.beatmap.ar,
+      cs: score.beatmap.cs,
+      od: score.beatmap.accuracy,
+      hp: score.beatmap.drain,
+      countCircles: score.beatmap.count_circles,
+      countSliders: score.beatmap.count_sliders,
+      countSpinners: score.beatmap.count_spinners,
+      url: score.beatmap.url,
+    },
+    beatmapset: {
+      id: score.beatmapset.id,
+      userId: score.beatmapset.user_id,
+      creator: score.beatmapset.creator,
+      artist: score.beatmapset.artist,
+      title: score.beatmapset.title,
+      coverUrl: score.beatmapset.covers.cover,
+      status: score.beatmapset.status,
+    },
+    user: {
+      id: score.user.id,
+      username: score.user.username,
+    },
+  };
+}
+
+function userBestScoreInternalToExternal(score: BestScore): UserBestScoreInfo {
+  return {
+    id: score.id,
+    userId: score.user_id,
+    mods: score.mods,
+    statistics: {
+      great: score.statistics.great,
+      ok: score.statistics.ok,
+      meh: score.statistics.meh,
+      miss: score.statistics.miss,
+      largeTickHit: score.statistics.large_tick_hit,
+      smallTickHit: score.statistics.small_tick_hit,
+      smallTickMiss: score.statistics.small_tick_miss,
+      perfect: score.statistics.perfect,
+      good: score.statistics.good,
+    },
+    rank: score.rank,
+    accuracy: score.accuracy,
+    startedAt: score.started_at as string | null,
+    endedAt: score.ended_at as string,
+    isPerfectCombo: score.is_perfect_combo,
+    maxCombo: score.max_combo,
+    passed: score.passed,
+    pp: score.pp,
+    totalScore: score.total_score,
+    beatmap: {
+      id: score.beatmap.id,
+      userId: score.beatmap.user_id,
+      version: score.beatmap.version,
+      totalLength: score.beatmap.total_length,
+      hitLength: score.beatmap.hit_length,
+      difficultyRating: score.beatmap.difficulty_rating,
+      bpm: score.beatmap.bpm,
+      ar: score.beatmap.ar,
+      cs: score.beatmap.cs,
+      od: score.beatmap.accuracy,
+      hp: score.beatmap.drain,
+      countCircles: score.beatmap.count_circles,
+      countSliders: score.beatmap.count_sliders,
+      countSpinners: score.beatmap.count_spinners,
+      url: score.beatmap.url,
+    },
+    beatmapset: {
+      id: score.beatmapset.id,
+      userId: score.beatmapset.user_id,
+      creator: score.beatmapset.creator,
+      artist: score.beatmapset.artist,
+      title: score.beatmapset.title,
+      coverUrl: score.beatmapset.covers.cover,
+      status: score.beatmapset.status,
+    },
+    user: {
+      id: score.user.id,
+      username: score.user.username,
+    },
+  };
 }
