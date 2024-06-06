@@ -25,6 +25,7 @@ describe('Domain', function () {
     require('./domain/usecases/GetAppUserInfoUseCase.test');
     require('./domain/usecases/GetOsuUserInfoUseCase.test');
     require('./domain/usecases/GetRecentPlaysUseCase.test');
+    require('./domain/usecases/GetUserBestPlaysUseCase.test');
     require('./domain/usecases/SetUsernameUseCase.test');
   });
 });
