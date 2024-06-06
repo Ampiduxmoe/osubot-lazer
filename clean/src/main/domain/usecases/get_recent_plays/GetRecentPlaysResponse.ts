@@ -133,15 +133,15 @@ export type SettingsCL = {
 };
 
 export class SettingsDefaults {
-  static DT: SettingsDT = {
+  static DT: Required<SettingsDT> = {
     adjust_pitch: false,
     speed_change: 1.5,
   };
-  static HT: SettingsHT = {
+  static HT: Required<SettingsHT> = {
     adjust_pitch: false,
     speed_change: 0.75,
   };
-  static CL: SettingsCL = {
+  static CL: Required<SettingsCL> = {
     classic_health: true,
     classic_note_lock: true,
     fade_hit_circle_early: true,

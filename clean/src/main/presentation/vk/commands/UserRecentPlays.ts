@@ -244,19 +244,20 @@ export class UserRecentPlays extends VkCommand<
     const scoresText = recentPlays.plays
       .map((p, i) =>
         oneScore
-          ? this.verboseScoreDescription(p, mode!)
-          : this.shortScoreDescription(p, mode!, i)
+          ? this.verboseScoreDescription(p, mode)
+          : this.shortScoreDescription(p, mode, i)
       )
-      .join('\n');
+      .join('\n\n');
     const couldNotGetSomeStatsMessage =
       recentPlays.plays.find(play =>
         [play.stars, play.beatmap.maxCombo].includes(undefined)
       ) !== undefined
-        ? '\n(Не удалось получить некоторые параметры плея)'
+        ? '\n(Не удалось получить часть статистики)'
         : '';
     const text = `
 [Server: ${serverString}, Mode: ${modeString}]
 ${passesOnly ? passesString : scoresString} ${username}
+
 ${scoresText}
 ${couldNotGetSomeStatsMessage}
     `.trim();
@@ -309,22 +310,26 @@ ${couldNotGetSomeStatsMessage}
     const {artist, title} = mapset;
     const diffname = map.difficultyName;
     const mapperName = mapset.creator;
-    const totalLength = new Timespan().addSeconds(map.totalLength / speed);
-    const z0 = totalLength.minutes <= 9 ? '0' : '';
-    const z1 = totalLength.seconds <= 9 ? '0' : '';
-    const drainLength = new Timespan().addSeconds(map.drainLength / speed);
-    const z2 = drainLength.minutes <= 9 ? '0' : '';
-    const z3 = drainLength.seconds <= 9 ? '0' : '';
-    const lengthString = `${z0}${totalLength.minutes}:${z1}${totalLength.seconds}`;
-    const drainString = `${z2}${drainLength.minutes}:${z3}${drainLength.seconds}`;
+    let lengthString: string;
+    let drainString: string;
+    {
+      const totalLength = new Timespan().addSeconds(map.totalLength / speed);
+      const z0 = totalLength.minutes <= 9 ? '0' : '';
+      const z1 = totalLength.seconds <= 9 ? '0' : '';
+      const drainLength = new Timespan().addSeconds(map.drainLength / speed);
+      const z2 = drainLength.minutes <= 9 ? '0' : '';
+      const z3 = drainLength.seconds <= 9 ? '0' : '';
+      lengthString = `${z0}${totalLength.minutes}:${z1}${totalLength.seconds}`;
+      drainString = `${z2}${drainLength.minutes}:${z3}${drainLength.seconds}`;
+    }
     const bpm = round(map.bpm * speed, 2);
     const sr = play.stars?.toFixed(2) ?? '—';
     const modAcronyms = play.mods.map(m => m.acronym);
     let modsString = modAcronyms.join('');
     const defaultSpeeds = [
       1,
-      SettingsDefaults.DT.speed_change!,
-      SettingsDefaults.HT.speed_change!,
+      SettingsDefaults.DT.speed_change,
+      SettingsDefaults.HT.speed_change,
     ];
     if (!defaultSpeeds.includes(speed)) {
       modsString += ` (${speed}x)`;
@@ -403,8 +408,8 @@ Beatmap: ${mapUrlShort}
     let modsString = modAcronyms.join('');
     const defaultSpeeds = [
       1,
-      SettingsDefaults.DT.speed_change!,
-      SettingsDefaults.HT.speed_change!,
+      SettingsDefaults.DT.speed_change,
+      SettingsDefaults.HT.speed_change,
     ];
     if (!defaultSpeeds.includes(speed)) {
       modsString += ` (${speed}x)`;
@@ -552,7 +557,7 @@ function getMapMaxCombo(
   play: RecentPlay,
   mode: OsuRuleset
 ): number | undefined {
-  // Tt is most likely possible to calculate max combo for every play.
+  // It is most likely possible to calculate max combo for every play.
   // But since we get different fields for scores set on stable client
   // than for scores set on lazer client (might want check if this is still true)
   // combined with the fact that api is not stable and is not well documented
