@@ -199,10 +199,28 @@ describe('UserRecentPlays', function () {
       }
     });
     it('should match full form with username', function () {
+      const startPosition = 2;
+      const quantity = 5;
+      const mods = [
+        {acronym: 'hd', isOptional: true},
+        {acronym: 'dt', isOptional: false},
+      ];
+      const modsString =
+        '+' +
+        mods
+          .filter(m => m.isOptional)
+          .map(m => `(${m.acronym})`)
+          .join('') +
+        mods
+          .filter(m => !m.isOptional)
+          .map(m => m.acronym)
+          .join('');
+      const mode = OsuRuleset.osu;
+      const modeString = `mode=${OsuRuleset[mode]}`;
       for (const serverAndPrefix of SERVERS) {
         for (const prefix of command.prefixes) {
           const username = 'username';
-          const goodText = `${serverAndPrefix.prefix} ${prefix} ${username} \\2 :5 +(hd)dt mode=osu`;
+          const goodText = `${serverAndPrefix.prefix} ${prefix} ${username} \\${startPosition} :${quantity} ${modsString} ${modeString}`;
           const msg = createWithOnlyText({
             senderId: 1,
             text: goodText,
@@ -214,6 +232,16 @@ describe('UserRecentPlays', function () {
             serverAndPrefix.server
           );
           assert.strictEqual(matchResult.commandArgs?.username, username);
+          assert.strictEqual(
+            matchResult.commandArgs?.startPosition,
+            startPosition
+          );
+          assert.strictEqual(matchResult.commandArgs?.quantity, quantity);
+          assert.strictEqual(
+            matchResult.commandArgs?.mods?.length,
+            mods.length
+          );
+          assert.strictEqual(matchResult.commandArgs?.mode, mode);
         }
       }
     });
@@ -240,10 +268,28 @@ describe('UserRecentPlays', function () {
       }
     });
     it('should match full form payload with username', function () {
+      const startPosition = 3;
+      const quantity = 6;
+      const mods = [
+        {acronym: 'hd', isOptional: true},
+        {acronym: 'hr', isOptional: false},
+      ];
+      const modsString =
+        '+' +
+        mods
+          .filter(m => m.isOptional)
+          .map(m => `(${m.acronym})`)
+          .join('') +
+        mods
+          .filter(m => !m.isOptional)
+          .map(m => m.acronym)
+          .join('');
+      const mode = OsuRuleset.osu;
+      const modeString = `mode=${OsuRuleset[mode]}`;
       for (const serverAndPrefix of SERVERS) {
         for (const prefix of command.prefixes) {
           const username = 'username';
-          const goodText = `${serverAndPrefix.prefix} ${prefix} ${username} \\3 :6 +(hd)hr mode=osu`;
+          const goodText = `${serverAndPrefix.prefix} ${prefix} ${username} \\${startPosition} :${quantity} ${modsString} ${modeString}`;
           const msg = createWithPayload({
             senderId: 1,
             text: 'lorem ipsum',
@@ -259,6 +305,16 @@ describe('UserRecentPlays', function () {
             serverAndPrefix.server
           );
           assert.strictEqual(matchResult.commandArgs?.username, username);
+          assert.strictEqual(
+            matchResult.commandArgs?.startPosition,
+            startPosition
+          );
+          assert.strictEqual(matchResult.commandArgs?.quantity, quantity);
+          assert.strictEqual(
+            matchResult.commandArgs?.mods?.length,
+            mods.length
+          );
+          assert.strictEqual(matchResult.commandArgs?.mode, mode);
         }
       }
     });
