@@ -32,6 +32,7 @@ describe('Domain', function () {
 
 describe('Presentation', function () {
   describe('Commands', function () {
+    require('./presentation/UserBestPlays.test');
     require('./presentation/UserInfo.test');
     require('./presentation/UserRecentPlays.test');
   });

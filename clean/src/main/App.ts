@@ -27,6 +27,9 @@ import {TimeWindowsImpl} from './data/raw/db/tables/TimeWindows';
 import {Timespan} from '../primitives/Timespan';
 import {ApiUsageSummary} from './presentation/vk/commands/ApiUsageSummary';
 import {GetApiUsageSummaryUseCase} from './domain/usecases/get_api_usage_summary/GetApiUsageSummaryUseCase';
+import {UserBestPlays} from './presentation/vk/commands/UserBestPlays';
+import {GetUserBestPlaysUseCase} from './domain/usecases/get_user_best_plays/GetUserBestPlaysUseCase';
+import {OsuUserBestScoresDaoImpl} from './data/dao/OsuUserBestScoresDaoImpl';
 
 export const APP_CODE_NAME = 'osubot-lazer';
 
@@ -94,6 +97,11 @@ export class App {
       osuUserSnapshots,
       recentApiRequestsDao
     );
+    const userBestScoresDao = new OsuUserBestScoresDaoImpl(
+      osuApiList,
+      osuUserSnapshots,
+      recentApiRequestsDao
+    );
     const scoreSimulationsDao = new ScoreSimulationsDaoImpl(scoreSiulationApi);
     const cachedOsuUsersDao = new CachedOsuUsersDaoImpl(osuUserSnapshots);
 
@@ -102,6 +110,12 @@ export class App {
     const setUsernameUseCase = new SetUsernameUseCase(appUsersDao, osuUsersDao);
     const getRecentPlaysUseCase = new GetRecentPlaysUseCase(
       recentScoresDao,
+      scoreSimulationsDao,
+      cachedOsuUsersDao,
+      osuUsersDao
+    );
+    const getUserBestPlaysUseCase = new GetUserBestPlaysUseCase(
+      userBestScoresDao,
       scoreSimulationsDao,
       cachedOsuUsersDao,
       osuUsersDao
@@ -116,6 +130,7 @@ export class App {
       getAppUserInfoUseCase: getAppUserInfoUseCase,
       setUsernameUseCase: setUsernameUseCase,
       getRecentPlaysUseCase: getRecentPlaysUseCase,
+      getUserBestPlaysUseCase: getUserBestPlaysUseCase,
       getApiUsageSummaryUseCase: getApiUsageSummaryUseCase,
     });
 
@@ -146,6 +161,7 @@ export class App {
     const {getAppUserInfoUseCase} = params;
     const {setUsernameUseCase} = params;
     const {getRecentPlaysUseCase} = params;
+    const {getUserBestPlaysUseCase} = params;
     const {getApiUsageSummaryUseCase} = params;
     const vk = new VK({
       pollingGroupId: group.id,
@@ -156,6 +172,7 @@ export class App {
       new UserInfo(getOsuUserInfoUseCase, getAppUserInfoUseCase),
       new SetUsername(setUsernameUseCase),
       new UserRecentPlays(getRecentPlaysUseCase, getAppUserInfoUseCase),
+      new UserBestPlays(getUserBestPlaysUseCase, getAppUserInfoUseCase),
     ];
     const adminCommands = [
       new ApiUsageSummary([group.owner], getApiUsageSummaryUseCase),
@@ -207,5 +224,6 @@ type VkClientCreationParams = {
   getAppUserInfoUseCase: GetAppUserInfoUseCase;
   setUsernameUseCase: SetUsernameUseCase;
   getRecentPlaysUseCase: GetRecentPlaysUseCase;
+  getUserBestPlaysUseCase: GetUserBestPlaysUseCase;
   getApiUsageSummaryUseCase: GetApiUsageSummaryUseCase;
 };

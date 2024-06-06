@@ -1,0 +1,535 @@
+/* eslint-disable no-irregular-whitespace */
+import {VkMessageContext} from '../VkMessageContext';
+import {CommandMatchResult} from '../../common/CommandMatchResult';
+import {VkOutputMessage} from './base/VkOutputMessage';
+import {VkCommand} from './base/VkCommand';
+import {OsuServer} from '../../../../primitives/OsuServer';
+import {APP_CODE_NAME} from '../../../App';
+import {GetAppUserInfoUseCase} from '../../../domain/usecases/get_app_user_info/GetAppUserInfoUseCase';
+import {VkIdConverter} from '../VkIdConverter';
+import {clamp, round} from '../../../../primitives/Numbers';
+import {
+  OWN_COMMAND_PREFIX,
+  MODS,
+  QUANTITY,
+  SERVER_PREFIX,
+  START_POSITION,
+  USERNAME,
+  MODE,
+} from '../../common/arg_processing/CommandArguments';
+import {MainArgsProcessor} from '../../common/arg_processing/MainArgsProcessor';
+import {Timespan} from '../../../../primitives/Timespan';
+import {ModArg} from '../../common/arg_processing/ModArg';
+import {CommandPrefixes} from '../../common/CommandPrefixes';
+import {OsuRuleset} from '../../../../primitives/OsuRuleset';
+import {GetUserBestPlaysUseCase} from '../../../domain/usecases/get_user_best_plays/GetUserBestPlaysUseCase';
+import {
+  BestPlay,
+  BestPlayStatisticsCtb,
+  BestPlayStatisticsMania,
+  BestPlayStatisticsOsu,
+  BestPlayStatisticsTaiko,
+  OsuUserBestPlays,
+} from '../../../domain/usecases/get_user_best_plays/GetUserBestPlaysResponse';
+
+export class UserBestPlays extends VkCommand<
+  UserBestPlaysExecutionArgs,
+  UserBestPlaysViewParams
+> {
+  internalName = UserBestPlays.name;
+  shortDescription = 'топ скоры';
+  longDescription = 'Отображает лучшие скоры игрока';
+
+  static prefixes = new CommandPrefixes('t', 'top');
+  prefixes = UserBestPlays.prefixes;
+
+  private static COMMAND_PREFIX = new OWN_COMMAND_PREFIX(this.prefixes);
+  private COMMAND_PREFIX = UserBestPlays.COMMAND_PREFIX;
+  private static commandStructure = [
+    {argument: SERVER_PREFIX, isOptional: false},
+    {argument: this.COMMAND_PREFIX, isOptional: false},
+    {argument: USERNAME, isOptional: true},
+    {argument: START_POSITION, isOptional: true},
+    {argument: QUANTITY, isOptional: true},
+    {argument: MODS, isOptional: true},
+    {argument: MODE, isOptional: true},
+  ];
+
+  getUserBestPlays: GetUserBestPlaysUseCase;
+  getAppUserInfo: GetAppUserInfoUseCase;
+  constructor(
+    getUserBestPlays: GetUserBestPlaysUseCase,
+    getAppUserInfo: GetAppUserInfoUseCase
+  ) {
+    super(UserBestPlays.commandStructure);
+    this.getUserBestPlays = getUserBestPlays;
+    this.getAppUserInfo = getAppUserInfo;
+  }
+
+  matchVkMessage(
+    ctx: VkMessageContext
+  ): CommandMatchResult<UserBestPlaysExecutionArgs> {
+    const fail = CommandMatchResult.fail<UserBestPlaysExecutionArgs>();
+    let command: string | undefined = undefined;
+    if (ctx.hasMessagePayload && ctx.messagePayload!.target === APP_CODE_NAME) {
+      command = ctx.messagePayload!.command;
+    } else if (ctx.hasText) {
+      command = ctx.text!;
+    }
+    if (command === undefined) {
+      return fail;
+    }
+
+    const splitSequence = ' ';
+    const tokens = command.split(splitSequence);
+    const argsProcessor = new MainArgsProcessor(
+      [...tokens],
+      this.commandStructure.map(e => e.argument)
+    );
+    const server = argsProcessor.use(SERVER_PREFIX).at(0).extract();
+    // eslint-disable-next-line prettier/prettier
+    const commandPrefix = argsProcessor.use(this.COMMAND_PREFIX).at(0).extract();
+    const startPosition = argsProcessor.use(START_POSITION).extract();
+    const quantity = argsProcessor.use(QUANTITY).extract();
+    const mods = argsProcessor.use(MODS).extract();
+    const mode = argsProcessor.use(MODE).extract();
+    const usernameParts: string[] = [];
+    let usernamePart = argsProcessor.use(USERNAME).extract();
+    while (usernamePart !== undefined) {
+      usernameParts.push(usernamePart);
+      usernamePart = argsProcessor.use(USERNAME).extract();
+    }
+    const username =
+      usernameParts.length === 0
+        ? undefined
+        : usernameParts.join(splitSequence);
+
+    if (argsProcessor.remainingTokens.length > 0) {
+      return fail;
+    }
+    if (server === undefined || commandPrefix === undefined) {
+      return fail;
+    }
+    if (!this.prefixes.matchIgnoringCase(commandPrefix)) {
+      return fail;
+    }
+    return CommandMatchResult.ok({
+      vkUserId: ctx.senderId,
+      server: server,
+      username: username,
+      startPosition: startPosition,
+      quantity: quantity,
+      mods: mods,
+      mode: mode,
+    });
+  }
+
+  async process(
+    args: UserBestPlaysExecutionArgs
+  ): Promise<UserBestPlaysViewParams> {
+    let username = args.username;
+    let mode = args.mode;
+    if (username === undefined) {
+      const appUserInfoResponse = await this.getAppUserInfo.execute({
+        id: VkIdConverter.vkUserIdToAppUserId(args.vkUserId),
+        server: args.server,
+      });
+      const boundUser = appUserInfoResponse.userInfo;
+      if (boundUser === undefined) {
+        return {
+          server: args.server,
+          mode: args.mode,
+          usernameInput: undefined,
+          bestPlays: undefined,
+        };
+      }
+      username = boundUser.username;
+      mode ??= boundUser.ruleset;
+    }
+    const mods = args.mods ?? [];
+    const startPosition = clamp(args.startPosition ?? 1, 1, 100);
+    let quantity: number;
+    if (args.startPosition === undefined) {
+      quantity = clamp(args.quantity ?? 3, 1, 10);
+    } else {
+      quantity = clamp(args.quantity ?? 1, 1, 10);
+    }
+    const bestPlaysResult = await this.getUserBestPlays.execute({
+      appUserId: VkIdConverter.vkUserIdToAppUserId(args.vkUserId),
+      server: args.server,
+      username: username,
+      ruleset: mode,
+      startPosition: startPosition,
+      quantity: quantity,
+      mods: mods,
+    });
+    if (bestPlaysResult.isFailure) {
+      const internalFailureReason = bestPlaysResult.failureReason!;
+      switch (internalFailureReason) {
+        case 'user not found':
+          return {
+            server: args.server,
+            mode: mode,
+            usernameInput: args.username,
+            bestPlays: undefined,
+          };
+        default:
+          throw Error('Switch case is not exhaustive');
+      }
+    }
+    return {
+      server: args.server,
+      mode: bestPlaysResult.ruleset!,
+      usernameInput: args.username,
+      bestPlays: bestPlaysResult.bestPlays!,
+    };
+  }
+
+  createOutputMessage(params: UserBestPlaysViewParams): VkOutputMessage {
+    const {server, mode, bestPlays} = params;
+    if (bestPlays === undefined) {
+      if (params.usernameInput === undefined) {
+        return this.createUsernameNotBoundMessage(params.server);
+      }
+      return this.createUserNotFoundMessage(
+        params.server,
+        params.usernameInput
+      );
+    }
+    if (bestPlays.plays.length === 0) {
+      return this.createNoBestPlaysMessage(server, mode!);
+    }
+    return this.createBestPlaysMessage(bestPlays, server, mode!);
+  }
+
+  createBestPlaysMessage(
+    bestPlays: OsuUserBestPlays,
+    server: OsuServer,
+    mode: OsuRuleset
+  ): VkOutputMessage {
+    const serverString = OsuServer[server];
+    const modeString = OsuRuleset[mode];
+    const oneScore = bestPlays.plays.length === 1;
+    const scoresString = oneScore ? 'Лучший скор' : 'Лучшие скоры';
+    const username = bestPlays.username;
+    const scoresText = bestPlays.plays
+      .map(p => {
+        if (oneScore) {
+          return this.verboseScoreDescription(p, mode);
+        }
+        if (bestPlays.plays.length > 3) {
+          return this.shortScoreDescription(p, mode);
+        }
+        return this.defaultScoreDescription(p, mode);
+      })
+      .join('\n\n');
+    const couldNotGetSomeStatsMessage =
+      bestPlays.plays.find(play =>
+        [play.stars, play.beatmap.maxCombo].includes(undefined)
+      ) !== undefined
+        ? '\n(Не удалось получить часть статистики)'
+        : '';
+    const text = `
+[Server: ${serverString}, Mode: ${modeString}]
+${scoresString} ${username}
+
+${scoresText}
+${couldNotGetSomeStatsMessage}
+    `.trim();
+    return {
+      text: text,
+      attachment: undefined,
+      buttons: undefined,
+    };
+  }
+
+  verboseScoreDescription(play: BestPlay, mode: OsuRuleset): string {
+    const map = play.beatmap;
+    const mapset = play.beatmapset;
+
+    let speed = 1;
+    const dtMod = play.mods.find(m => m.acronym === 'DT');
+    if (dtMod !== undefined) {
+      speed = 1.5;
+    }
+    const htMod = play.mods.find(m => m.acronym === 'HT');
+    if (htMod !== undefined) {
+      speed = 0.75;
+    }
+
+    const absPos = `\\${play.absolutePosition}`;
+    const {artist, title} = mapset;
+    const diffname = map.difficultyName;
+    const mapperName = mapset.creator;
+    let lengthString: string;
+    let drainString: string;
+    {
+      const totalLength = new Timespan().addSeconds(map.totalLength / speed);
+      const z0 = totalLength.minutes <= 9 ? '0' : '';
+      const z1 = totalLength.seconds <= 9 ? '0' : '';
+      const drainLength = new Timespan().addSeconds(map.drainLength / speed);
+      const z2 = drainLength.minutes <= 9 ? '0' : '';
+      const z3 = drainLength.seconds <= 9 ? '0' : '';
+      lengthString = `${z0}${totalLength.minutes}:${z1}${totalLength.seconds}`;
+      drainString = `${z2}${drainLength.minutes}:${z3}${drainLength.seconds}`;
+    }
+    const bpm = round(map.bpm * speed, 2);
+    const sr = play.stars?.toFixed(2) ?? '—';
+    const modAcronyms = play.mods.map(m => m.acronym);
+    const modsString = modAcronyms.join('');
+    let modsPlusSign = '';
+    if (modAcronyms.length) {
+      modsPlusSign = '+';
+    }
+    const ar = round(play.ar, 2);
+    const cs = round(play.cs, 2);
+    const od = round(play.od, 2);
+    const hp = round(play.hp, 2);
+    const {totalScore} = play;
+    const combo = play.combo;
+    const max_combo = getMapMaxCombo(play, mode) ?? '—';
+    const comboString = `${combo}x/${max_combo}x`;
+    const acc = (play.accuracy * 100).toFixed(2);
+    const pp = play.pp.toFixed(2);
+    const hitcounts = getHitcounts(play, mode);
+    const hitcountsString = hitcounts.join('/');
+    const {grade} = play;
+    const scoreDateString = getScoreDateString(new Date(play.date));
+    const mapUrlShort = map.url.replace('beatmaps', 'b');
+    return `
+${absPos}. ${artist} - ${title} [${diffname}] by ${mapperName}
+${lengthString} (${drainString})　${bpm} BPM　${sr}★　${modsPlusSign}${modsString}
+AR: ${ar}　CS: ${cs}　OD: ${od}　HP: ${hp}
+
+Score: ${totalScore}　Combo: ${comboString}
+Accuracy: ${acc}%
+PP: ${pp}
+Hitcounts: ${hitcountsString}
+Grade: ${grade}
+${scoreDateString}
+
+Beatmap: ${mapUrlShort}
+    `.trim();
+  }
+
+  defaultScoreDescription(play: BestPlay, mode: OsuRuleset): string {
+    const map = play.beatmap;
+    const mapset = play.beatmapset;
+
+    let speed = 1;
+    const dtMod = play.mods.find(m => m.acronym === 'DT');
+    if (dtMod !== undefined) {
+      speed = 1.5;
+    }
+    const htMod = play.mods.find(m => m.acronym === 'HT');
+    if (htMod !== undefined) {
+      speed = 0.75;
+    }
+
+    const absPos = `\\${play.absolutePosition}`;
+    const {title} = mapset;
+    const diffname = map.difficultyName;
+    let lengthString: string;
+    {
+      const totalLength = new Timespan().addSeconds(map.totalLength / speed);
+      const z0 = totalLength.minutes <= 9 ? '0' : '';
+      const z1 = totalLength.seconds <= 9 ? '0' : '';
+      lengthString = `${z0}${totalLength.minutes}:${z1}${totalLength.seconds}`;
+    }
+    const bpm = round(map.bpm * speed, 2);
+    const sr = play.stars?.toFixed(2) ?? '—';
+    const modAcronyms = play.mods.map(m => m.acronym);
+    const modsString = modAcronyms.join('');
+    let modsPlusSign = '';
+    if (modAcronyms.length) {
+      modsPlusSign = '+';
+    }
+    const ar = round(play.ar, 2);
+    const cs = round(play.cs, 2);
+    const od = round(play.od, 2);
+    const hp = round(play.hp, 2);
+    const combo = play.combo;
+    const max_combo = getMapMaxCombo(play, mode) ?? '—';
+    const comboString = `${combo}x/${max_combo}x`;
+    const acc = (play.accuracy * 100).toFixed(2);
+    const pp = play.pp.toFixed(2);
+    const hitcounts = getHitcounts(play, mode);
+    const hitcountsString = hitcounts.join('/');
+    const {grade} = play;
+    const scoreDateString = getScoreDateString(new Date(play.date));
+    const mapUrlShort = map.url.replace('beatmaps', 'b');
+    return `
+${absPos}. ${title} [${diffname}] ${modsPlusSign}${modsString}
+${lengthString}　${bpm} BPM　${sr}★
+AR: ${ar}　CS: ${cs}　OD: ${od}　HP: ${hp}
+Grade: ${grade}　${comboString}
+Accuracy: ${acc}%　${hitcountsString}
+PP: ${pp}
+${scoreDateString}
+${mapUrlShort}
+    `.trim();
+  }
+
+  shortScoreDescription(play: BestPlay, mode: OsuRuleset): string {
+    const map = play.beatmap;
+    const mapset = play.beatmapset;
+    const absPos = `\\${play.absolutePosition}`;
+    const {title} = mapset;
+    const diffname = map.difficultyName;
+    const sr = play.stars?.toFixed(2) ?? '—';
+    const modAcronyms = play.mods.map(m => m.acronym);
+    const modsString = modAcronyms.join('');
+    let modsPlusSign = '';
+    if (modAcronyms.length) {
+      modsPlusSign = '+';
+    }
+    const combo = play.combo;
+    const max_combo = getMapMaxCombo(play, mode) ?? '—';
+    const comboString = `${combo}x/${max_combo}x`;
+    const acc = (play.accuracy * 100).toFixed(2);
+    const pp = play.pp.toFixed(2);
+    const {grade} = play;
+    const mapUrlShort = map.url.replace('beatmaps', 'b');
+    return `
+${absPos}. ${title} [${diffname}] ${modsPlusSign}${modsString}
+${sr}★　${comboString}　${acc}%　${grade}
+${pp}pp　 ${mapUrlShort}
+    `.trim();
+  }
+
+  createUserNotFoundMessage(
+    server: OsuServer,
+    usernameInput: string
+  ): VkOutputMessage {
+    const serverString = OsuServer[server];
+    const text = `
+[Server: ${serverString}]
+Пользователь с ником ${usernameInput} не найден
+    `.trim();
+    return {
+      text: text,
+      attachment: undefined,
+      buttons: undefined,
+    };
+  }
+
+  createUsernameNotBoundMessage(server: OsuServer): VkOutputMessage {
+    const serverString = OsuServer[server];
+    const text = `
+[Server: ${serverString}]
+Не установлен ник!
+    `.trim();
+    return {
+      text: text,
+      attachment: undefined,
+      buttons: undefined,
+    };
+  }
+
+  createNoBestPlaysMessage(
+    server: OsuServer,
+    mode: OsuRuleset
+  ): VkOutputMessage {
+    const serverString = OsuServer[server];
+    const modeString = OsuRuleset[mode];
+    const text = `
+[Server: ${serverString}, Mode: ${modeString}]
+Нет лучших скоров
+    `.trim();
+    return {
+      text: text,
+      attachment: undefined,
+      buttons: undefined,
+    };
+  }
+}
+
+type UserBestPlaysExecutionArgs = {
+  vkUserId: number;
+  server: OsuServer;
+  username: string | undefined;
+  startPosition: number | undefined;
+  quantity: number | undefined;
+  mods: ModArg[] | undefined;
+  mode: OsuRuleset | undefined;
+};
+
+type UserBestPlaysViewParams = {
+  server: OsuServer;
+  mode: OsuRuleset | undefined;
+  usernameInput: string | undefined;
+  bestPlays: OsuUserBestPlays | undefined;
+};
+
+function getHitcounts(play: BestPlay, mode: OsuRuleset): number[] {
+  let counts: number[];
+  if (mode === OsuRuleset.osu) {
+    const statistics = play.statistics as BestPlayStatisticsOsu;
+    counts = [
+      statistics.countGreat,
+      statistics.countOk,
+      statistics.countMeh,
+      statistics.countMiss,
+    ];
+  } else if (mode === OsuRuleset.taiko) {
+    const statistics = play.statistics as BestPlayStatisticsTaiko;
+    counts = [statistics.countGreat, statistics.countOk, statistics.countMiss];
+  } else if (mode === OsuRuleset.ctb) {
+    const statistics = play.statistics as BestPlayStatisticsCtb;
+    counts = [
+      statistics.countGreat,
+      statistics.countLargeTickHit,
+      statistics.countSmallTickHit,
+      statistics.countSmallTickMiss,
+      statistics.countMiss,
+    ];
+  } else if (mode === OsuRuleset.mania) {
+    const statistics = play.statistics as BestPlayStatisticsMania;
+    counts = [
+      statistics.countPerfect,
+      statistics.countGreat,
+      statistics.countGood,
+      statistics.countOk,
+      statistics.countMeh,
+      statistics.countMiss,
+    ];
+  } else {
+    throw Error('Unknown game mode');
+  }
+  return counts;
+}
+
+function getMapMaxCombo(play: BestPlay, mode: OsuRuleset): number | undefined {
+  // It is most likely possible to calculate max combo for every play.
+  // But since we get different fields for scores set on stable client
+  // than for scores set on lazer client (might want check if this is still true)
+  // combined with the fact that api is not stable and is not well documented
+  // we will rely on simulated max combo which can be undefined if simulation api is not available.
+  const maybeMaxCombo = play.beatmap.maxCombo;
+  if (mode === OsuRuleset.osu) {
+    return maybeMaxCombo;
+  } else if (mode === OsuRuleset.taiko) {
+    return maybeMaxCombo ?? play.beatmap.countCircles;
+  } else if (mode === OsuRuleset.ctb) {
+    return maybeMaxCombo;
+  } else if (mode === OsuRuleset.mania) {
+    return maybeMaxCombo;
+  } else {
+    throw Error('Unknown game mode');
+  }
+}
+
+function getScoreDateString(date: Date): string {
+  const day = date.getUTCDate();
+  const dayFormatted = (day > 9 ? '' : '0') + day;
+  const month = date.getUTCMonth() + 1;
+  const monthFormatted = (month > 9 ? '' : '0') + month;
+  const year = date.getUTCFullYear();
+  const hours = date.getUTCHours();
+  const hoursFormatted = (hours > 9 ? '' : '0') + hours;
+  const minutes = date.getUTCMinutes();
+  const minutesFormatted = (minutes > 9 ? '' : '0') + minutes;
+  const datePart = `${dayFormatted}.${monthFormatted}.${year}`;
+  const timePart = `${hoursFormatted}:${minutesFormatted}`;
+  return `${datePart} ${timePart}`;
+}
