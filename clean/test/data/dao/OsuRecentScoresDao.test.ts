@@ -12,6 +12,8 @@ import {AppUserApiRequestsSummariesDaoImpl} from '../../../src/main/data/dao/App
 import {AppUserRecentApiRequestsDaoImpl} from '../../../src/main/data/dao/AppUserRecentApiRequestsDaoImpl';
 import {SqlDbTable} from '../../../src/main/data/raw/db/SqlDbTable';
 import {OsuRecentScoresDao} from '../../../src/main/data/dao/OsuRecentScoresDao';
+import {getFakeRecentScoreInfos} from '../../mocks/Generators';
+import {RecentScoreInfo} from '../../../src/main/data/raw/http/boundary/RecentScoreInfo';
 
 describe('OsuRecentScoresDao', function () {
   let tables: SqlDbTable<object, object>[];
@@ -66,6 +68,41 @@ describe('OsuRecentScoresDao', function () {
       );
       assert.notStrictEqual(result, undefined);
       assert.notStrictEqual(result.length, 0);
+    });
+    it('should correctly filter scores based on mod list', async function () {
+      const osuId = 1;
+      const ruleset = OsuRuleset.osu;
+      const fakeScores = getFakeRecentScoreInfos(osuId, ruleset);
+      const modAcronyms = (s: RecentScoreInfo) => s.mods.map(m => m.acronym);
+      const hdDtScores = fakeScores.filter(
+        s =>
+          s.mods.length === 2 &&
+          modAcronyms(s).includes('HD') &&
+          modAcronyms(s).includes('DT')
+      );
+      const dtScores = fakeScores.filter(
+        s => s.mods.length === 1 && modAcronyms(s).includes('DT')
+      );
+      if (hdDtScores.length === 0 || dtScores.length === 0) {
+        throw Error('Fake scores should include popular mod combinations');
+      }
+      const targetScoreCount = hdDtScores.length + dtScores.length;
+      const appUserId = 'fake-app-user-id';
+      const result = await dao.get(
+        appUserId,
+        osuId,
+        OsuServer.Bancho,
+        true,
+        [
+          {acronym: 'HD', isOptional: true},
+          {acronym: 'DT', isOptional: false},
+        ],
+        10,
+        1,
+        ruleset
+      );
+      assert.notStrictEqual(result, undefined);
+      assert.strictEqual(result.length, targetScoreCount);
     });
   });
 });
