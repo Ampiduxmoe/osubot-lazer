@@ -10,6 +10,7 @@ import {
 import {pickRandom} from '../../../../primitives/Arrays';
 import {MainArgsProcessor} from '../../common/arg_processing/MainArgsProcessor';
 import {CommandPrefixes} from '../../common/CommandPrefixes';
+import {CommandArgument} from '../../common/arg_processing/CommandArgument';
 
 export class Help extends VkCommand<HelpExecutionArgs, HelpViewParams> {
   internalName = Help.name;
@@ -19,15 +20,24 @@ export class Help extends VkCommand<HelpExecutionArgs, HelpViewParams> {
   static prefixes = new CommandPrefixes('osubot', 'osubot-help');
   prefixes = Help.prefixes;
 
-  private COMMAND_PREFIX = new OWN_COMMAND_PREFIX(this.prefixes);
-  commandStructure = [
-    {argument: this.COMMAND_PREFIX, isOptional: false},
-    {argument: VK_FOREIGN_COMMAND_PREFIX, isOptional: true},
-  ];
+  private COMMAND_PREFIX: CommandArgument<string>;
+  private FOREIGN_COMMAND_PREFIX: CommandArgument<string>;
 
   commands: VkCommand<unknown, unknown>[];
   constructor(commands: VkCommand<unknown, unknown>[]) {
-    super();
+    const COMMAND_PREFIX = new OWN_COMMAND_PREFIX(Help.prefixes);
+    const FOREIGN_COMMAND_PREFIX = VK_FOREIGN_COMMAND_PREFIX(
+      new CommandPrefixes(
+        ...Help.prefixes,
+        ...commands.map(c => c.prefixes).flat(1)
+      )
+    );
+    super([
+      {argument: COMMAND_PREFIX, isOptional: false},
+      {argument: FOREIGN_COMMAND_PREFIX, isOptional: true},
+    ]);
+    this.COMMAND_PREFIX = COMMAND_PREFIX;
+    this.FOREIGN_COMMAND_PREFIX = FOREIGN_COMMAND_PREFIX;
     this.commands = commands;
   }
 
@@ -53,7 +63,7 @@ export class Help extends VkCommand<HelpExecutionArgs, HelpViewParams> {
       .at(0)
       .extract();
     const commandPrefix = argsProcessor
-      .use(VK_FOREIGN_COMMAND_PREFIX)
+      .use(this.FOREIGN_COMMAND_PREFIX)
       .at(0)
       .extract();
 

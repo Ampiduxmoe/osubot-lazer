@@ -26,9 +26,11 @@ export class ApiUsageSummary extends VkCommand<
   static prefixes = new CommandPrefixes();
   prefixes = ApiUsageSummary.prefixes;
 
-  private WORD_API = WORD('api');
-  private WORD_USAGE = WORD('usage');
-  commandStructure = [
+  private static WORD_API = WORD('api');
+  private WORD_API = ApiUsageSummary.WORD_API;
+  private static WORD_USAGE = WORD('usage');
+  private WORD_USAGE = ApiUsageSummary.WORD_USAGE;
+  private static commandStructure = [
     {argument: this.WORD_API, isOptional: false},
     {argument: this.WORD_USAGE, isOptional: false},
     {argument: DATE, isOptional: false},
@@ -41,7 +43,7 @@ export class ApiUsageSummary extends VkCommand<
     adminVkIds: number[],
     getApiUsageSummary: GetApiUsageSummaryUseCase
   ) {
-    super();
+    super(ApiUsageSummary.commandStructure);
     this.adminVkIds = adminVkIds;
     this.getApiUsageSummary = getApiUsageSummary;
   }

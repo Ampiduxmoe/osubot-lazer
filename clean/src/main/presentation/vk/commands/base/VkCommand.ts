@@ -9,7 +9,11 @@ export abstract class VkCommand<TExecutionArgs, TViewParams> {
   abstract readonly shortDescription: string;
   abstract readonly longDescription: string;
   abstract readonly prefixes: CommandPrefixes;
-  abstract readonly commandStructure: Readonly<CommandStructureElement>[];
+  readonly commandStructure: Readonly<CommandStructureElement>[];
+
+  constructor(commandStructure: Readonly<CommandStructureElement>[]) {
+    this.commandStructure = commandStructure;
+  }
 
   abstract matchVkMessage(
     ctx: VkMessageContext

@@ -2,10 +2,6 @@ import {OsuServer} from '../../../../primitives/OsuServer';
 import {SERVERS} from '../OsuServers';
 import {pickRandom, uniquesFilter} from '../../../../primitives/Arrays';
 import {CommandArgument} from './CommandArgument';
-import {SetUsername} from '../../vk/commands/SetUsername';
-import {UserInfo} from '../../vk/commands/UserInfo';
-import {UserRecentPlays} from '../../vk/commands/UserRecentPlays';
-import {Help} from '../../vk/commands/Help';
 import {ModArg} from './ModArg';
 import {CommandPrefixes} from '../CommandPrefixes';
 import {ALL_OSU_RULESETS, OsuRuleset} from '../../../../primitives/OsuRuleset';
@@ -44,30 +40,21 @@ export class OWN_COMMAND_PREFIX implements CommandArgument<string> {
   }
 }
 
-export const VK_FOREIGN_COMMAND_PREFIX: CommandArgument<string> = {
+export const VK_FOREIGN_COMMAND_PREFIX: (
+  validPrefixes: CommandPrefixes
+) => CommandArgument<string> = validPrefixes => ({
   displayName: 'command',
   description: 'буква или название команды',
   get usageExample(): string {
-    const somePrefixes = [
-      ...SetUsername.prefixes,
-      ...UserInfo.prefixes,
-      ...UserRecentPlays.prefixes,
-    ];
-    return pickRandom(somePrefixes);
+    return pickRandom(validPrefixes);
   },
   match: function (token: string): boolean {
-    const allPrefixes = new CommandPrefixes(
-      ...Help.prefixes,
-      ...SetUsername.prefixes,
-      ...UserInfo.prefixes,
-      ...UserRecentPlays.prefixes
-    );
-    return allPrefixes.matchIgnoringCase(token);
+    return validPrefixes.matchIgnoringCase(token);
   },
   parse: function (token: string): string {
     return token;
   },
-};
+});
 
 export const USERNAME: CommandArgument<string> = {
   displayName: 'username',

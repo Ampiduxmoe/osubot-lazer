@@ -27,8 +27,9 @@ export class SetUsername extends VkCommand<
   static prefixes = new CommandPrefixes('n', 'nickname');
   prefixes = SetUsername.prefixes;
 
-  private COMMAND_PREFIX = new OWN_COMMAND_PREFIX(this.prefixes);
-  commandStructure = [
+  private static COMMAND_PREFIX = new OWN_COMMAND_PREFIX(this.prefixes);
+  private COMMAND_PREFIX = SetUsername.COMMAND_PREFIX;
+  private static commandStructure = [
     {argument: SERVER_PREFIX, isOptional: false},
     {argument: this.COMMAND_PREFIX, isOptional: false},
     {argument: USERNAME, isOptional: false},
@@ -37,7 +38,7 @@ export class SetUsername extends VkCommand<
 
   setUsername: SetUsernameUseCase;
   constructor(setUsername: SetUsernameUseCase) {
-    super();
+    super(SetUsername.commandStructure);
     this.setUsername = setUsername;
   }
 

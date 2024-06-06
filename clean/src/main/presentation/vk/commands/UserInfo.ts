@@ -31,8 +31,9 @@ export class UserInfo extends VkCommand<
   static prefixes = new CommandPrefixes('u', 'user');
   prefixes = UserInfo.prefixes;
 
-  private COMMAND_PREFIX = new OWN_COMMAND_PREFIX(this.prefixes);
-  commandStructure = [
+  private static COMMAND_PREFIX = new OWN_COMMAND_PREFIX(this.prefixes);
+  private COMMAND_PREFIX = UserInfo.COMMAND_PREFIX;
+  private static commandStructure = [
     {argument: SERVER_PREFIX, isOptional: false},
     {argument: this.COMMAND_PREFIX, isOptional: false},
     {argument: USERNAME, isOptional: true},
@@ -45,7 +46,7 @@ export class UserInfo extends VkCommand<
     getRecentPlays: GetOsuUserInfoUseCase,
     getAppUserInfo: GetAppUserInfoUseCase
   ) {
-    super();
+    super(UserInfo.commandStructure);
     this.getOsuUserInfo = getRecentPlays;
     this.getAppUserInfo = getAppUserInfo;
   }

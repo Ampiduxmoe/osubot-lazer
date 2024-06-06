@@ -60,8 +60,9 @@ export class UserRecentPlays extends VkCommand<
   );
   prefixes = UserRecentPlays.prefixes;
 
-  private COMMAND_PREFIX = new OWN_COMMAND_PREFIX(this.prefixes);
-  commandStructure = [
+  private static COMMAND_PREFIX = new OWN_COMMAND_PREFIX(this.prefixes);
+  private COMMAND_PREFIX = UserRecentPlays.COMMAND_PREFIX;
+  private static commandStructure = [
     {argument: SERVER_PREFIX, isOptional: false},
     {argument: this.COMMAND_PREFIX, isOptional: false},
     {argument: USERNAME, isOptional: true},
@@ -77,7 +78,7 @@ export class UserRecentPlays extends VkCommand<
     getRecentPlays: GetRecentPlaysUseCase,
     getAppUserInfo: GetAppUserInfoUseCase
   ) {
-    super();
+    super(UserRecentPlays.commandStructure);
     this.getRecentPlays = getRecentPlays;
     this.getAppUserInfo = getAppUserInfo;
   }
