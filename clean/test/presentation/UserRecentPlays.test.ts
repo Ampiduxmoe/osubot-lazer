@@ -589,6 +589,11 @@ function scoreInfoToRecentPlay(recentScoreInfo: RecentScoreInfo): RecentPlay {
       countOk: s.statistics.ok ?? 0,
       countMeh: s.statistics.meh ?? 0,
       countMiss: s.statistics.miss ?? 0,
+      countLargeTickHit: s.statistics.largeTickHit ?? 0,
+      countSmallTickHit: s.statistics.smallTickHit ?? 0,
+      countSmallTickMiss: s.statistics.smallTickMiss ?? 0,
+      countPerfect: s.statistics.perfect ?? 0,
+      countGood: s.statistics.good ?? 0,
     },
     grade: s.rank,
   };
