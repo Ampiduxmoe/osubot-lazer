@@ -7,12 +7,12 @@ export function main() {
   const app = new App(appConfig);
   app.start();
 
-  const shutdown = () => {
-    console.log('Program received SIGTERM, attempting to shutdown now...');
+  const shutdown = (signal: string) => {
+    console.log(`Program received ${signal}, attempting to shutdown now...`);
     app.stop();
   };
-  process.on('SIGTERM', shutdown);
-  process.on('SIGINT', shutdown);
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT', () => shutdown('SIGINT'));
 }
 
 main();
