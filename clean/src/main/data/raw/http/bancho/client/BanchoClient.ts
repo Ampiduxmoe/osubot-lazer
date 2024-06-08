@@ -6,15 +6,20 @@ import {BanchoUsers} from './users/BanchoUsers';
 export class BanchoClient {
   private ouathClientId: number;
   private oauthClientSecret: string;
+  private saveOuathToken: (t: OsuOauthAccessToken) => Promise<void>;
   private httpClient = axios.create({
     baseURL: 'https://osu.ppy.sh/api/v2',
     timeout: 4e3,
-    validateStatus: function (status: number) {
+    validateStatus: (status: number) => {
       if (status === 200) {
         return true;
       }
       if (status === 404) {
         return true;
+      }
+      if (status === 401) {
+        this.ouathToken = undefined;
+        return false;
       }
       return false;
     },
@@ -27,9 +32,16 @@ export class BanchoClient {
     return this.httpClient;
   });
 
-  constructor(ouathClientId: number, oauthClientSecret: string) {
-    this.ouathClientId = ouathClientId;
-    this.oauthClientSecret = oauthClientSecret;
+  constructor(config: BanchoClientConfig) {
+    this.ouathClientId = config.ouathClientId;
+    this.oauthClientSecret = config.oauthClientSecret;
+    this.saveOuathToken = config.saveOuathToken;
+    config.loadLatestOuathToken().then(token => {
+      if (token === undefined) {
+        return;
+      }
+      this.trySetToken(token);
+    });
   }
 
   private async refreshTokenIfNeeded(): Promise<void> {
@@ -56,10 +68,8 @@ export class BanchoClient {
     };
     const response = await axios.post('https://osu.ppy.sh/oauth/token', body);
     const rawToken = response.data;
-    const token = new OsuOauthAccessToken(rawToken);
-    /*
-      TODO: cache token
-    */
+    const token = OsuOauthAccessToken.FromRawToken(rawToken);
+    await this.saveOuathToken(token);
     return token;
   }
 
@@ -75,3 +85,10 @@ export class BanchoClient {
     console.log('Sucessfully set token!');
   }
 }
+
+type BanchoClientConfig = {
+  ouathClientId: number;
+  oauthClientSecret: string;
+  saveOuathToken: (t: OsuOauthAccessToken) => Promise<void>;
+  loadLatestOuathToken: () => Promise<OsuOauthAccessToken | undefined>;
+};

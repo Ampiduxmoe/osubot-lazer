@@ -30,6 +30,9 @@ import {GetApiUsageSummaryUseCase} from './domain/usecases/get_api_usage_summary
 import {UserBestPlays} from './presentation/vk/commands/UserBestPlays';
 import {GetUserBestPlaysUseCase} from './domain/usecases/get_user_best_plays/GetUserBestPlaysUseCase';
 import {OsuUserBestScoresDaoImpl} from './data/dao/OsuUserBestScoresDaoImpl';
+import {BanchoClient} from './data/raw/http/bancho/client/BanchoClient';
+import {JsonObjectsImpl} from './data/raw/db/tables/JsonObjects';
+import {OsuOauthAccessToken} from './data/raw/http/bancho/OsuOauthAccessToken';
 
 export const APP_CODE_NAME = 'osubot-lazer';
 
@@ -57,27 +60,47 @@ export class App {
       this.db = new SqliteDb('osu_dev.db');
     }
 
-    const scoreSiulationApi = new OsutoolsSimulationApi(
+    const appUsers = new AppUsersImpl(this.db);
+    const requestsCounts = new AppUserApiRequestsCountsImpl(this.db);
+    const jsonObjects = new JsonObjectsImpl(this.db);
+    const osuUserSnapshots = new OsuUserSnapshotsImpl(this.db);
+    const timeWindows = new TimeWindowsImpl(this.db);
+
+    const allDbTables = [
+      appUsers,
+      requestsCounts,
+      jsonObjects,
+      osuUserSnapshots,
+      timeWindows,
+    ];
+
+    const scoreSimulationApi = new OsutoolsSimulationApi(
       config.bot.score_simulation.endpoint_url,
       config.bot.score_simulation.default_timeout
     );
 
     const banchoOuath = config.osu.bancho.oauth;
-    const banchoApi = new BanchoApi(banchoOuath.id, banchoOuath.secret);
+    const banchoClient = new BanchoClient({
+      ouathClientId: banchoOuath.id,
+      oauthClientSecret: banchoOuath.secret,
+      saveOuathToken: async token => {
+        await jsonObjects.save(token, OsuOauthAccessToken.JsonCacheDescriptor);
+        console.log('Bancho OAuth token saved');
+      },
+      loadLatestOuathToken: async () => {
+        const token = await jsonObjects.validateAndGet(
+          OsuOauthAccessToken.JsonCacheDescriptor
+        );
+        if (token === undefined) {
+          return undefined;
+        }
+        console.log('Previous Bancho OAuth token loaded');
+        return token;
+      },
+    });
+    const banchoApi = new BanchoApi(banchoClient);
 
     const osuApiList = [banchoApi];
-
-    const requestsCounts = new AppUserApiRequestsCountsImpl(this.db);
-    const timeWindows = new TimeWindowsImpl(this.db);
-    const osuUserSnapshots = new OsuUserSnapshotsImpl(this.db);
-    const appUsers = new AppUsersImpl(this.db);
-
-    const allDbTables = [
-      requestsCounts,
-      timeWindows,
-      osuUserSnapshots,
-      appUsers,
-    ];
 
     const requestSummariesDao = new AppUserApiRequestsSummariesDaoImpl(
       requestsCounts,
@@ -102,7 +125,7 @@ export class App {
       osuUserSnapshots,
       recentApiRequestsDao
     );
-    const scoreSimulationsDao = new ScoreSimulationsDaoImpl(scoreSiulationApi);
+    const scoreSimulationsDao = new ScoreSimulationsDaoImpl(scoreSimulationApi);
     const cachedOsuUsersDao = new CachedOsuUsersDaoImpl(osuUserSnapshots);
 
     const getOsuUserInfoUseCase = new GetOsuUserInfoUseCase(osuUsersDao);

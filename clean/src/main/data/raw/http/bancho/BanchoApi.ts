@@ -11,8 +11,8 @@ import {UserBestScoreInfo} from '../boundary/UserBestScoreInfo';
 
 export class BanchoApi implements OsuApi {
   private client: BanchoClient;
-  constructor(ouathClientId: number, oauthClientSecret: string) {
-    this.client = new BanchoClient(ouathClientId, oauthClientSecret);
+  constructor(client: BanchoClient) {
+    this.client = client;
   }
 
   server = OsuServer.Bancho;

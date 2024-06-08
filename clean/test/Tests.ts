@@ -4,6 +4,7 @@ describe('Data', function () {
   describe('Tables', function () {
     require('./data/raw/db/tables/AppUserApiRequestsCounts.test');
     require('./data/raw/db/tables/AppUsers.test');
+    require('./data/raw/db/tables/JsonObjects.test');
     require('./data/raw/db/tables/OsuUserSnapshots.test');
     require('./data/raw/db/tables/TimeWindows.test');
   });
