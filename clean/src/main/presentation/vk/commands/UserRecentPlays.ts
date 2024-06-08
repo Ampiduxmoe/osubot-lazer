@@ -311,18 +311,17 @@ ${couldNotGetSomeStatsMessage}
     const {artist, title} = mapset;
     const diffname = map.difficultyName;
     const mapperName = mapset.creator;
-    let lengthString: string;
-    let drainString: string;
-    {
+    const [lengthString, drainString] = (() => {
       const totalLength = new Timespan().addSeconds(map.totalLength / speed);
       const z0 = totalLength.minutes <= 9 ? '0' : '';
       const z1 = totalLength.seconds <= 9 ? '0' : '';
       const drainLength = new Timespan().addSeconds(map.drainLength / speed);
       const z2 = drainLength.minutes <= 9 ? '0' : '';
       const z3 = drainLength.seconds <= 9 ? '0' : '';
-      lengthString = `${z0}${totalLength.minutes}:${z1}${totalLength.seconds}`;
-      drainString = `${z2}${drainLength.minutes}:${z3}${drainLength.seconds}`;
-    }
+      const lengthString = `${z0}${totalLength.minutes}:${z1}${totalLength.seconds}`;
+      const drainString = `${z2}${drainLength.minutes}:${z3}${drainLength.seconds}`;
+      return [lengthString, drainString];
+    })();
     const bpm = round(map.bpm * speed, 2);
     const sr = play.stars?.toFixed(2) ?? '—';
     const modAcronyms = play.mods.map(m => m.acronym);
