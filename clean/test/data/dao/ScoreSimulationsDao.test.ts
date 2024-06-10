@@ -1,7 +1,7 @@
 /* eslint-disable prefer-arrow-callback */
 import assert from 'assert';
 import {FakeScoreSimulationApi} from '../../mocks/data/raw/http/ScoreSimulationApi';
-import {ScoreSimulationsDao} from '../../../src/main/data/dao/ScoreSimulationsDao';
+import {ScoreSimulationsDao} from '../../../src/main/domain/requirements/dao/ScoreSimulationsDao';
 import {ScoreSimulationsDaoImpl} from '../../../src/main/data/dao/ScoreSimulationsDaoImpl';
 
 describe('ScoreSimulationsDao', function () {

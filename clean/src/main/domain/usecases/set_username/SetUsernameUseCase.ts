@@ -1,8 +1,8 @@
 import {UseCase} from '../UseCase';
 import {SetUsernameRequest} from './SetUsernameRequest';
 import {SetUsernameResponse} from './SetUsernameResponse';
-import {OsuUsersDao} from '../../../data/dao/OsuUsersDao';
-import {AppUsersDao} from '../../../data/dao/AppUsersDao';
+import {OsuUsersDao} from '../../requirements/dao/OsuUsersDao';
+import {AppUsersDao} from '../../requirements/dao/AppUsersDao';
 
 export class SetUsernameUseCase
   implements UseCase<SetUsernameRequest, SetUsernameResponse>

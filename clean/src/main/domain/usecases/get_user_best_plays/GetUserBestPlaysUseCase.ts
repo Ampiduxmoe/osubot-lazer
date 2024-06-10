@@ -1,8 +1,8 @@
 import {UseCase} from '../UseCase';
-import {CachedOsuUsersDao} from '../../../data/dao/CachedOsuUsersDao';
-import {OsuUsersDao} from '../../../data/dao/OsuUsersDao';
+import {CachedOsuUsersDao} from '../../requirements/dao/CachedOsuUsersDao';
+import {OsuUsersDao} from '../../requirements/dao/OsuUsersDao';
 import {OsuRuleset} from '../../../../primitives/OsuRuleset';
-import {ScoreSimulationsDao} from '../../../data/dao/ScoreSimulationsDao';
+import {ScoreSimulationsDao} from '../../requirements/dao/ScoreSimulationsDao';
 import {BeatmapStats} from '../../entities/BeatmapStats';
 import {OsuServer} from '../../../../primitives/OsuServer';
 import {
@@ -17,7 +17,7 @@ import {GetUserBestPlaysRequest} from './GetUserBestPlaysRequest';
 import {
   OsuUserBestScoresDao,
   UserBestScore,
-} from '../../../data/dao/OsuUserBestScoresDao';
+} from '../../requirements/dao/OsuUserBestScoresDao';
 
 export class GetUserBestPlaysUseCase
   implements UseCase<GetUserBestPlaysRequest, GetUserBestPlaysResponse>

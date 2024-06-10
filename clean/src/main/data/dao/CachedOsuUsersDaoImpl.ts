@@ -1,6 +1,9 @@
 import {OsuServer} from '../../../primitives/OsuServer';
 import {OsuUserSnapshots} from '../raw/db/tables/OsuUserSnapshots';
-import {CachedOsuUser, CachedOsuUsersDao} from './CachedOsuUsersDao';
+import {
+  CachedOsuUser,
+  CachedOsuUsersDao,
+} from '../../domain/requirements/dao/CachedOsuUsersDao';
 
 export class CachedOsuUsersDaoImpl implements CachedOsuUsersDao {
   private osuUserSnapshotsTable: OsuUserSnapshots;

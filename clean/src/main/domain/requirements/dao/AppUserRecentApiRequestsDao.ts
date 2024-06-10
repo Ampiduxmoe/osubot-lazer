@@ -1,4 +1,4 @@
-import {Timespan} from '../../../primitives/Timespan';
+import {Timespan} from '../../../../primitives/Timespan';
 
 export interface AppUserRecentApiRequestsDao {
   readonly minStoreTime: Timespan;

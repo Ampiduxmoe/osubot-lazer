@@ -9,7 +9,7 @@ import {
   SimulatedScoreMania,
   SimulatedScoreOsu,
   SimulatedScoreTaiko,
-} from './ScoreSimulationsDao';
+} from '../../domain/requirements/dao/ScoreSimulationsDao';
 
 export class ScoreSimulationsDaoImpl implements ScoreSimulationsDao {
   private apiHealthCheckJob: NodeJS.Timeout | undefined = undefined;

@@ -4,9 +4,12 @@ import {OsuApi} from '../raw/http/OsuAPI';
 import {
   AppUserRecentApiRequestsDao,
   COMMON_REQUEST_SUBTARGETS,
-} from './AppUserRecentApiRequestsDao';
+} from '../../domain/requirements/dao/AppUserRecentApiRequestsDao';
 import {OsuUserSnapshots} from '../raw/db/tables/OsuUserSnapshots';
-import {OsuUserBestScoresDao, UserBestScore} from './OsuUserBestScoresDao';
+import {
+  OsuUserBestScoresDao,
+  UserBestScore,
+} from '../../domain/requirements/dao/OsuUserBestScoresDao';
 
 export class OsuUserBestScoresDaoImpl implements OsuUserBestScoresDao {
   private apis: OsuApi[];

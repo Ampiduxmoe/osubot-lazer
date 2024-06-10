@@ -1,7 +1,7 @@
 import {UseCase} from '../UseCase';
 import {GetApiUsageSummaryRequest} from './GetApiUsageSummaryRequest';
 import {GetApiUsageSummaryResponse} from './GetApiUsageSummaryResponse';
-import {AppUserApiRequestsSummariesDao} from '../../../data/dao/AppUserApiRequestsSummariesDao';
+import {AppUserApiRequestsSummariesDao} from '../../requirements/dao/AppUserApiRequestsSummariesDao';
 
 export class GetApiUsageSummaryUseCase
   implements UseCase<GetApiUsageSummaryRequest, GetApiUsageSummaryResponse>

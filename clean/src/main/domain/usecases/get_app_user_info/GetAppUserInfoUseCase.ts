@@ -1,4 +1,4 @@
-import {AppUsersDao} from '../../../data/dao/AppUsersDao';
+import {AppUsersDao} from '../../requirements/dao/AppUsersDao';
 import {UseCase} from '../UseCase';
 import {GetAppUserInfoRequest} from './GetAppUserInfoRequest';
 import {GetAppUserInfoResponse} from './GetAppUserInfoResponse';

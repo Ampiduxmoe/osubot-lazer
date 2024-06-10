@@ -1,6 +1,6 @@
-import {OsuServer} from '../../../primitives/OsuServer';
-import {OsuRuleset} from '../../../primitives/OsuRuleset';
-import {UserBestScoreInfo} from '../raw/http/boundary/UserBestScoreInfo';
+import {OsuServer} from '../../../../primitives/OsuServer';
+import {OsuRuleset} from '../../../../primitives/OsuRuleset';
+import {UserBestScoreInfo} from '../../../data/raw/http/boundary/UserBestScoreInfo';
 
 export interface OsuUserBestScoresDao {
   get(

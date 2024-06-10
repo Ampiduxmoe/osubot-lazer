@@ -1,6 +1,6 @@
-import {RecentScoreInfo} from '../raw/http/boundary/RecentScoreInfo';
-import {OsuServer} from '../../../primitives/OsuServer';
-import {OsuRuleset} from '../../../primitives/OsuRuleset';
+import {RecentScoreInfo} from '../../../data/raw/http/boundary/RecentScoreInfo';
+import {OsuServer} from '../../../../primitives/OsuServer';
+import {OsuRuleset} from '../../../../primitives/OsuRuleset';
 
 export interface OsuRecentScoresDao {
   get(

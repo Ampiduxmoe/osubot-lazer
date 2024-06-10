@@ -1,7 +1,7 @@
 import {UseCase} from '../UseCase';
 import {GetOsuUserInfoRequest} from './GetOsuUserInfoRequest';
 import {GetOsuUserInfoResponse} from './GetOsuUserInfoResponse';
-import {OsuUsersDao} from '../../../data/dao/OsuUsersDao';
+import {OsuUsersDao} from '../../requirements/dao/OsuUsersDao';
 
 export class GetOsuUserInfoUseCase
   implements UseCase<GetOsuUserInfoRequest, GetOsuUserInfoResponse>

@@ -1,7 +1,7 @@
-import {ScoreSimulationInfoCtb} from '../raw/http/boundary/ScoreSimulationInfoCtb';
-import {ScoreSimulationInfoMania} from '../raw/http/boundary/ScoreSimulationInfoMania';
-import {ScoreSimulationInfoOsu} from '../raw/http/boundary/ScoreSimulationInfoOsu';
-import {ScoreSimulationInfoTaiko} from '../raw/http/boundary/ScoreSimulationInfoTaiko';
+import {ScoreSimulationInfoCtb} from '../../../data/raw/http/boundary/ScoreSimulationInfoCtb';
+import {ScoreSimulationInfoMania} from '../../../data/raw/http/boundary/ScoreSimulationInfoMania';
+import {ScoreSimulationInfoOsu} from '../../../data/raw/http/boundary/ScoreSimulationInfoOsu';
+import {ScoreSimulationInfoTaiko} from '../../../data/raw/http/boundary/ScoreSimulationInfoTaiko';
 
 export interface ScoreSimulationsDao {
   getForOsu(

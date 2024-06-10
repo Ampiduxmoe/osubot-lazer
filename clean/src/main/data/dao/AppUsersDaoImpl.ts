@@ -1,7 +1,10 @@
 import {OsuServer} from '../../../primitives/OsuServer';
 import {AppUser, AppUserKey} from '../raw/db/entities/AppUser';
 import {AppUsers} from '../raw/db/tables/AppUsers';
-import {AppUserInfo, AppUsersDao} from './AppUsersDao';
+import {
+  AppUserInfo,
+  AppUsersDao,
+} from '../../domain/requirements/dao/AppUsersDao';
 
 export class AppUsersDaoImpl implements AppUsersDao {
   private appUsersTable: AppUsers;

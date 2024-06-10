@@ -5,8 +5,8 @@ import {SqliteDb} from '../../../src/main/data/raw/db/SqliteDb';
 import {AppUserApiRequestsCountsImpl} from '../../../src/main/data/raw/db/tables/AppUserApiRequestsCounts';
 import {TimeWindowsImpl} from '../../../src/main/data/raw/db/tables/TimeWindows';
 import {SqlDbTable} from '../../../src/main/data/raw/db/SqlDbTable';
-import {AppUserApiRequestsSummariesDao} from '../../../src/main/data/dao/AppUserApiRequestsSummariesDao';
-import {AppUserApiRequests} from '../../../src/main/data/dao/AppUserRecentApiRequestsDao';
+import {AppUserApiRequestsSummariesDao} from '../../../src/main/domain/requirements/dao/AppUserApiRequestsSummariesDao';
+import {AppUserApiRequests} from '../../../src/main/domain/requirements/dao/AppUserRecentApiRequestsDao';
 
 describe('AppUserApiRequestsSummariesDao', function () {
   let tables: SqlDbTable<object, object>[];

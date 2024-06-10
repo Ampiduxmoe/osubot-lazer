@@ -1,5 +1,5 @@
 import {OsuServer} from '../../../primitives/OsuServer';
-import {OsuUser, OsuUsersDao} from './OsuUsersDao';
+import {OsuUser, OsuUsersDao} from '../../domain/requirements/dao/OsuUsersDao';
 import {OsuApi} from '../raw/http/OsuAPI';
 import {
   OsuUserSnapshot,
@@ -10,7 +10,7 @@ import {OsuUserInfo} from '../raw/http/boundary/OsuUserInfo';
 import {
   AppUserRecentApiRequestsDao,
   COMMON_REQUEST_SUBTARGETS,
-} from './AppUserRecentApiRequestsDao';
+} from '../../domain/requirements/dao/AppUserRecentApiRequestsDao';
 import {OsuUserSnapshots} from '../raw/db/tables/OsuUserSnapshots';
 
 export class OsuUsersDaoImpl implements OsuUsersDao {

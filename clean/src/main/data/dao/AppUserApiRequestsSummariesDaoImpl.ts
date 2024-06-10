@@ -5,8 +5,8 @@ import {TimeWindows} from '../raw/db/tables/TimeWindows';
 import {
   AppUserApiRequestsSummariesDao,
   AppUserApiRequestsSummary,
-} from './AppUserApiRequestsSummariesDao';
-import {AppUserApiRequests} from './AppUserRecentApiRequestsDao';
+} from '../../domain/requirements/dao/AppUserApiRequestsSummariesDao';
+import {AppUserApiRequests} from '../../domain/requirements/dao/AppUserRecentApiRequestsDao';
 
 export class AppUserApiRequestsSummariesDaoImpl
   implements AppUserApiRequestsSummariesDao

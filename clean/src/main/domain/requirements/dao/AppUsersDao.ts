@@ -1,5 +1,5 @@
-import {OsuRuleset} from '../../../primitives/OsuRuleset';
-import {OsuServer} from '../../../primitives/OsuServer';
+import {OsuRuleset} from '../../../../primitives/OsuRuleset';
+import {OsuServer} from '../../../../primitives/OsuServer';
 
 export interface AppUsersDao {
   get(id: string, server: OsuServer): Promise<AppUserInfo | undefined>;

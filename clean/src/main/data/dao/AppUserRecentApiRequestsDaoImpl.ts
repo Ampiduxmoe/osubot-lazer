@@ -1,9 +1,9 @@
 import {Timespan} from '../../../primitives/Timespan';
-import {AppUserApiRequestsSummariesDao} from './AppUserApiRequestsSummariesDao';
+import {AppUserApiRequestsSummariesDao} from '../../domain/requirements/dao/AppUserApiRequestsSummariesDao';
 import {
   AppUserApiRequests,
   AppUserRecentApiRequestsDao,
-} from './AppUserRecentApiRequestsDao';
+} from '../../domain/requirements/dao/AppUserRecentApiRequestsDao';
 
 export class AppUserRecentApiRequestsDaoImpl
   implements AppUserRecentApiRequestsDao

@@ -1,11 +1,14 @@
 import {OsuServer} from '../../../primitives/OsuServer';
 import {OsuRuleset} from '../../../primitives/OsuRuleset';
-import {OsuRecentScoresDao, RecentScore} from './OsuRecentScoresDao';
+import {
+  OsuRecentScoresDao,
+  RecentScore,
+} from '../../domain/requirements/dao/OsuRecentScoresDao';
 import {OsuApi} from '../raw/http/OsuAPI';
 import {
   AppUserRecentApiRequestsDao,
   COMMON_REQUEST_SUBTARGETS,
-} from './AppUserRecentApiRequestsDao';
+} from '../../domain/requirements/dao/AppUserRecentApiRequestsDao';
 import {OsuUserSnapshots} from '../raw/db/tables/OsuUserSnapshots';
 
 export class OsuRecentScoresDaoImpl implements OsuRecentScoresDao {

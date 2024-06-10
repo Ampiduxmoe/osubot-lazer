@@ -6,7 +6,10 @@ import {OsuServer} from '../../../src/primitives/OsuServer';
 import {OsuRuleset} from '../../../src/primitives/OsuRuleset';
 import {AppUsersImpl} from '../../../src/main/data/raw/db/tables/AppUsers';
 import {AppUser} from '../../../src/main/data/raw/db/entities/AppUser';
-import {AppUserInfo, AppUsersDao} from '../../../src/main/data/dao/AppUsersDao';
+import {
+  AppUserInfo,
+  AppUsersDao,
+} from '../../../src/main/domain/requirements/dao/AppUsersDao';
 
 describe('AppUsersDao', function () {
   const db = new SqliteDb(':memory:');
