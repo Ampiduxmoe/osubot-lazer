@@ -36,7 +36,7 @@ import {Timespan} from '../../../../primitives/Timespan';
 import {ModArg} from '../../common/arg_processing/ModArg';
 import {CommandPrefixes} from '../../common/CommandPrefixes';
 import {OsuRuleset} from '../../../../primitives/OsuRuleset';
-import {sumBy} from '../../../../primitives/Arrays';
+import {sum} from '../../../../primitives/Arrays';
 
 export class UserRecentPlays extends VkCommand<
   UserRecentPlaysExecutionArgs,
@@ -598,17 +598,14 @@ function getMapCompletion(
     return hitCountsTotal / play.beatmap.maxCombo;
   } else if (mode === OsuRuleset.mania) {
     const statistics = play.statistics as RecentPlayStatisticsMania;
-    const hitCountsTotal = sumBy(
-      x => x,
-      [
-        statistics.countPerfect,
-        statistics.countGreat,
-        statistics.countGood,
-        statistics.countOk,
-        statistics.countMeh,
-        statistics.countMiss,
-      ]
-    );
+    const hitCountsTotal = sum([
+      statistics.countPerfect,
+      statistics.countGreat,
+      statistics.countGood,
+      statistics.countOk,
+      statistics.countMeh,
+      statistics.countMiss,
+    ]);
     const objectsTotal = play.beatmap.countCircles + play.beatmap.countSliders;
     return hitCountsTotal / objectsTotal;
   } else {

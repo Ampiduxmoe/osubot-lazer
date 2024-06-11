@@ -3,7 +3,7 @@ import {ScoreSimulationInfoCtb} from '../../../../../src/main/data/raw/http/boun
 import {ScoreSimulationInfoMania} from '../../../../../src/main/data/raw/http/boundary/ScoreSimulationInfoMania';
 import {ScoreSimulationInfoOsu} from '../../../../../src/main/data/raw/http/boundary/ScoreSimulationInfoOsu';
 import {ScoreSimulationInfoTaiko} from '../../../../../src/main/data/raw/http/boundary/ScoreSimulationInfoTaiko';
-import {maxBy, minBy, sumBy} from '../../../../../src/primitives/Arrays';
+import {max, min, sum} from '../../../../../src/primitives/Arrays';
 export class FakeScoreSimulationApi implements ScoreSimulationApi {
   async status(): Promise<string> {
     return 'ok';
@@ -35,9 +35,9 @@ export class FakeScoreSimulationApi implements ScoreSimulationApi {
       .toString()
       .split('')
       .map(c => parseInt(c));
-    const beatmapIdDigitsSum = sumBy(x => x, beatmapIdDigits);
-    const maxBeatmapIdDigit = maxBy(x => x, beatmapIdDigits)!;
-    const minBeatmapIdDigit = minBy(x => x, beatmapIdDigits)!;
+    const beatmapIdDigitsSum = sum(beatmapIdDigits);
+    const maxBeatmapIdDigit = max(beatmapIdDigits);
+    const minBeatmapIdDigit = min(beatmapIdDigits);
     const scoreCombo = combo ?? goods + mehs;
     const scoreAccuracy =
       maxBeatmapIdDigit / (minBeatmapIdDigit + maxBeatmapIdDigit);
@@ -109,8 +109,8 @@ export class FakeScoreSimulationApi implements ScoreSimulationApi {
       .toString()
       .split('')
       .map(c => parseInt(c));
-    const beatmapIdDigitsSum = sumBy(x => x, beatmapIdDigits);
-    const maxBeatmapIdDigit = maxBy(x => x, beatmapIdDigits)!;
+    const beatmapIdDigitsSum = sum(beatmapIdDigits);
+    const maxBeatmapIdDigit = max(beatmapIdDigits);
     return {
       difficultyAttributes: {
         starRating: maxBeatmapIdDigit,
