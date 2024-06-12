@@ -3,11 +3,11 @@ import {VkMessageContext} from '../VkMessageContext';
 import {CommandMatchResult} from '../../common/CommandMatchResult';
 import {VkOutputMessage} from './base/VkOutputMessage';
 import {VkCommand} from './base/VkCommand';
-import {GetRecentPlaysUseCase} from '../../../domain/usecases/get_recent_plays/GetRecentPlaysUseCase';
+import {GetRecentPlaysUseCase} from '../../../application/usecases/get_recent_plays/GetRecentPlaysUseCase';
 import {OsuServer} from '../../../../primitives/OsuServer';
 import {APP_CODE_NAME} from '../../../App';
 import {SERVERS} from '../../common/OsuServers';
-import {GetAppUserInfoUseCase} from '../../../domain/usecases/get_app_user_info/GetAppUserInfoUseCase';
+import {GetAppUserInfoUseCase} from '../../../application/usecases/get_app_user_info/GetAppUserInfoUseCase';
 import {VkIdConverter} from '../VkIdConverter';
 import {clamp, round} from '../../../../primitives/Numbers';
 import {
@@ -21,7 +21,7 @@ import {
   SettingsDT,
   SettingsDefaults,
   SettingsHT,
-} from '../../../domain/usecases/get_recent_plays/GetRecentPlaysResponse';
+} from '../../../application/usecases/get_recent_plays/GetRecentPlaysResponse';
 import {
   OWN_COMMAND_PREFIX,
   MODS,

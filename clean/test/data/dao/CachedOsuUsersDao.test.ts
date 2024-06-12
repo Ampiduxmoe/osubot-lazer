@@ -5,7 +5,7 @@ import {SqliteDb} from '../../../src/main/data/raw/db/SqliteDb';
 import {getFakeOsuUserUsername} from '../../mocks/Generators';
 import {OsuServer} from '../../../src/primitives/OsuServer';
 import {OsuUserSnapshotsImpl} from '../../../src/main/data/raw/db/tables/OsuUserSnapshots';
-import {CachedOsuUsersDao} from '../../../src/main/domain/requirements/dao/CachedOsuUsersDao';
+import {CachedOsuUsersDao} from '../../../src/main/application/requirements/dao/CachedOsuUsersDao';
 import {OsuUserSnapshot} from '../../../src/main/data/raw/db/entities/OsuUserSnapshot';
 import {OsuRuleset} from '../../../src/primitives/OsuRuleset';
 

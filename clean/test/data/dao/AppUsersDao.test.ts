@@ -9,7 +9,7 @@ import {AppUser} from '../../../src/main/data/raw/db/entities/AppUser';
 import {
   AppUserInfo,
   AppUsersDao,
-} from '../../../src/main/domain/requirements/dao/AppUsersDao';
+} from '../../../src/main/application/requirements/dao/AppUsersDao';
 
 describe('AppUsersDao', function () {
   const db = new SqliteDb(':memory:');

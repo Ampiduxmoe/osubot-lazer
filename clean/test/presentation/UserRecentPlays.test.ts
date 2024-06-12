@@ -31,16 +31,16 @@ import {
 } from '../mocks/Generators';
 import {AppUser} from '../../src/main/data/raw/db/entities/AppUser';
 import {VkIdConverter} from '../../src/main/presentation/vk/VkIdConverter';
-import {GetAppUserInfoUseCase} from '../../src/main/domain/usecases/get_app_user_info/GetAppUserInfoUseCase';
+import {GetAppUserInfoUseCase} from '../../src/main/application/usecases/get_app_user_info/GetAppUserInfoUseCase';
 import {OsuRecentScoresDaoImpl} from '../../src/main/data/dao/OsuRecentScoresDaoImpl';
 import {FakeScoreSimulationApi} from '../mocks/data/raw/http/ScoreSimulationApi';
 import {ScoreSimulationsDaoImpl} from '../../src/main/data/dao/ScoreSimulationsDaoImpl';
-import {GetRecentPlaysUseCase} from '../../src/main/domain/usecases/get_recent_plays/GetRecentPlaysUseCase';
+import {GetRecentPlaysUseCase} from '../../src/main/application/usecases/get_recent_plays/GetRecentPlaysUseCase';
 import {CachedOsuUsersDaoImpl} from '../../src/main/data/dao/CachedOsuUsersDaoImpl';
 import {
   OsuUserRecentPlays,
   RecentPlay,
-} from '../../src/main/domain/usecases/get_recent_plays/GetRecentPlaysResponse';
+} from '../../src/main/application/usecases/get_recent_plays/GetRecentPlaysResponse';
 import {RecentScoreInfo} from '../../src/main/data/raw/http/boundary/RecentScoreInfo';
 
 describe('UserRecentPlays', function () {

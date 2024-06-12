@@ -1,8 +1,8 @@
 /* eslint-disable prefer-arrow-callback */
 import assert from 'assert';
 import {UserInfo} from '../../src/main/presentation/vk/commands/UserInfo';
-import {GetAppUserInfoUseCase} from '../../src/main/domain/usecases/get_app_user_info/GetAppUserInfoUseCase';
-import {GetOsuUserInfoUseCase} from '../../src/main/domain/usecases/get_osu_user_info/GetOsuUserInfoUseCase';
+import {GetAppUserInfoUseCase} from '../../src/main/application/usecases/get_app_user_info/GetAppUserInfoUseCase';
+import {GetOsuUserInfoUseCase} from '../../src/main/application/usecases/get_osu_user_info/GetOsuUserInfoUseCase';
 import {
   createWithOnlyText,
   createWithPayload,

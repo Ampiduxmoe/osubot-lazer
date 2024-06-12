@@ -1,7 +1,7 @@
 /* eslint-disable prefer-arrow-callback */
 import assert from 'assert';
-import {GetOsuUserInfoUseCase} from '../../../src/main/domain/usecases/get_osu_user_info/GetOsuUserInfoUseCase';
-import {GetOsuUserInfoRequest} from '../../../src/main/domain/usecases/get_osu_user_info/GetOsuUserInfoRequest';
+import {GetOsuUserInfoUseCase} from '../../../src/main/application/usecases/get_osu_user_info/GetOsuUserInfoUseCase';
+import {GetOsuUserInfoRequest} from '../../../src/main/application/usecases/get_osu_user_info/GetOsuUserInfoRequest';
 import {ALL_OSU_SERVERS, OsuServer} from '../../../src/primitives/OsuServer';
 import {getFakeOsuUserUsername} from '../../mocks/Generators';
 import {ALL_OSU_RULESETS, OsuRuleset} from '../../../src/primitives/OsuRuleset';

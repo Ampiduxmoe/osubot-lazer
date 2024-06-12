@@ -12,8 +12,8 @@ import {AppUserApiRequestsCountsImpl} from '../../../src/main/data/raw/db/tables
 import {TimeWindowsImpl} from '../../../src/main/data/raw/db/tables/TimeWindows';
 import {SqlDbTable} from '../../../src/main/data/raw/db/SqlDbTable';
 import {getFakeOsuUserInfo} from '../../mocks/Generators';
-import {SetUsernameUseCase} from '../../../src/main/domain/usecases/set_username/SetUsernameUseCase';
-import {SetUsernameRequest} from '../../../src/main/domain/usecases/set_username/SetUsernameRequest';
+import {SetUsernameUseCase} from '../../../src/main/application/usecases/set_username/SetUsernameUseCase';
+import {SetUsernameRequest} from '../../../src/main/application/usecases/set_username/SetUsernameRequest';
 import {AppUsersImpl} from '../../../src/main/data/raw/db/tables/AppUsers';
 import {AppUsersDaoImpl} from '../../../src/main/data/dao/AppUsersDaoImpl';
 

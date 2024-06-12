@@ -11,7 +11,7 @@ import {AppUserRecentApiRequestsDaoImpl} from '../../../src/main/data/dao/AppUse
 import {AppUserApiRequestsCountsImpl} from '../../../src/main/data/raw/db/tables/AppUserApiRequestsCounts';
 import {TimeWindowsImpl} from '../../../src/main/data/raw/db/tables/TimeWindows';
 import {AppUserApiRequestsSummariesDaoImpl} from '../../../src/main/data/dao/AppUserApiRequestsSummariesDaoImpl';
-import {OsuUsersDao} from '../../../src/main/domain/requirements/dao/OsuUsersDao';
+import {OsuUsersDao} from '../../../src/main/application/requirements/dao/OsuUsersDao';
 import {SqlDbTable} from '../../../src/main/data/raw/db/SqlDbTable';
 
 describe('OsuUsersDao', async function () {

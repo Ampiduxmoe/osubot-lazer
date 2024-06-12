@@ -20,9 +20,3 @@ export type AppUserApiRequests = {
   subtarget?: string;
   count: number;
 };
-
-export const COMMON_REQUEST_SUBTARGETS = {
-  osuUserInfo: 'user_info',
-  userRecentPlays: 'user_recent_plays',
-  userBestPlays: 'user_best_plays',
-};

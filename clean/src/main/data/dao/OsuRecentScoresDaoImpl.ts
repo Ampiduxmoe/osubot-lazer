@@ -3,13 +3,11 @@ import {OsuRuleset} from '../../../primitives/OsuRuleset';
 import {
   OsuRecentScoresDao,
   RecentScore,
-} from '../../domain/requirements/dao/OsuRecentScoresDao';
+} from '../../application/requirements/dao/OsuRecentScoresDao';
 import {OsuApi} from '../raw/http/OsuAPI';
-import {
-  AppUserRecentApiRequestsDao,
-  COMMON_REQUEST_SUBTARGETS,
-} from '../../domain/requirements/dao/AppUserRecentApiRequestsDao';
+import {AppUserRecentApiRequestsDao} from '../../application/requirements/dao/AppUserRecentApiRequestsDao';
 import {OsuUserSnapshots} from '../raw/db/tables/OsuUserSnapshots';
+import {COMMON_REQUEST_SUBTARGETS} from './AppUserApiRequestsSummariesDaoImpl';
 
 export class OsuRecentScoresDaoImpl implements OsuRecentScoresDao {
   private apis: OsuApi[];

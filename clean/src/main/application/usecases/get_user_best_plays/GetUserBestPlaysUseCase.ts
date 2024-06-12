@@ -3,7 +3,7 @@ import {CachedOsuUsersDao} from '../../requirements/dao/CachedOsuUsersDao';
 import {OsuUsersDao} from '../../requirements/dao/OsuUsersDao';
 import {OsuRuleset} from '../../../../primitives/OsuRuleset';
 import {ScoreSimulationsDao} from '../../requirements/dao/ScoreSimulationsDao';
-import {BeatmapStats} from '../../entities/BeatmapStats';
+import {BeatmapStats} from '../../../domain/entities/BeatmapStats';
 import {OsuServer} from '../../../../primitives/OsuServer';
 import {
   BeatmapsetRankStatus,

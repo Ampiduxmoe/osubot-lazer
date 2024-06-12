@@ -5,7 +5,7 @@ import {SqliteDb} from '../../../src/main/data/raw/db/SqliteDb';
 import {
   AppUserApiRequests,
   AppUserRecentApiRequestsDao,
-} from '../../../src/main/domain/requirements/dao/AppUserRecentApiRequestsDao';
+} from '../../../src/main/application/requirements/dao/AppUserRecentApiRequestsDao';
 import {AppUserApiRequestsSummariesDaoImpl} from '../../../src/main/data/dao/AppUserApiRequestsSummariesDaoImpl';
 import {AppUserApiRequestsCountsImpl} from '../../../src/main/data/raw/db/tables/AppUserApiRequestsCounts';
 import {TimeWindowsImpl} from '../../../src/main/data/raw/db/tables/TimeWindows';

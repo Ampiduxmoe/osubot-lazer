@@ -11,12 +11,12 @@ import {AppUserApiRequestsSummariesDaoImpl} from '../../../src/main/data/dao/App
 import {AppUserApiRequestsCountsImpl} from '../../../src/main/data/raw/db/tables/AppUserApiRequestsCounts';
 import {TimeWindowsImpl} from '../../../src/main/data/raw/db/tables/TimeWindows';
 import {SqlDbTable} from '../../../src/main/data/raw/db/SqlDbTable';
-import {GetRecentPlaysUseCase} from '../../../src/main/domain/usecases/get_recent_plays/GetRecentPlaysUseCase';
+import {GetRecentPlaysUseCase} from '../../../src/main/application/usecases/get_recent_plays/GetRecentPlaysUseCase';
 import {OsuRecentScoresDaoImpl} from '../../../src/main/data/dao/OsuRecentScoresDaoImpl';
 import {FakeScoreSimulationApi} from '../../mocks/data/raw/http/ScoreSimulationApi';
 import {ScoreSimulationsDaoImpl} from '../../../src/main/data/dao/ScoreSimulationsDaoImpl';
 import {CachedOsuUsersDaoImpl} from '../../../src/main/data/dao/CachedOsuUsersDaoImpl';
-import {GetRecentPlaysRequest} from '../../../src/main/domain/usecases/get_recent_plays/GetRecentPlaysRequest';
+import {GetRecentPlaysRequest} from '../../../src/main/application/usecases/get_recent_plays/GetRecentPlaysRequest';
 import {getFakeOsuUserInfo} from '../../mocks/Generators';
 
 describe('GetRecentPlaysUseCase', function () {

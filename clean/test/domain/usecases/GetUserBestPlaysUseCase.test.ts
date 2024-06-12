@@ -15,9 +15,9 @@ import {FakeScoreSimulationApi} from '../../mocks/data/raw/http/ScoreSimulationA
 import {ScoreSimulationsDaoImpl} from '../../../src/main/data/dao/ScoreSimulationsDaoImpl';
 import {CachedOsuUsersDaoImpl} from '../../../src/main/data/dao/CachedOsuUsersDaoImpl';
 import {getFakeOsuUserInfo} from '../../mocks/Generators';
-import {GetUserBestPlaysUseCase} from '../../../src/main/domain/usecases/get_user_best_plays/GetUserBestPlaysUseCase';
+import {GetUserBestPlaysUseCase} from '../../../src/main/application/usecases/get_user_best_plays/GetUserBestPlaysUseCase';
 import {OsuUserBestScoresDaoImpl} from '../../../src/main/data/dao/OsuUserBestScoresDaoImpl';
-import {GetUserBestPlaysRequest} from '../../../src/main/domain/usecases/get_user_best_plays/GetUserBestPlaysRequest';
+import {GetUserBestPlaysRequest} from '../../../src/main/application/usecases/get_user_best_plays/GetUserBestPlaysRequest';
 
 describe('GetUserBestPlaysUseCase', function () {
   let tables: SqlDbTable<object, object>[];

@@ -3,12 +3,12 @@ import {CommandMatchResult} from '../../common/CommandMatchResult';
 import {VkOutputMessage} from './base/VkOutputMessage';
 import {VkCommand} from './base/VkCommand';
 import {OsuServer} from '../../../../primitives/OsuServer';
-import {GetOsuUserInfoUseCase} from '../../../domain/usecases/get_osu_user_info/GetOsuUserInfoUseCase';
+import {GetOsuUserInfoUseCase} from '../../../application/usecases/get_osu_user_info/GetOsuUserInfoUseCase';
 import {Timespan} from '../../../../primitives/Timespan';
 import {APP_CODE_NAME} from '../../../App';
 import {SERVERS} from '../../common/OsuServers';
 import {UserRecentPlays} from './UserRecentPlays';
-import {GetAppUserInfoUseCase} from '../../../domain/usecases/get_app_user_info/GetAppUserInfoUseCase';
+import {GetAppUserInfoUseCase} from '../../../application/usecases/get_app_user_info/GetAppUserInfoUseCase';
 import {VkIdConverter} from '../VkIdConverter';
 import {
   MODE,

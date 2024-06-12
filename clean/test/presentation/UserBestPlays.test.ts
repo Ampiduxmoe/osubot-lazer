@@ -31,16 +31,16 @@ import {
 } from '../mocks/Generators';
 import {AppUser} from '../../src/main/data/raw/db/entities/AppUser';
 import {VkIdConverter} from '../../src/main/presentation/vk/VkIdConverter';
-import {GetAppUserInfoUseCase} from '../../src/main/domain/usecases/get_app_user_info/GetAppUserInfoUseCase';
+import {GetAppUserInfoUseCase} from '../../src/main/application/usecases/get_app_user_info/GetAppUserInfoUseCase';
 import {FakeScoreSimulationApi} from '../mocks/data/raw/http/ScoreSimulationApi';
 import {ScoreSimulationsDaoImpl} from '../../src/main/data/dao/ScoreSimulationsDaoImpl';
 import {CachedOsuUsersDaoImpl} from '../../src/main/data/dao/CachedOsuUsersDaoImpl';
 import {OsuUserBestScoresDaoImpl} from '../../src/main/data/dao/OsuUserBestScoresDaoImpl';
-import {GetUserBestPlaysUseCase} from '../../src/main/domain/usecases/get_user_best_plays/GetUserBestPlaysUseCase';
+import {GetUserBestPlaysUseCase} from '../../src/main/application/usecases/get_user_best_plays/GetUserBestPlaysUseCase';
 import {
   BestPlay,
   OsuUserBestPlays,
-} from '../../src/main/domain/usecases/get_user_best_plays/GetUserBestPlaysResponse';
+} from '../../src/main/application/usecases/get_user_best_plays/GetUserBestPlaysResponse';
 import {UserBestScoreInfo} from '../../src/main/data/raw/http/boundary/UserBestScoreInfo';
 
 describe('UserBestPlays', function () {

@@ -4,7 +4,7 @@ import {VkOutputMessage} from './base/VkOutputMessage';
 import {VkCommand} from './base/VkCommand';
 import {OsuServer} from '../../../../primitives/OsuServer';
 import {APP_CODE_NAME} from '../../../App';
-import {SetUsernameUseCase} from '../../../domain/usecases/set_username/SetUsernameUseCase';
+import {SetUsernameUseCase} from '../../../application/usecases/set_username/SetUsernameUseCase';
 import {VkIdConverter} from '../VkIdConverter';
 import {
   MODE,

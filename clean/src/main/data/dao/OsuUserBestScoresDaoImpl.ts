@@ -1,15 +1,13 @@
 import {OsuServer} from '../../../primitives/OsuServer';
 import {OsuRuleset} from '../../../primitives/OsuRuleset';
 import {OsuApi} from '../raw/http/OsuAPI';
-import {
-  AppUserRecentApiRequestsDao,
-  COMMON_REQUEST_SUBTARGETS,
-} from '../../domain/requirements/dao/AppUserRecentApiRequestsDao';
+import {AppUserRecentApiRequestsDao} from '../../application/requirements/dao/AppUserRecentApiRequestsDao';
 import {OsuUserSnapshots} from '../raw/db/tables/OsuUserSnapshots';
 import {
   OsuUserBestScoresDao,
   UserBestScore,
-} from '../../domain/requirements/dao/OsuUserBestScoresDao';
+} from '../../application/requirements/dao/OsuUserBestScoresDao';
+import {COMMON_REQUEST_SUBTARGETS} from './AppUserApiRequestsSummariesDaoImpl';
 
 export class OsuUserBestScoresDaoImpl implements OsuUserBestScoresDao {
   private apis: OsuApi[];

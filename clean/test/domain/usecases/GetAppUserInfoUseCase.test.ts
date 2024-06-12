@@ -1,7 +1,7 @@
 /* eslint-disable prefer-arrow-callback */
 import assert from 'assert';
-import {GetAppUserInfoRequest} from '../../../src/main/domain/usecases/get_app_user_info/GetAppUserInfoRequest';
-import {GetAppUserInfoUseCase} from '../../../src/main/domain/usecases/get_app_user_info/GetAppUserInfoUseCase';
+import {GetAppUserInfoRequest} from '../../../src/main/application/usecases/get_app_user_info/GetAppUserInfoRequest';
+import {GetAppUserInfoUseCase} from '../../../src/main/application/usecases/get_app_user_info/GetAppUserInfoUseCase';
 import {OsuServer} from '../../../src/primitives/OsuServer';
 import {AppUsersDaoImpl} from '../../../src/main/data/dao/AppUsersDaoImpl';
 import {

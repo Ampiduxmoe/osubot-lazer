@@ -4,7 +4,7 @@ import {AppUsers} from '../raw/db/tables/AppUsers';
 import {
   AppUserInfo,
   AppUsersDao,
-} from '../../domain/requirements/dao/AppUsersDao';
+} from '../../application/requirements/dao/AppUsersDao';
 
 export class AppUsersDaoImpl implements AppUsersDao {
   private appUsersTable: AppUsers;

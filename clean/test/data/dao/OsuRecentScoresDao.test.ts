@@ -11,7 +11,7 @@ import {TimeWindowsImpl} from '../../../src/main/data/raw/db/tables/TimeWindows'
 import {AppUserApiRequestsSummariesDaoImpl} from '../../../src/main/data/dao/AppUserApiRequestsSummariesDaoImpl';
 import {AppUserRecentApiRequestsDaoImpl} from '../../../src/main/data/dao/AppUserRecentApiRequestsDaoImpl';
 import {SqlDbTable} from '../../../src/main/data/raw/db/SqlDbTable';
-import {OsuRecentScoresDao} from '../../../src/main/domain/requirements/dao/OsuRecentScoresDao';
+import {OsuRecentScoresDao} from '../../../src/main/application/requirements/dao/OsuRecentScoresDao';
 import {getFakeRecentScoreInfos} from '../../mocks/Generators';
 import {RecentScoreInfo} from '../../../src/main/data/raw/http/boundary/RecentScoreInfo';
 

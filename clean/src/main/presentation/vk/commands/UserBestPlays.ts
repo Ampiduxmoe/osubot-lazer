@@ -5,7 +5,7 @@ import {VkOutputMessage} from './base/VkOutputMessage';
 import {VkCommand} from './base/VkCommand';
 import {OsuServer} from '../../../../primitives/OsuServer';
 import {APP_CODE_NAME} from '../../../App';
-import {GetAppUserInfoUseCase} from '../../../domain/usecases/get_app_user_info/GetAppUserInfoUseCase';
+import {GetAppUserInfoUseCase} from '../../../application/usecases/get_app_user_info/GetAppUserInfoUseCase';
 import {VkIdConverter} from '../VkIdConverter';
 import {clamp, round} from '../../../../primitives/Numbers';
 import {
@@ -22,7 +22,7 @@ import {Timespan} from '../../../../primitives/Timespan';
 import {ModArg} from '../../common/arg_processing/ModArg';
 import {CommandPrefixes} from '../../common/CommandPrefixes';
 import {OsuRuleset} from '../../../../primitives/OsuRuleset';
-import {GetUserBestPlaysUseCase} from '../../../domain/usecases/get_user_best_plays/GetUserBestPlaysUseCase';
+import {GetUserBestPlaysUseCase} from '../../../application/usecases/get_user_best_plays/GetUserBestPlaysUseCase';
 import {
   BestPlay,
   BestPlayStatisticsCtb,
@@ -30,7 +30,7 @@ import {
   BestPlayStatisticsOsu,
   BestPlayStatisticsTaiko,
   OsuUserBestPlays,
-} from '../../../domain/usecases/get_user_best_plays/GetUserBestPlaysResponse';
+} from '../../../application/usecases/get_user_best_plays/GetUserBestPlaysResponse';
 
 export class UserBestPlays extends VkCommand<
   UserBestPlaysExecutionArgs,

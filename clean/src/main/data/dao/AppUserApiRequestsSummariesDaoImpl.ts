@@ -2,11 +2,9 @@ import {Timespan} from '../../../primitives/Timespan';
 import {TimeWindow} from '../raw/db/entities/TimeWindow';
 import {AppUserApiRequestsCounts} from '../raw/db/tables/AppUserApiRequestsCounts';
 import {TimeWindows} from '../raw/db/tables/TimeWindows';
-import {
-  AppUserApiRequestsSummariesDao,
-  AppUserApiRequestsSummary,
-} from '../../domain/requirements/dao/AppUserApiRequestsSummariesDao';
-import {AppUserApiRequests} from '../../domain/requirements/dao/AppUserRecentApiRequestsDao';
+import {AppUserApiRequests} from '../../application/requirements/dao/AppUserRecentApiRequestsDao';
+import {AppUserApiRequestsSummariesDao} from '../../application/requirements/dao/AppUserApiRequestsSummariesDao';
+import {AppUserApiRequestsSummary} from '../../application/requirements/dao/AppUserApiRequestsSummariesDao';
 
 export class AppUserApiRequestsSummariesDaoImpl
   implements AppUserApiRequestsSummariesDao
@@ -206,3 +204,9 @@ export class AppUserApiRequestsSummariesDaoImpl
     await this.timeWindows.addAllWithoutIds(targetDayWindows);
   }
 }
+
+export const COMMON_REQUEST_SUBTARGETS = {
+  osuUserInfo: 'user_info',
+  userRecentPlays: 'user_recent_plays',
+  userBestPlays: 'user_best_plays',
+};

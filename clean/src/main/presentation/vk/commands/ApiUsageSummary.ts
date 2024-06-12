@@ -9,8 +9,8 @@ import {
   WORD,
 } from '../../common/arg_processing/CommandArguments';
 import {MainArgsProcessor} from '../../common/arg_processing/MainArgsProcessor';
-import {GetApiUsageSummaryUseCase} from '../../../domain/usecases/get_api_usage_summary/GetApiUsageSummaryUseCase';
-import {TimeIntervalUsageSummary} from '../../../domain/usecases/get_api_usage_summary/GetApiUsageSummaryResponse';
+import {GetApiUsageSummaryUseCase} from '../../../application/usecases/get_api_usage_summary/GetApiUsageSummaryUseCase';
+import {TimeIntervalUsageSummary} from '../../../application/usecases/get_api_usage_summary/GetApiUsageSummaryResponse';
 import {Timespan} from '../../../../primitives/Timespan';
 import {sumBy} from '../../../../primitives/Arrays';
 import {CommandPrefixes} from '../../common/CommandPrefixes';

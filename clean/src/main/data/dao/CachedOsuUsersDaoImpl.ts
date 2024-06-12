@@ -3,7 +3,7 @@ import {OsuUserSnapshots} from '../raw/db/tables/OsuUserSnapshots';
 import {
   CachedOsuUser,
   CachedOsuUsersDao,
-} from '../../domain/requirements/dao/CachedOsuUsersDao';
+} from '../../application/requirements/dao/CachedOsuUsersDao';
 
 export class CachedOsuUsersDaoImpl implements CachedOsuUsersDao {
   private osuUserSnapshotsTable: OsuUserSnapshots;
