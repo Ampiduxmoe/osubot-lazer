@@ -1,8 +1,12 @@
-import {BeatmapScore} from '../beatmap_scores/BeatmapScore';
-import {Hitcounts} from '../hitcounts/Hitcounts';
+import {BeatmapScore} from '../entities/BeatmapScore';
+import {Hitcounts} from '../entities/hitcounts/Hitcounts';
+import {Mode} from '../entities/mode/Mode';
 
-export interface PpEstimationProvider<HitcountsType extends Hitcounts> {
+export interface PpEstimationProvider<
+  ModeType extends Mode,
+  HitcountsType extends Hitcounts,
+> {
   getEstimation(
-    score: BeatmapScore<HitcountsType>
+    score: BeatmapScore<ModeType, HitcountsType>
   ): Promise<number | undefined>;
 }

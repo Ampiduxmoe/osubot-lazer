@@ -1,7 +1,11 @@
-import {BeatmapScore} from './BeatmapScore';
-import {HitcountsOsu} from '../hitcounts/HitcountsOsu';
+import {OsuRuleset} from '../../../../primitives/OsuRuleset';
+import {Mode} from './Mode';
 
-export class BeatmapScoreOsu extends BeatmapScore<HitcountsOsu> {
+export class ModeOsu extends Mode {
+  readonly ruleset = OsuRuleset.osu;
+  readonly name = 'osu!';
+  readonly shortName = 'osu';
+  readonly validMods = [];
   readonly modApplyOrder = [
     ...['EZ', 'HR', 'DA'],
     ...['TP'],
@@ -22,4 +26,10 @@ export class BeatmapScoreOsu extends BeatmapScore<HitcountsOsu> {
     'WU', // Wind Up
     'WD', // Wind Down
   ];
+  areModsCompatible(a: string, b: string): boolean {
+    if (a === b) {
+      return false;
+    }
+    return true;
+  }
 }

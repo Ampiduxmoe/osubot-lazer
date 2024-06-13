@@ -1,9 +1,6 @@
-import {OsuRuleset} from '../../../../primitives/OsuRuleset';
 import {Hitcounts} from './Hitcounts';
 
 export class HitcountsCtb extends Hitcounts {
-  readonly mode = OsuRuleset.ctb;
-
   // [great, largeTickHit, smallTickHit, smallTickMiss, miss]
   private hitcounts: number[];
   get orderedValues(): readonly number[] {

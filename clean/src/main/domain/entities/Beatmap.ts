@@ -1,10 +1,10 @@
-import {OsuRuleset} from '../../../primitives/OsuRuleset';
 import {Beatmapset} from './Beatmapset';
 import {Song} from './Song';
+import {Mode} from './mode/Mode';
 
-export class Beatmap {
+export class Beatmap<ModeType extends Mode> {
   readonly id: number;
-  readonly mode: OsuRuleset;
+  readonly mode: ModeType;
   readonly difficultyName: string;
   readonly stats: {
     readonly ar: number;
@@ -32,7 +32,7 @@ export class Beatmap {
     song,
   }: {
     id: number;
-    mode: OsuRuleset;
+    mode: ModeType;
     difficultyName: string;
     stats: {
       ar: number;
@@ -69,7 +69,7 @@ export class Beatmap {
     song,
   }: {
     id?: number;
-    mode?: OsuRuleset;
+    mode?: ModeType;
     difficultyName?: string;
     stats?: {
       ar: number;

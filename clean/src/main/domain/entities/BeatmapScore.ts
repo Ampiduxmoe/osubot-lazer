@@ -1,17 +1,19 @@
-import {Hitcounts} from '../hitcounts/Hitcounts';
-import {Mod} from '../mods/Mod';
-import {Beatmap} from '../Beatmap';
+import {Hitcounts} from './hitcounts/Hitcounts';
+import {Mod} from './mods/Mod';
+import {Beatmap} from './Beatmap';
 import {StarRatingEstimationProvider} from '../requirements/StarRatingEstimationProvider';
 import {PpEstimationProvider} from '../requirements/PpEstimationProvider';
+import {Mode} from './mode/Mode';
 
-export abstract class BeatmapScore<HitcountsType extends Hitcounts> {
+export abstract class BeatmapScore<
+  ModeType extends Mode,
+  HitcountsType extends Hitcounts,
+> {
   readonly id: number;
   readonly endedAt: Date;
   readonly passed: boolean;
   readonly mapProgress: number;
-  readonly mods: readonly Mod<object>[];
-  abstract readonly modApplyOrder: string[];
-  abstract readonly starRatingChangingMods: string[];
+  readonly mods: readonly Mod<ModeType, object>[];
   readonly totalScore: number;
   readonly maxCombo: number;
   readonly hitcounts: HitcountsType;
@@ -20,7 +22,8 @@ export abstract class BeatmapScore<HitcountsType extends Hitcounts> {
   readonly pp: number | null;
 
   readonly hasStarRatingChangingMods: boolean = (() => {
-    const starRatingChangingModsLowercase = this.modApplyOrder.map(x =>
+    const mode = this.baseBeatmap.mode;
+    const starRatingChangingModsLowercase = mode.modApplyOrder.map(x =>
       x.toLowerCase()
     );
     const scoreModsLowercase = this.mods.map(x => x.acronym.toLowerCase());
@@ -32,10 +35,11 @@ export abstract class BeatmapScore<HitcountsType extends Hitcounts> {
     return false;
   })();
 
-  readonly baseBeatmap: Beatmap;
-  readonly moddedBeatmap: Beatmap = (() => {
+  readonly baseBeatmap: Beatmap<ModeType>;
+  readonly moddedBeatmap: Beatmap<ModeType> = (() => {
     let beatmap = this.baseBeatmap;
-    const modApplyOrderLowercase = this.modApplyOrder.map(x => x.toLowerCase());
+    const mode = beatmap.mode;
+    const modApplyOrderLowercase = mode.modApplyOrder.map(x => x.toLowerCase());
     for (const acronym in modApplyOrderLowercase) {
       const scoreMod = this.mods.find(m => m.acronym.toLowerCase() === acronym);
       if (scoreMod !== undefined) {
@@ -48,7 +52,10 @@ export abstract class BeatmapScore<HitcountsType extends Hitcounts> {
     return beatmap;
   })();
 
-  private starRatingEstimationProvider: StarRatingEstimationProvider<HitcountsType>;
+  private starRatingEstimationProvider: StarRatingEstimationProvider<
+    ModeType,
+    HitcountsType
+  >;
   getEstimatedStarRating: () => Promise<number | undefined> = (() => {
     let starRatingEstimationPromise: Promise<number | undefined> | null = null;
     return () => {
@@ -60,7 +67,7 @@ export abstract class BeatmapScore<HitcountsType extends Hitcounts> {
     };
   })();
 
-  private ppEstimationProvider: PpEstimationProvider<HitcountsType>;
+  private ppEstimationProvider: PpEstimationProvider<ModeType, HitcountsType>;
   getEstimatedPp: () => Promise<number | undefined> = (() => {
     let ppEstimationPromise: Promise<number | undefined> | null = null;
     return () => {
@@ -90,15 +97,18 @@ export abstract class BeatmapScore<HitcountsType extends Hitcounts> {
     endedAt: Date;
     passed: boolean;
     mapProgress: number;
-    mods: Mod<object>[];
+    mods: Mod<ModeType, object>[];
     totalScore: number;
     maxCombo: number;
     hitcounts: HitcountsType;
     accuracy: number;
     rank: BeatmapScoreRank;
     pp: number | null;
-    starRatingEstimationProvider: StarRatingEstimationProvider<HitcountsType>;
-    ppEstimationProvider: PpEstimationProvider<HitcountsType>;
+    starRatingEstimationProvider: StarRatingEstimationProvider<
+      ModeType,
+      HitcountsType
+    >;
+    ppEstimationProvider: PpEstimationProvider<ModeType, HitcountsType>;
   }) {
     this.id = id;
     this.endedAt = endedAt;

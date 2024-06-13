@@ -1,9 +1,6 @@
-import {OsuRuleset} from '../../../../primitives/OsuRuleset';
 import {Hitcounts} from './Hitcounts';
 
 export class HitcountsTaiko extends Hitcounts {
-  readonly mode = OsuRuleset.taiko;
-
   // [great, ok, miss]
   private hitcounts: number[];
   get orderedValues(): readonly number[] {
