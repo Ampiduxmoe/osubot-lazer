@@ -1,13 +1,13 @@
 /* eslint-disable prefer-arrow-callback */
-import {SqliteDb} from '../../../../../src/main/data/raw/db/SqliteDb';
+import {SqliteDb} from '../../../../../src/main/data/persistence/db/SqliteDb';
 import {
   JsonObjects,
   JsonObjectsImpl,
-} from '../../../../../src/main/data/raw/db/tables/JsonObjects';
+} from '../../../../../src/main/data/persistence/db/tables/JsonObjects';
 import {
   JsonObject,
   JsonObjectKey,
-} from '../../../../../src/main/data/raw/db/entities/JsonObject';
+} from '../../../../../src/main/data/persistence/db/entities/JsonObject';
 import {describeBaseTableMethods} from './GenericTableTest';
 import {JsonCacheDescriptor} from '../../../../../src/primitives/JsonCacheDescriptor';
 import assert from 'assert';

@@ -1,7 +1,7 @@
 /* eslint-disable prefer-arrow-callback */
 import assert from 'assert';
-import {SqlDb} from '../../../../../src/main/data/raw/db/SqlDb';
-import {SqlDbTable} from '../../../../../src/main/data/raw/db/SqlDbTable';
+import {SqlDb} from '../../../../../src/main/data/persistence/db/SqlDb';
+import {SqlDbTable} from '../../../../../src/main/data/persistence/db/SqlDbTable';
 
 type TestEntity<TEntityKey extends object, TEntity extends TEntityKey> = {
   value: TEntity;

@@ -1,13 +1,13 @@
 /* eslint-disable prefer-arrow-callback */
-import {SqliteDb} from '../../../../../src/main/data/raw/db/SqliteDb';
+import {SqliteDb} from '../../../../../src/main/data/persistence/db/SqliteDb';
 import {
   AppUsers,
   AppUsersImpl,
-} from '../../../../../src/main/data/raw/db/tables/AppUsers';
+} from '../../../../../src/main/data/persistence/db/tables/AppUsers';
 import {
   AppUser,
   AppUserKey,
-} from '../../../../../src/main/data/raw/db/entities/AppUser';
+} from '../../../../../src/main/data/persistence/db/entities/AppUser';
 import {OsuRuleset} from '../../../../../src/primitives/OsuRuleset';
 import {OsuServer} from '../../../../../src/primitives/OsuServer';
 import {describeBaseTableMethods} from './GenericTableTest';

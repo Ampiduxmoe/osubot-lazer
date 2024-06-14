@@ -1,4 +1,4 @@
-import {OsuRuleset} from '../../../../../primitives/OsuRuleset';
+import {OsuRuleset} from '../../../../primitives/OsuRuleset';
 
 export type OsuUserInfo = {
   id: number;

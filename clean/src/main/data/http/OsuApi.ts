@@ -1,5 +1,5 @@
-import {OsuRuleset} from '../../../../primitives/OsuRuleset';
-import {OsuServer} from '../../../../primitives/OsuServer';
+import {OsuRuleset} from '../../../primitives/OsuRuleset';
+import {OsuServer} from '../../../primitives/OsuServer';
 import {OsuUserInfo} from './boundary/OsuUserInfo';
 import {RecentScoreInfo} from './boundary/RecentScoreInfo';
 

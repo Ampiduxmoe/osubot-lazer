@@ -1,9 +1,9 @@
 /* eslint-disable prefer-arrow-callback */
-import {SqliteDb} from '../../../../../src/main/data/raw/db/SqliteDb';
+import {SqliteDb} from '../../../../../src/main/data/persistence/db/SqliteDb';
 import {
   AppUserApiRequestsCounts,
   AppUserApiRequestsCountsImpl,
-} from '../../../../../src/main/data/raw/db/tables/AppUserApiRequestsCounts';
+} from '../../../../../src/main/data/persistence/db/tables/AppUserApiRequestsCounts';
 import {
   assertTwoTestEntitiesAreEqual,
   describeBaseTableMethods,
@@ -11,7 +11,7 @@ import {
 import {
   AppUserApiRequestsCount,
   AppUserApiRequestsCountKey,
-} from '../../../../../src/main/data/raw/db/entities/AppUserApiRequestsCount';
+} from '../../../../../src/main/data/persistence/db/entities/AppUserApiRequestsCount';
 import assert from 'assert';
 
 describe('AppUserApiRequestsCounts', function () {

@@ -3,15 +3,15 @@ import {
   OsuUser,
   OsuUsersDao,
 } from '../../application/requirements/dao/OsuUsersDao';
-import {OsuApi} from '../raw/http/OsuAPI';
+import {OsuApi} from '../http/OsuAPI';
 import {
   OsuUserSnapshot,
   OsuUserSnapshotKey,
-} from '../raw/db/entities/OsuUserSnapshot';
+} from '../persistence/db/entities/OsuUserSnapshot';
 import {OsuRuleset} from '../../../primitives/OsuRuleset';
-import {OsuUserInfo} from '../raw/http/boundary/OsuUserInfo';
+import {OsuUserInfo} from '../http/boundary/OsuUserInfo';
 import {AppUserRecentApiRequestsDao} from '../../application/requirements/dao/AppUserRecentApiRequestsDao';
-import {OsuUserSnapshots} from '../raw/db/tables/OsuUserSnapshots';
+import {OsuUserSnapshots} from '../persistence/db/tables/OsuUserSnapshots';
 import {COMMON_REQUEST_SUBTARGETS} from './AppUserApiRequestsSummariesDaoImpl';
 
 export class OsuUsersDaoImpl implements OsuUsersDao {

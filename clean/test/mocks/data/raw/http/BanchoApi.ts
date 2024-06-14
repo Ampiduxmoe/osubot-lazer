@@ -1,7 +1,7 @@
-import {OsuApi} from '../../../../../src/main/data/raw/http/OsuAPI';
-import {OsuUserInfo} from '../../../../../src/main/data/raw/http/boundary/OsuUserInfo';
-import {RecentScoreInfo} from '../../../../../src/main/data/raw/http/boundary/RecentScoreInfo';
-import {UserBestScoreInfo} from '../../../../../src/main/data/raw/http/boundary/UserBestScoreInfo';
+import {OsuApi} from '../../../../../src/main/data/http/OsuAPI';
+import {OsuUserInfo} from '../../../../../src/main/data/http/boundary/OsuUserInfo';
+import {RecentScoreInfo} from '../../../../../src/main/data/http/boundary/RecentScoreInfo';
+import {UserBestScoreInfo} from '../../../../../src/main/data/http/boundary/UserBestScoreInfo';
 import {OsuRuleset} from '../../../../../src/primitives/OsuRuleset';
 import {OsuServer} from '../../../../../src/primitives/OsuServer';
 import {

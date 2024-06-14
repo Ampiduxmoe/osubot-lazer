@@ -1,10 +1,10 @@
 /* eslint-disable prefer-arrow-callback */
 import assert from 'assert';
 import {AppUserApiRequestsSummariesDaoImpl} from '../../../src/main/data/dao/AppUserApiRequestsSummariesDaoImpl';
-import {SqliteDb} from '../../../src/main/data/raw/db/SqliteDb';
-import {AppUserApiRequestsCountsImpl} from '../../../src/main/data/raw/db/tables/AppUserApiRequestsCounts';
-import {TimeWindowsImpl} from '../../../src/main/data/raw/db/tables/TimeWindows';
-import {SqlDbTable} from '../../../src/main/data/raw/db/SqlDbTable';
+import {SqliteDb} from '../../../src/main/data/persistence/db/SqliteDb';
+import {AppUserApiRequestsCountsImpl} from '../../../src/main/data/persistence/db/tables/AppUserApiRequestsCounts';
+import {TimeWindowsImpl} from '../../../src/main/data/persistence/db/tables/TimeWindows';
+import {SqlDbTable} from '../../../src/main/data/persistence/db/SqlDbTable';
 import {AppUserApiRequestsSummariesDao} from '../../../src/main/application/requirements/dao/AppUserApiRequestsSummariesDao';
 import {AppUserApiRequests} from '../../../src/main/application/requirements/dao/AppUserRecentApiRequestsDao';
 

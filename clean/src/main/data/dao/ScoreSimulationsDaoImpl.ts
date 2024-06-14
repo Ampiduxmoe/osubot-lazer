@@ -1,8 +1,8 @@
-import {ScoreSimulationApi} from '../raw/http/ScoreSimulationApi';
-import {ScoreSimulationInfoCtb} from '../raw/http/boundary/ScoreSimulationInfoCtb';
-import {ScoreSimulationInfoMania} from '../raw/http/boundary/ScoreSimulationInfoMania';
-import {ScoreSimulationInfoOsu} from '../raw/http/boundary/ScoreSimulationInfoOsu';
-import {ScoreSimulationInfoTaiko} from '../raw/http/boundary/ScoreSimulationInfoTaiko';
+import {ScoreSimulationApi} from '../http/ScoreSimulationApi';
+import {ScoreSimulationInfoCtb} from '../http/boundary/ScoreSimulationInfoCtb';
+import {ScoreSimulationInfoMania} from '../http/boundary/ScoreSimulationInfoMania';
+import {ScoreSimulationInfoOsu} from '../http/boundary/ScoreSimulationInfoOsu';
+import {ScoreSimulationInfoTaiko} from '../http/boundary/ScoreSimulationInfoTaiko';
 import {
   ScoreSimulationsDao,
   SimulatedScoreCtb,

@@ -1,8 +1,8 @@
-import {ScoreSimulationApi} from '../../../../../src/main/data/raw/http/ScoreSimulationApi';
-import {ScoreSimulationInfoCtb} from '../../../../../src/main/data/raw/http/boundary/ScoreSimulationInfoCtb';
-import {ScoreSimulationInfoMania} from '../../../../../src/main/data/raw/http/boundary/ScoreSimulationInfoMania';
-import {ScoreSimulationInfoOsu} from '../../../../../src/main/data/raw/http/boundary/ScoreSimulationInfoOsu';
-import {ScoreSimulationInfoTaiko} from '../../../../../src/main/data/raw/http/boundary/ScoreSimulationInfoTaiko';
+import {ScoreSimulationApi} from '../../../../../src/main/data/http/ScoreSimulationApi';
+import {ScoreSimulationInfoCtb} from '../../../../../src/main/data/http/boundary/ScoreSimulationInfoCtb';
+import {ScoreSimulationInfoMania} from '../../../../../src/main/data/http/boundary/ScoreSimulationInfoMania';
+import {ScoreSimulationInfoOsu} from '../../../../../src/main/data/http/boundary/ScoreSimulationInfoOsu';
+import {ScoreSimulationInfoTaiko} from '../../../../../src/main/data/http/boundary/ScoreSimulationInfoTaiko';
 import {max, min, sum} from '../../../../../src/primitives/Arrays';
 export class FakeScoreSimulationApi implements ScoreSimulationApi {
   async status(): Promise<string> {

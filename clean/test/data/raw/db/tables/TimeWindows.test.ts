@@ -1,14 +1,14 @@
 /* eslint-disable prefer-arrow-callback */
 import assert from 'assert';
-import {SqliteDb} from '../../../../../src/main/data/raw/db/SqliteDb';
+import {SqliteDb} from '../../../../../src/main/data/persistence/db/SqliteDb';
 import {
   TimeWindow,
   TimeWindowKey,
-} from '../../../../../src/main/data/raw/db/entities/TimeWindow';
+} from '../../../../../src/main/data/persistence/db/entities/TimeWindow';
 import {
   TimeWindows,
   TimeWindowsImpl,
-} from '../../../../../src/main/data/raw/db/tables/TimeWindows';
+} from '../../../../../src/main/data/persistence/db/tables/TimeWindows';
 import {
   assertTwoTestEntitiesAreEqual,
   describeBaseTableMethods,

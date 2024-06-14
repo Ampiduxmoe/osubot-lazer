@@ -1,6 +1,6 @@
 import {OsuServer} from '../../../primitives/OsuServer';
-import {AppUser, AppUserKey} from '../raw/db/entities/AppUser';
-import {AppUsers} from '../raw/db/tables/AppUsers';
+import {AppUser, AppUserKey} from '../persistence/db/entities/AppUser';
+import {AppUsers} from '../persistence/db/tables/AppUsers';
 import {
   AppUserInfo,
   AppUsersDao,

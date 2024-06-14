@@ -1,4 +1,4 @@
-import {RecentScoreInfo} from '../../../data/raw/http/boundary/RecentScoreInfo';
+import {RecentScoreInfo} from '../../../data/http/boundary/RecentScoreInfo';
 import {OsuServer} from '../../../../primitives/OsuServer';
 import {OsuRuleset} from '../../../../primitives/OsuRuleset';
 

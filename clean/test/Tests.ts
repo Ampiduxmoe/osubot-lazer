@@ -20,14 +20,14 @@ describe('Data', function () {
   });
 });
 
-describe('Domain', function () {
+describe('Application', function () {
   describe('Usecases', function () {
-    require('./domain/usecases/GetApiUsageSummaryUseCase.test');
-    require('./domain/usecases/GetAppUserInfoUseCase.test');
-    require('./domain/usecases/GetOsuUserInfoUseCase.test');
-    require('./domain/usecases/GetRecentPlaysUseCase.test');
-    require('./domain/usecases/GetUserBestPlaysUseCase.test');
-    require('./domain/usecases/SetUsernameUseCase.test');
+    require('./application/usecases/GetApiUsageSummaryUseCase.test');
+    require('./application/usecases/GetAppUserInfoUseCase.test');
+    require('./application/usecases/GetOsuUserInfoUseCase.test');
+    require('./application/usecases/GetRecentPlaysUseCase.test');
+    require('./application/usecases/GetUserBestPlaysUseCase.test');
+    require('./application/usecases/SetUsernameUseCase.test');
   });
 });
 

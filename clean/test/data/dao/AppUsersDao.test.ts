@@ -1,11 +1,11 @@
 /* eslint-disable prefer-arrow-callback */
 import assert from 'assert';
 import {AppUsersDaoImpl} from '../../../src/main/data/dao/AppUsersDaoImpl';
-import {SqliteDb} from '../../../src/main/data/raw/db/SqliteDb';
+import {SqliteDb} from '../../../src/main/data/persistence/db/SqliteDb';
 import {OsuServer} from '../../../src/primitives/OsuServer';
 import {OsuRuleset} from '../../../src/primitives/OsuRuleset';
-import {AppUsersImpl} from '../../../src/main/data/raw/db/tables/AppUsers';
-import {AppUser} from '../../../src/main/data/raw/db/entities/AppUser';
+import {AppUsersImpl} from '../../../src/main/data/persistence/db/tables/AppUsers';
+import {AppUser} from '../../../src/main/data/persistence/db/entities/AppUser';
 import {
   AppUserInfo,
   AppUsersDao,

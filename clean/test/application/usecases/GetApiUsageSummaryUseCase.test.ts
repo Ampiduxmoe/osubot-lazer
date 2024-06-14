@@ -1,19 +1,19 @@
 /* eslint-disable prefer-arrow-callback */
 import assert from 'assert';
-import {SqliteDb} from '../../../src/main/data/raw/db/SqliteDb';
+import {SqliteDb} from '../../../src/main/data/persistence/db/SqliteDb';
 import {AppUserApiRequestsSummariesDaoImpl} from '../../../src/main/data/dao/AppUserApiRequestsSummariesDaoImpl';
 import {
   AppUserApiRequestsCounts,
   AppUserApiRequestsCountsImpl,
-} from '../../../src/main/data/raw/db/tables/AppUserApiRequestsCounts';
+} from '../../../src/main/data/persistence/db/tables/AppUserApiRequestsCounts';
 import {
   TimeWindows,
   TimeWindowsImpl,
-} from '../../../src/main/data/raw/db/tables/TimeWindows';
-import {SqlDbTable} from '../../../src/main/data/raw/db/SqlDbTable';
+} from '../../../src/main/data/persistence/db/tables/TimeWindows';
+import {SqlDbTable} from '../../../src/main/data/persistence/db/SqlDbTable';
 import {GetApiUsageSummaryUseCase} from '../../../src/main/application/usecases/get_api_usage_summary/GetApiUsageSummaryUseCase';
-import {TimeWindow} from '../../../src/main/data/raw/db/entities/TimeWindow';
-import {AppUserApiRequestsCount} from '../../../src/main/data/raw/db/entities/AppUserApiRequestsCount';
+import {TimeWindow} from '../../../src/main/data/persistence/db/entities/TimeWindow';
+import {AppUserApiRequestsCount} from '../../../src/main/data/persistence/db/entities/AppUserApiRequestsCount';
 import {GetApiUsageSummaryRequest} from '../../../src/main/application/usecases/get_api_usage_summary/GetApiUsageSummaryRequest';
 
 describe('GetApiUsageSummaryUseCase', function () {

@@ -7,11 +7,11 @@ import {AppUsersDaoImpl} from '../../../src/main/data/dao/AppUsersDaoImpl';
 import {
   AppUsers,
   AppUsersImpl,
-} from '../../../src/main/data/raw/db/tables/AppUsers';
-import {SqliteDb} from '../../../src/main/data/raw/db/SqliteDb';
-import {SqlDbTable} from '../../../src/main/data/raw/db/SqlDbTable';
+} from '../../../src/main/data/persistence/db/tables/AppUsers';
+import {SqliteDb} from '../../../src/main/data/persistence/db/SqliteDb';
+import {SqlDbTable} from '../../../src/main/data/persistence/db/SqlDbTable';
 import {OsuRuleset} from '../../../src/primitives/OsuRuleset';
-import {AppUser} from '../../../src/main/data/raw/db/entities/AppUser';
+import {AppUser} from '../../../src/main/data/persistence/db/entities/AppUser';
 
 describe('GetAppUserInfoUseCase', function () {
   let tables: SqlDbTable<object, object>[];

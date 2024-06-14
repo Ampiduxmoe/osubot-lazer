@@ -13,21 +13,21 @@ import {APP_CODE_NAME} from '../../src/main/App';
 import {OsuServer} from '../../src/primitives/OsuServer';
 import {OsuRuleset} from '../../src/primitives/OsuRuleset';
 import {FakeBanchoApi} from '../mocks/data/raw/http/BanchoApi';
-import {SqliteDb} from '../../src/main/data/raw/db/SqliteDb';
-import {OsuUserSnapshotsImpl} from '../../src/main/data/raw/db/tables/OsuUserSnapshots';
-import {AppUserApiRequestsCountsImpl} from '../../src/main/data/raw/db/tables/AppUserApiRequestsCounts';
-import {TimeWindowsImpl} from '../../src/main/data/raw/db/tables/TimeWindows';
+import {SqliteDb} from '../../src/main/data/persistence/db/SqliteDb';
+import {OsuUserSnapshotsImpl} from '../../src/main/data/persistence/db/tables/OsuUserSnapshots';
+import {AppUserApiRequestsCountsImpl} from '../../src/main/data/persistence/db/tables/AppUserApiRequestsCounts';
+import {TimeWindowsImpl} from '../../src/main/data/persistence/db/tables/TimeWindows';
 import {AppUserApiRequestsSummariesDaoImpl} from '../../src/main/data/dao/AppUserApiRequestsSummariesDaoImpl';
 import {AppUserRecentApiRequestsDaoImpl} from '../../src/main/data/dao/AppUserRecentApiRequestsDaoImpl';
 import {OsuUsersDaoImpl} from '../../src/main/data/dao/OsuUsersDaoImpl';
 import {
   AppUsers,
   AppUsersImpl,
-} from '../../src/main/data/raw/db/tables/AppUsers';
+} from '../../src/main/data/persistence/db/tables/AppUsers';
 import {AppUsersDaoImpl} from '../../src/main/data/dao/AppUsersDaoImpl';
-import {SqlDbTable} from '../../src/main/data/raw/db/SqlDbTable';
+import {SqlDbTable} from '../../src/main/data/persistence/db/SqlDbTable';
 import {getFakeOsuUserInfo, getFakeOsuUserUsername} from '../mocks/Generators';
-import {AppUser} from '../../src/main/data/raw/db/entities/AppUser';
+import {AppUser} from '../../src/main/data/persistence/db/entities/AppUser';
 import {VkIdConverter} from '../../src/main/presentation/vk/VkIdConverter';
 
 describe('UserInfo', function () {

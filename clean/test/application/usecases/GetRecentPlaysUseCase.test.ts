@@ -4,24 +4,24 @@ import {ALL_OSU_SERVERS, OsuServer} from '../../../src/primitives/OsuServer';
 import {ALL_OSU_RULESETS, OsuRuleset} from '../../../src/primitives/OsuRuleset';
 import {OsuUsersDaoImpl} from '../../../src/main/data/dao/OsuUsersDaoImpl';
 import {FakeBanchoApi} from '../../mocks/data/raw/http/BanchoApi';
-import {SqliteDb} from '../../../src/main/data/raw/db/SqliteDb';
-import {OsuUserSnapshotsImpl} from '../../../src/main/data/raw/db/tables/OsuUserSnapshots';
+import {SqliteDb} from '../../../src/main/data/persistence/db/SqliteDb';
+import {OsuUserSnapshotsImpl} from '../../../src/main/data/persistence/db/tables/OsuUserSnapshots';
 import {AppUserRecentApiRequestsDaoImpl} from '../../../src/main/data/dao/AppUserRecentApiRequestsDaoImpl';
 import {AppUserApiRequestsSummariesDaoImpl} from '../../../src/main/data/dao/AppUserApiRequestsSummariesDaoImpl';
-import {AppUserApiRequestsCountsImpl} from '../../../src/main/data/raw/db/tables/AppUserApiRequestsCounts';
-import {TimeWindowsImpl} from '../../../src/main/data/raw/db/tables/TimeWindows';
-import {SqlDbTable} from '../../../src/main/data/raw/db/SqlDbTable';
+import {AppUserApiRequestsCountsImpl} from '../../../src/main/data/persistence/db/tables/AppUserApiRequestsCounts';
+import {TimeWindowsImpl} from '../../../src/main/data/persistence/db/tables/TimeWindows';
+import {SqlDbTable} from '../../../src/main/data/persistence/db/SqlDbTable';
+import {GetRecentPlaysUseCase} from '../../../src/main/application/usecases/get_recent_plays/GetRecentPlaysUseCase';
+import {OsuRecentScoresDaoImpl} from '../../../src/main/data/dao/OsuRecentScoresDaoImpl';
 import {FakeScoreSimulationApi} from '../../mocks/data/raw/http/ScoreSimulationApi';
 import {ScoreSimulationsDaoImpl} from '../../../src/main/data/dao/ScoreSimulationsDaoImpl';
 import {CachedOsuUsersDaoImpl} from '../../../src/main/data/dao/CachedOsuUsersDaoImpl';
+import {GetRecentPlaysRequest} from '../../../src/main/application/usecases/get_recent_plays/GetRecentPlaysRequest';
 import {getFakeOsuUserInfo} from '../../mocks/Generators';
-import {GetUserBestPlaysUseCase} from '../../../src/main/application/usecases/get_user_best_plays/GetUserBestPlaysUseCase';
-import {OsuUserBestScoresDaoImpl} from '../../../src/main/data/dao/OsuUserBestScoresDaoImpl';
-import {GetUserBestPlaysRequest} from '../../../src/main/application/usecases/get_user_best_plays/GetUserBestPlaysRequest';
 
-describe('GetUserBestPlaysUseCase', function () {
+describe('GetRecentPlaysUseCase', function () {
   let tables: SqlDbTable<object, object>[];
-  let usecase: GetUserBestPlaysUseCase;
+  let usecase: GetRecentPlaysUseCase;
   {
     const apis = [new FakeBanchoApi()];
     const scoreSimApi = new FakeScoreSimulationApi();
@@ -43,15 +43,15 @@ describe('GetUserBestPlaysUseCase', function () {
     );
     const cachedOsuUsersDao = new CachedOsuUsersDaoImpl(osuUserSnapshots);
     const scoreSimulationsDao = new ScoreSimulationsDaoImpl(scoreSimApi);
-    const userBestScoresDao = new OsuUserBestScoresDaoImpl(
+    const recentScoresDao = new OsuRecentScoresDaoImpl(
       apis,
       osuUserSnapshots,
       recentApiRequestsDao
     );
 
     tables = [osuUserSnapshots, appUserApiRequestsCounts, timeWindows];
-    usecase = new GetUserBestPlaysUseCase(
-      userBestScoresDao,
+    usecase = new GetRecentPlaysUseCase(
+      recentScoresDao,
       scoreSimulationsDao,
       cachedOsuUsersDao,
       osuUsersDao
@@ -65,15 +65,16 @@ describe('GetUserBestPlaysUseCase', function () {
   const servers = ALL_OSU_SERVERS;
   const rulesets = ALL_OSU_RULESETS;
   describe('#execute()', function () {
-    it('should return OsuUserBestPlays as undefined when user does not exist', async function () {
+    it('should return OsuUserRecentPlays as undefined when user does not exist', async function () {
       const username = 'this username should not exist';
       for (const server of servers) {
         for (const ruleset of rulesets) {
-          const request: GetUserBestPlaysRequest = {
+          const request: GetRecentPlaysRequest = {
             appUserId: 'should be irrelevant',
             server: OsuServer[server],
             username: username,
             ruleset: OsuRuleset[ruleset],
+            includeFails: true,
             startPosition: 1,
             quantity: 1,
             mods: [
@@ -84,7 +85,7 @@ describe('GetUserBestPlaysUseCase', function () {
             ],
           };
           const result = await usecase.execute(request);
-          assert.strictEqual(result.bestPlays, undefined);
+          assert.strictEqual(result.recentPlays, undefined);
         }
       }
     });
@@ -103,11 +104,12 @@ describe('GetUserBestPlaysUseCase', function () {
         });
       });
       for (const user of usersThatShouldExist) {
-        const request: GetUserBestPlaysRequest = {
+        const request: GetRecentPlaysRequest = {
           appUserId: 'should be irrelevant',
           server: user.server,
           username: user.username,
           ruleset: undefined,
+          includeFails: true,
           startPosition: 1,
           quantity: 10,
           mods: [
@@ -118,7 +120,7 @@ describe('GetUserBestPlaysUseCase', function () {
           ],
         };
         const result = await usecase.execute(request);
-        assert.notStrictEqual(result.bestPlays, undefined);
+        assert.notStrictEqual(result.recentPlays, undefined);
         assert.strictEqual(result.ruleset, user.ruleset);
       }
     });
@@ -137,11 +139,12 @@ describe('GetUserBestPlaysUseCase', function () {
         );
       });
       for (const user of usersThatShouldExist) {
-        const request: GetUserBestPlaysRequest = {
+        const request: GetRecentPlaysRequest = {
           appUserId: 'should be irrelevant',
           server: user.server,
           username: user.username,
           ruleset: user.ruleset,
+          includeFails: true,
           startPosition: 1,
           quantity: 10,
           mods: [
@@ -152,7 +155,7 @@ describe('GetUserBestPlaysUseCase', function () {
           ],
         };
         const result = await usecase.execute(request);
-        assert.notStrictEqual(result.bestPlays, undefined);
+        assert.notStrictEqual(result.recentPlays, undefined);
         assert.strictEqual(result.ruleset, user.ruleset);
       }
     });

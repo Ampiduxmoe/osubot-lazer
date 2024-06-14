@@ -1,6 +1,6 @@
-import {OsuUserInfo} from '../../src/main/data/raw/http/boundary/OsuUserInfo';
-import {RecentScoreInfo} from '../../src/main/data/raw/http/boundary/RecentScoreInfo';
-import {UserBestScoreInfo} from '../../src/main/data/raw/http/boundary/UserBestScoreInfo';
+import {OsuUserInfo} from '../../src/main/data/http/boundary/OsuUserInfo';
+import {RecentScoreInfo} from '../../src/main/data/http/boundary/RecentScoreInfo';
+import {UserBestScoreInfo} from '../../src/main/data/http/boundary/UserBestScoreInfo';
 import {minBy} from '../../src/primitives/Arrays';
 import {OsuRuleset} from '../../src/primitives/OsuRuleset';
 

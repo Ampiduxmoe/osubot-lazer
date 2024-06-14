@@ -1,8 +1,8 @@
 import {OsuServer} from '../../../primitives/OsuServer';
 import {OsuRuleset} from '../../../primitives/OsuRuleset';
-import {OsuApi} from '../raw/http/OsuAPI';
+import {OsuApi} from '../http/OsuAPI';
 import {AppUserRecentApiRequestsDao} from '../../application/requirements/dao/AppUserRecentApiRequestsDao';
-import {OsuUserSnapshots} from '../raw/db/tables/OsuUserSnapshots';
+import {OsuUserSnapshots} from '../persistence/db/tables/OsuUserSnapshots';
 import {
   OsuUserBestScoresDao,
   UserBestScore,

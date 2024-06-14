@@ -2,7 +2,7 @@ import axios, {AxiosInstance} from 'axios';
 import {ScoreSimulationApi} from '../ScoreSimulationApi';
 import {ScoreSimulationInfoOsu} from '../boundary/ScoreSimulationInfoOsu';
 import {RawScoreSimulationResultOsu} from './RawScoreSimulationResultOsu';
-import {round} from '../../../../../primitives/Numbers';
+import {round} from '../../../../primitives/Numbers';
 import {
   RawScoreSimulationParamsOsu,
   RawScoreSimulationParamsOsuDt,

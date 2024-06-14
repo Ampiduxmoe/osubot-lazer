@@ -1,5 +1,5 @@
 import {AxiosInstance} from 'axios';
-import {OsuRuleset} from '../../../../../../../primitives/OsuRuleset';
+import {OsuRuleset} from '../../../../../../primitives/OsuRuleset';
 import {UserExtended} from './UserExtended';
 import {Playmode} from '../common_types/Playmode';
 import {RecentScore} from './RecentScore';

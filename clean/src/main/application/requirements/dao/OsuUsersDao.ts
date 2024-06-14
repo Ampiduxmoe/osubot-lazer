@@ -1,6 +1,6 @@
 import {OsuRuleset} from '../../../../primitives/OsuRuleset';
 import {OsuServer} from '../../../../primitives/OsuServer';
-import {OsuUserInfo} from '../../../data/raw/http/boundary/OsuUserInfo';
+import {OsuUserInfo} from '../../../data/http/boundary/OsuUserInfo';
 
 export interface OsuUsersDao {
   getByUsername(

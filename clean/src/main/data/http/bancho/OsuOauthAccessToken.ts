@@ -1,6 +1,6 @@
-import {Timespan} from '../../../../../primitives/Timespan';
+import {Timespan} from '../../../../primitives/Timespan';
 import {RawOauthToken} from './RawOauthToken';
-import {JsonCacheDescriptor} from '../../../../../primitives/JsonCacheDescriptor';
+import {JsonCacheDescriptor} from '../../../../primitives/JsonCacheDescriptor';
 
 export class OsuOauthAccessToken {
   readonly tokenType: string;

@@ -1,12 +1,12 @@
 /* eslint-disable prefer-arrow-callback */
 import assert from 'assert';
 import {CachedOsuUsersDaoImpl} from '../../../src/main/data/dao/CachedOsuUsersDaoImpl';
-import {SqliteDb} from '../../../src/main/data/raw/db/SqliteDb';
+import {SqliteDb} from '../../../src/main/data/persistence/db/SqliteDb';
 import {getFakeOsuUserUsername} from '../../mocks/Generators';
 import {OsuServer} from '../../../src/primitives/OsuServer';
-import {OsuUserSnapshotsImpl} from '../../../src/main/data/raw/db/tables/OsuUserSnapshots';
+import {OsuUserSnapshotsImpl} from '../../../src/main/data/persistence/db/tables/OsuUserSnapshots';
 import {CachedOsuUsersDao} from '../../../src/main/application/requirements/dao/CachedOsuUsersDao';
-import {OsuUserSnapshot} from '../../../src/main/data/raw/db/entities/OsuUserSnapshot';
+import {OsuUserSnapshot} from '../../../src/main/data/persistence/db/entities/OsuUserSnapshot';
 import {OsuRuleset} from '../../../src/primitives/OsuRuleset';
 
 describe('CachedOsuUsersDao', function () {

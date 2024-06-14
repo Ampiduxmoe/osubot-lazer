@@ -4,17 +4,17 @@ import {ALL_OSU_SERVERS, OsuServer} from '../../../src/primitives/OsuServer';
 import {ALL_OSU_RULESETS, OsuRuleset} from '../../../src/primitives/OsuRuleset';
 import {OsuUsersDaoImpl} from '../../../src/main/data/dao/OsuUsersDaoImpl';
 import {FakeBanchoApi} from '../../mocks/data/raw/http/BanchoApi';
-import {SqliteDb} from '../../../src/main/data/raw/db/SqliteDb';
-import {OsuUserSnapshotsImpl} from '../../../src/main/data/raw/db/tables/OsuUserSnapshots';
+import {SqliteDb} from '../../../src/main/data/persistence/db/SqliteDb';
+import {OsuUserSnapshotsImpl} from '../../../src/main/data/persistence/db/tables/OsuUserSnapshots';
 import {AppUserRecentApiRequestsDaoImpl} from '../../../src/main/data/dao/AppUserRecentApiRequestsDaoImpl';
 import {AppUserApiRequestsSummariesDaoImpl} from '../../../src/main/data/dao/AppUserApiRequestsSummariesDaoImpl';
-import {AppUserApiRequestsCountsImpl} from '../../../src/main/data/raw/db/tables/AppUserApiRequestsCounts';
-import {TimeWindowsImpl} from '../../../src/main/data/raw/db/tables/TimeWindows';
-import {SqlDbTable} from '../../../src/main/data/raw/db/SqlDbTable';
+import {AppUserApiRequestsCountsImpl} from '../../../src/main/data/persistence/db/tables/AppUserApiRequestsCounts';
+import {TimeWindowsImpl} from '../../../src/main/data/persistence/db/tables/TimeWindows';
+import {SqlDbTable} from '../../../src/main/data/persistence/db/SqlDbTable';
 import {getFakeOsuUserInfo} from '../../mocks/Generators';
 import {SetUsernameUseCase} from '../../../src/main/application/usecases/set_username/SetUsernameUseCase';
 import {SetUsernameRequest} from '../../../src/main/application/usecases/set_username/SetUsernameRequest';
-import {AppUsersImpl} from '../../../src/main/data/raw/db/tables/AppUsers';
+import {AppUsersImpl} from '../../../src/main/data/persistence/db/tables/AppUsers';
 import {AppUsersDaoImpl} from '../../../src/main/data/dao/AppUsersDaoImpl';
 
 describe('SetUsernameUseCase', function () {

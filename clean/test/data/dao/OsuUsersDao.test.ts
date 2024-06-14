@@ -2,17 +2,17 @@
 import assert from 'assert';
 import {OsuUsersDaoImpl} from '../../../src/main/data/dao/OsuUsersDaoImpl';
 import {FakeBanchoApi} from '../../mocks/data/raw/http/BanchoApi';
-import {SqliteDb} from '../../../src/main/data/raw/db/SqliteDb';
+import {SqliteDb} from '../../../src/main/data/persistence/db/SqliteDb';
 import {getFakeOsuUserUsername} from '../../mocks/Generators';
 import {OsuServer} from '../../../src/primitives/OsuServer';
 import {OsuRuleset} from '../../../src/primitives/OsuRuleset';
-import {OsuUserSnapshotsImpl} from '../../../src/main/data/raw/db/tables/OsuUserSnapshots';
+import {OsuUserSnapshotsImpl} from '../../../src/main/data/persistence/db/tables/OsuUserSnapshots';
 import {AppUserRecentApiRequestsDaoImpl} from '../../../src/main/data/dao/AppUserRecentApiRequestsDaoImpl';
-import {AppUserApiRequestsCountsImpl} from '../../../src/main/data/raw/db/tables/AppUserApiRequestsCounts';
-import {TimeWindowsImpl} from '../../../src/main/data/raw/db/tables/TimeWindows';
+import {AppUserApiRequestsCountsImpl} from '../../../src/main/data/persistence/db/tables/AppUserApiRequestsCounts';
+import {TimeWindowsImpl} from '../../../src/main/data/persistence/db/tables/TimeWindows';
 import {AppUserApiRequestsSummariesDaoImpl} from '../../../src/main/data/dao/AppUserApiRequestsSummariesDaoImpl';
 import {OsuUsersDao} from '../../../src/main/application/requirements/dao/OsuUsersDao';
-import {SqlDbTable} from '../../../src/main/data/raw/db/SqlDbTable';
+import {SqlDbTable} from '../../../src/main/data/persistence/db/SqlDbTable';
 
 describe('OsuUsersDao', async function () {
   let tables: SqlDbTable<object, object>[];

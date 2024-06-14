@@ -1,14 +1,14 @@
 /* eslint-disable prefer-arrow-callback */
 import assert from 'assert';
-import {SqliteDb} from '../../../../../src/main/data/raw/db/SqliteDb';
+import {SqliteDb} from '../../../../../src/main/data/persistence/db/SqliteDb';
 import {
   OsuUserSnapshot,
   OsuUserSnapshotKey,
-} from '../../../../../src/main/data/raw/db/entities/OsuUserSnapshot';
+} from '../../../../../src/main/data/persistence/db/entities/OsuUserSnapshot';
 import {
   OsuUserSnapshots,
   OsuUserSnapshotsImpl,
-} from '../../../../../src/main/data/raw/db/tables/OsuUserSnapshots';
+} from '../../../../../src/main/data/persistence/db/tables/OsuUserSnapshots';
 import {OsuServer} from '../../../../../src/primitives/OsuServer';
 import {describeBaseTableMethods} from './GenericTableTest';
 import {OsuRuleset} from '../../../../../src/primitives/OsuRuleset';

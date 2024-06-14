@@ -4,9 +4,9 @@ import {
   OsuRecentScoresDao,
   RecentScore,
 } from '../../application/requirements/dao/OsuRecentScoresDao';
-import {OsuApi} from '../raw/http/OsuAPI';
+import {OsuApi} from '../http/OsuAPI';
 import {AppUserRecentApiRequestsDao} from '../../application/requirements/dao/AppUserRecentApiRequestsDao';
-import {OsuUserSnapshots} from '../raw/db/tables/OsuUserSnapshots';
+import {OsuUserSnapshots} from '../persistence/db/tables/OsuUserSnapshots';
 import {COMMON_REQUEST_SUBTARGETS} from './AppUserApiRequestsSummariesDaoImpl';
 
 export class OsuRecentScoresDaoImpl implements OsuRecentScoresDao {

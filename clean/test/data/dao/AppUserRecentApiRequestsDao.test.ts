@@ -1,15 +1,15 @@
 /* eslint-disable prefer-arrow-callback */
 import assert from 'assert';
 import {AppUserRecentApiRequestsDaoImpl} from '../../../src/main/data/dao/AppUserRecentApiRequestsDaoImpl';
-import {SqliteDb} from '../../../src/main/data/raw/db/SqliteDb';
+import {SqliteDb} from '../../../src/main/data/persistence/db/SqliteDb';
 import {
   AppUserApiRequests,
   AppUserRecentApiRequestsDao,
 } from '../../../src/main/application/requirements/dao/AppUserRecentApiRequestsDao';
 import {AppUserApiRequestsSummariesDaoImpl} from '../../../src/main/data/dao/AppUserApiRequestsSummariesDaoImpl';
-import {AppUserApiRequestsCountsImpl} from '../../../src/main/data/raw/db/tables/AppUserApiRequestsCounts';
-import {TimeWindowsImpl} from '../../../src/main/data/raw/db/tables/TimeWindows';
-import {SqlDbTable} from '../../../src/main/data/raw/db/SqlDbTable';
+import {AppUserApiRequestsCountsImpl} from '../../../src/main/data/persistence/db/tables/AppUserApiRequestsCounts';
+import {TimeWindowsImpl} from '../../../src/main/data/persistence/db/tables/TimeWindows';
+import {SqlDbTable} from '../../../src/main/data/persistence/db/SqlDbTable';
 
 describe('AppUserRecentApiRequestsDao', function () {
   let tables: SqlDbTable<object, object>[];

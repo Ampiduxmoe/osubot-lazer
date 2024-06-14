@@ -1,5 +1,5 @@
 import {OsuServer} from '../../../primitives/OsuServer';
-import {OsuUserSnapshots} from '../raw/db/tables/OsuUserSnapshots';
+import {OsuUserSnapshots} from '../persistence/db/tables/OsuUserSnapshots';
 import {
   CachedOsuUser,
   CachedOsuUsersDao,

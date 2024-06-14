@@ -1,6 +1,6 @@
 import axios from 'axios';
 import {OsuOauthAccessToken} from '../OsuOauthAccessToken';
-import {Timespan} from '../../../../../../primitives/Timespan';
+import {Timespan} from '../../../../../primitives/Timespan';
 import {BanchoUsers} from './users/BanchoUsers';
 
 export class BanchoClient {
