@@ -12,7 +12,7 @@ import {SERVERS} from '../../src/main/presentation/common/OsuServers';
 import {APP_CODE_NAME} from '../../src/main/App';
 import {OsuServer} from '../../src/primitives/OsuServer';
 import {OsuRuleset} from '../../src/primitives/OsuRuleset';
-import {FakeBanchoApi} from '../mocks/data/raw/http/BanchoApi';
+import {FakeBanchoApi} from '../mocks/data/http/BanchoApi';
 import {SqliteDb} from '../../src/main/data/persistence/db/SqliteDb';
 import {OsuUserSnapshotsImpl} from '../../src/main/data/persistence/db/tables/OsuUserSnapshots';
 import {AppUserApiRequestsCountsImpl} from '../../src/main/data/persistence/db/tables/AppUserApiRequestsCounts';

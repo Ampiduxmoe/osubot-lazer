@@ -1,15 +1,15 @@
-import {OsuApi} from '../../../../../src/main/data/http/OsuAPI';
-import {OsuUserInfo} from '../../../../../src/main/data/http/boundary/OsuUserInfo';
-import {RecentScoreInfo} from '../../../../../src/main/data/http/boundary/RecentScoreInfo';
-import {UserBestScoreInfo} from '../../../../../src/main/data/http/boundary/UserBestScoreInfo';
-import {OsuRuleset} from '../../../../../src/primitives/OsuRuleset';
-import {OsuServer} from '../../../../../src/primitives/OsuServer';
+import {OsuApi} from '../../../../src/main/data/http/OsuAPI';
+import {OsuUserInfo} from '../../../../src/main/data/http/boundary/OsuUserInfo';
+import {RecentScoreInfo} from '../../../../src/main/data/http/boundary/RecentScoreInfo';
+import {UserBestScoreInfo} from '../../../../src/main/data/http/boundary/UserBestScoreInfo';
+import {OsuRuleset} from '../../../../src/primitives/OsuRuleset';
+import {OsuServer} from '../../../../src/primitives/OsuServer';
 import {
   getFakeOsuUserId,
   getFakeOsuUserInfo,
   getFakeRecentScoreInfos,
   getFakeUserBestScoreInfos,
-} from '../../../Generators';
+} from '../../Generators';
 
 export class FakeBanchoApi implements OsuApi {
   server = OsuServer.Bancho;

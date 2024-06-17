@@ -3,7 +3,7 @@ import assert from 'assert';
 import {ALL_OSU_SERVERS, OsuServer} from '../../../src/primitives/OsuServer';
 import {ALL_OSU_RULESETS, OsuRuleset} from '../../../src/primitives/OsuRuleset';
 import {OsuUsersDaoImpl} from '../../../src/main/data/dao/OsuUsersDaoImpl';
-import {FakeBanchoApi} from '../../mocks/data/raw/http/BanchoApi';
+import {FakeBanchoApi} from '../../mocks/data/http/BanchoApi';
 import {SqliteDb} from '../../../src/main/data/persistence/db/SqliteDb';
 import {OsuUserSnapshotsImpl} from '../../../src/main/data/persistence/db/tables/OsuUserSnapshots';
 import {AppUserRecentApiRequestsDaoImpl} from '../../../src/main/data/dao/AppUserRecentApiRequestsDaoImpl';
@@ -11,7 +11,7 @@ import {AppUserApiRequestsSummariesDaoImpl} from '../../../src/main/data/dao/App
 import {AppUserApiRequestsCountsImpl} from '../../../src/main/data/persistence/db/tables/AppUserApiRequestsCounts';
 import {TimeWindowsImpl} from '../../../src/main/data/persistence/db/tables/TimeWindows';
 import {SqlDbTable} from '../../../src/main/data/persistence/db/SqlDbTable';
-import {FakeScoreSimulationApi} from '../../mocks/data/raw/http/ScoreSimulationApi';
+import {FakeScoreSimulationApi} from '../../mocks/data/http/ScoreSimulationApi';
 import {ScoreSimulationsDaoImpl} from '../../../src/main/data/dao/ScoreSimulationsDaoImpl';
 import {CachedOsuUsersDaoImpl} from '../../../src/main/data/dao/CachedOsuUsersDaoImpl';
 import {getFakeOsuUserInfo} from '../../mocks/Generators';

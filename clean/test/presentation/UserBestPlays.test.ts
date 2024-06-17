@@ -10,7 +10,7 @@ import {SERVERS} from '../../src/main/presentation/common/OsuServers';
 import {APP_CODE_NAME} from '../../src/main/App';
 import {OsuServer} from '../../src/primitives/OsuServer';
 import {ALL_OSU_RULESETS, OsuRuleset} from '../../src/primitives/OsuRuleset';
-import {FakeBanchoApi} from '../mocks/data/raw/http/BanchoApi';
+import {FakeBanchoApi} from '../mocks/data/http/BanchoApi';
 import {SqliteDb} from '../../src/main/data/persistence/db/SqliteDb';
 import {OsuUserSnapshotsImpl} from '../../src/main/data/persistence/db/tables/OsuUserSnapshots';
 import {AppUserApiRequestsCountsImpl} from '../../src/main/data/persistence/db/tables/AppUserApiRequestsCounts';
@@ -32,7 +32,7 @@ import {
 import {AppUser} from '../../src/main/data/persistence/db/entities/AppUser';
 import {VkIdConverter} from '../../src/main/presentation/vk/VkIdConverter';
 import {GetAppUserInfoUseCase} from '../../src/main/application/usecases/get_app_user_info/GetAppUserInfoUseCase';
-import {FakeScoreSimulationApi} from '../mocks/data/raw/http/ScoreSimulationApi';
+import {FakeScoreSimulationApi} from '../mocks/data/http/ScoreSimulationApi';
 import {ScoreSimulationsDaoImpl} from '../../src/main/data/dao/ScoreSimulationsDaoImpl';
 import {CachedOsuUsersDaoImpl} from '../../src/main/data/dao/CachedOsuUsersDaoImpl';
 import {OsuUserBestScoresDaoImpl} from '../../src/main/data/dao/OsuUserBestScoresDaoImpl';

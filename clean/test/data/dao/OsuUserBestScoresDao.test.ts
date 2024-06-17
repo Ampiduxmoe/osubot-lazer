@@ -1,6 +1,6 @@
 /* eslint-disable prefer-arrow-callback */
 import assert from 'assert';
-import {FakeBanchoApi} from '../../mocks/data/raw/http/BanchoApi';
+import {FakeBanchoApi} from '../../mocks/data/http/BanchoApi';
 import {SqliteDb} from '../../../src/main/data/persistence/db/SqliteDb';
 import {OsuServer} from '../../../src/primitives/OsuServer';
 import {OsuRuleset} from '../../../src/primitives/OsuRuleset';

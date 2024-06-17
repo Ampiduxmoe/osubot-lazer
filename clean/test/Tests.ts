@@ -2,11 +2,11 @@
 
 describe('Data', function () {
   describe('Tables', function () {
-    require('./data/raw/db/tables/AppUserApiRequestsCounts.test');
-    require('./data/raw/db/tables/AppUsers.test');
-    require('./data/raw/db/tables/JsonObjects.test');
-    require('./data/raw/db/tables/OsuUserSnapshots.test');
-    require('./data/raw/db/tables/TimeWindows.test');
+    require('./data/persistence/db/tables/AppUserApiRequestsCounts.test');
+    require('./data/persistence/db/tables/AppUsers.test');
+    require('./data/persistence/db/tables/JsonObjects.test');
+    require('./data/persistence/db/tables/OsuUserSnapshots.test');
+    require('./data/persistence/db/tables/TimeWindows.test');
   });
   describe('DAOs', function () {
     require('./data/dao/AppUserApiRequestsSummariesDao.test');

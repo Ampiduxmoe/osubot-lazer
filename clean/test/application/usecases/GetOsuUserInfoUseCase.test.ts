@@ -6,7 +6,7 @@ import {ALL_OSU_SERVERS, OsuServer} from '../../../src/primitives/OsuServer';
 import {getFakeOsuUserUsername} from '../../mocks/Generators';
 import {ALL_OSU_RULESETS, OsuRuleset} from '../../../src/primitives/OsuRuleset';
 import {OsuUsersDaoImpl} from '../../../src/main/data/dao/OsuUsersDaoImpl';
-import {FakeBanchoApi} from '../../mocks/data/raw/http/BanchoApi';
+import {FakeBanchoApi} from '../../mocks/data/http/BanchoApi';
 import {SqliteDb} from '../../../src/main/data/persistence/db/SqliteDb';
 import {OsuUserSnapshotsImpl} from '../../../src/main/data/persistence/db/tables/OsuUserSnapshots';
 import {AppUserRecentApiRequestsDaoImpl} from '../../../src/main/data/dao/AppUserRecentApiRequestsDaoImpl';
