@@ -1,20 +1,20 @@
 import {Timespan} from '../../../primitives/Timespan';
-import {TimeWindow} from '../persistence/db/entities/TimeWindow';
-import {AppUserApiRequestsCounts} from '../persistence/db/tables/AppUserApiRequestsCounts';
-import {TimeWindows} from '../persistence/db/tables/TimeWindows';
+import {TimeWindow} from '../repository/models/TimeWindow';
 import {AppUserApiRequests} from '../../application/requirements/dao/AppUserRecentApiRequestsDao';
 import {AppUserApiRequestsSummariesDao} from '../../application/requirements/dao/AppUserApiRequestsSummariesDao';
 import {AppUserApiRequestsSummary} from '../../application/requirements/dao/AppUserApiRequestsSummariesDao';
+import {AppUserApiRequestsCountsRepository} from '../repository/repositories/AppUserApiRequestsCountsRepository';
+import {TimeWindowsRepository} from '../repository/repositories/TimeWindowsRepository';
 
 export class AppUserApiRequestsSummariesDaoImpl
   implements AppUserApiRequestsSummariesDao
 {
   private bucketTimeWindow = new Timespan().addMinutes(20);
-  private requestsCounts: AppUserApiRequestsCounts;
-  private timeWindows: TimeWindows;
+  private requestsCounts: AppUserApiRequestsCountsRepository;
+  private timeWindows: TimeWindowsRepository;
   constructor(
-    requestsCounts: AppUserApiRequestsCounts,
-    timeWindows: TimeWindows
+    requestsCounts: AppUserApiRequestsCountsRepository,
+    timeWindows: TimeWindowsRepository
   ) {
     this.requestsCounts = requestsCounts;
     this.timeWindows = timeWindows;
@@ -43,11 +43,11 @@ export class AppUserApiRequestsSummariesDaoImpl
       );
     }
     const fittingTimeWindow = targetDayWindows.find(
-      w => w.start_time < requestsTime && w.end_time > requestsTime
+      w => w.startTime < requestsTime && w.endTime > requestsTime
     )!;
     const existingRequestsCount = await this.requestsCounts.get({
-      time_window_id: fittingTimeWindow.id,
-      app_user_id: requests.appUserId,
+      timeWindowId: fittingTimeWindow.id,
+      appUserId: requests.appUserId,
       target: requests.target,
       subtarget: requests.subtarget ?? null,
     });
@@ -57,8 +57,8 @@ export class AppUserApiRequestsSummariesDaoImpl
       return;
     }
     this.requestsCounts.add({
-      time_window_id: fittingTimeWindow.id,
-      app_user_id: requests.appUserId,
+      timeWindowId: fittingTimeWindow.id,
+      appUserId: requests.appUserId,
       target: requests.target,
       subtarget: requests.subtarget ?? null,
       count: requests.count,
@@ -96,11 +96,11 @@ export class AppUserApiRequestsSummariesDaoImpl
       };
     } = {};
     for (const requestCount of requestsCounts) {
-      const timeWindowId = requestCount.time_window_id;
+      const timeWindowId = requestCount.timeWindowId;
       if (byTimeWindows[timeWindowId] === undefined) {
         byTimeWindows[timeWindowId] = {};
       }
-      const appUserId = requestCount.app_user_id;
+      const appUserId = requestCount.appUserId;
       if (byTimeWindows[timeWindowId][appUserId] === undefined) {
         byTimeWindows[timeWindowId][appUserId] = [];
       }
@@ -131,8 +131,8 @@ export class AppUserApiRequestsSummariesDaoImpl
         });
       }
       result.push({
-        timeWindowStart: timeWindow.start_time,
-        timeWindowEnd: timeWindow.end_time,
+        timeWindowStart: timeWindow.startTime,
+        timeWindowEnd: timeWindow.endTime,
         appUsers: appUsers,
       });
     }
@@ -162,7 +162,7 @@ export class AppUserApiRequestsSummariesDaoImpl
       await this.requestsCounts.getAllByTimeWindows(
         targetDayTimeWindows.map(w => w.id)
       );
-    const usedWindowIds = targetDayRequestsCounts.map(s => s.time_window_id);
+    const usedWindowIds = targetDayRequestsCounts.map(s => s.timeWindowId);
     const unusedWindows = targetDayTimeWindows.filter(
       w => !usedWindowIds.includes(w.id)
     );
@@ -190,16 +190,16 @@ export class AppUserApiRequestsSummariesDaoImpl
       const bucketEndTime = targetDayStart + (i + 1) * bucketTimeWindowMs - 1;
       targetDayWindows.push({
         id: -1,
-        start_time: bucketStartTime,
-        end_time: bucketEndTime,
+        startTime: bucketStartTime,
+        endTime: bucketEndTime,
       });
     }
     const lastBucketStartTime = targetDayStart + i * bucketTimeWindowMs;
     const lastBucketEndTime = targetDayEnd;
     targetDayWindows.push({
       id: -1,
-      start_time: lastBucketStartTime,
-      end_time: lastBucketEndTime,
+      startTime: lastBucketStartTime,
+      endTime: lastBucketEndTime,
     });
     await this.timeWindows.addAllWithoutIds(targetDayWindows);
   }

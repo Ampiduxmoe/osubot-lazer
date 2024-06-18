@@ -2,20 +2,20 @@ import {OsuServer} from '../../../primitives/OsuServer';
 import {OsuRuleset} from '../../../primitives/OsuRuleset';
 import {OsuApi} from '../http/OsuAPI';
 import {AppUserRecentApiRequestsDao} from '../../application/requirements/dao/AppUserRecentApiRequestsDao';
-import {OsuUserSnapshots} from '../persistence/db/tables/OsuUserSnapshots';
 import {
   OsuUserBestScoresDao,
   UserBestScore,
 } from '../../application/requirements/dao/OsuUserBestScoresDao';
 import {COMMON_REQUEST_SUBTARGETS} from './AppUserApiRequestsSummariesDaoImpl';
+import {OsuUserSnapshotsRepository} from '../repository/repositories/OsuUserSnapshotsRepository';
 
 export class OsuUserBestScoresDaoImpl implements OsuUserBestScoresDao {
   private apis: OsuApi[];
-  private osuUserSnapshotsTable: OsuUserSnapshots;
+  private osuUserSnapshotsTable: OsuUserSnapshotsRepository;
   private recentApiRequests: AppUserRecentApiRequestsDao;
   constructor(
     apis: OsuApi[],
-    osuUserSnapshotsTable: OsuUserSnapshots,
+    osuUserSnapshotsTable: OsuUserSnapshotsRepository,
     recentApiRequests: AppUserRecentApiRequestsDao
   ) {
     this.apis = apis;

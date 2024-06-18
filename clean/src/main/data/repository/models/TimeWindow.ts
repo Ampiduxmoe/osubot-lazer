@@ -3,6 +3,6 @@ export type TimeWindowKey = {
 };
 
 export type TimeWindow = TimeWindowKey & {
-  start_time: number;
-  end_time: number;
+  startTime: number;
+  endTime: number;
 };

@@ -9,12 +9,12 @@ import {UserRecentPlays} from './presentation/vk/commands/UserRecentPlays';
 import {UserInfo} from './presentation/vk/commands/UserInfo';
 import {SetUsername} from './presentation/vk/commands/SetUsername';
 import {SetUsernameUseCase} from './application/usecases/set_username/SetUsernameUseCase';
-import {AppUsersImpl} from './data/persistence/db/tables/AppUsers';
+import {AppUsersTable} from './data/persistence/db/tables/AppUsersTable';
 import {SqliteDb} from './data/persistence/db/SqliteDb';
 import {SqlDb} from './data/persistence/db/SqlDb';
 import {GetAppUserInfoUseCase} from './application/usecases/get_app_user_info/GetAppUserInfoUseCase';
-import {OsuUserSnapshotsImpl} from './data/persistence/db/tables/OsuUserSnapshots';
-import {AppUserApiRequestsCountsImpl} from './data/persistence/db/tables/AppUserApiRequestsCounts';
+import {OsuUserSnapshotsTable} from './data/persistence/db/tables/OsuUserSnapshotsTable';
+import {AppUserApiRequestsCountsTable} from './data/persistence/db/tables/AppUserApiRequestsCountsTable';
 import {AppUsersDaoImpl} from './data/dao/AppUsersDaoImpl';
 import {OsuRecentScoresDaoImpl} from './data/dao/OsuRecentScoresDaoImpl';
 import {CachedOsuUsersDaoImpl} from './data/dao/CachedOsuUsersDaoImpl';
@@ -23,7 +23,7 @@ import {ScoreSimulationsDaoImpl} from './data/dao/ScoreSimulationsDaoImpl';
 import {OsutoolsSimulationApi} from './data/http/score_simulation/OsutoolsSImulationApi';
 import {AppUserRecentApiRequestsDaoImpl} from './data/dao/AppUserRecentApiRequestsDaoImpl';
 import {AppUserApiRequestsSummariesDaoImpl} from './data/dao/AppUserApiRequestsSummariesDaoImpl';
-import {TimeWindowsImpl} from './data/persistence/db/tables/TimeWindows';
+import {TimeWindowsTable} from './data/persistence/db/tables/TimeWindowsTable';
 import {Timespan} from '../primitives/Timespan';
 import {ApiUsageSummary} from './presentation/vk/commands/ApiUsageSummary';
 import {GetApiUsageSummaryUseCase} from './application/usecases/get_api_usage_summary/GetApiUsageSummaryUseCase';
@@ -31,7 +31,7 @@ import {UserBestPlays} from './presentation/vk/commands/UserBestPlays';
 import {GetUserBestPlaysUseCase} from './application/usecases/get_user_best_plays/GetUserBestPlaysUseCase';
 import {OsuUserBestScoresDaoImpl} from './data/dao/OsuUserBestScoresDaoImpl';
 import {BanchoClient} from './data/http/bancho/client/BanchoClient';
-import {JsonObjectsImpl} from './data/persistence/db/tables/JsonObjects';
+import {JsonObjectsTable} from './data/persistence/db/tables/JsonObjectsTable';
 import {OsuOauthAccessToken} from './data/http/bancho/OsuOauthAccessToken';
 
 export const APP_CODE_NAME = 'osubot-lazer';
@@ -60,11 +60,11 @@ export class App {
       this.db = new SqliteDb('osu_dev.db');
     }
 
-    const appUsers = new AppUsersImpl(this.db);
-    const requestsCounts = new AppUserApiRequestsCountsImpl(this.db);
-    const jsonObjects = new JsonObjectsImpl(this.db);
-    const osuUserSnapshots = new OsuUserSnapshotsImpl(this.db);
-    const timeWindows = new TimeWindowsImpl(this.db);
+    const appUsers = new AppUsersTable(this.db);
+    const requestsCounts = new AppUserApiRequestsCountsTable(this.db);
+    const jsonObjects = new JsonObjectsTable(this.db);
+    const osuUserSnapshots = new OsuUserSnapshotsTable(this.db);
+    const timeWindows = new TimeWindowsTable(this.db);
 
     const allDbTables = [
       appUsers,

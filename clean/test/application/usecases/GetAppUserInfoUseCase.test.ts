@@ -4,22 +4,19 @@ import {GetAppUserInfoRequest} from '../../../src/main/application/usecases/get_
 import {GetAppUserInfoUseCase} from '../../../src/main/application/usecases/get_app_user_info/GetAppUserInfoUseCase';
 import {OsuServer} from '../../../src/primitives/OsuServer';
 import {AppUsersDaoImpl} from '../../../src/main/data/dao/AppUsersDaoImpl';
-import {
-  AppUsers,
-  AppUsersImpl,
-} from '../../../src/main/data/persistence/db/tables/AppUsers';
+import {AppUsersTable} from '../../../src/main/data/persistence/db/tables/AppUsersTable';
 import {SqliteDb} from '../../../src/main/data/persistence/db/SqliteDb';
 import {SqlDbTable} from '../../../src/main/data/persistence/db/SqlDbTable';
 import {OsuRuleset} from '../../../src/primitives/OsuRuleset';
-import {AppUser} from '../../../src/main/data/persistence/db/entities/AppUser';
+import {AppUser} from '../../../src/main/data/repository/models/AppUser';
 
 describe('GetAppUserInfoUseCase', function () {
-  let tables: SqlDbTable<object, object>[];
-  let appUsers: AppUsers;
+  let tables: SqlDbTable[];
+  let appUsers: AppUsersTable;
   let usecase: GetAppUserInfoUseCase;
   {
     const db = new SqliteDb(':memory:');
-    appUsers = new AppUsersImpl(db);
+    appUsers = new AppUsersTable(db);
     const appUsersDao = new AppUsersDaoImpl(appUsers);
 
     tables = [appUsers];
@@ -29,7 +26,7 @@ describe('GetAppUserInfoUseCase', function () {
   const exampleAppUser: AppUser = {
     id: 'AddedUserAppUserId',
     server: OsuServer.Bancho,
-    osu_id: 123,
+    osuId: 123,
     username: 'AddedUserUsername',
     ruleset: OsuRuleset.osu,
   };
@@ -57,7 +54,7 @@ describe('GetAppUserInfoUseCase', function () {
       const result = await usecase.execute(request);
       assert.notStrictEqual(result.userInfo, undefined);
       const resultUserInfo = result.userInfo!;
-      assert.strictEqual(resultUserInfo.osuId, existingAppUser.osu_id);
+      assert.strictEqual(resultUserInfo.osuId, existingAppUser.osuId);
       assert.strictEqual(resultUserInfo.ruleset, existingAppUser.ruleset);
       assert.strictEqual(resultUserInfo.username, existingAppUser.username);
     });

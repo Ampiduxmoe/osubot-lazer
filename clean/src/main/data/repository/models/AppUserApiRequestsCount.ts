@@ -1,6 +1,6 @@
 export type AppUserApiRequestsCountKey = {
-  time_window_id: number;
-  app_user_id: string;
+  timeWindowId: number;
+  appUserId: string;
   target: string;
   subtarget: string | null;
 };

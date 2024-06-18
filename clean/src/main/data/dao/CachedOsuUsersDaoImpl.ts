@@ -1,13 +1,13 @@
 import {OsuServer} from '../../../primitives/OsuServer';
-import {OsuUserSnapshots} from '../persistence/db/tables/OsuUserSnapshots';
 import {
   CachedOsuUser,
   CachedOsuUsersDao,
 } from '../../application/requirements/dao/CachedOsuUsersDao';
+import {OsuUserSnapshotsRepository} from '../repository/repositories/OsuUserSnapshotsRepository';
 
 export class CachedOsuUsersDaoImpl implements CachedOsuUsersDao {
-  private osuUserSnapshotsTable: OsuUserSnapshots;
-  constructor(osuUserSnapshotsTable: OsuUserSnapshots) {
+  private osuUserSnapshotsTable: OsuUserSnapshotsRepository;
+  constructor(osuUserSnapshotsTable: OsuUserSnapshotsRepository) {
     this.osuUserSnapshotsTable = osuUserSnapshotsTable;
   }
   async get(
@@ -25,7 +25,7 @@ export class CachedOsuUsersDaoImpl implements CachedOsuUsersDao {
       username: userSnapshot.username,
       server: userSnapshot.server,
       id: userSnapshot.id,
-      preferredMode: userSnapshot.preferred_mode,
+      preferredMode: userSnapshot.preferredMode,
     };
   }
 }

@@ -5,5 +5,6 @@ export interface SqlDb {
 }
 
 export type OperationExecutionResult = {
-  isSuccess: boolean;
+  rowsChanged: number;
+  lastInsertRowId: number;
 };

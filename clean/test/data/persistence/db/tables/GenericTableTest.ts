@@ -2,6 +2,7 @@
 import assert from 'assert';
 import {SqlDb} from '../../../../../src/main/data/persistence/db/SqlDb';
 import {SqlDbTable} from '../../../../../src/main/data/persistence/db/SqlDbTable';
+import {Repository} from '../../../../../src/main/data/repository/Repository';
 
 type TestEntity<TEntityKey extends object, TEntity extends TEntityKey> = {
   value: TEntity;
@@ -13,7 +14,7 @@ export function describeBaseTableMethods<
   TEntity extends TEntityKey,
 >(params: {
   db: SqlDb;
-  table: SqlDbTable<TEntityKey, TEntity>;
+  table: SqlDbTable & Repository<TEntityKey, TEntity>;
   testEntities: TestEntity<TEntityKey, TEntity>[];
   options: {
     entityToUpdate: {

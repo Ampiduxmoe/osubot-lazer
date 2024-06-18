@@ -1,5 +1,5 @@
-import {OsuRuleset} from '../../../../../primitives/OsuRuleset';
-import {OsuServer} from '../../../../../primitives/OsuServer';
+import {OsuRuleset} from '../../../../primitives/OsuRuleset';
+import {OsuServer} from '../../../../primitives/OsuServer';
 
 export type AppUserKey = {
   id: string;
@@ -7,7 +7,7 @@ export type AppUserKey = {
 };
 
 export type AppUser = AppUserKey & {
-  osu_id: number;
+  osuId: number;
   username: string;
   ruleset: OsuRuleset;
 };

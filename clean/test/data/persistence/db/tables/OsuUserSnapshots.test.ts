@@ -4,41 +4,38 @@ import {SqliteDb} from '../../../../../src/main/data/persistence/db/SqliteDb';
 import {
   OsuUserSnapshot,
   OsuUserSnapshotKey,
-} from '../../../../../src/main/data/persistence/db/entities/OsuUserSnapshot';
-import {
-  OsuUserSnapshots,
-  OsuUserSnapshotsImpl,
-} from '../../../../../src/main/data/persistence/db/tables/OsuUserSnapshots';
+} from '../../../../../src/main/data/repository/models/OsuUserSnapshot';
+import {OsuUserSnapshotsTable} from '../../../../../src/main/data/persistence/db/tables/OsuUserSnapshotsTable';
 import {OsuServer} from '../../../../../src/primitives/OsuServer';
 import {describeBaseTableMethods} from './GenericTableTest';
 import {OsuRuleset} from '../../../../../src/primitives/OsuRuleset';
 
-describe('OsuUserSnapshots', function () {
+describe('OsuUserSnapshotsTable', function () {
   const db = new SqliteDb(':memory:');
-  const table: OsuUserSnapshots = new OsuUserSnapshotsImpl(db);
+  const table = new OsuUserSnapshotsTable(db);
   const firstEntity: OsuUserSnapshot = {
     username: 'Username',
     server: OsuServer.Bancho,
     id: 0,
-    preferred_mode: OsuRuleset.mania,
+    preferredMode: OsuRuleset.mania,
   };
   const firstEntityUpdated: OsuUserSnapshot = {
     username: firstEntity.username,
     server: firstEntity.server,
     id: 999,
-    preferred_mode: OsuRuleset.osu,
+    preferredMode: OsuRuleset.osu,
   };
   const secondEntity: OsuUserSnapshot = {
     username: 'Username #2',
     server: OsuServer.Bancho,
     id: 1,
-    preferred_mode: OsuRuleset.taiko,
+    preferredMode: OsuRuleset.taiko,
   };
   const thirdEntity: OsuUserSnapshot = {
     username: 'Username #3',
     server: OsuServer.Bancho,
     id: 2,
-    preferred_mode: OsuRuleset.ctb,
+    preferredMode: OsuRuleset.ctb,
   };
   describeBaseTableMethods({
     db: db,

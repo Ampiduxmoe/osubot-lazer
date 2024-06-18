@@ -5,11 +5,11 @@ import {ALL_OSU_RULESETS, OsuRuleset} from '../../../src/primitives/OsuRuleset';
 import {OsuUsersDaoImpl} from '../../../src/main/data/dao/OsuUsersDaoImpl';
 import {FakeBanchoApi} from '../../mocks/data/http/BanchoApi';
 import {SqliteDb} from '../../../src/main/data/persistence/db/SqliteDb';
-import {OsuUserSnapshotsImpl} from '../../../src/main/data/persistence/db/tables/OsuUserSnapshots';
+import {OsuUserSnapshotsTable} from '../../../src/main/data/persistence/db/tables/OsuUserSnapshotsTable';
 import {AppUserRecentApiRequestsDaoImpl} from '../../../src/main/data/dao/AppUserRecentApiRequestsDaoImpl';
 import {AppUserApiRequestsSummariesDaoImpl} from '../../../src/main/data/dao/AppUserApiRequestsSummariesDaoImpl';
-import {AppUserApiRequestsCountsImpl} from '../../../src/main/data/persistence/db/tables/AppUserApiRequestsCounts';
-import {TimeWindowsImpl} from '../../../src/main/data/persistence/db/tables/TimeWindows';
+import {AppUserApiRequestsCountsTable} from '../../../src/main/data/persistence/db/tables/AppUserApiRequestsCountsTable';
+import {TimeWindowsTable} from '../../../src/main/data/persistence/db/tables/TimeWindowsTable';
 import {SqlDbTable} from '../../../src/main/data/persistence/db/SqlDbTable';
 import {GetRecentPlaysUseCase} from '../../../src/main/application/usecases/get_recent_plays/GetRecentPlaysUseCase';
 import {OsuRecentScoresDaoImpl} from '../../../src/main/data/dao/OsuRecentScoresDaoImpl';
@@ -20,15 +20,15 @@ import {GetRecentPlaysRequest} from '../../../src/main/application/usecases/get_
 import {getFakeOsuUserInfo} from '../../mocks/Generators';
 
 describe('GetRecentPlaysUseCase', function () {
-  let tables: SqlDbTable<object, object>[];
+  let tables: SqlDbTable[];
   let usecase: GetRecentPlaysUseCase;
   {
     const apis = [new FakeBanchoApi()];
     const scoreSimApi = new FakeScoreSimulationApi();
     const db = new SqliteDb(':memory:');
-    const osuUserSnapshots = new OsuUserSnapshotsImpl(db);
-    const appUserApiRequestsCounts = new AppUserApiRequestsCountsImpl(db);
-    const timeWindows = new TimeWindowsImpl(db);
+    const osuUserSnapshots = new OsuUserSnapshotsTable(db);
+    const appUserApiRequestsCounts = new AppUserApiRequestsCountsTable(db);
+    const timeWindows = new TimeWindowsTable(db);
     const requestsSummariesDao = new AppUserApiRequestsSummariesDaoImpl(
       appUserApiRequestsCounts,
       timeWindows

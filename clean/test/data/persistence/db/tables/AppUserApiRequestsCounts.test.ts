@@ -1,9 +1,6 @@
 /* eslint-disable prefer-arrow-callback */
 import {SqliteDb} from '../../../../../src/main/data/persistence/db/SqliteDb';
-import {
-  AppUserApiRequestsCounts,
-  AppUserApiRequestsCountsImpl,
-} from '../../../../../src/main/data/persistence/db/tables/AppUserApiRequestsCounts';
+import {AppUserApiRequestsCountsTable} from '../../../../../src/main/data/persistence/db/tables/AppUserApiRequestsCountsTable';
 import {
   assertTwoTestEntitiesAreEqual,
   describeBaseTableMethods,
@@ -11,50 +8,50 @@ import {
 import {
   AppUserApiRequestsCount,
   AppUserApiRequestsCountKey,
-} from '../../../../../src/main/data/persistence/db/entities/AppUserApiRequestsCount';
+} from '../../../../../src/main/data/repository/models/AppUserApiRequestsCount';
 import assert from 'assert';
 
-describe('AppUserApiRequestsCounts', function () {
+describe('AppUserApiRequestsCountsTable', function () {
   const db = new SqliteDb(':memory:');
-  const table: AppUserApiRequestsCounts = new AppUserApiRequestsCountsImpl(db);
+  const table = new AppUserApiRequestsCountsTable(db);
   const firstEntity: AppUserApiRequestsCount = {
-    time_window_id: 1,
-    app_user_id: 'appUserId1',
+    timeWindowId: 1,
+    appUserId: 'appUserId1',
     target: 'target1',
     subtarget: 'subtarget1',
     count: 0,
   };
   const firstEntityUpdated: AppUserApiRequestsCount = {
-    time_window_id: firstEntity.time_window_id,
-    app_user_id: firstEntity.app_user_id,
+    timeWindowId: firstEntity.timeWindowId,
+    appUserId: firstEntity.appUserId,
     target: firstEntity.target,
     subtarget: firstEntity.subtarget,
     count: 10,
   };
   const secondEntity: AppUserApiRequestsCount = {
-    time_window_id: 1,
-    app_user_id: 'appUserId2',
+    timeWindowId: 1,
+    appUserId: 'appUserId2',
     target: 'target1',
     subtarget: 'subtarget2',
     count: 20,
   };
   const thirdEntity: AppUserApiRequestsCount = {
-    time_window_id: 3,
-    app_user_id: 'appUserId1',
+    timeWindowId: 3,
+    appUserId: 'appUserId1',
     target: 'target2',
     subtarget: 'subtarget1',
     count: 30,
   };
   const fourthEntity: AppUserApiRequestsCount = {
-    time_window_id: 4,
-    app_user_id: 'appUserId1',
+    timeWindowId: 4,
+    appUserId: 'appUserId1',
     target: 'target2',
     subtarget: 'subtarget1',
     count: 40,
   };
   const fifthEntity: AppUserApiRequestsCount = {
-    time_window_id: 4,
-    app_user_id: 'appUserId2',
+    timeWindowId: 4,
+    appUserId: 'appUserId2',
     target: 'target1',
     subtarget: 'subtarget1',
     count: 50,
@@ -111,7 +108,7 @@ describe('AppUserApiRequestsCounts', function () {
             value: referenceEntity,
             key: referenceEntity as AppUserApiRequestsCountKey,
           },
-          idFields: ['time_window_id', 'app_user_id', 'target', 'subtarget'],
+          idFields: ['timeWindowId', 'appUserId', 'target', 'subtarget'],
         });
       }
     });
@@ -133,7 +130,7 @@ describe('AppUserApiRequestsCounts', function () {
             value: referenceEntity,
             key: referenceEntity as AppUserApiRequestsCountKey,
           },
-          idFields: ['time_window_id', 'app_user_id', 'target', 'subtarget'],
+          idFields: ['timeWindowId', 'appUserId', 'target', 'subtarget'],
         });
       }
     });

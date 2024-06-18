@@ -4,8 +4,8 @@ import {AppUsersDaoImpl} from '../../../src/main/data/dao/AppUsersDaoImpl';
 import {SqliteDb} from '../../../src/main/data/persistence/db/SqliteDb';
 import {OsuServer} from '../../../src/primitives/OsuServer';
 import {OsuRuleset} from '../../../src/primitives/OsuRuleset';
-import {AppUsersImpl} from '../../../src/main/data/persistence/db/tables/AppUsers';
-import {AppUser} from '../../../src/main/data/persistence/db/entities/AppUser';
+import {AppUsersTable} from '../../../src/main/data/persistence/db/tables/AppUsersTable';
+import {AppUser} from '../../../src/main/data/repository/models/AppUser';
 import {
   AppUserInfo,
   AppUsersDao,
@@ -13,13 +13,13 @@ import {
 
 describe('AppUsersDao', function () {
   const db = new SqliteDb(':memory:');
-  const appUsers = new AppUsersImpl(db);
+  const appUsers = new AppUsersTable(db);
   const dao: AppUsersDao = new AppUsersDaoImpl(appUsers);
 
   const exampleAppUser: AppUser = {
     id: 'exampleId',
     server: OsuServer.Bancho,
-    osu_id: 123,
+    osuId: 123,
     username: 'exampleUsername',
     ruleset: OsuRuleset.osu,
   };

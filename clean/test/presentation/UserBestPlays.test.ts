@@ -12,16 +12,13 @@ import {OsuServer} from '../../src/primitives/OsuServer';
 import {ALL_OSU_RULESETS, OsuRuleset} from '../../src/primitives/OsuRuleset';
 import {FakeBanchoApi} from '../mocks/data/http/BanchoApi';
 import {SqliteDb} from '../../src/main/data/persistence/db/SqliteDb';
-import {OsuUserSnapshotsImpl} from '../../src/main/data/persistence/db/tables/OsuUserSnapshots';
-import {AppUserApiRequestsCountsImpl} from '../../src/main/data/persistence/db/tables/AppUserApiRequestsCounts';
-import {TimeWindowsImpl} from '../../src/main/data/persistence/db/tables/TimeWindows';
+import {OsuUserSnapshotsTable} from '../../src/main/data/persistence/db/tables/OsuUserSnapshotsTable';
+import {AppUserApiRequestsCountsTable} from '../../src/main/data/persistence/db/tables/AppUserApiRequestsCountsTable';
+import {TimeWindowsTable} from '../../src/main/data/persistence/db/tables/TimeWindowsTable';
 import {AppUserApiRequestsSummariesDaoImpl} from '../../src/main/data/dao/AppUserApiRequestsSummariesDaoImpl';
 import {AppUserRecentApiRequestsDaoImpl} from '../../src/main/data/dao/AppUserRecentApiRequestsDaoImpl';
 import {OsuUsersDaoImpl} from '../../src/main/data/dao/OsuUsersDaoImpl';
-import {
-  AppUsers,
-  AppUsersImpl,
-} from '../../src/main/data/persistence/db/tables/AppUsers';
+import {AppUsersTable} from '../../src/main/data/persistence/db/tables/AppUsersTable';
 import {AppUsersDaoImpl} from '../../src/main/data/dao/AppUsersDaoImpl';
 import {SqlDbTable} from '../../src/main/data/persistence/db/SqlDbTable';
 import {
@@ -29,7 +26,7 @@ import {
   getFakeOsuUserUsername,
   getFakeUserBestScoreInfos,
 } from '../mocks/Generators';
-import {AppUser} from '../../src/main/data/persistence/db/entities/AppUser';
+import {AppUser} from '../../src/main/data/repository/models/AppUser';
 import {VkIdConverter} from '../../src/main/presentation/vk/VkIdConverter';
 import {GetAppUserInfoUseCase} from '../../src/main/application/usecases/get_app_user_info/GetAppUserInfoUseCase';
 import {FakeScoreSimulationApi} from '../mocks/data/http/ScoreSimulationApi';
@@ -44,16 +41,16 @@ import {
 import {UserBestScoreInfo} from '../../src/main/data/http/boundary/UserBestScoreInfo';
 
 describe('UserBestPlays', function () {
-  let tables: SqlDbTable<object, object>[];
-  let appUsers: AppUsers;
+  let tables: SqlDbTable[];
+  let appUsers: AppUsersTable;
   let command: UserBestPlays;
   {
     const apis = [new FakeBanchoApi()];
     const db = new SqliteDb(':memory:');
-    const osuUserSnapshots = new OsuUserSnapshotsImpl(db);
-    const appUserApiRequestsCounts = new AppUserApiRequestsCountsImpl(db);
-    const timeWindows = new TimeWindowsImpl(db);
-    appUsers = new AppUsersImpl(db);
+    const osuUserSnapshots = new OsuUserSnapshotsTable(db);
+    const appUserApiRequestsCounts = new AppUserApiRequestsCountsTable(db);
+    const timeWindows = new TimeWindowsTable(db);
+    appUsers = new AppUsersTable(db);
     const requestsSummariesDao = new AppUserApiRequestsSummariesDaoImpl(
       appUserApiRequestsCounts,
       timeWindows
@@ -96,7 +93,7 @@ describe('UserBestPlays', function () {
   const exampleAppUser: AppUser = {
     id: VkIdConverter.vkUserIdToAppUserId(123123),
     server: OsuServer.Bancho,
-    osu_id: 123,
+    osuId: 123,
     username:
       getFakeOsuUserUsername(123) ??
       (() => {

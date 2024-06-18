@@ -7,17 +7,17 @@ import {
   AppUserRecentApiRequestsDao,
 } from '../../../src/main/application/requirements/dao/AppUserRecentApiRequestsDao';
 import {AppUserApiRequestsSummariesDaoImpl} from '../../../src/main/data/dao/AppUserApiRequestsSummariesDaoImpl';
-import {AppUserApiRequestsCountsImpl} from '../../../src/main/data/persistence/db/tables/AppUserApiRequestsCounts';
-import {TimeWindowsImpl} from '../../../src/main/data/persistence/db/tables/TimeWindows';
+import {AppUserApiRequestsCountsTable} from '../../../src/main/data/persistence/db/tables/AppUserApiRequestsCountsTable';
+import {TimeWindowsTable} from '../../../src/main/data/persistence/db/tables/TimeWindowsTable';
 import {SqlDbTable} from '../../../src/main/data/persistence/db/SqlDbTable';
 
 describe('AppUserRecentApiRequestsDao', function () {
-  let tables: SqlDbTable<object, object>[];
+  let tables: SqlDbTable[];
   let dao: AppUserRecentApiRequestsDao;
   {
     const db = new SqliteDb(':memory:');
-    const appUserApiRequestsCounts = new AppUserApiRequestsCountsImpl(db);
-    const timeWindows = new TimeWindowsImpl(db);
+    const appUserApiRequestsCounts = new AppUserApiRequestsCountsTable(db);
+    const timeWindows = new TimeWindowsTable(db);
     const requestsSummariesDao = new AppUserApiRequestsSummariesDaoImpl(
       appUserApiRequestsCounts,
       timeWindows

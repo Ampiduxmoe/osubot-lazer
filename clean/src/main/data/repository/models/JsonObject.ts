@@ -1,7 +1,7 @@
 export type JsonObjectKey = {
-  json_key: string;
+  jsonKey: string;
 };
 
 export type JsonObject = JsonObjectKey & {
-  json_string: string;
+  jsonString: string;
 };

@@ -10,8 +10,14 @@ export class SqliteDb implements SqlDb {
     this.sqliteDb.pragma('journal_mode = WAL');
   }
   async run(stmt: string, opts: unknown[]): Promise<OperationExecutionResult> {
-    this.sqliteDb.prepare(stmt).run(...opts);
-    return {isSuccess: true};
+    const result = this.sqliteDb.prepare(stmt).run(...opts);
+    if (result.lastInsertRowid > Number.MAX_SAFE_INTEGER) {
+      throw Error('bigint conversion is not implemented');
+    }
+    return {
+      rowsChanged: result.changes,
+      lastInsertRowId: Number(result.lastInsertRowid),
+    };
   }
   async get<T>(stmt: string, opts: unknown[]): Promise<T | undefined> {
     return this.sqliteDb.prepare<unknown[], T>(stmt).get(...opts);

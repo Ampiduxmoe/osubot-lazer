@@ -1,9 +1,6 @@
-import {SqlDb, OperationExecutionResult} from './SqlDb';
+import {SqlDb} from './SqlDb';
 
-export abstract class SqlDbTable<
-  TEntityKey extends object,
-  TEntity extends TEntityKey,
-> {
+export abstract class SqlDbTable {
   abstract readonly tableName: string;
 
   readonly db: SqlDb;
@@ -19,18 +16,10 @@ export abstract class SqlDbTable<
     }
     this.isInitializing = true;
     console.log(`Initializing database table ${this.tableName}...`);
-    const result = await this.createTable();
-    if (result.isSuccess) {
-      this.isInitialized = true;
-    }
+    await this.createTable();
     console.log(`Database table ${this.tableName} initialized`);
     this.isInitializing = false;
   }
 
-  abstract createTable(): Promise<OperationExecutionResult>;
-
-  abstract get(key: TEntityKey): Promise<TEntity | undefined>;
-  abstract add(value: TEntity): Promise<OperationExecutionResult>;
-  abstract update(value: TEntity): Promise<OperationExecutionResult>;
-  abstract delete(key: TEntityKey): Promise<OperationExecutionResult>;
+  abstract createTable(): Promise<void>;
 }

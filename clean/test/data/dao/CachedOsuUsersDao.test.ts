@@ -4,14 +4,14 @@ import {CachedOsuUsersDaoImpl} from '../../../src/main/data/dao/CachedOsuUsersDa
 import {SqliteDb} from '../../../src/main/data/persistence/db/SqliteDb';
 import {getFakeOsuUserUsername} from '../../mocks/Generators';
 import {OsuServer} from '../../../src/primitives/OsuServer';
-import {OsuUserSnapshotsImpl} from '../../../src/main/data/persistence/db/tables/OsuUserSnapshots';
+import {OsuUserSnapshotsTable} from '../../../src/main/data/persistence/db/tables/OsuUserSnapshotsTable';
 import {CachedOsuUsersDao} from '../../../src/main/application/requirements/dao/CachedOsuUsersDao';
-import {OsuUserSnapshot} from '../../../src/main/data/persistence/db/entities/OsuUserSnapshot';
+import {OsuUserSnapshot} from '../../../src/main/data/repository/models/OsuUserSnapshot';
 import {OsuRuleset} from '../../../src/primitives/OsuRuleset';
 
 describe('CachedOsuUsersDao', function () {
   const db = new SqliteDb(':memory:');
-  const osuUserSnapshots = new OsuUserSnapshotsImpl(db);
+  const osuUserSnapshots = new OsuUserSnapshotsTable(db);
   const dao: CachedOsuUsersDao = new CachedOsuUsersDaoImpl(osuUserSnapshots);
 
   const exampleUserSnapshot: OsuUserSnapshot = {
@@ -22,7 +22,7 @@ describe('CachedOsuUsersDao', function () {
       })(),
     server: OsuServer.Bancho,
     id: 123,
-    preferred_mode: OsuRuleset.mania,
+    preferredMode: OsuRuleset.mania,
   };
 
   before(async function () {

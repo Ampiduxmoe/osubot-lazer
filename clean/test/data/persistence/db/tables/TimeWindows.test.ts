@@ -4,38 +4,35 @@ import {SqliteDb} from '../../../../../src/main/data/persistence/db/SqliteDb';
 import {
   TimeWindow,
   TimeWindowKey,
-} from '../../../../../src/main/data/persistence/db/entities/TimeWindow';
-import {
-  TimeWindows,
-  TimeWindowsImpl,
-} from '../../../../../src/main/data/persistence/db/tables/TimeWindows';
+} from '../../../../../src/main/data/repository/models/TimeWindow';
+import {TimeWindowsTable} from '../../../../../src/main/data/persistence/db/tables/TimeWindowsTable';
 import {
   assertTwoTestEntitiesAreEqual,
   describeBaseTableMethods,
 } from './GenericTableTest';
 
-describe('TimeWindows', function () {
+describe('TimeWindowsTable', function () {
   const db = new SqliteDb(':memory:');
-  const table: TimeWindows = new TimeWindowsImpl(db);
+  const table = new TimeWindowsTable(db);
   const firstEntity: TimeWindow = {
     id: 1,
-    start_time: 0,
-    end_time: 9,
+    startTime: 0,
+    endTime: 9,
   };
   const firstEntityUpdated: TimeWindow = {
     id: 1,
-    start_time: 10,
-    end_time: 19,
+    startTime: 10,
+    endTime: 19,
   };
   const secondEntity: TimeWindow = {
     id: 2,
-    start_time: 20,
-    end_time: 29,
+    startTime: 20,
+    endTime: 29,
   };
   const thirdEntity: TimeWindow = {
     id: 3,
-    start_time: 30,
-    end_time: 39,
+    startTime: 30,
+    endTime: 39,
   };
   describeBaseTableMethods({
     db: db,
@@ -69,8 +66,8 @@ describe('TimeWindows', function () {
     it('should correctly add one row through #addWithoutId()', async function () {
       await table.addWithoutId({
         id: -1,
-        start_time: -10,
-        end_time: -1,
+        startTime: -10,
+        endTime: -1,
       });
       const row = await table.get({id: 4});
       assert.notStrictEqual(row, undefined);
@@ -81,12 +78,12 @@ describe('TimeWindows', function () {
       for (const referenceEntity of [firstEntityUpdated, thirdEntity]) {
         const entityMatch = rows.find(
           x =>
-            x.start_time === referenceEntity.start_time &&
-            x.end_time === referenceEntity.end_time
+            x.startTime === referenceEntity.startTime &&
+            x.endTime === referenceEntity.endTime
         );
         assert.notStrictEqual(entityMatch, undefined);
         const referenceId =
-          referenceEntity.start_time === firstEntityUpdated.start_time ? 1 : 3;
+          referenceEntity.startTime === firstEntityUpdated.startTime ? 1 : 3;
         assertTwoTestEntitiesAreEqual({
           firstObject: {
             value: entityMatch!,
@@ -101,10 +98,10 @@ describe('TimeWindows', function () {
       }
     });
     const newIds = [5, 6, 7, 8, 9];
-    const newTimeWindows = newIds.map(n => ({
+    const newTimeWindows: TimeWindow[] = newIds.map(n => ({
       id: -1,
-      start_time: n * 10,
-      end_time: n * 10 + 9,
+      startTime: n * 10,
+      endTime: n * 10 + 9,
     }));
     it('should correctly add multiple rows on #addAllWithoutIds() call', async function () {
       await table.addAllWithoutIds(newTimeWindows);

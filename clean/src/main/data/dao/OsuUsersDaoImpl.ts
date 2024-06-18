@@ -7,20 +7,20 @@ import {OsuApi} from '../http/OsuAPI';
 import {
   OsuUserSnapshot,
   OsuUserSnapshotKey,
-} from '../persistence/db/entities/OsuUserSnapshot';
+} from '../repository/models/OsuUserSnapshot';
 import {OsuRuleset} from '../../../primitives/OsuRuleset';
 import {OsuUserInfo} from '../http/boundary/OsuUserInfo';
 import {AppUserRecentApiRequestsDao} from '../../application/requirements/dao/AppUserRecentApiRequestsDao';
-import {OsuUserSnapshots} from '../persistence/db/tables/OsuUserSnapshots';
 import {COMMON_REQUEST_SUBTARGETS} from './AppUserApiRequestsSummariesDaoImpl';
+import {OsuUserSnapshotsRepository} from '../repository/repositories/OsuUserSnapshotsRepository';
 
 export class OsuUsersDaoImpl implements OsuUsersDao {
   private apis: OsuApi[];
-  private osuUserSnapshotsTable: OsuUserSnapshots;
+  private osuUserSnapshotsTable: OsuUserSnapshotsRepository;
   private recentApiRequests: AppUserRecentApiRequestsDao;
   constructor(
     apis: OsuApi[],
-    osuUserSnapshotsTable: OsuUserSnapshots,
+    osuUserSnapshotsTable: OsuUserSnapshotsRepository,
     recentApiRequests: AppUserRecentApiRequestsDao
   ) {
     this.apis = apis;
@@ -59,7 +59,7 @@ export class OsuUsersDaoImpl implements OsuUsersDao {
       username: osuUserInfo.username,
       server: server,
       id: osuUserInfo.id,
-      preferred_mode: osuUserInfo.preferredMode,
+      preferredMode: osuUserInfo.preferredMode,
     };
     const existingIdAndUsername = await this.osuUserSnapshotsTable.get(
       newSnapshot as OsuUserSnapshotKey

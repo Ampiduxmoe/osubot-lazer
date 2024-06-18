@@ -6,23 +6,23 @@ import {SqliteDb} from '../../../src/main/data/persistence/db/SqliteDb';
 import {getFakeOsuUserUsername} from '../../mocks/Generators';
 import {OsuServer} from '../../../src/primitives/OsuServer';
 import {OsuRuleset} from '../../../src/primitives/OsuRuleset';
-import {OsuUserSnapshotsImpl} from '../../../src/main/data/persistence/db/tables/OsuUserSnapshots';
+import {OsuUserSnapshotsTable} from '../../../src/main/data/persistence/db/tables/OsuUserSnapshotsTable';
 import {AppUserRecentApiRequestsDaoImpl} from '../../../src/main/data/dao/AppUserRecentApiRequestsDaoImpl';
-import {AppUserApiRequestsCountsImpl} from '../../../src/main/data/persistence/db/tables/AppUserApiRequestsCounts';
-import {TimeWindowsImpl} from '../../../src/main/data/persistence/db/tables/TimeWindows';
+import {AppUserApiRequestsCountsTable} from '../../../src/main/data/persistence/db/tables/AppUserApiRequestsCountsTable';
+import {TimeWindowsTable} from '../../../src/main/data/persistence/db/tables/TimeWindowsTable';
 import {AppUserApiRequestsSummariesDaoImpl} from '../../../src/main/data/dao/AppUserApiRequestsSummariesDaoImpl';
 import {OsuUsersDao} from '../../../src/main/application/requirements/dao/OsuUsersDao';
 import {SqlDbTable} from '../../../src/main/data/persistence/db/SqlDbTable';
 
 describe('OsuUsersDao', async function () {
-  let tables: SqlDbTable<object, object>[];
+  let tables: SqlDbTable[];
   let dao: OsuUsersDao;
   {
     const apis = [new FakeBanchoApi()];
     const db = new SqliteDb(':memory:');
-    const osuUserSnapshots = new OsuUserSnapshotsImpl(db);
-    const appUserApiRequestsCounts = new AppUserApiRequestsCountsImpl(db);
-    const timeWindows = new TimeWindowsImpl(db);
+    const osuUserSnapshots = new OsuUserSnapshotsTable(db);
+    const appUserApiRequestsCounts = new AppUserApiRequestsCountsTable(db);
+    const timeWindows = new TimeWindowsTable(db);
     const requestsSummariesDao = new AppUserApiRequestsSummariesDaoImpl(
       appUserApiRequestsCounts,
       timeWindows

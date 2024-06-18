@@ -5,9 +5,9 @@ import {FakeBanchoApi} from '../../mocks/data/http/BanchoApi';
 import {SqliteDb} from '../../../src/main/data/persistence/db/SqliteDb';
 import {OsuServer} from '../../../src/primitives/OsuServer';
 import {OsuRuleset} from '../../../src/primitives/OsuRuleset';
-import {OsuUserSnapshotsImpl} from '../../../src/main/data/persistence/db/tables/OsuUserSnapshots';
-import {AppUserApiRequestsCountsImpl} from '../../../src/main/data/persistence/db/tables/AppUserApiRequestsCounts';
-import {TimeWindowsImpl} from '../../../src/main/data/persistence/db/tables/TimeWindows';
+import {OsuUserSnapshotsTable} from '../../../src/main/data/persistence/db/tables/OsuUserSnapshotsTable';
+import {AppUserApiRequestsCountsTable} from '../../../src/main/data/persistence/db/tables/AppUserApiRequestsCountsTable';
+import {TimeWindowsTable} from '../../../src/main/data/persistence/db/tables/TimeWindowsTable';
 import {AppUserApiRequestsSummariesDaoImpl} from '../../../src/main/data/dao/AppUserApiRequestsSummariesDaoImpl';
 import {AppUserRecentApiRequestsDaoImpl} from '../../../src/main/data/dao/AppUserRecentApiRequestsDaoImpl';
 import {SqlDbTable} from '../../../src/main/data/persistence/db/SqlDbTable';
@@ -16,14 +16,14 @@ import {getFakeRecentScoreInfos} from '../../mocks/Generators';
 import {RecentScoreInfo} from '../../../src/main/data/http/boundary/RecentScoreInfo';
 
 describe('OsuRecentScoresDao', function () {
-  let tables: SqlDbTable<object, object>[];
+  let tables: SqlDbTable[];
   let dao: OsuRecentScoresDao;
   {
     const apis = [new FakeBanchoApi()];
     const db = new SqliteDb(':memory:');
-    const osuUserSnapshots = new OsuUserSnapshotsImpl(db);
-    const appUserApiRequestsCounts = new AppUserApiRequestsCountsImpl(db);
-    const timeWindows = new TimeWindowsImpl(db);
+    const osuUserSnapshots = new OsuUserSnapshotsTable(db);
+    const appUserApiRequestsCounts = new AppUserApiRequestsCountsTable(db);
+    const timeWindows = new TimeWindowsTable(db);
     const requestsSummariesDao = new AppUserApiRequestsSummariesDaoImpl(
       appUserApiRequestsCounts,
       timeWindows
