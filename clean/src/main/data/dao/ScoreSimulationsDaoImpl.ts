@@ -10,6 +10,7 @@ import {
   SimulatedScoreOsu,
   SimulatedScoreTaiko,
 } from '../../application/requirements/dao/ScoreSimulationsDao';
+import {ModAcronym} from '../../../primitives/ModAcronym';
 
 export class ScoreSimulationsDaoImpl implements ScoreSimulationsDao {
   private apiHealthCheckJob: NodeJS.Timeout | undefined = undefined;
@@ -21,7 +22,7 @@ export class ScoreSimulationsDaoImpl implements ScoreSimulationsDao {
   }
   async getForOsu(
     beatmapId: number,
-    mods: string[],
+    mods: ModAcronym[],
     combo: number | null,
     misses: number,
     mehs: number,
@@ -55,9 +56,9 @@ export class ScoreSimulationsDaoImpl implements ScoreSimulationsDao {
       this.isApiAvailable = false;
       return undefined;
     }
-    const isRequestWithHidden = mods.find(s => s.toLowerCase() === 'hd');
-    const isResponseWithHidden = scoreSimulation.score.mods.find(
-      m => m.toLowerCase() === 'hd'
+    const isRequestWithHidden = mods.find(s => s.is('hd'));
+    const isResponseWithHidden = scoreSimulation.score.mods.find(m =>
+      m.is('hd')
     );
     // some versions can't calculate hidden for some reason
     if (isRequestWithHidden && !isResponseWithHidden) {
@@ -81,14 +82,17 @@ export class ScoreSimulationsDaoImpl implements ScoreSimulationsDao {
           1.0 / 1.1
         ) * multiplier;
       scoreSimulation.performanceAttributes.pp = actualPp;
-      scoreSimulation.score.mods = [...scoreSimulation.score.mods, 'HD'];
+      scoreSimulation.score.mods = [
+        ...scoreSimulation.score.mods,
+        new ModAcronym('HD'),
+      ];
     }
     return scoreSimulation;
   }
 
   async getForTaiko(
     beatmapId: number,
-    mods: string[]
+    mods: ModAcronym[]
   ): Promise<SimulatedScoreTaiko | undefined> {
     if (!this.isApiAvailable) {
       return undefined;
@@ -105,7 +109,7 @@ export class ScoreSimulationsDaoImpl implements ScoreSimulationsDao {
 
   async getForCtb(
     beatmapId: number,
-    mods: string[]
+    mods: ModAcronym[]
   ): Promise<SimulatedScoreCtb | undefined> {
     if (!this.isApiAvailable) {
       return undefined;
@@ -122,7 +126,7 @@ export class ScoreSimulationsDaoImpl implements ScoreSimulationsDao {
 
   async getForMania(
     beatmapId: number,
-    mods: string[]
+    mods: ModAcronym[]
   ): Promise<SimulatedScoreMania | undefined> {
     if (!this.isApiAvailable) {
       return undefined;

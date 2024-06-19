@@ -18,6 +18,7 @@ import {getFakeOsuUserInfo} from '../../mocks/Generators';
 import {GetUserBestPlaysUseCase} from '../../../src/main/application/usecases/get_user_best_plays/GetUserBestPlaysUseCase';
 import {OsuUserBestScoresDaoImpl} from '../../../src/main/data/dao/OsuUserBestScoresDaoImpl';
 import {GetUserBestPlaysRequest} from '../../../src/main/application/usecases/get_user_best_plays/GetUserBestPlaysRequest';
+import {ModAcronym} from '../../../src/primitives/ModAcronym';
 
 describe('GetUserBestPlaysUseCase', function () {
   let tables: SqlDbTable[];
@@ -78,7 +79,7 @@ describe('GetUserBestPlaysUseCase', function () {
             quantity: 1,
             mods: [
               {
-                acronym: 'HD',
+                acronym: new ModAcronym('HD'),
                 isOptional: true,
               },
             ],
@@ -112,7 +113,7 @@ describe('GetUserBestPlaysUseCase', function () {
           quantity: 10,
           mods: [
             {
-              acronym: 'HD',
+              acronym: new ModAcronym('HD'),
               isOptional: true,
             },
           ],
@@ -146,7 +147,7 @@ describe('GetUserBestPlaysUseCase', function () {
           quantity: 10,
           mods: [
             {
-              acronym: 'HD',
+              acronym: new ModAcronym('HD'),
               isOptional: true,
             },
           ],

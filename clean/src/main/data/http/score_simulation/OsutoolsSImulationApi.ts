@@ -15,6 +15,7 @@ import {RawScoreSimulationParamsTaiko} from './RawSimulationParamsTaiko';
 import {RawScoreSimulationResultCompact} from './RawScoreSimulationResultCompact';
 import {RawScoreSimulationParamsCtb} from './RawSimulationParamsCtb';
 import {RawScoreSimulationParamsMania} from './RawSimulationParamsMania';
+import {ModAcronym} from '../../../../primitives/ModAcronym';
 
 export class OsutoolsSimulationApi implements ScoreSimulationApi {
   private httpClient: AxiosInstance;
@@ -35,7 +36,7 @@ export class OsutoolsSimulationApi implements ScoreSimulationApi {
   }
   async simulateOsu(
     beatmapId: number,
-    mods: string[],
+    mods: ModAcronym[],
     combo: number | null,
     misses: number,
     mehs: number,
@@ -54,21 +55,21 @@ export class OsutoolsSimulationApi implements ScoreSimulationApi {
     let url = '/osu/';
     const body: RawScoreSimulationParamsOsu = {
       beatmap_id: beatmapId,
-      mods: mods,
+      mods: mods.map(m => m.toString()),
       combo: combo,
       misses: misses,
       mehs: mehs,
       goods: goods,
     };
     if (
-      mods.find(m => m.toLowerCase() === 'dt') !== undefined &&
+      mods.find(m => m.is('dt')) !== undefined &&
       simulationParams !== undefined &&
       simulationParams.dtRate !== undefined
     ) {
       url = url + 'dt';
       (body as RawScoreSimulationParamsOsuDt).dt_rate = simulationParams.dtRate;
     } else if (
-      mods.find(m => m.toLowerCase() === 'ht') !== undefined &&
+      mods.find(m => m.is('ht')) !== undefined &&
       simulationParams !== undefined &&
       simulationParams.htRate !== undefined
     ) {
@@ -76,7 +77,7 @@ export class OsutoolsSimulationApi implements ScoreSimulationApi {
       (body as RawScoreSimulationParamsOsuHt).ht_rate = simulationParams.htRate;
     }
     if (
-      mods.find(m => m.toLowerCase() === 'da') !== undefined &&
+      mods.find(m => m.is('da')) !== undefined &&
       simulationParams !== undefined &&
       simulationParams.difficultyAdjust !== undefined
     ) {
@@ -102,7 +103,7 @@ export class OsutoolsSimulationApi implements ScoreSimulationApi {
       simulationResult;
     return {
       score: {
-        mods: score.mods.map(m => m.acronym),
+        mods: score.mods.map(m => new ModAcronym(m.acronym)),
         accuracy: score.accuracy,
         combo: score.combo,
         statistics: {
@@ -135,12 +136,12 @@ export class OsutoolsSimulationApi implements ScoreSimulationApi {
 
   async simulateTaikoDefault(
     beatmapId: number,
-    mods: string[]
+    mods: ModAcronym[]
   ): Promise<ScoreSimulationInfoTaiko> {
     const url = '/taiko/';
     const body: RawScoreSimulationParamsTaiko = {
       beatmap_id: beatmapId,
-      mods: mods,
+      mods: mods.map(m => m.toString()),
       misses: 0,
       goods: 0,
     };
@@ -157,12 +158,12 @@ export class OsutoolsSimulationApi implements ScoreSimulationApi {
 
   async simulateCtbDefault(
     beatmapId: number,
-    mods: string[]
+    mods: ModAcronym[]
   ): Promise<ScoreSimulationInfoCtb> {
     const url = '/ctb/';
     const body: RawScoreSimulationParamsCtb = {
       beatmap_id: beatmapId,
-      mods: mods,
+      mods: mods.map(m => m.toString()),
       misses: 0,
       droplets: 0,
       tiny_droplets: 0,
@@ -180,12 +181,12 @@ export class OsutoolsSimulationApi implements ScoreSimulationApi {
 
   async simulateManiaDefault(
     beatmapId: number,
-    mods: string[]
+    mods: ModAcronym[]
   ): Promise<ScoreSimulationInfoMania> {
     const url = '/mania/';
     const body: RawScoreSimulationParamsMania = {
       beatmap_id: beatmapId,
-      mods: mods,
+      mods: mods.map(m => m.toString()),
       score: 1e6,
     };
     console.log(`Trying to get score simulation (${JSON.stringify(body)})...`);

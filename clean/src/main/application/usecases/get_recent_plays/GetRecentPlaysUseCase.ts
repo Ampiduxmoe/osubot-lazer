@@ -21,6 +21,7 @@ import {OsuRuleset} from '../../../../primitives/OsuRuleset';
 import {ScoreSimulationsDao} from '../../requirements/dao/ScoreSimulationsDao';
 import {OsuServer} from '../../../../primitives/OsuServer';
 import {BeatmapStats} from '../../../domain/entities/BeatmapStats';
+import {ModAcronym} from '../../../../primitives/ModAcronym';
 
 export class GetRecentPlaysUseCase
   implements UseCase<GetRecentPlaysRequest, GetRecentPlaysResponse>
@@ -128,7 +129,7 @@ export class GetRecentPlaysUseCase
     startPosition: number,
     quantity: number,
     mods: {
-      acronym: string;
+      acronym: ModAcronym;
       isOptional: boolean;
     }[]
   ): Promise<GetRecentPlaysResponse> {
@@ -191,29 +192,28 @@ export class GetRecentPlaysUseCase
         s.beatmap.od,
         s.beatmap.hp
       );
-      if (mods.find(m => m.toLowerCase() === 'da')) {
+      if (mods.find(m => m.is('da'))) {
         if (simulationParams?.difficultyAdjust !== undefined) {
           moddedBeatmapStats.applyDaMod(simulationParams.difficultyAdjust);
         }
-      } else if (mods.find(m => m.toLowerCase() === 'hr')) {
+      } else if (mods.find(m => m.is('hr'))) {
         moddedBeatmapStats.applyHrMod();
-      } else if (mods.find(m => m.toLowerCase() === 'ez')) {
+      } else if (mods.find(m => m.is('ez'))) {
         moddedBeatmapStats.applyEzMod();
       }
 
-      if (mods.find(m => m.toLowerCase() === 'tp')) {
+      if (mods.find(m => m.is('tp'))) {
         moddedBeatmapStats.applyTpMod();
       }
 
-      if (mods.find(m => ['ht', 'dc'].includes(m.toLowerCase()))) {
+      if (mods.find(m => m.isAnyOf('ht', 'dc'))) {
         moddedBeatmapStats.applyHtMod(simulationParams?.htRate);
-      } else if (mods.find(m => ['dt', 'nc'].includes(m.toLowerCase()))) {
+      } else if (mods.find(m => m.isAnyOf('dt', 'nc'))) {
         moddedBeatmapStats.applyDtMod(simulationParams?.dtRate);
       }
 
       const hasStarsChangingMods =
-        mods.find(m => starsChangingMods.find(x => x === m.toLowerCase())) !==
-        undefined;
+        mods.find(m => m.isAnyOf(...starsChangingMods)) !== undefined;
 
       const osuUserRecentScore: RecentPlay = {
         absolutePosition: s.absolutePosision,
@@ -297,7 +297,7 @@ export class GetRecentPlaysUseCase
     startPosition: number,
     quantity: number,
     mods: {
-      acronym: string;
+      acronym: ModAcronym;
       isOptional: boolean;
     }[]
   ): Promise<GetRecentPlaysResponse> {
@@ -342,7 +342,7 @@ export class GetRecentPlaysUseCase
     startPosition: number,
     quantity: number,
     mods: {
-      acronym: string;
+      acronym: ModAcronym;
       isOptional: boolean;
     }[]
   ): Promise<GetRecentPlaysResponse> {
@@ -387,7 +387,7 @@ export class GetRecentPlaysUseCase
     startPosition: number,
     quantity: number,
     mods: {
-      acronym: string;
+      acronym: ModAcronym;
       isOptional: boolean;
     }[]
   ): Promise<GetRecentPlaysResponse> {
@@ -484,21 +484,21 @@ function getSimulationParamsOsu(
   score: RecentScore
 ): SimulationParamsOsu | undefined {
   let simulationParams: SimulationParamsOsu | undefined = undefined;
-  const dt = score.mods.find(m => m.acronym.toLowerCase() === 'dt');
+  const dt = score.mods.find(m => m.acronym.is('dt'));
   if (dt !== undefined && dt.settings !== undefined) {
     const dtRate = (dt.settings as SettingsDT).speed_change;
     if (dtRate !== undefined) {
       simulationParams = {dtRate};
     }
   }
-  const ht = score.mods.find(m => m.acronym.toLowerCase() === 'ht');
+  const ht = score.mods.find(m => m.acronym.is('ht'));
   if (ht !== undefined && ht.settings !== undefined) {
     const htRate = (ht.settings as SettingsHT).speed_change;
     if (htRate !== undefined) {
       simulationParams = {htRate};
     }
   }
-  const da = score.mods.find(m => m.acronym.toLowerCase() === 'da');
+  const da = score.mods.find(m => m.acronym.is('da'));
   if (da !== undefined && da.settings !== undefined) {
     const settingsDa = da.settings as SettingsDA;
     const ar = settingsDa.approach_rate;

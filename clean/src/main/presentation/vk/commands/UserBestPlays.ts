@@ -248,11 +248,11 @@ ${couldNotGetSomeStatsMessage}
     const mapset = play.beatmapset;
 
     let speed = 1;
-    const dtMod = play.mods.find(m => m.acronym === 'DT');
+    const dtMod = play.mods.find(m => m.acronym.is('DT'));
     if (dtMod !== undefined) {
       speed = 1.5;
     }
-    const htMod = play.mods.find(m => m.acronym === 'HT');
+    const htMod = play.mods.find(m => m.acronym.is('HT'));
     if (htMod !== undefined) {
       speed = 0.75;
     }
@@ -316,11 +316,11 @@ Beatmap: ${mapUrlShort}
     const mapset = play.beatmapset;
 
     let speed = 1;
-    const dtMod = play.mods.find(m => m.acronym === 'DT');
+    const dtMod = play.mods.find(m => m.acronym.is('DT'));
     if (dtMod !== undefined) {
       speed = 1.5;
     }
-    const htMod = play.mods.find(m => m.acronym === 'HT');
+    const htMod = play.mods.find(m => m.acronym.is('HT'));
     if (htMod !== undefined) {
       speed = 0.75;
     }

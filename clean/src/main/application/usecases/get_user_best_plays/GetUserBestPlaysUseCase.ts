@@ -18,6 +18,7 @@ import {
   OsuUserBestScoresDao,
   UserBestScore,
 } from '../../requirements/dao/OsuUserBestScoresDao';
+import {ModAcronym} from '../../../../primitives/ModAcronym';
 
 export class GetUserBestPlaysUseCase
   implements UseCase<GetUserBestPlaysRequest, GetUserBestPlaysResponse>
@@ -120,7 +121,7 @@ export class GetUserBestPlaysUseCase
     startPosition: number,
     quantity: number,
     mods: {
-      acronym: string;
+      acronym: ModAcronym;
       isOptional: boolean;
     }[]
   ): Promise<GetUserBestPlaysResponse> {
@@ -181,25 +182,24 @@ export class GetUserBestPlaysUseCase
         s.beatmap.od,
         s.beatmap.hp
       );
-      if (mods.find(m => m.toLowerCase() === 'hr')) {
+      if (mods.find(m => m.is('hr'))) {
         moddedBeatmapStats.applyHrMod();
-      } else if (mods.find(m => m.toLowerCase() === 'ez')) {
+      } else if (mods.find(m => m.is('ez'))) {
         moddedBeatmapStats.applyEzMod();
       }
 
-      if (mods.find(m => m.toLowerCase() === 'tp')) {
+      if (mods.find(m => m.is('tp'))) {
         moddedBeatmapStats.applyTpMod();
       }
 
-      if (mods.find(m => ['ht', 'dc'].includes(m.toLowerCase()))) {
+      if (mods.find(m => m.isAnyOf('ht', 'dc'))) {
         moddedBeatmapStats.applyHtMod(undefined);
-      } else if (mods.find(m => ['dt', 'nc'].includes(m.toLowerCase()))) {
+      } else if (mods.find(m => m.isAnyOf('dt', 'nc'))) {
         moddedBeatmapStats.applyDtMod(undefined);
       }
 
       const hasStarsChangingMods =
-        mods.find(m => starsChangingMods.find(x => x === m.toLowerCase())) !==
-        undefined;
+        mods.find(m => m.isAnyOf(...starsChangingMods)) !== undefined;
 
       const osuUserBestScore: BestPlay = {
         absolutePosition: s.absolutePosision,
@@ -268,7 +268,7 @@ export class GetUserBestPlaysUseCase
     startPosition: number,
     quantity: number,
     mods: {
-      acronym: string;
+      acronym: ModAcronym;
       isOptional: boolean;
     }[]
   ): Promise<GetUserBestPlaysResponse> {
@@ -311,7 +311,7 @@ export class GetUserBestPlaysUseCase
     startPosition: number,
     quantity: number,
     mods: {
-      acronym: string;
+      acronym: ModAcronym;
       isOptional: boolean;
     }[]
   ): Promise<GetUserBestPlaysResponse> {
@@ -354,7 +354,7 @@ export class GetUserBestPlaysUseCase
     startPosition: number,
     quantity: number,
     mods: {
-      acronym: string;
+      acronym: ModAcronym;
       isOptional: boolean;
     }[]
   ): Promise<GetUserBestPlaysResponse> {

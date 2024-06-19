@@ -14,6 +14,7 @@ import {SqlDbTable} from '../../../src/main/data/persistence/db/SqlDbTable';
 import {OsuRecentScoresDao} from '../../../src/main/application/requirements/dao/OsuRecentScoresDao';
 import {getFakeRecentScoreInfos} from '../../mocks/Generators';
 import {RecentScoreInfo} from '../../../src/main/data/http/boundary/RecentScoreInfo';
+import {ModAcronym} from '../../../src/primitives/ModAcronym';
 
 describe('OsuRecentScoresDao', function () {
   let tables: SqlDbTable[];
@@ -47,7 +48,7 @@ describe('OsuRecentScoresDao', function () {
         NaN,
         OsuServer.Bancho,
         true,
-        [{acronym: 'HD', isOptional: false}],
+        [{acronym: new ModAcronym('HD'), isOptional: false}],
         3,
         1,
         OsuRuleset.osu
@@ -61,7 +62,7 @@ describe('OsuRecentScoresDao', function () {
         1,
         OsuServer.Bancho,
         true,
-        [{acronym: 'HD', isOptional: false}],
+        [{acronym: new ModAcronym('HD'), isOptional: false}],
         3,
         1,
         OsuRuleset.osu
@@ -77,11 +78,11 @@ describe('OsuRecentScoresDao', function () {
       const hdDtScores = fakeScores.filter(
         s =>
           s.mods.length === 2 &&
-          modAcronyms(s).includes('HD') &&
-          modAcronyms(s).includes('DT')
+          ModAcronym.listContains('HD', modAcronyms(s)) &&
+          ModAcronym.listContains('DT', modAcronyms(s))
       );
       const dtScores = fakeScores.filter(
-        s => s.mods.length === 1 && modAcronyms(s).includes('DT')
+        s => s.mods.length === 1 && modAcronyms(s)[0].is('DT')
       );
       if (hdDtScores.length === 0 || dtScores.length === 0) {
         throw Error('Fake scores should include popular mod combinations');
@@ -94,8 +95,8 @@ describe('OsuRecentScoresDao', function () {
         OsuServer.Bancho,
         true,
         [
-          {acronym: 'HD', isOptional: true},
-          {acronym: 'DT', isOptional: false},
+          {acronym: new ModAcronym('HD'), isOptional: true},
+          {acronym: new ModAcronym('DT'), isOptional: false},
         ],
         10,
         1,

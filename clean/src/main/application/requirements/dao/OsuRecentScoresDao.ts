@@ -1,6 +1,7 @@
 import {RecentScoreInfo} from '../../../data/http/boundary/RecentScoreInfo';
 import {OsuServer} from '../../../../primitives/OsuServer';
 import {OsuRuleset} from '../../../../primitives/OsuRuleset';
+import {ModAcronym} from '../../../../primitives/ModAcronym';
 
 export interface OsuRecentScoresDao {
   get(
@@ -9,7 +10,7 @@ export interface OsuRecentScoresDao {
     server: OsuServer,
     includeFails: boolean,
     mods: {
-      acronym: string;
+      acronym: ModAcronym;
       isOptional: boolean;
     }[],
     quantity: number,

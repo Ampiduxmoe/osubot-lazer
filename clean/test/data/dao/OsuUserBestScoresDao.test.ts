@@ -14,6 +14,7 @@ import {OsuUserBestScoresDaoImpl} from '../../../src/main/data/dao/OsuUserBestSc
 import {OsuUserBestScoresDao} from '../../../src/main/application/requirements/dao/OsuUserBestScoresDao';
 import {getFakeUserBestScoreInfos} from '../../mocks/Generators';
 import {UserBestScoreInfo} from '../../../src/main/data/http/boundary/UserBestScoreInfo';
+import {ModAcronym} from '../../../src/primitives/ModAcronym';
 
 describe('OsuUserBestScoresDao', function () {
   let tables: SqlDbTable[];
@@ -50,7 +51,7 @@ describe('OsuUserBestScoresDao', function () {
         appUserId,
         NaN,
         OsuServer.Bancho,
-        [{acronym: 'HD', isOptional: false}],
+        [{acronym: new ModAcronym('HD'), isOptional: false}],
         3,
         1,
         OsuRuleset.osu
@@ -63,7 +64,7 @@ describe('OsuUserBestScoresDao', function () {
         appUserId,
         1,
         OsuServer.Bancho,
-        [{acronym: 'HD', isOptional: false}],
+        [{acronym: new ModAcronym('HD'), isOptional: false}],
         3,
         1,
         OsuRuleset.osu
@@ -79,11 +80,11 @@ describe('OsuUserBestScoresDao', function () {
       const hdDtScores = fakeScores.filter(
         s =>
           s.mods.length === 2 &&
-          modAcronyms(s).includes('HD') &&
-          modAcronyms(s).includes('DT')
+          ModAcronym.listContains('HD', modAcronyms(s)) &&
+          ModAcronym.listContains('DT', modAcronyms(s))
       );
       const dtScores = fakeScores.filter(
-        s => s.mods.length === 1 && modAcronyms(s).includes('DT')
+        s => s.mods.length === 1 && modAcronyms(s)[0].is('DT')
       );
       if (hdDtScores.length === 0 || dtScores.length === 0) {
         throw Error('Fake scores should include popular mod combinations');
@@ -95,8 +96,8 @@ describe('OsuUserBestScoresDao', function () {
         osuId,
         OsuServer.Bancho,
         [
-          {acronym: 'HD', isOptional: true},
-          {acronym: 'DT', isOptional: false},
+          {acronym: new ModAcronym('HD'), isOptional: true},
+          {acronym: new ModAcronym('DT'), isOptional: false},
         ],
         10,
         1,

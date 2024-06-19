@@ -22,28 +22,20 @@ export abstract class BeatmapScore<
   readonly pp: number | null;
 
   readonly hasStarRatingChangingMods: boolean = (() => {
-    const mode = this.baseBeatmap.mode;
-    const starRatingChangingModsLowercase = mode.modApplyOrder.map(x =>
-      x.toLowerCase()
+    const scoreMods = this.mods.map(x => x.acronym);
+    const starRatingChangingMods = this.baseBeatmap.mode.starRatingChangingMods;
+    return (
+      scoreMods.find(m => m.isAnyOf(...starRatingChangingMods)) !== undefined
     );
-    const scoreModsLowercase = this.mods.map(x => x.acronym.toLowerCase());
-    for (const acronym in starRatingChangingModsLowercase) {
-      if (scoreModsLowercase.includes(acronym)) {
-        return true;
-      }
-    }
-    return false;
   })();
 
   readonly baseBeatmap: Beatmap<ModeType>;
   readonly moddedBeatmap: Beatmap<ModeType> = (() => {
     let beatmap = this.baseBeatmap;
-    const mode = beatmap.mode;
-    const modApplyOrderLowercase = mode.modApplyOrder.map(x => x.toLowerCase());
-    for (const acronym in modApplyOrderLowercase) {
-      const scoreMod = this.mods.find(m => m.acronym.toLowerCase() === acronym);
-      if (scoreMod !== undefined) {
-        beatmap = scoreMod.apply(beatmap);
+    for (const acronym in beatmap.mode.modApplyOrder) {
+      const modToApply = this.mods.find(m => m.acronym.is(acronym));
+      if (modToApply !== undefined) {
+        beatmap = modToApply.apply(beatmap);
       }
     }
     if (this.hasStarRatingChangingMods) {

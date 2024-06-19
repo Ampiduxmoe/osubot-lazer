@@ -1,3 +1,4 @@
+import {ModAcronym} from '../../../../primitives/ModAcronym';
 import {OsuRuleset} from '../../../../primitives/OsuRuleset';
 import {Mode} from './Mode';
 
@@ -6,12 +7,12 @@ export class ModeOsu extends Mode {
   readonly name = 'osu!';
   readonly shortName = 'osu';
   readonly validMods = [];
-  readonly modApplyOrder = [
+  readonly modApplyOrder = ModAcronym.createMany(
     ...['EZ', 'HR', 'DA'],
     ...['TP'],
-    ...['HT', 'DC', 'DT', 'NC'],
-  ];
-  readonly starRatingChangingMods = [
+    ...['HT', 'DC', 'DT', 'NC']
+  );
+  readonly starRatingChangingMods = ModAcronym.createMany(
     'EZ', // Easy
     'HT', // Half Time
     'DC', // Daycore
@@ -24,9 +25,9 @@ export class ModeOsu extends Mode {
     'DA', // Difficulty Adjust
     'RD', // Random
     'WU', // Wind Up
-    'WD', // Wind Down
-  ];
-  areModsCompatible(a: string, b: string): boolean {
+    'WD' // Wind Down
+  );
+  areModsCompatible(a: ModAcronym, b: ModAcronym): boolean {
     if (a === b) {
       return false;
     }

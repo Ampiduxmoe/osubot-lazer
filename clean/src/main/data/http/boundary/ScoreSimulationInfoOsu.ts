@@ -1,6 +1,8 @@
+import {ModAcronym} from '../../../../primitives/ModAcronym';
+
 export type ScoreSimulationInfoOsu = {
   score: {
-    mods: string[];
+    mods: ModAcronym[];
     accuracy: number;
     combo: number;
     statistics: {

@@ -18,6 +18,7 @@ import {ScoreSimulationsDaoImpl} from '../../../src/main/data/dao/ScoreSimulatio
 import {CachedOsuUsersDaoImpl} from '../../../src/main/data/dao/CachedOsuUsersDaoImpl';
 import {GetRecentPlaysRequest} from '../../../src/main/application/usecases/get_recent_plays/GetRecentPlaysRequest';
 import {getFakeOsuUserInfo} from '../../mocks/Generators';
+import {ModAcronym} from '../../../src/primitives/ModAcronym';
 
 describe('GetRecentPlaysUseCase', function () {
   let tables: SqlDbTable[];
@@ -79,7 +80,7 @@ describe('GetRecentPlaysUseCase', function () {
             quantity: 1,
             mods: [
               {
-                acronym: 'HD',
+                acronym: new ModAcronym('HD'),
                 isOptional: true,
               },
             ],
@@ -114,7 +115,7 @@ describe('GetRecentPlaysUseCase', function () {
           quantity: 10,
           mods: [
             {
-              acronym: 'HD',
+              acronym: new ModAcronym('HD'),
               isOptional: true,
             },
           ],
@@ -149,7 +150,7 @@ describe('GetRecentPlaysUseCase', function () {
           quantity: 10,
           mods: [
             {
-              acronym: 'HD',
+              acronym: new ModAcronym('HD'),
               isOptional: true,
             },
           ],

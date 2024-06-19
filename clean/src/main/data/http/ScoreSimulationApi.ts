@@ -2,12 +2,14 @@ import {ScoreSimulationInfoOsu} from './boundary/ScoreSimulationInfoOsu';
 import {ScoreSimulationInfoTaiko} from './boundary/ScoreSimulationInfoTaiko';
 import {ScoreSimulationInfoCtb} from './boundary/ScoreSimulationInfoCtb';
 import {ScoreSimulationInfoMania} from './boundary/ScoreSimulationInfoMania';
+import {ModAcronym} from '../../../primitives/ModAcronym';
+
 export interface ScoreSimulationApi {
   status(): Promise<string>;
 
   simulateOsu(
     beatmapId: number,
-    mods: string[],
+    mods: ModAcronym[],
     combo: number | null,
     misses: number,
     mehs: number,
@@ -26,16 +28,16 @@ export interface ScoreSimulationApi {
 
   simulateTaikoDefault(
     beatmapId: number,
-    mods: string[]
+    mods: ModAcronym[]
   ): Promise<ScoreSimulationInfoTaiko>;
 
   simulateCtbDefault(
     beatmapId: number,
-    mods: string[]
+    mods: ModAcronym[]
   ): Promise<ScoreSimulationInfoCtb>;
 
   simulateManiaDefault(
     beatmapId: number,
-    mods: string[]
+    mods: ModAcronym[]
   ): Promise<ScoreSimulationInfoMania>;
 }

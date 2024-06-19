@@ -1,6 +1,7 @@
 import {OsuServer} from '../../../../primitives/OsuServer';
 import {OsuRuleset} from '../../../../primitives/OsuRuleset';
 import {UserBestScoreInfo} from '../../../data/http/boundary/UserBestScoreInfo';
+import {ModAcronym} from '../../../../primitives/ModAcronym';
 
 export interface OsuUserBestScoresDao {
   get(
@@ -8,7 +9,7 @@ export interface OsuUserBestScoresDao {
     osuUserId: number,
     server: OsuServer,
     mods: {
-      acronym: string;
+      acronym: ModAcronym;
       isOptional: boolean;
     }[],
     quantity: number,

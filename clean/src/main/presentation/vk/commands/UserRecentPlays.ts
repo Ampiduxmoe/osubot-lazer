@@ -274,13 +274,13 @@ ${couldNotGetSomeStatsMessage}
     const mapset = play.beatmapset;
 
     let speed = 1;
-    const dtMod = play.mods.find(m => m.acronym === 'DT');
+    const dtMod = play.mods.find(m => m.acronym.is('DT'));
     if (dtMod !== undefined) {
       speed =
         (dtMod.settings as SettingsDT)?.speed_change ??
         SettingsDefaults.DT.speed_change!;
     }
-    const htMod = play.mods.find(m => m.acronym === 'HT');
+    const htMod = play.mods.find(m => m.acronym.is('HT'));
     if (htMod !== undefined) {
       speed =
         (htMod.settings as SettingsHT)?.speed_change ??
@@ -290,7 +290,7 @@ ${couldNotGetSomeStatsMessage}
     let csAsterisk = '';
     let odAsterisk = '';
     let hpAsterisk = '';
-    const daMod = play.mods.find(m => m.acronym === 'DA');
+    const daMod = play.mods.find(m => m.acronym.is('DA'));
     if (daMod !== undefined && daMod.settings !== undefined) {
       const daSettings = daMod.settings as SettingsDA;
       if (daSettings.approach_rate !== undefined) {
@@ -381,13 +381,13 @@ Beatmap: ${mapUrlShort}
     const mapset = play.beatmapset;
 
     let speed = 1;
-    const dtMod = play.mods.find(m => m.acronym === 'DT');
+    const dtMod = play.mods.find(m => m.acronym.is('DT'));
     if (dtMod !== undefined && dtMod.settings !== undefined) {
       speed =
         (dtMod.settings as SettingsDT).speed_change ??
         SettingsDefaults.DT.speed_change!;
     }
-    const htMod = play.mods.find(m => m.acronym === 'HT');
+    const htMod = play.mods.find(m => m.acronym.is('HT'));
     if (htMod !== undefined && htMod.settings !== undefined) {
       speed =
         (htMod.settings as SettingsHT).speed_change ??

@@ -8,6 +8,7 @@ import {Playmode} from './client/common_types/Playmode';
 import {RecentScore} from './client/users/RecentScore';
 import {BestScore} from './client/users/BestScore';
 import {UserBestScoreInfo} from '../boundary/UserBestScoreInfo';
+import {ModAcronym} from '../../../../primitives/ModAcronym';
 
 export class BanchoApi implements OsuApi {
   private client: BanchoClient;
@@ -103,7 +104,10 @@ function recentScoreInternalToExternal(score: RecentScore): RecentScoreInfo {
   return {
     id: score.id,
     userId: score.user_id,
-    mods: score.mods,
+    mods: score.mods.map(m => ({
+      acronym: new ModAcronym(m.acronym),
+      settings: m.settings,
+    })),
     statistics: {
       great: score.statistics.great,
       ok: score.statistics.ok,
@@ -161,7 +165,10 @@ function userBestScoreInternalToExternal(score: BestScore): UserBestScoreInfo {
   return {
     id: score.id,
     userId: score.user_id,
-    mods: score.mods,
+    mods: score.mods.map(m => ({
+      acronym: new ModAcronym(m.acronym),
+      settings: m.settings,
+    })),
     statistics: {
       great: score.statistics.great,
       ok: score.statistics.ok,

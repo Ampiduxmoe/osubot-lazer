@@ -1,3 +1,4 @@
+import {ModAcronym} from '../../../../primitives/ModAcronym';
 import {ScoreSimulationInfoCtb} from '../../../data/http/boundary/ScoreSimulationInfoCtb';
 import {ScoreSimulationInfoMania} from '../../../data/http/boundary/ScoreSimulationInfoMania';
 import {ScoreSimulationInfoOsu} from '../../../data/http/boundary/ScoreSimulationInfoOsu';
@@ -6,7 +7,7 @@ import {ScoreSimulationInfoTaiko} from '../../../data/http/boundary/ScoreSimulat
 export interface ScoreSimulationsDao {
   getForOsu(
     beatmapId: number,
-    mods: string[],
+    mods: ModAcronym[],
     combo: number | null,
     misses: number,
     mehs: number,
@@ -25,17 +26,17 @@ export interface ScoreSimulationsDao {
 
   getForTaiko(
     beatmapId: number,
-    mods: string[]
+    mods: ModAcronym[]
   ): Promise<SimulatedScoreTaiko | undefined>;
 
   getForCtb(
     beatmapId: number,
-    mods: string[]
+    mods: ModAcronym[]
   ): Promise<SimulatedScoreCtb | undefined>;
 
   getForMania(
     beatmapId: number,
-    mods: string[]
+    mods: ModAcronym[]
   ): Promise<SimulatedScoreMania | undefined>;
 }
 

@@ -1,8 +1,10 @@
+import {ModAcronym} from '../../../../primitives/ModAcronym';
+
 export type RecentScoreInfo = {
   id: number;
   userId: number;
   mods: {
-    acronym: string;
+    acronym: ModAcronym;
     settings?: object;
   }[];
   statistics: {

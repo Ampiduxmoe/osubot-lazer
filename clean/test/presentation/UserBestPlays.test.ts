@@ -39,6 +39,7 @@ import {
   OsuUserBestPlays,
 } from '../../src/main/application/usecases/get_user_best_plays/GetUserBestPlaysResponse';
 import {UserBestScoreInfo} from '../../src/main/data/http/boundary/UserBestScoreInfo';
+import {ModAcronym} from '../../src/primitives/ModAcronym';
 
 describe('UserBestPlays', function () {
   let tables: SqlDbTable[];
@@ -328,8 +329,8 @@ describe('UserBestPlays', function () {
         startPosition: 2,
         quantity: 3,
         mods: [
-          {acronym: 'HD', isOptional: true},
-          {acronym: 'DT', isOptional: false},
+          {acronym: new ModAcronym('HD'), isOptional: true},
+          {acronym: new ModAcronym('DT'), isOptional: false},
         ],
         mode: mode,
       });
@@ -348,8 +349,8 @@ describe('UserBestPlays', function () {
         startPosition: 2,
         quantity: 3,
         mods: [
-          {acronym: 'HD', isOptional: true},
-          {acronym: 'DT', isOptional: false},
+          {acronym: new ModAcronym('HD'), isOptional: true},
+          {acronym: new ModAcronym('DT'), isOptional: false},
         ],
         mode: mode,
       });
@@ -380,8 +381,8 @@ describe('UserBestPlays', function () {
             startPosition: 2,
             quantity: 3,
             mods: [
-              {acronym: 'HD', isOptional: true},
-              {acronym: 'DT', isOptional: false},
+              {acronym: new ModAcronym('HD'), isOptional: true},
+              {acronym: new ModAcronym('DT'), isOptional: false},
             ],
             mode: undefined,
           });
@@ -410,8 +411,8 @@ describe('UserBestPlays', function () {
             startPosition: 2,
             quantity: 3,
             mods: [
-              {acronym: 'HD', isOptional: true},
-              {acronym: 'DT', isOptional: false},
+              {acronym: new ModAcronym('HD'), isOptional: true},
+              {acronym: new ModAcronym('DT'), isOptional: false},
             ],
             mode: OsuRuleset[mode],
           });
@@ -431,8 +432,8 @@ describe('UserBestPlays', function () {
         startPosition: 2,
         quantity: 3,
         mods: [
-          {acronym: 'HD', isOptional: true},
-          {acronym: 'DT', isOptional: false},
+          {acronym: new ModAcronym('HD'), isOptional: true},
+          {acronym: new ModAcronym('DT'), isOptional: false},
         ],
         mode: undefined,
       });

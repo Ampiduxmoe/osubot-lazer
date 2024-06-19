@@ -1,5 +1,9 @@
 /* eslint-disable prefer-arrow-callback */
 
+describe('Primitives', function () {
+  require('./primitives/ModAcronym.test');
+});
+
 describe('Data', function () {
   describe('Tables', function () {
     require('./data/persistence/db/tables/AppUserApiRequestsCounts.test');

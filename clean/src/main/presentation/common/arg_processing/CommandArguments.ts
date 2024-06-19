@@ -5,6 +5,7 @@ import {CommandArgument} from './CommandArgument';
 import {ModArg} from './ModArg';
 import {CommandPrefixes} from '../CommandPrefixes';
 import {ALL_OSU_RULESETS, OsuRuleset} from '../../../../primitives/OsuRuleset';
+import {ModAcronym} from '../../../../primitives/ModAcronym';
 
 export const SERVER_PREFIX: CommandArgument<OsuServer> = {
   displayName: 'server',
@@ -151,25 +152,34 @@ export const MODS: CommandArgument<ModArg[]> = {
     return modsRegex.test(token);
   },
   parse: function (token: string): ModArg[] {
-    const modsString = token.substring(1).toUpperCase();
-    const optionalMods =
-      modsString
+    const acronymsString = token.substring(1);
+    const optionalModAcronyms =
+      acronymsString
         .match(/\(.{2}\)/g)
         ?.flat()
         ?.filter(uniquesFilter)
         ?.map(s => s.substring(1, 3)) ?? [];
-    let noOptionalModsString = modsString;
-    for (const optionalMod of optionalMods) {
-      noOptionalModsString = noOptionalModsString.replace(
-        `(${optionalMod})`,
-        ''
-      );
-    }
+    const requiredModsAcronymsString = (() => {
+      let tmpStr = acronymsString;
+      for (const optionalMod of optionalModAcronyms) {
+        tmpStr = tmpStr.replace(`(${optionalMod})`, '');
+      }
+      return tmpStr;
+    })();
     const requiredMods =
-      noOptionalModsString.match(/.{2}/g)?.flat()?.filter(uniquesFilter) ?? [];
+      requiredModsAcronymsString
+        .match(/.{2}/g)
+        ?.flat()
+        ?.filter(uniquesFilter) ?? [];
     const mods: ModArg[] = [
-      ...optionalMods.map(m => ({acronym: m, isOptional: true})),
-      ...requiredMods.map(m => ({acronym: m, isOptional: false})),
+      ...optionalModAcronyms.map(m => ({
+        acronym: new ModAcronym(m),
+        isOptional: true,
+      })),
+      ...requiredMods.map(m => ({
+        acronym: new ModAcronym(m),
+        isOptional: false,
+      })),
     ];
     return mods;
   },

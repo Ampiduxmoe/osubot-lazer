@@ -8,6 +8,7 @@ import {
 } from '../../application/requirements/dao/OsuUserBestScoresDao';
 import {COMMON_REQUEST_SUBTARGETS} from './AppUserApiRequestsSummariesDaoImpl';
 import {OsuUserSnapshotsRepository} from '../repository/repositories/OsuUserSnapshotsRepository';
+import {ModAcronym} from '../../../primitives/ModAcronym';
 
 export class OsuUserBestScoresDaoImpl implements OsuUserBestScoresDao {
   private apis: OsuApi[];
@@ -27,7 +28,7 @@ export class OsuUserBestScoresDaoImpl implements OsuUserBestScoresDao {
     osuUserId: number,
     server: OsuServer,
     mods: {
-      acronym: string;
+      acronym: ModAcronym;
       isOptional: boolean;
     }[],
     quantity: number,
@@ -40,13 +41,16 @@ export class OsuUserBestScoresDaoImpl implements OsuUserBestScoresDao {
     }
     const requiredMods = mods
       .filter(m => m.isOptional === false)
-      .map(m => m.acronym.toLowerCase());
+      .map(m => m.acronym);
     const optionalMods = mods
       .filter(m => m.isOptional === true)
-      .map(m => m.acronym.toLowerCase())
-      .filter(m => m !== 'nm');
+      .map(m => m.acronym)
+      .filter(m => !m.is('nm'));
     const allFilterMods = [...requiredMods, ...optionalMods];
-    if (requiredMods.includes('nm') && requiredMods.length > 1) {
+    if (
+      ModAcronym.listContains('nm', requiredMods) &&
+      requiredMods.length > 1
+    ) {
       return [];
     }
     let adjustedQuantity = quantity;
@@ -85,17 +89,20 @@ export class OsuUserBestScoresDaoImpl implements OsuUserBestScoresDao {
       if (allFilterMods.length === 0) {
         return true;
       }
-      const scoreMods = s.mods.map(m => m.acronym.toLowerCase());
-      if (requiredMods.includes('nm') && scoreMods.length === 0) {
+      const scoreMods = s.mods.map(m => m.acronym);
+      if (
+        ModAcronym.listContains('nm', requiredMods) &&
+        scoreMods.length === 0
+      ) {
         return true;
       }
       for (const scoreMod of scoreMods) {
-        if (!allFilterMods.includes(scoreMod)) {
+        if (!scoreMod.isAnyOf(...allFilterMods)) {
           return false;
         }
       }
       for (const requiredMod of requiredMods) {
-        if (!scoreMods.includes(requiredMod)) {
+        if (!requiredMod.isAnyOf(...scoreMods)) {
           return false;
         }
       }

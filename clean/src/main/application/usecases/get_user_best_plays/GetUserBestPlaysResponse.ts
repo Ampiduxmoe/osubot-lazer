@@ -1,3 +1,4 @@
+import {ModAcronym} from '../../../../primitives/ModAcronym';
 import {OsuRuleset} from '../../../../primitives/OsuRuleset';
 
 export type GetUserBestPlaysResponse = {
@@ -37,7 +38,7 @@ export type BestPlay = {
     countSpinners: number;
   };
   mods: {
-    acronym: string;
+    acronym: ModAcronym;
   }[];
   stars: number | undefined;
   ar: number;

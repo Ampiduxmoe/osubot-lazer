@@ -1,3 +1,4 @@
+import {ModAcronym} from '../../../../primitives/ModAcronym';
 import {OsuRuleset} from '../../../../primitives/OsuRuleset';
 import {Mode} from './Mode';
 
@@ -8,7 +9,7 @@ export class ModeTaiko extends Mode {
   readonly validMods = [];
   readonly modApplyOrder = [];
   readonly starRatingChangingMods = [];
-  areModsCompatible(a: string, b: string): boolean {
+  areModsCompatible(a: ModAcronym, b: ModAcronym): boolean {
     if (a === b) {
       return false;
     }

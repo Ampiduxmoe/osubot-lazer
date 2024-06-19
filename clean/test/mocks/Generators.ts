@@ -2,6 +2,7 @@ import {OsuUserInfo} from '../../src/main/data/http/boundary/OsuUserInfo';
 import {RecentScoreInfo} from '../../src/main/data/http/boundary/RecentScoreInfo';
 import {UserBestScoreInfo} from '../../src/main/data/http/boundary/UserBestScoreInfo';
 import {minBy} from '../../src/primitives/Arrays';
+import {ModAcronym} from '../../src/primitives/ModAcronym';
 import {OsuRuleset} from '../../src/primitives/OsuRuleset';
 
 const modCombos = [
@@ -126,7 +127,7 @@ export function getFakeRecentScoreInfos(
         modCombos[scoreId % modCombos.length]
           .match(/.{2}/g)
           ?.flat()
-          ?.map(m => ({acronym: m})) ?? [],
+          ?.map(m => ({acronym: new ModAcronym(m)})) ?? [],
       statistics: {
         great: 30 * i,
         ok: 10 * i,
@@ -208,7 +209,7 @@ export function getFakeUserBestScoreInfos(
         modCombos[scoreId % modCombos.length]
           .match(/.{2}/g)
           ?.flat()
-          ?.map(m => ({acronym: m})) ?? [],
+          ?.map(m => ({acronym: new ModAcronym(m)})) ?? [],
       statistics: {
         great: 30 * i,
         ok: 10 * i,

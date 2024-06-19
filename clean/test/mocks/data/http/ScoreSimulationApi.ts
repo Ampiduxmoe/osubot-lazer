@@ -4,6 +4,7 @@ import {ScoreSimulationInfoMania} from '../../../../src/main/data/http/boundary/
 import {ScoreSimulationInfoOsu} from '../../../../src/main/data/http/boundary/ScoreSimulationInfoOsu';
 import {ScoreSimulationInfoTaiko} from '../../../../src/main/data/http/boundary/ScoreSimulationInfoTaiko';
 import {max, min, sum} from '../../../../src/primitives/Arrays';
+import {ModAcronym} from '../../../../src/primitives/ModAcronym';
 export class FakeScoreSimulationApi implements ScoreSimulationApi {
   async status(): Promise<string> {
     return 'ok';
@@ -11,7 +12,7 @@ export class FakeScoreSimulationApi implements ScoreSimulationApi {
 
   async simulateOsu(
     beatmapId: number,
-    mods: string[],
+    mods: ModAcronym[],
     combo: number | null,
     misses: number,
     mehs: number,
@@ -80,28 +81,28 @@ export class FakeScoreSimulationApi implements ScoreSimulationApi {
 
   simulateTaikoDefault(
     beatmapId: number,
-    mods: string[]
+    mods: ModAcronym[]
   ): Promise<ScoreSimulationInfoTaiko> {
     return this.simulateOtherModes(beatmapId, mods);
   }
 
   simulateCtbDefault(
     beatmapId: number,
-    mods: string[]
+    mods: ModAcronym[]
   ): Promise<ScoreSimulationInfoCtb> {
     return this.simulateOtherModes(beatmapId, mods);
   }
 
   simulateManiaDefault(
     beatmapId: number,
-    mods: string[]
+    mods: ModAcronym[]
   ): Promise<ScoreSimulationInfoMania> {
     return this.simulateOtherModes(beatmapId, mods);
   }
 
   async simulateOtherModes(
     beatmapId: number,
-    mods: string[]
+    mods: ModAcronym[]
   ): Promise<
     ScoreSimulationInfoTaiko | ScoreSimulationInfoCtb | ScoreSimulationInfoMania
   > {

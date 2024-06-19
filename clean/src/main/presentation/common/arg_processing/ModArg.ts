@@ -1,4 +1,6 @@
+import {ModAcronym} from '../../../../primitives/ModAcronym';
+
 export type ModArg = {
-  acronym: string;
+  acronym: ModAcronym;
   isOptional: boolean;
 };
