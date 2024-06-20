@@ -307,10 +307,11 @@ ${couldNotGetSomeStatsMessage}
       }
     }
 
-    const mapStatus = mapset.status;
+    const absPos = `\\${play.absolutePosition}`;
     const {artist, title} = mapset;
     const diffname = map.difficultyName;
     const mapperName = mapset.creator;
+    const mapStatus = mapset.status;
     const [lengthString, drainString] = (() => {
       const totalLength = new Timespan().addSeconds(map.totalLength / speed);
       const z0 = totalLength.minutes <= 9 ? '0' : '';
@@ -362,7 +363,7 @@ ${couldNotGetSomeStatsMessage}
       play.passed || isNaN(mapProgress) ? '' : `(${completionPercent}%)`;
     const mapUrlShort = map.url.replace('beatmaps', 'b');
     return `
-<${mapStatus}> ${artist} - ${title} [${diffname}] by ${mapperName}
+${absPos}. ${artist} - ${title} [${diffname}] by ${mapperName} (${mapStatus})
 ${lengthString} (${drainString})　${bpm} BPM　${sr}★　${modsPlusSign}${modsString}
 AR: ${ar}${arAsterisk}　CS: ${cs}${csAsterisk}　OD: ${od}${odAsterisk}　HP: ${hp}${hpAsterisk}
 
