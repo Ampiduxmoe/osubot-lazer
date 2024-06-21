@@ -106,8 +106,32 @@ function recentScoreInternalToExternal(score: RecentScore): RecentScoreInfo {
     userId: score.user_id,
     mods: score.mods.map(m => ({
       acronym: new ModAcronym(m.acronym),
-      settings: m.settings,
+      settings:
+        m.settings === undefined
+          ? undefined
+          : {
+              speedChange: m.settings.speed_change,
+              adjustPitch: m.settings.adjust_pitch,
+              ar: m.settings.approach_rate,
+              cs: m.settings.circle_size,
+              od: m.settings.overall_difficulty,
+              hp: m.settings.drain_rate,
+              retries: m.settings.retries,
+              seed: m.settings.seed,
+              metronome: m.settings.metronome,
+            },
     })),
+    maximumStatistics: {
+      great: score.maximum_statistics.great,
+      perfect: score.maximum_statistics.perfect,
+      legacyComboIncrease: score.maximum_statistics.legacy_combo_increase,
+      ignoreHit: score.maximum_statistics.ignore_hit,
+      largeBonus: score.maximum_statistics.large_bonus,
+      smallBonus: score.maximum_statistics.small_bonus,
+      largeTickHit: score.maximum_statistics.large_tick_hit,
+      smallTickHit: score.maximum_statistics.small_tick_hit,
+      sliderTailHit: score.maximum_statistics.slider_tail_hit,
+    },
     statistics: {
       great: score.statistics.great,
       ok: score.statistics.ok,
@@ -167,14 +191,39 @@ function userBestScoreInternalToExternal(score: BestScore): UserBestScoreInfo {
     userId: score.user_id,
     mods: score.mods.map(m => ({
       acronym: new ModAcronym(m.acronym),
-      settings: m.settings,
+      settings:
+        m.settings === undefined
+          ? undefined
+          : {
+              speedChange: m.settings.speed_change,
+              adjustPitch: m.settings.adjust_pitch,
+              ar: m.settings.approach_rate,
+              cs: m.settings.circle_size,
+              od: m.settings.overall_difficulty,
+              hp: m.settings.drain_rate,
+              retries: m.settings.retries,
+              seed: m.settings.seed,
+              metronome: m.settings.metronome,
+            },
     })),
+    maximumStatistics: {
+      great: score.maximum_statistics.great,
+      perfect: score.maximum_statistics.perfect,
+      legacyComboIncrease: score.maximum_statistics.legacy_combo_increase,
+      ignoreHit: score.maximum_statistics.ignore_hit,
+      largeBonus: score.maximum_statistics.large_bonus,
+      smallBonus: score.maximum_statistics.small_bonus,
+      largeTickHit: score.maximum_statistics.large_tick_hit,
+      smallTickHit: score.maximum_statistics.small_tick_hit,
+      sliderTailHit: score.maximum_statistics.slider_tail_hit,
+    },
     statistics: {
       great: score.statistics.great,
       ok: score.statistics.ok,
       meh: score.statistics.meh,
       miss: score.statistics.miss,
       largeTickHit: score.statistics.large_tick_hit,
+      largeTickMiss: score.statistics.large_tick_miss,
       smallTickHit: score.statistics.small_tick_hit,
       smallTickMiss: score.statistics.small_tick_miss,
       perfect: score.statistics.perfect,

@@ -1,35 +1,33 @@
 import {UseCase} from '../UseCase';
 import {GetRecentPlaysRequest} from './GetRecentPlaysRequest';
-import {
-  GetRecentPlaysResponse,
-  RecentPlay,
-  BeatmapsetRankStatus,
-  SettingsDT,
-  SettingsHT,
-  SettingsDA,
-  RecentPlayStatisticsTaiko,
-  RecentPlayStatisticsMania,
-  RecentPlayStatisticsCtb,
-} from './GetRecentPlaysResponse';
-import {
-  OsuRecentScoresDao,
-  RecentScore,
-} from '../../requirements/dao/OsuRecentScoresDao';
+import {GetRecentPlaysResponse, RecentPlay} from './GetRecentPlaysResponse';
+import {OsuRecentScoresDao} from '../../requirements/dao/OsuRecentScoresDao';
 import {CachedOsuUsersDao} from '../../requirements/dao/CachedOsuUsersDao';
 import {OsuUsersDao} from '../../requirements/dao/OsuUsersDao';
-import {OsuRuleset} from '../../../../primitives/OsuRuleset';
 import {ScoreSimulationsDao} from '../../requirements/dao/ScoreSimulationsDao';
-import {OsuServer} from '../../../../primitives/OsuServer';
-import {BeatmapStats} from '../../../domain/entities/BeatmapStats';
-import {ModAcronym} from '../../../../primitives/ModAcronym';
+import {
+  BeatmapScore,
+  SCORE_FULL_COMBO,
+} from '../../../domain/entities/BeatmapScore';
+import {Hitcounts} from '../../../domain/entities/hitcounts/Hitcounts';
+import {Mode} from '../../../domain/entities/mode/Mode';
+import {HitcountsOsu} from '../../../domain/entities/hitcounts/HitcountsOsu';
+import {ModeOsu} from '../../../domain/entities/mode/ModeOsu';
+import {RecentScoreAdapter} from '../../adapters/recent_score/RecentScoreAdapter';
+import {ModeTaiko} from '../../../domain/entities/mode/ModeTaiko';
+import {HitcountsTaiko} from '../../../domain/entities/hitcounts/HitcountsTaiko';
+import {ModeCtb} from '../../../domain/entities/mode/ModeCtb';
+import {HitcountsCtb} from '../../../domain/entities/hitcounts/HitcountsCtb';
+import {ModeMania} from '../../../domain/entities/mode/ModeMania';
+import {HitcountsMania} from '../../../domain/entities/hitcounts/HitcountsMania';
 
 export class GetRecentPlaysUseCase
   implements UseCase<GetRecentPlaysRequest, GetRecentPlaysResponse>
 {
   recentScores: OsuRecentScoresDao;
-  scoreSimulations: ScoreSimulationsDao;
   cachedOsuUsers: CachedOsuUsersDao;
   osuUsers: OsuUsersDao;
+  recentScoreAdapter: RecentScoreAdapter;
   constructor(
     recentScores: OsuRecentScoresDao,
     scoreSimulations: ScoreSimulationsDao,
@@ -37,22 +35,22 @@ export class GetRecentPlaysUseCase
     osuUsers: OsuUsersDao
   ) {
     this.recentScores = recentScores;
-    this.scoreSimulations = scoreSimulations;
     this.cachedOsuUsers = cachedOsuUsers;
     this.osuUsers = osuUsers;
+    this.recentScoreAdapter = new RecentScoreAdapter(scoreSimulations);
   }
   async execute(
     params: GetRecentPlaysRequest
   ): Promise<GetRecentPlaysResponse> {
     const {appUserId, username, server, ruleset} = params;
     const userSnapshot = await this.cachedOsuUsers.get(username, server);
-    let osuId = userSnapshot?.id;
-    let caseCorrectUsername = userSnapshot?.username;
-    let mode = ruleset ?? userSnapshot?.preferredMode;
+    let targetOsuId = userSnapshot?.id;
+    let targetCaseCorrectUsername = userSnapshot?.username;
+    let targetRuleset = ruleset ?? userSnapshot?.preferredMode;
     if (
-      osuId === undefined ||
-      caseCorrectUsername === undefined ||
-      mode === undefined
+      targetOsuId === undefined ||
+      targetCaseCorrectUsername === undefined ||
+      targetRuleset === undefined
     ) {
       const osuUser = await this.osuUsers.getByUsername(
         appUserId,
@@ -66,552 +64,224 @@ export class GetRecentPlaysUseCase
           failureReason: 'user not found',
         };
       }
-      osuId = osuUser.id;
-      caseCorrectUsername = osuUser.username;
-      mode ??= osuUser.preferredMode;
+      targetOsuId = osuUser.id;
+      targetCaseCorrectUsername = osuUser.username;
+      targetRuleset ??= osuUser.preferredMode;
     }
-    switch (mode) {
-      case OsuRuleset.osu:
-        return await this.executeForOsu(
-          appUserId,
-          server,
-          caseCorrectUsername,
-          osuId,
-          params.includeFails,
-          params.startPosition,
-          params.quantity,
-          params.mods
-        );
-      case OsuRuleset.taiko:
-        return await this.executeForTaiko(
-          appUserId,
-          server,
-          caseCorrectUsername,
-          osuId,
-          params.includeFails,
-          params.startPosition,
-          params.quantity,
-          params.mods
-        );
-      case OsuRuleset.ctb:
-        return await this.executeForCtb(
-          appUserId,
-          server,
-          caseCorrectUsername,
-          osuId,
-          params.includeFails,
-          params.startPosition,
-          params.quantity,
-          params.mods
-        );
-      case OsuRuleset.mania:
-        return await this.executeForMania(
-          appUserId,
-          server,
-          caseCorrectUsername,
-          osuId,
-          params.includeFails,
-          params.startPosition,
-          params.quantity,
-          params.mods
-        );
-      default:
-        throw Error('Switch case is not exhaustive!');
-    }
-  }
 
-  async executeForOsu(
-    appUserId: string,
-    server: OsuServer,
-    username: string,
-    osuId: number,
-    includeFails: boolean,
-    startPosition: number,
-    quantity: number,
-    mods: {
-      acronym: ModAcronym;
-      isOptional: boolean;
-    }[]
-  ): Promise<GetRecentPlaysResponse> {
-    const ruleset = OsuRuleset.osu;
     const rawRecentScores = await this.recentScores.get(
       appUserId,
-      osuId,
+      targetOsuId,
       server,
-      includeFails,
-      mods,
-      quantity,
-      startPosition,
-      ruleset
+      params.includeFails,
+      params.mods,
+      params.quantity,
+      params.startPosition,
+      targetRuleset
     );
-    const starsChangingMods = [
-      'ez', // Easy
-      'ht', // Half Time
-      'dc', // Daycore
-      'hr', // Hard Rock
-      'dt', // Double Time
-      'nc', // Nightcore
-      'fl', // Flashlight
-      'rx', // Relax
-      'tp', // Target Practice
-      'da', // Difficulty Adjust
-      'rd', // Random
-      'wu', // Wind Up
-      'wd', // Wind Down
-    ];
-    const recentPlayPromises = rawRecentScores.map(async s => {
-      const mods = s.mods.map(s => s.acronym);
-      const map = s.beatmap;
-      const counts = {
-        great: s.statistics.great ?? 0,
-        ok: s.statistics.ok ?? 0,
-        meh: s.statistics.meh ?? 0,
-        miss: s.statistics.miss ?? 0,
-      };
-      const hitcountsTotal =
-        counts.great + counts.ok + counts.meh + counts.miss;
-      const objectsTotal =
-        map.countCircles + map.countSliders + map.countSpinners;
-      const totalToHitRatio = objectsTotal / hitcountsTotal;
-      const fullPlayMisses = Math.floor(totalToHitRatio * counts.miss);
-      const fullPlayMehs = Math.floor(totalToHitRatio * counts.meh);
-      const fullPlayGoods = Math.floor(totalToHitRatio * counts.ok);
-      const simulationParams = getSimulationParamsOsu(s);
-      const scoreSimulation = await this.scoreSimulations.getForOsu(
-        s.beatmap.id,
-        mods,
-        s.maxCombo,
-        fullPlayMisses,
-        fullPlayMehs,
-        fullPlayGoods,
-        simulationParams
+    const recentPlayPromises = rawRecentScores.map(score => {
+      const beatmapScore = this.recentScoreAdapter.recentScoreToBeatmapScore(
+        score,
+        targetRuleset
       );
-      const moddedBeatmapStats = new BeatmapStats(
-        s.beatmap.ar,
-        s.beatmap.cs,
-        s.beatmap.od,
-        s.beatmap.hp
+      return getRecentPlayWithoutFcAndSsEstimations(
+        beatmapScore,
+        score.absolutePosition
       );
-      if (mods.find(m => m.is('da'))) {
-        if (simulationParams?.difficultyAdjust !== undefined) {
-          moddedBeatmapStats.applyDaMod(simulationParams.difficultyAdjust);
-        }
-      } else if (mods.find(m => m.is('hr'))) {
-        moddedBeatmapStats.applyHrMod();
-      } else if (mods.find(m => m.is('ez'))) {
-        moddedBeatmapStats.applyEzMod();
-      }
-
-      if (mods.find(m => m.is('tp'))) {
-        moddedBeatmapStats.applyTpMod();
-      }
-
-      if (mods.find(m => m.isAnyOf('ht', 'dc'))) {
-        moddedBeatmapStats.applyHtMod(simulationParams?.htRate);
-      } else if (mods.find(m => m.isAnyOf('dt', 'nc'))) {
-        moddedBeatmapStats.applyDtMod(simulationParams?.dtRate);
-      }
-
-      const hasStarsChangingMods =
-        mods.find(m => m.isAnyOf(...starsChangingMods)) !== undefined;
-
-      const osuUserRecentScore: RecentPlay = {
-        absolutePosition: s.absolutePosision,
-        beatmapset: {
-          status: extractBeatmapsetRankStatus(s),
-          artist: s.beatmapset.artist,
-          title: s.beatmapset.title,
-          creator: s.beatmapset.creator,
-        },
-        beatmap: {
-          difficultyName: s.beatmap.version,
-          totalLength: s.beatmap.totalLength,
-          drainLength: s.beatmap.hitLength,
-          bpm: s.beatmap.bpm,
-          stars: s.beatmap.difficultyRating,
-          ar: s.beatmap.ar,
-          cs: s.beatmap.cs,
-          od: s.beatmap.od,
-          hp: s.beatmap.hp,
-          maxCombo: scoreSimulation?.difficultyAttributes.maxCombo,
-          url: s.beatmap.url,
-          countCircles: s.beatmap.countCircles,
-          countSliders: s.beatmap.countSliders,
-          countSpinners: s.beatmap.countSpinners,
-        },
-        mods: s.mods,
-        stars: hasStarsChangingMods
-          ? scoreSimulation?.difficultyAttributes.starRating
-          : s.beatmap.difficultyRating,
-        ar: moddedBeatmapStats.ar,
-        cs: moddedBeatmapStats.cs,
-        od: moddedBeatmapStats.od,
-        hp: moddedBeatmapStats.hp,
-        passed: s.passed,
-        totalScore: s.totalScore,
-        combo: s.maxCombo,
-        accuracy: s.accuracy,
-        pp: {
-          value: s.pp ?? scoreSimulation?.performanceAttributes.pp,
-          ifFc: undefined,
-          ifSs: undefined,
-        },
-        statistics: {
-          countGreat: counts.great,
-          countOk: counts.ok,
-          countMeh: counts.meh,
-          countMiss: counts.miss,
-        },
-        grade: s.rank,
-      };
-      return osuUserRecentScore;
     });
     const recentPlays = await Promise.all(recentPlayPromises);
     if (recentPlays.length === 1) {
-      const simulatedPpValues = await getOsuFcAndSsValues(
+      const beatmapScore = this.recentScoreAdapter.recentScoreToBeatmapScore(
         rawRecentScores[0],
-        this.scoreSimulations
+        targetRuleset
       );
-      recentPlays[0].pp = {
-        value: recentPlays[0].pp.value,
-        ifFc: simulatedPpValues.fc,
-        ifSs: simulatedPpValues.ss,
-      };
+      const estimatedPpValues = await getFcAndSsEstimations(beatmapScore);
+      recentPlays[0].pp.ifFc = estimatedPpValues.fc;
+      recentPlays[0].pp.ifSs = estimatedPpValues.ss;
     }
     return {
       isFailure: false,
-      ruleset: ruleset,
+      ruleset: targetRuleset,
       recentPlays: {
-        username: username,
-        plays: recentPlays,
-      },
-    };
-  }
-
-  async executeForTaiko(
-    appUserId: string,
-    server: OsuServer,
-    username: string,
-    osuId: number,
-    includeFails: boolean,
-    startPosition: number,
-    quantity: number,
-    mods: {
-      acronym: ModAcronym;
-      isOptional: boolean;
-    }[]
-  ): Promise<GetRecentPlaysResponse> {
-    const ruleset = OsuRuleset.taiko;
-    const rawRecentScores = await this.recentScores.get(
-      appUserId,
-      osuId,
-      server,
-      includeFails,
-      mods,
-      quantity,
-      startPosition,
-      ruleset
-    );
-    const recentPlayPromises = rawRecentScores.map(async s => {
-      const mods = s.mods.map(s => s.acronym);
-      const scoreSimulation = await this.scoreSimulations.getForTaiko(
-        s.beatmap.id,
-        mods
-      );
-      const maxCombo = scoreSimulation?.difficultyAttributes.maxCombo;
-      const stars = scoreSimulation?.difficultyAttributes.starRating;
-      return recentScoreToRecentPlay(s, ruleset, maxCombo, stars);
-    });
-    const recentPlays = await Promise.all(recentPlayPromises);
-    return {
-      isFailure: false,
-      ruleset: ruleset,
-      recentPlays: {
-        username: username,
-        plays: recentPlays,
-      },
-    };
-  }
-
-  async executeForCtb(
-    appUserId: string,
-    server: OsuServer,
-    username: string,
-    osuId: number,
-    includeFails: boolean,
-    startPosition: number,
-    quantity: number,
-    mods: {
-      acronym: ModAcronym;
-      isOptional: boolean;
-    }[]
-  ): Promise<GetRecentPlaysResponse> {
-    const ruleset = OsuRuleset.ctb;
-    const rawRecentScores = await this.recentScores.get(
-      appUserId,
-      osuId,
-      server,
-      includeFails,
-      mods,
-      quantity,
-      startPosition,
-      ruleset
-    );
-    const recentPlayPromises = rawRecentScores.map(async s => {
-      const mods = s.mods.map(s => s.acronym);
-      const scoreSimulation = await this.scoreSimulations.getForCtb(
-        s.beatmap.id,
-        mods
-      );
-      const maxCombo = scoreSimulation?.difficultyAttributes.maxCombo;
-      const stars = scoreSimulation?.difficultyAttributes.starRating;
-      return recentScoreToRecentPlay(s, ruleset, maxCombo, stars);
-    });
-    const recentPlays = await Promise.all(recentPlayPromises);
-    return {
-      isFailure: false,
-      ruleset: ruleset,
-      recentPlays: {
-        username: username,
-        plays: recentPlays,
-      },
-    };
-  }
-
-  async executeForMania(
-    appUserId: string,
-    server: OsuServer,
-    username: string,
-    osuId: number,
-    includeFails: boolean,
-    startPosition: number,
-    quantity: number,
-    mods: {
-      acronym: ModAcronym;
-      isOptional: boolean;
-    }[]
-  ): Promise<GetRecentPlaysResponse> {
-    const ruleset = OsuRuleset.mania;
-    const rawRecentScores = await this.recentScores.get(
-      appUserId,
-      osuId,
-      server,
-      includeFails,
-      mods,
-      quantity,
-      startPosition,
-      ruleset
-    );
-    const recentPlayPromises = rawRecentScores.map(async s => {
-      const mods = s.mods.map(s => s.acronym);
-      const scoreSimulation = await this.scoreSimulations.getForMania(
-        s.beatmap.id,
-        mods
-      );
-      const maxCombo = scoreSimulation?.difficultyAttributes.maxCombo;
-      const stars = scoreSimulation?.difficultyAttributes.starRating;
-      return recentScoreToRecentPlay(s, ruleset, maxCombo, stars);
-    });
-    const recentPlays = await Promise.all(recentPlayPromises);
-    return {
-      isFailure: false,
-      ruleset: ruleset,
-      recentPlays: {
-        username: username,
+        username: targetCaseCorrectUsername,
         plays: recentPlays,
       },
     };
   }
 }
 
-async function getOsuFcAndSsValues(
-  score: RecentScore,
-  dao: ScoreSimulationsDao
+async function getFcAndSsEstimations(
+  score: BeatmapScore<Mode, Hitcounts>
 ): Promise<{
   fc: number | undefined;
   ss: number | undefined;
 }> {
-  const mods = score.mods.map(s => s.acronym);
-  const map = score.beatmap;
-  const counts = {
-    great: score.statistics.great ?? 0,
-    ok: score.statistics.ok ?? 0,
-    meh: score.statistics.meh ?? 0,
-    miss: score.statistics.miss ?? 0,
-  };
-  const hitcountsTotal = counts.great + counts.ok + counts.meh + counts.miss;
-  const objectsTotal = map.countCircles + map.countSliders + map.countSpinners;
-  const totalToHitRatio = objectsTotal / hitcountsTotal;
-  const fullPlayMehs = Math.floor(totalToHitRatio * counts.meh);
-  const fullPlayGoods = Math.floor(totalToHitRatio * counts.ok);
-  const simulationParams = getSimulationParamsOsu(score);
-
-  const fcPromise = dao.getForOsu(
-    map.id,
-    mods,
-    null,
-    0,
-    fullPlayMehs,
-    fullPlayGoods,
-    simulationParams
+  const modeClassName = score.baseBeatmap.mode.constructor.name;
+  const hitcountsClassName = score.hitcounts.constructor.name;
+  const unexpectedTypeCombinationError = Error(
+    `Unexpected hitcounts type ${hitcountsClassName} for ${modeClassName}`
   );
-  const ssPromise = dao.getForOsu(
-    map.id,
-    mods,
-    null,
-    0,
-    0,
-    0,
-    simulationParams
-  );
+  if (score.baseBeatmap.mode instanceof ModeOsu) {
+    if (score.hitcounts instanceof HitcountsOsu) {
+      return getOsuFcAndSsEstimations(
+        score as BeatmapScore<ModeOsu, HitcountsOsu>
+      );
+    }
+    throw unexpectedTypeCombinationError;
+  }
+  if (score.baseBeatmap.mode instanceof ModeTaiko) {
+    if (score.hitcounts instanceof HitcountsTaiko) {
+      return getTaikoFcAndSsEstimations(
+        score as BeatmapScore<ModeTaiko, HitcountsTaiko>
+      );
+    }
+    throw unexpectedTypeCombinationError;
+  }
+  if (score.baseBeatmap.mode instanceof ModeCtb) {
+    if (score.hitcounts instanceof HitcountsCtb) {
+      return getCtbFcAndSsEstimations(
+        score as BeatmapScore<ModeCtb, HitcountsCtb>
+      );
+    }
+    throw unexpectedTypeCombinationError;
+  }
+  if (score.baseBeatmap.mode instanceof ModeMania) {
+    if (score.hitcounts instanceof HitcountsMania) {
+      return getManiaFcAndSsEstimations(
+        score as BeatmapScore<ModeMania, HitcountsMania>
+      );
+    }
+    throw unexpectedTypeCombinationError;
+  }
+  throw Error(`Unexpected mode type ${modeClassName}`);
+}
+
+async function getOsuFcAndSsEstimations(
+  score: BeatmapScore<ModeOsu, HitcountsOsu>
+): Promise<{
+  fc: number | undefined;
+  ss: number | undefined;
+}> {
+  const totalHits =
+    score.hitcounts.great +
+    score.hitcounts.ok +
+    score.hitcounts.meh +
+    score.hitcounts.miss;
+  const fcScore = score.copy({
+    passed: true,
+    mapProgress: 1,
+    maxCombo: SCORE_FULL_COMBO,
+    hitcounts: new HitcountsOsu({
+      great: Math.round(
+        (score.hitcounts.great + score.hitcounts.miss) / score.mapProgress
+      ),
+      ok: Math.round(score.hitcounts.ok / score.mapProgress),
+      meh: Math.round(score.hitcounts.meh / score.mapProgress),
+      miss: 0,
+    }),
+  });
+  const ssScore = fcScore.copy({
+    hitcounts: new HitcountsOsu({
+      great: totalHits,
+      ok: 0,
+      meh: 0,
+      miss: 0,
+    }),
+  });
   return {
-    fc: (await fcPromise)?.performanceAttributes.pp,
-    ss: (await ssPromise)?.performanceAttributes.pp,
+    fc: await fcScore.getEstimatedPp(),
+    ss: await ssScore.getEstimatedPp(),
   };
 }
 
-interface SimulationParamsOsu {
-  dtRate?: number;
-  htRate?: number;
-  difficultyAdjust?: {
-    ar?: number;
-    cs?: number;
-    od?: number;
-    hp?: number;
+async function getTaikoFcAndSsEstimations(
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  score: BeatmapScore<ModeTaiko, HitcountsTaiko>
+): Promise<{
+  fc: number | undefined;
+  ss: number | undefined;
+}> {
+  return {
+    fc: undefined,
+    ss: undefined,
   };
 }
-function getSimulationParamsOsu(
-  score: RecentScore
-): SimulationParamsOsu | undefined {
-  let simulationParams: SimulationParamsOsu | undefined = undefined;
-  const dt = score.mods.find(m => m.acronym.is('dt'));
-  if (dt !== undefined && dt.settings !== undefined) {
-    const dtRate = (dt.settings as SettingsDT).speed_change;
-    if (dtRate !== undefined) {
-      simulationParams = {dtRate};
-    }
-  }
-  const ht = score.mods.find(m => m.acronym.is('ht'));
-  if (ht !== undefined && ht.settings !== undefined) {
-    const htRate = (ht.settings as SettingsHT).speed_change;
-    if (htRate !== undefined) {
-      simulationParams = {htRate};
-    }
-  }
-  const da = score.mods.find(m => m.acronym.is('da'));
-  if (da !== undefined && da.settings !== undefined) {
-    const settingsDa = da.settings as SettingsDA;
-    const ar = settingsDa.approach_rate;
-    const cs = settingsDa.circle_size;
-    const od = settingsDa.overall_difficulty;
-    const hp = settingsDa.drain_rate;
-    simulationParams ??= {};
-    simulationParams.difficultyAdjust = {ar, cs, od, hp};
-  }
-  return simulationParams;
-}
 
-function extractBeatmapsetRankStatus(score: RecentScore): BeatmapsetRankStatus {
-  switch (score.beatmapset.status) {
-    case 'graveyard':
-      return 'Graveyard';
-    case 'wip':
-      return 'Wip';
-    case 'pending':
-      return 'Pending';
-    case 'ranked':
-      return 'Ranked';
-    case 'approved':
-      return 'Approved';
-    case 'qualified':
-      return 'Qualified';
-    case 'loved':
-      return 'Loved';
-    default:
-      throw Error('Unkown beatmapset status');
-  }
-}
-
-// general function for taiko, ctb and mania modes
-function recentScoreToRecentPlay(
-  s: RecentScore,
-  ruleset: OsuRuleset,
-  maxCombo: number | undefined,
-  stars: number | undefined
-): RecentPlay {
-  let statistics:
-    | RecentPlayStatisticsTaiko
-    | RecentPlayStatisticsCtb
-    | RecentPlayStatisticsMania;
-  if (ruleset === OsuRuleset.taiko) {
-    const taikoStatistics: RecentPlayStatisticsTaiko = {
-      countGreat: s.statistics.great ?? 0,
-      countOk: s.statistics.ok ?? 0,
-      countMiss: s.statistics.miss ?? 0,
-    };
-    statistics = taikoStatistics;
-  } else if (ruleset === OsuRuleset.ctb) {
-    const ctbStatistics: RecentPlayStatisticsCtb = {
-      countGreat: s.statistics.great ?? 0,
-      countLargeTickHit: s.statistics.largeTickHit ?? 0,
-      countSmallTickHit: s.statistics.smallTickHit ?? 0,
-      countSmallTickMiss: s.statistics.smallTickMiss ?? 0,
-      countMiss: s.statistics.miss ?? 0,
-    };
-    statistics = ctbStatistics;
-  } else if (ruleset === OsuRuleset.mania) {
-    const maniaStatistics: RecentPlayStatisticsMania = {
-      countPerfect: s.statistics.perfect ?? 0,
-      countGreat: s.statistics.great ?? 0,
-      countGood: s.statistics.good ?? 0,
-      countOk: s.statistics.ok ?? 0,
-      countMeh: s.statistics.meh ?? 0,
-      countMiss: s.statistics.miss ?? 0,
-    };
-    statistics = maniaStatistics;
-  } else {
-    throw Error('This method should not be used for other modes');
-  }
+async function getCtbFcAndSsEstimations(
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  score: BeatmapScore<ModeCtb, HitcountsCtb>
+): Promise<{
+  fc: number | undefined;
+  ss: number | undefined;
+}> {
   return {
-    absolutePosition: s.absolutePosision,
+    fc: undefined,
+    ss: undefined,
+  };
+}
+
+async function getManiaFcAndSsEstimations(
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  score: BeatmapScore<ModeMania, HitcountsMania>
+): Promise<{
+  fc: number | undefined;
+  ss: number | undefined;
+}> {
+  return {
+    fc: undefined,
+    ss: undefined,
+  };
+}
+
+async function getRecentPlayWithoutFcAndSsEstimations(
+  score: BeatmapScore<Mode, Hitcounts>,
+  absolutePosition: number
+): Promise<RecentPlay> {
+  const estimatedStarRating = score.hasStarRatingChangingMods
+    ? await score.getEstimatedStarRating()
+    : score.baseBeatmap.starRating;
+  return {
+    absolutePosition: absolutePosition,
     beatmapset: {
-      status: extractBeatmapsetRankStatus(s),
-      artist: s.beatmapset.artist,
-      title: s.beatmapset.title,
-      creator: s.beatmapset.creator,
+      status: score.baseBeatmap.beatmapset.status,
+      artist: score.baseBeatmap.song.artist,
+      title: score.baseBeatmap.song.title,
+      creator: score.baseBeatmap.beatmapset.creatorUsername,
     },
     beatmap: {
-      difficultyName: s.beatmap.version,
-      totalLength: s.beatmap.totalLength,
-      drainLength: s.beatmap.hitLength,
-      bpm: s.beatmap.bpm,
-      stars: s.beatmap.difficultyRating,
-      ar: s.beatmap.ar,
-      cs: s.beatmap.cs,
-      od: s.beatmap.od,
-      hp: s.beatmap.hp,
-      maxCombo: maxCombo,
-      url: s.beatmap.url,
-      countCircles: s.beatmap.countCircles,
-      countSliders: s.beatmap.countSliders,
-      countSpinners: s.beatmap.countSpinners,
+      difficultyName: score.baseBeatmap.difficultyName,
+      totalLength: score.baseBeatmap.song.length,
+      drainLength: score.baseBeatmap.length,
+      bpm: score.baseBeatmap.song.bpm,
+      stars: score.baseBeatmap.starRating,
+      ar: score.baseBeatmap.stats.ar,
+      cs: score.baseBeatmap.stats.cs,
+      od: score.baseBeatmap.stats.od,
+      hp: score.baseBeatmap.stats.hp,
+      maxCombo: score.baseBeatmap.maxCombo,
+      url: `https://osu.ppy.sh/b/${score.baseBeatmap.id}`,
     },
-    mods: s.mods,
-    stars: stars ?? s.beatmap.difficultyRating,
-    ar: s.beatmap.ar,
-    cs: s.beatmap.cs,
-    od: s.beatmap.od,
-    hp: s.beatmap.hp,
-    passed: s.passed,
-    totalScore: s.totalScore,
-    combo: s.maxCombo,
-    accuracy: s.accuracy,
+    mods: score.mods.map(m => ({
+      acronym: m.acronym,
+      settings: m.settings,
+    })),
+    estimatedStarRating: estimatedStarRating,
+    ar: score.moddedBeatmap.stats.ar,
+    cs: score.moddedBeatmap.stats.cs,
+    od: score.moddedBeatmap.stats.od,
+    hp: score.moddedBeatmap.stats.hp,
+    passed: score.passed,
+    mapProgress: score.mapProgress,
+    totalScore: score.totalScore,
+    combo: score.maxCombo,
+    accuracy: score.accuracy,
     pp: {
-      value: s.pp ?? undefined,
+      value: score.pp ?? undefined,
+      estimatedValue: estimatedStarRating,
       ifFc: undefined,
       ifSs: undefined,
     },
-    statistics: statistics,
-    grade: s.rank,
+    orderedHitcounts: [...score.hitcounts.orderedValues],
+    grade: score.rank,
   };
 }

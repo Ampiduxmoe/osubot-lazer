@@ -84,7 +84,7 @@ export class OsuRecentScoresDaoImpl implements OsuRecentScoresDao {
     }
     const recentScores = scoreInfos.map((s, i) => {
       const recentScore = s as RecentScore;
-      recentScore.absolutePosision = i + adjustedStartPosition;
+      recentScore.absolutePosition = i + adjustedStartPosition;
       return recentScore;
     });
     let filteredScores = recentScores.filter(s => {

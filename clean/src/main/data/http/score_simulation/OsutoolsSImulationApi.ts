@@ -62,14 +62,14 @@ export class OsutoolsSimulationApi implements ScoreSimulationApi {
       goods: goods,
     };
     if (
-      mods.find(m => m.is('dt')) !== undefined &&
+      mods.find(m => m.isAnyOf('dt', 'nc')) !== undefined &&
       simulationParams !== undefined &&
       simulationParams.dtRate !== undefined
     ) {
       url = url + 'dt';
       (body as RawScoreSimulationParamsOsuDt).dt_rate = simulationParams.dtRate;
     } else if (
-      mods.find(m => m.is('ht')) !== undefined &&
+      mods.find(m => m.isAnyOf('ht', 'dc')) !== undefined &&
       simulationParams !== undefined &&
       simulationParams.htRate !== undefined
     ) {

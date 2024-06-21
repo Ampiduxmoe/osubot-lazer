@@ -14,3 +14,14 @@ export abstract class Mod<
     this.settings = settings;
   }
 }
+
+export class UnremarkableMod extends Mod<Mode, object> {
+  readonly acronym: ModAcronym;
+  apply(map: Beatmap<Mode>): Beatmap<Mode> {
+    return map;
+  }
+  constructor(acronym: ModAcronym) {
+    super({});
+    this.acronym = acronym;
+  }
+}

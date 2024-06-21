@@ -14,7 +14,7 @@ export class Beatmap<ModeType extends Mode> {
   };
   readonly starRating: number;
   readonly length: number;
-  readonly maxCombo: number | null;
+  readonly maxCombo: number;
 
   readonly beatmapset: Beatmapset;
 
@@ -42,7 +42,7 @@ export class Beatmap<ModeType extends Mode> {
     };
     starRating: number;
     length: number;
-    maxCombo: number | null;
+    maxCombo: number;
     beatmapset: Beatmapset;
     song: Song;
   }) {
@@ -90,7 +90,7 @@ export class Beatmap<ModeType extends Mode> {
       stats: stats ?? this.stats,
       starRating: starRating ?? this.starRating,
       length: length ?? this.length,
-      maxCombo: maxCombo !== undefined ? maxCombo : this.maxCombo,
+      maxCombo: maxCombo ?? this.maxCombo,
       beatmapset: beatmapset ?? this.beatmapset,
       song: song ?? this.song,
     });

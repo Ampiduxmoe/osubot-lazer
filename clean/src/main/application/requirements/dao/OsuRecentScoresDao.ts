@@ -20,5 +20,5 @@ export interface OsuRecentScoresDao {
 }
 
 export type RecentScore = RecentScoreInfo & {
-  absolutePosision: number;
+  absolutePosition: number;
 };

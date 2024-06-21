@@ -5,7 +5,7 @@ import {StarRatingEstimationProvider} from '../requirements/StarRatingEstimation
 import {PpEstimationProvider} from '../requirements/PpEstimationProvider';
 import {Mode} from './mode/Mode';
 
-export abstract class BeatmapScore<
+export class BeatmapScore<
   ModeType extends Mode,
   HitcountsType extends Hitcounts,
 > {
@@ -21,28 +21,10 @@ export abstract class BeatmapScore<
   readonly rank: BeatmapScoreRank;
   readonly pp: number | null;
 
-  readonly hasStarRatingChangingMods: boolean = (() => {
-    const scoreMods = this.mods.map(x => x.acronym);
-    const starRatingChangingMods = this.baseBeatmap.mode.starRatingChangingMods;
-    return (
-      scoreMods.find(m => m.isAnyOf(...starRatingChangingMods)) !== undefined
-    );
-  })();
+  readonly hasStarRatingChangingMods: boolean;
 
   readonly baseBeatmap: Beatmap<ModeType>;
-  readonly moddedBeatmap: Beatmap<ModeType> = (() => {
-    let beatmap = this.baseBeatmap;
-    for (const acronym in beatmap.mode.modApplyOrder) {
-      const modToApply = this.mods.find(m => m.acronym.is(acronym));
-      if (modToApply !== undefined) {
-        beatmap = modToApply.apply(beatmap);
-      }
-    }
-    if (this.hasStarRatingChangingMods) {
-      return beatmap.copy({starRating: NaN});
-    }
-    return beatmap;
-  })();
+  readonly moddedBeatmap: Beatmap<ModeType>;
 
   private starRatingEstimationProvider: StarRatingEstimationProvider<
     ModeType,
@@ -82,6 +64,7 @@ export abstract class BeatmapScore<
     accuracy,
     rank,
     pp,
+    baseBeatmap,
     starRatingEstimationProvider,
     ppEstimationProvider,
   }: {
@@ -89,13 +72,14 @@ export abstract class BeatmapScore<
     endedAt: Date;
     passed: boolean;
     mapProgress: number;
-    mods: Mod<ModeType, object>[];
+    mods: readonly Mod<ModeType, object>[];
     totalScore: number;
     maxCombo: number;
     hitcounts: HitcountsType;
     accuracy: number;
     rank: BeatmapScoreRank;
     pp: number | null;
+    baseBeatmap: Beatmap<ModeType>;
     starRatingEstimationProvider: StarRatingEstimationProvider<
       ModeType,
       HitcountsType
@@ -113,9 +97,88 @@ export abstract class BeatmapScore<
     this.accuracy = accuracy;
     this.rank = rank;
     this.pp = pp;
+
+    this.baseBeatmap = baseBeatmap;
+    this.hasStarRatingChangingMods = (() => {
+      const scoreMods = this.mods.map(x => x.acronym);
+      const starRatingChangingMods =
+        this.baseBeatmap.mode.starRatingChangingMods;
+      return (
+        scoreMods.find(m => m.isAnyOf(...starRatingChangingMods)) !== undefined
+      );
+    })();
+    this.moddedBeatmap = (() => {
+      let beatmap = this.baseBeatmap;
+      for (const acronym in beatmap.mode.modApplyOrder) {
+        const modToApply = this.mods.find(m => m.acronym.is(acronym));
+        if (modToApply !== undefined) {
+          beatmap = modToApply.apply(beatmap);
+        }
+      }
+      if (this.hasStarRatingChangingMods) {
+        return beatmap.copy({starRating: NaN});
+      }
+      return beatmap;
+    })();
+
     this.starRatingEstimationProvider = starRatingEstimationProvider;
     this.ppEstimationProvider = ppEstimationProvider;
   }
+
+  copy({
+    id,
+    endedAt,
+    passed,
+    mapProgress,
+    mods,
+    totalScore,
+    maxCombo,
+    hitcounts,
+    accuracy,
+    rank,
+    pp,
+    baseBeatmap,
+    starRatingEstimationProvider,
+    ppEstimationProvider,
+  }: {
+    id?: number;
+    endedAt?: Date;
+    passed?: boolean;
+    mapProgress?: number;
+    mods?: readonly Mod<ModeType, object>[];
+    totalScore?: number;
+    maxCombo?: number;
+    hitcounts?: HitcountsType;
+    accuracy?: number;
+    rank?: BeatmapScoreRank;
+    pp?: number | null;
+    baseBeatmap?: Beatmap<ModeType>;
+    starRatingEstimationProvider?: StarRatingEstimationProvider<
+      ModeType,
+      HitcountsType
+    >;
+    ppEstimationProvider?: PpEstimationProvider<ModeType, HitcountsType>;
+  }) {
+    return new BeatmapScore({
+      id: id ?? this.id,
+      endedAt: endedAt ?? this.endedAt,
+      passed: passed ?? this.passed,
+      mapProgress: mapProgress ?? this.mapProgress,
+      mods: mods ?? this.mods,
+      totalScore: totalScore ?? this.totalScore,
+      maxCombo: maxCombo ?? this.maxCombo,
+      hitcounts: hitcounts ?? this.hitcounts,
+      accuracy: accuracy ?? this.accuracy,
+      rank: rank ?? this.rank,
+      pp: pp !== undefined ? pp : this.pp,
+      baseBeatmap: baseBeatmap ?? this.baseBeatmap,
+      starRatingEstimationProvider:
+        starRatingEstimationProvider ?? this.starRatingEstimationProvider,
+      ppEstimationProvider: ppEstimationProvider ?? this.ppEstimationProvider,
+    });
+  }
 }
+
+export const SCORE_FULL_COMBO: number = Number.POSITIVE_INFINITY;
 
 export type BeatmapScoreRank = 'SS' | 'S' | 'A' | 'B' | 'C' | 'D' | 'F';

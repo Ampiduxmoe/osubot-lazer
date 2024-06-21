@@ -19,5 +19,5 @@ export interface OsuUserBestScoresDao {
 }
 
 export type UserBestScore = UserBestScoreInfo & {
-  absolutePosision: number;
+  absolutePosition: number;
 };

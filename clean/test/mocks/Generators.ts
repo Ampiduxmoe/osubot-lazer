@@ -128,6 +128,17 @@ export function getFakeRecentScoreInfos(
           .match(/.{2}/g)
           ?.flat()
           ?.map(m => ({acronym: new ModAcronym(m)})) ?? [],
+      maximumStatistics: {
+        great: 1000,
+        perfect: 1001,
+        legacyComboIncrease: 1002,
+        ignoreHit: 1003,
+        largeBonus: 1004,
+        smallBonus: 1005,
+        largeTickHit: 1006,
+        smallTickHit: 1007,
+        sliderTailHit: 1008,
+      },
       statistics: {
         great: 30 * i,
         ok: 10 * i,
@@ -210,6 +221,17 @@ export function getFakeUserBestScoreInfos(
           .match(/.{2}/g)
           ?.flat()
           ?.map(m => ({acronym: new ModAcronym(m)})) ?? [],
+      maximumStatistics: {
+        great: 1000,
+        perfect: 1001,
+        legacyComboIncrease: 1002,
+        ignoreHit: 1003,
+        largeBonus: 1004,
+        smallBonus: 1005,
+        largeTickHit: 1006,
+        smallTickHit: 1007,
+        sliderTailHit: 1008,
+      },
       statistics: {
         great: 30 * i,
         ok: 10 * i,

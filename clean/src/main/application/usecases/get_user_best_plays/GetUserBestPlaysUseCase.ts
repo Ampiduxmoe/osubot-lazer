@@ -202,7 +202,7 @@ export class GetUserBestPlaysUseCase
         mods.find(m => m.isAnyOf(...starsChangingMods)) !== undefined;
 
       const osuUserBestScore: BestPlay = {
-        absolutePosition: s.absolutePosision,
+        absolutePosition: s.absolutePosition,
         beatmapset: {
           status: extractBeatmapsetRankStatus(s),
           artist: s.beatmapset.artist,
@@ -454,7 +454,7 @@ function userBestScoreToBestPlay(
     throw Error('This method should not be used for other modes');
   }
   return {
-    absolutePosition: s.absolutePosision,
+    absolutePosition: s.absolutePosition,
     beatmapset: {
       status: extractBeatmapsetRankStatus(s),
       artist: s.beatmapset.artist,

@@ -13,10 +13,6 @@ import {clamp, round} from '../../../../primitives/Numbers';
 import {
   OsuUserRecentPlays,
   RecentPlay,
-  RecentPlayStatisticsCtb,
-  RecentPlayStatisticsMania,
-  RecentPlayStatisticsOsu,
-  RecentPlayStatisticsTaiko,
   SettingsDA,
   SettingsDT,
   SettingsDefaults,
@@ -36,7 +32,6 @@ import {Timespan} from '../../../../primitives/Timespan';
 import {ModArg} from '../../common/arg_processing/ModArg';
 import {CommandPrefixes} from '../../common/CommandPrefixes';
 import {OsuRuleset} from '../../../../primitives/OsuRuleset';
-import {sum} from '../../../../primitives/Arrays';
 
 export class UserRecentPlays extends VkCommand<
   UserRecentPlaysExecutionArgs,
@@ -245,14 +240,13 @@ export class UserRecentPlays extends VkCommand<
     const scoresText = recentPlays.plays
       .map(p =>
         oneScore
-          ? this.verboseScoreDescription(p, mode)
-          : this.shortScoreDescription(p, mode)
+          ? this.verboseScoreDescription(p)
+          : this.shortScoreDescription(p)
       )
       .join('\n\n');
     const couldNotGetSomeStatsMessage =
-      recentPlays.plays.find(play =>
-        [play.stars, play.beatmap.maxCombo].includes(undefined)
-      ) !== undefined
+      recentPlays.plays.find(play => play.estimatedStarRating === undefined) !==
+      undefined
         ? '\n(Не удалось получить часть статистики)'
         : '';
     const text = `
@@ -269,7 +263,7 @@ ${couldNotGetSomeStatsMessage}
     };
   }
 
-  verboseScoreDescription(play: RecentPlay, mode: OsuRuleset): string {
+  verboseScoreDescription(play: RecentPlay): string {
     const map = play.beatmap;
     const mapset = play.beatmapset;
 
@@ -277,35 +271,25 @@ ${couldNotGetSomeStatsMessage}
     const dtMod = play.mods.find(m => m.acronym.is('DT'));
     if (dtMod !== undefined) {
       speed =
-        (dtMod.settings as SettingsDT)?.speed_change ??
-        SettingsDefaults.DT.speed_change!;
+        (dtMod.settings as SettingsDT)?.speedChange ??
+        SettingsDefaults.DT.speedChange!;
     }
     const htMod = play.mods.find(m => m.acronym.is('HT'));
     if (htMod !== undefined) {
       speed =
-        (htMod.settings as SettingsHT)?.speed_change ??
-        SettingsDefaults.HT.speed_change!;
+        (htMod.settings as SettingsHT)?.speedChange ??
+        SettingsDefaults.HT.speedChange!;
     }
-    let arAsterisk = '';
-    let csAsterisk = '';
-    let odAsterisk = '';
-    let hpAsterisk = '';
-    const daMod = play.mods.find(m => m.acronym.is('DA'));
-    if (daMod !== undefined && daMod.settings !== undefined) {
-      const daSettings = daMod.settings as SettingsDA;
-      if (daSettings.approach_rate !== undefined) {
-        arAsterisk = '*';
-      }
-      if (daSettings.circle_size !== undefined) {
-        csAsterisk = '*';
-      }
-      if (daSettings.overall_difficulty !== undefined) {
-        odAsterisk = '*';
-      }
-      if (daSettings.drain_rate !== undefined) {
-        hpAsterisk = '*';
-      }
-    }
+    const [arAsterisk, csAsterisk, odAsterisk, hpAsterisk] = (() => {
+      const daMod = play.mods.find(m => m.acronym.is('DA'));
+      const settings = daMod?.settings as SettingsDA | undefined;
+      return [
+        settings?.ar === undefined ? '' : '*',
+        settings?.cs === undefined ? '' : '*',
+        settings?.od === undefined ? '' : '*',
+        settings?.hp === undefined ? '' : '*',
+      ];
+    })();
 
     const absPos = `\\${play.absolutePosition}`;
     const {artist, title} = mapset;
@@ -324,13 +308,13 @@ ${couldNotGetSomeStatsMessage}
       return [lengthString, drainString];
     })();
     const bpm = round(map.bpm * speed, 2);
-    const sr = play.stars?.toFixed(2) ?? '—';
+    const sr = play.estimatedStarRating?.toFixed(2) ?? '—';
     const modAcronyms = play.mods.map(m => m.acronym);
     let modsString = modAcronyms.join('');
     const defaultSpeeds = [
       1,
-      SettingsDefaults.DT.speed_change,
-      SettingsDefaults.HT.speed_change,
+      SettingsDefaults.DT.speedChange,
+      SettingsDefaults.HT.speedChange,
     ];
     if (!defaultSpeeds.includes(speed)) {
       modsString += ` (${speed}x)`;
@@ -345,22 +329,25 @@ ${couldNotGetSomeStatsMessage}
     const hp = round(play.hp, 2);
     const {totalScore} = play;
     const combo = play.combo;
-    const max_combo = getMapMaxCombo(play, mode) ?? '—';
+    const max_combo = play.beatmap.maxCombo;
     const comboString = `${combo}x/${max_combo}x`;
     const acc = (play.accuracy * 100).toFixed(2);
-    const pp = play.pp.value?.toFixed(2) ?? '—';
+    const ppValue = play.pp.value;
+    const ppValueEstimation = play.pp.estimatedValue;
+    const pp = (ppValue ?? ppValueEstimation)?.toFixed(2) ?? '—';
+    const ppEstimationMark =
+      ppValue === undefined && ppValueEstimation !== undefined ? '~' : '';
     const ppFc = play.pp.ifFc?.toFixed(2) ?? '—';
     const ppSs = play.pp.ifSs?.toFixed(2) ?? '—';
     const ppForFcAndSsString = [play.pp.ifFc, play.pp.ifSs].includes(undefined)
       ? ''
       : `　⯈ FC: ${ppFc}　⯈ SS: ${ppSs}`;
-    const hitcounts = getHitcounts(play, mode);
+    const hitcounts = play.orderedHitcounts;
     const hitcountsString = hitcounts.join('/');
     const {grade} = play;
-    const mapProgress = getMapCompletion(play, mode) ?? NaN;
+    const mapProgress = play.mapProgress;
     const completionPercent = (mapProgress * 100).toFixed(2);
-    const mapCompletionString =
-      play.passed || isNaN(mapProgress) ? '' : `(${completionPercent}%)`;
+    const mapCompletionString = play.passed ? '' : `(${completionPercent}%)`;
     const mapUrlShort = map.url.replace('beatmaps', 'b');
     return `
 ${absPos}. ${artist} - ${title} [${diffname}] by ${mapperName} (${mapStatus})
@@ -369,7 +356,7 @@ AR: ${ar}${arAsterisk}　CS: ${cs}${csAsterisk}　OD: ${od}${odAsterisk}　HP: $
 
 Score: ${totalScore}　Combo: ${comboString}
 Accuracy: ${acc}%
-PP: ${pp}${ppForFcAndSsString}
+PP: ${ppEstimationMark}${pp}${ppForFcAndSsString}
 Hitcounts: ${hitcountsString}
 Grade: ${grade} ${mapCompletionString}
 
@@ -377,34 +364,34 @@ Beatmap: ${mapUrlShort}
     `.trim();
   }
 
-  shortScoreDescription(play: RecentPlay, mode: OsuRuleset): string {
+  shortScoreDescription(play: RecentPlay): string {
     const map = play.beatmap;
     const mapset = play.beatmapset;
 
     let speed = 1;
-    const dtMod = play.mods.find(m => m.acronym.is('DT'));
+    const dtMod = play.mods.find(m => m.acronym.isAnyOf('DT', 'NC'));
     if (dtMod !== undefined && dtMod.settings !== undefined) {
       speed =
-        (dtMod.settings as SettingsDT).speed_change ??
-        SettingsDefaults.DT.speed_change!;
+        (dtMod.settings as SettingsDT).speedChange ??
+        SettingsDefaults.DT.speedChange;
     }
-    const htMod = play.mods.find(m => m.acronym.is('HT'));
+    const htMod = play.mods.find(m => m.acronym.isAnyOf('HT', 'DC'));
     if (htMod !== undefined && htMod.settings !== undefined) {
       speed =
-        (htMod.settings as SettingsHT).speed_change ??
-        SettingsDefaults.HT.speed_change!;
+        (htMod.settings as SettingsHT).speedChange ??
+        SettingsDefaults.HT.speedChange;
     }
 
     const absPos = `\\${play.absolutePosition}`;
     const {title} = mapset;
     const diffname = map.difficultyName;
-    const sr = play.stars?.toFixed(2) ?? '—';
+    const sr = play.estimatedStarRating?.toFixed(2) ?? '—';
     const modAcronyms = play.mods.map(m => m.acronym);
     let modsString = modAcronyms.join('');
     const defaultSpeeds = [
       1,
-      SettingsDefaults.DT.speed_change,
-      SettingsDefaults.HT.speed_change,
+      SettingsDefaults.DT.speedChange,
+      SettingsDefaults.HT.speedChange,
     ];
     if (!defaultSpeeds.includes(speed)) {
       modsString += ` (${speed}x)`;
@@ -414,20 +401,23 @@ Beatmap: ${mapUrlShort}
       modsPlusSign = '+';
     }
     const combo = play.combo;
-    const max_combo = getMapMaxCombo(play, mode) ?? '—';
+    const max_combo = play.beatmap.maxCombo;
     const comboString = `${combo}x/${max_combo}x`;
     const acc = (play.accuracy * 100).toFixed(2);
-    const pp = play.pp.value?.toFixed(2) ?? '—';
+    const ppValue = play.pp.value;
+    const ppValueEstimation = play.pp.estimatedValue;
+    const pp = (ppValue ?? ppValueEstimation)?.toFixed(2) ?? '—';
+    const ppEstimationMark =
+      ppValue === undefined && ppValueEstimation !== undefined ? '~' : '';
     const {grade} = play;
-    const mapProgress = getMapCompletion(play, mode) ?? NaN;
+    const mapProgress = play.mapProgress;
     const completionPercent = (mapProgress * 100).toFixed(2);
-    const mapCompletionString =
-      play.passed || isNaN(mapProgress) ? '' : `(${completionPercent}%)`;
+    const mapCompletionString = play.passed ? '' : `(${completionPercent}%)`;
     const mapUrlShort = map.url.replace('beatmaps', 'b');
     return `
 ${absPos}. ${title} [${diffname}] ${modsPlusSign}${modsString}
 ${sr}★　${grade}${mapCompletionString}　${comboString}　${acc}%
-${pp}pp　 ${mapUrlShort}
+${ppEstimationMark}${pp}pp　 ${mapUrlShort}
     `.trim();
   }
 
@@ -509,107 +499,3 @@ type UserRecentPlaysViewParams = {
   usernameInput: string | undefined;
   recentPlays: OsuUserRecentPlays | undefined;
 };
-
-function getHitcounts(play: RecentPlay, mode: OsuRuleset): number[] {
-  let counts: number[];
-  if (mode === OsuRuleset.osu) {
-    const statistics = play.statistics as RecentPlayStatisticsOsu;
-    counts = [
-      statistics.countGreat,
-      statistics.countOk,
-      statistics.countMeh,
-      statistics.countMiss,
-    ];
-  } else if (mode === OsuRuleset.taiko) {
-    const statistics = play.statistics as RecentPlayStatisticsTaiko;
-    counts = [statistics.countGreat, statistics.countOk, statistics.countMiss];
-  } else if (mode === OsuRuleset.ctb) {
-    const statistics = play.statistics as RecentPlayStatisticsCtb;
-    counts = [
-      statistics.countGreat,
-      statistics.countLargeTickHit,
-      statistics.countSmallTickHit,
-      statistics.countSmallTickMiss,
-      statistics.countMiss,
-    ];
-  } else if (mode === OsuRuleset.mania) {
-    const statistics = play.statistics as RecentPlayStatisticsMania;
-    counts = [
-      statistics.countPerfect,
-      statistics.countGreat,
-      statistics.countGood,
-      statistics.countOk,
-      statistics.countMeh,
-      statistics.countMiss,
-    ];
-  } else {
-    throw Error('Unknown game mode');
-  }
-  return counts;
-}
-
-function getMapMaxCombo(
-  play: RecentPlay,
-  mode: OsuRuleset
-): number | undefined {
-  // It is most likely possible to calculate max combo for every play.
-  // But since we get different fields for scores set on stable client
-  // than for scores set on lazer client (might want check if this is still true)
-  // combined with the fact that api is not stable and is not well documented
-  // we will rely on simulated max combo which can be undefined if simulation api is not available.
-  const maybeMaxCombo = play.beatmap.maxCombo;
-  if (mode === OsuRuleset.osu) {
-    return maybeMaxCombo;
-  } else if (mode === OsuRuleset.taiko) {
-    return maybeMaxCombo ?? play.beatmap.countCircles;
-  } else if (mode === OsuRuleset.ctb) {
-    return maybeMaxCombo;
-  } else if (mode === OsuRuleset.mania) {
-    return maybeMaxCombo;
-  } else {
-    throw Error('Unknown game mode');
-  }
-}
-
-function getMapCompletion(
-  play: RecentPlay,
-  mode: OsuRuleset
-): number | undefined {
-  if (mode === OsuRuleset.osu) {
-    const counts = play.statistics as RecentPlayStatisticsOsu;
-    const map = play.beatmap;
-    const hitCountsTotal =
-      counts.countGreat + counts.countOk + counts.countMeh + counts.countMiss;
-    const objectsTotal = map.countCircles + map.countSliders + map.countSliders;
-    return hitCountsTotal / objectsTotal;
-  } else if (mode === OsuRuleset.taiko) {
-    const counts = play.statistics as RecentPlayStatisticsTaiko;
-    const hitCountsTotal =
-      counts.countGreat + counts.countOk + counts.countMiss;
-    const objectsTotal = play.beatmap.countCircles;
-    return hitCountsTotal / objectsTotal;
-  } else if (mode === OsuRuleset.ctb) {
-    if (play.beatmap.maxCombo === undefined) {
-      // Not really important, better wait until api is stable and docs are good.
-      return undefined;
-    }
-    const counts = play.statistics as RecentPlayStatisticsCtb;
-    const hitCountsTotal =
-      counts.countGreat + counts.countLargeTickHit + counts.countMiss;
-    return hitCountsTotal / play.beatmap.maxCombo;
-  } else if (mode === OsuRuleset.mania) {
-    const statistics = play.statistics as RecentPlayStatisticsMania;
-    const hitCountsTotal = sum([
-      statistics.countPerfect,
-      statistics.countGreat,
-      statistics.countGood,
-      statistics.countOk,
-      statistics.countMeh,
-      statistics.countMiss,
-    ]);
-    const objectsTotal = play.beatmap.countCircles + play.beatmap.countSliders;
-    return hitCountsTotal / objectsTotal;
-  } else {
-    throw Error('Unknown game mode');
-  }
-}

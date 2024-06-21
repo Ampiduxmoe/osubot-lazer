@@ -10,7 +10,7 @@ export class ModeMania extends Mode {
   readonly modApplyOrder = [];
   readonly starRatingChangingMods = [];
   areModsCompatible(a: ModAcronym, b: ModAcronym): boolean {
-    if (a === b) {
+    if (a.is(b)) {
       return false;
     }
     return true;

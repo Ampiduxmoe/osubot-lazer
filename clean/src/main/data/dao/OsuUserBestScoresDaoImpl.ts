@@ -82,7 +82,7 @@ export class OsuUserBestScoresDaoImpl implements OsuUserBestScoresDao {
     }
     const bestScores = scoreInfos.map((s, i) => {
       const bestScore = s as UserBestScore;
-      bestScore.absolutePosision = i + adjustedStartPosition;
+      bestScore.absolutePosition = i + adjustedStartPosition;
       return bestScore;
     });
     let filteredScores = bestScores.filter(s => {
