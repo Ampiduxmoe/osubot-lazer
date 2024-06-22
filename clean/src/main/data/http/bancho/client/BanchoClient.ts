@@ -79,9 +79,8 @@ export class BanchoClient {
       return;
     }
     this.ouathToken = token;
-    this.httpClient.defaults.headers.common[
-      'Authorization'
-    ] = `Bearer ${token.value}`;
+    this.httpClient.defaults.headers.common['Authorization'] =
+      `Bearer ${token.value}`;
     console.log('Sucessfully set token!');
   }
 }

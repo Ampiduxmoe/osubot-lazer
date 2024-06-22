@@ -3,9 +3,9 @@
     "@types/better-sqlite3": "^7.6.10",
     "@types/mocha": "^10.0.6",
     "@types/node": "^20.8.2",
-    "gts": "^5.2.0",
+    "gts": "^5.3.1",
     "mocha": "^10.4.0",
-    "typescript": "^5.3.3"
+    "typescript": "^5.5.2"
   },
   "scripts": {
     "lint": "gts lint",

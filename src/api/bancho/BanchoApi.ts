@@ -115,9 +115,8 @@ export class BanchoApi implements IOsuServerApi {
       return;
     }
     this.ouathToken = token;
-    this.apiv2httpClient.defaults.headers.common[
-      'Authorization'
-    ] = `Bearer ${token.value}`;
+    this.apiv2httpClient.defaults.headers.common['Authorization'] =
+      `Bearer ${token.value}`;
     console.log('Sucessfully set token!');
   }
 
