@@ -31,16 +31,13 @@ export type BestPlay = {
     cs: number;
     od: number;
     hp: number;
-    maxCombo: number | undefined;
+    maxCombo: number;
     url: string;
-    countCircles: number;
-    countSliders: number;
-    countSpinners: number;
   };
   mods: {
     acronym: ModAcronym;
   }[];
-  stars: number | undefined;
+  estimatedStarRating: number | undefined;
   ar: number;
   cs: number;
   od: number;
@@ -50,7 +47,7 @@ export type BestPlay = {
   combo: number;
   accuracy: number;
   pp: number;
-  statistics: BestPlayStatistics;
+  orderedHitcounts: number[];
   grade: ScoreGrade;
   date: number;
 };
@@ -63,41 +60,5 @@ export type BeatmapsetRankStatus =
   | 'Approved'
   | 'Qualified'
   | 'Loved';
-
-export type BestPlayStatistics =
-  | BestPlayStatisticsOsu
-  | BestPlayStatisticsTaiko
-  | BestPlayStatisticsCtb
-  | BestPlayStatisticsMania;
-
-export type BestPlayStatisticsOsu = {
-  countGreat: number;
-  countOk: number;
-  countMeh: number;
-  countMiss: number;
-};
-
-export type BestPlayStatisticsTaiko = {
-  countGreat: number;
-  countOk: number;
-  countMiss: number;
-};
-
-export type BestPlayStatisticsCtb = {
-  countGreat: number;
-  countLargeTickHit: number;
-  countSmallTickHit: number;
-  countSmallTickMiss: number;
-  countMiss: number;
-};
-
-export type BestPlayStatisticsMania = {
-  countPerfect: number;
-  countGreat: number;
-  countGood: number;
-  countOk: number;
-  countMeh: number;
-  countMiss: number;
-};
 
 export type ScoreGrade = 'SS' | 'S' | 'A' | 'B' | 'C' | 'D' | 'F';

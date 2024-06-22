@@ -1,7 +1,7 @@
 import {OsuServer} from '../../../../primitives/OsuServer';
 import {OsuRuleset} from '../../../../primitives/OsuRuleset';
-import {UserBestScoreInfo} from '../../../data/http/boundary/UserBestScoreInfo';
 import {ModAcronym} from '../../../../primitives/ModAcronym';
+import {RecentScore} from './OsuRecentScoresDao';
 
 export interface OsuUserBestScoresDao {
   get(
@@ -18,6 +18,6 @@ export interface OsuUserBestScoresDao {
   ): Promise<UserBestScore[]>;
 }
 
-export type UserBestScore = UserBestScoreInfo & {
-  absolutePosition: number;
+export type UserBestScore = RecentScore & {
+  pp: number;
 };

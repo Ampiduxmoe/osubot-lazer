@@ -9,6 +9,7 @@ import {AppUserRecentApiRequestsDao} from '../../application/requirements/dao/Ap
 import {COMMON_REQUEST_SUBTARGETS} from './AppUserApiRequestsSummariesDaoImpl';
 import {OsuUserSnapshotsRepository} from '../repository/repositories/OsuUserSnapshotsRepository';
 import {ModAcronym} from '../../../primitives/ModAcronym';
+import {RecentScoreInfo} from '../http/boundary/RecentScoreInfo';
 
 export class OsuRecentScoresDaoImpl implements OsuRecentScoresDao {
   private apis: OsuApi[];
@@ -83,8 +84,51 @@ export class OsuRecentScoresDaoImpl implements OsuRecentScoresDao {
       );
     }
     const recentScores = scoreInfos.map((s, i) => {
-      const recentScore = s as RecentScore;
-      recentScore.absolutePosition = i + adjustedStartPosition;
+      const recentScore: RecentScore = {
+        id: s.id,
+        absolutePosition: adjustedStartPosition + i,
+        userId: s.userId,
+        mods: s.mods,
+        maximumStatistics: s.maximumStatistics,
+        statistics: s.statistics,
+        rank: s.rank,
+        accuracy: s.accuracy,
+        endedAt: s.endedAt,
+        maxCombo: s.maxCombo,
+        passed: s.passed,
+        pp: s.pp,
+        totalScore: s.totalScore,
+        beatmap: {
+          id: s.beatmap.id,
+          userId: s.beatmap.userId,
+          version: s.beatmap.version,
+          totalLength: s.beatmap.totalLength,
+          hitLength: s.beatmap.hitLength,
+          difficultyRating: s.beatmap.difficultyRating,
+          bpm: s.beatmap.bpm,
+          ar: s.beatmap.ar,
+          cs: s.beatmap.cs,
+          od: s.beatmap.od,
+          hp: s.beatmap.hp,
+          countCircles: s.beatmap.countCircles,
+          countSliders: s.beatmap.countSliders,
+          countSpinners: s.beatmap.countSpinners,
+          url: s.beatmap.url,
+        },
+        beatmapset: {
+          id: s.beatmapset.id,
+          userId: s.beatmapset.userId,
+          creator: s.beatmapset.creator,
+          artist: s.beatmapset.artist,
+          title: s.beatmapset.title,
+          coverUrl: s.beatmapset.coverUrl,
+          status: capitalizeBeatmapsetStatus(s),
+        },
+        user: {
+          id: s.user.id,
+          username: s.user.username,
+        },
+      };
       return recentScore;
     });
     let filteredScores = recentScores.filter(s => {
@@ -132,3 +176,33 @@ export class OsuRecentScoresDaoImpl implements OsuRecentScoresDao {
     }
   }
 }
+
+function capitalizeBeatmapsetStatus(
+  score: RecentScoreInfo
+): CapitalizedBeatmapsetStatus {
+  switch (score.beatmapset.status) {
+    case 'graveyard':
+      return 'Graveyard';
+    case 'wip':
+      return 'Wip';
+    case 'pending':
+      return 'Pending';
+    case 'ranked':
+      return 'Ranked';
+    case 'approved':
+      return 'Approved';
+    case 'qualified':
+      return 'Qualified';
+    case 'loved':
+      return 'Loved';
+  }
+}
+
+type CapitalizedBeatmapsetStatus =
+  | 'Graveyard'
+  | 'Wip'
+  | 'Pending'
+  | 'Ranked'
+  | 'Approved'
+  | 'Qualified'
+  | 'Loved';
