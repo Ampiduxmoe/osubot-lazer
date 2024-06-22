@@ -3,7 +3,7 @@ import {VkMessageContext} from '../VkMessageContext';
 import {CommandMatchResult} from '../../common/CommandMatchResult';
 import {VkOutputMessage} from './base/VkOutputMessage';
 import {VkCommand} from './base/VkCommand';
-import {GetRecentPlaysUseCase} from '../../../application/usecases/get_recent_plays/GetRecentPlaysUseCase';
+import {GetUserRecentPlaysUseCase} from '../../../application/usecases/get_user_recent_plays/GetUserRecentPlaysUseCase';
 import {OsuServer} from '../../../../primitives/OsuServer';
 import {APP_CODE_NAME} from '../../../App';
 import {SERVERS} from '../../common/OsuServers';
@@ -12,12 +12,12 @@ import {VkIdConverter} from '../VkIdConverter';
 import {clamp, round} from '../../../../primitives/Numbers';
 import {
   OsuUserRecentPlays,
-  RecentPlay,
+  OsuUserRecentPlay,
   SettingsDA,
   SettingsDT,
   SettingsDefaults,
   SettingsHT,
-} from '../../../application/usecases/get_recent_plays/GetRecentPlaysResponse';
+} from '../../../application/usecases/get_user_recent_plays/GetUserRecentPlaysResponse';
 import {
   OWN_COMMAND_PREFIX,
   MODS,
@@ -67,10 +67,10 @@ export class UserRecentPlays extends VkCommand<
     {argument: MODE, isOptional: true},
   ];
 
-  getRecentPlays: GetRecentPlaysUseCase;
+  getRecentPlays: GetUserRecentPlaysUseCase;
   getAppUserInfo: GetAppUserInfoUseCase;
   constructor(
-    getRecentPlays: GetRecentPlaysUseCase,
+    getRecentPlays: GetUserRecentPlaysUseCase,
     getAppUserInfo: GetAppUserInfoUseCase
   ) {
     super(UserRecentPlays.commandStructure);
@@ -263,7 +263,7 @@ ${couldNotGetSomeStatsMessage}
     };
   }
 
-  verboseScoreDescription(play: RecentPlay): string {
+  verboseScoreDescription(play: OsuUserRecentPlay): string {
     const map = play.beatmap;
     const mapset = play.beatmapset;
 
@@ -364,7 +364,7 @@ Beatmap: ${mapUrlShort}
     `.trim();
   }
 
-  shortScoreDescription(play: RecentPlay): string {
+  shortScoreDescription(play: OsuUserRecentPlay): string {
     const map = play.beatmap;
     const mapset = play.beatmapset;
 

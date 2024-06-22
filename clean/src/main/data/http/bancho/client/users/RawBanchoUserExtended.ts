@@ -24,7 +24,7 @@ import {UserStatistics} from '../common_types/UserStatistics';
 // https://github.com/ppy/osu-web/blob/59fc72974750e4ab0e721bd07e9b92155458f5a7/app/Transformers/UserTransformer.php
 // https://github.com/ppy/osu-web/blob/59fc72974750e4ab0e721bd07e9b92155458f5a7/app/Transformers/UserCompactTransformer.php
 // https://github.com/ppy/osu-web/blob/59fc72974750e4ab0e721bd07e9b92155458f5a7/app/Models/User.php#L2430
-export type UserExtended = {
+export type RawBanchoUserExtended = {
   // attributes of base 'User'
   avatar_url: string;
   country_code: string;

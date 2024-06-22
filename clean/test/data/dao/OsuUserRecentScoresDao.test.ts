@@ -1,6 +1,6 @@
 /* eslint-disable prefer-arrow-callback */
 import assert from 'assert';
-import {OsuRecentScoresDaoImpl} from '../../../src/main/data/dao/OsuRecentScoresDaoImpl';
+import {OsuUserRecentScoresDaoImpl} from '../../../src/main/data/dao/OsuUserRecentScoresDaoImpl';
 import {FakeBanchoApi} from '../../mocks/data/http/BanchoApi';
 import {SqliteDb} from '../../../src/main/data/persistence/db/SqliteDb';
 import {OsuServer} from '../../../src/primitives/OsuServer';
@@ -11,14 +11,14 @@ import {TimeWindowsTable} from '../../../src/main/data/persistence/db/tables/Tim
 import {AppUserApiRequestsSummariesDaoImpl} from '../../../src/main/data/dao/AppUserApiRequestsSummariesDaoImpl';
 import {AppUserRecentApiRequestsDaoImpl} from '../../../src/main/data/dao/AppUserRecentApiRequestsDaoImpl';
 import {SqlDbTable} from '../../../src/main/data/persistence/db/SqlDbTable';
-import {OsuRecentScoresDao} from '../../../src/main/application/requirements/dao/OsuRecentScoresDao';
+import {OsuUserRecentScoresDao} from '../../../src/main/application/requirements/dao/OsuUserRecentScoresDao';
 import {getFakeRecentScoreInfos} from '../../mocks/Generators';
-import {RecentScoreInfo} from '../../../src/main/data/http/boundary/RecentScoreInfo';
+import {OsuUserRecentScoreInfo} from '../../../src/main/data/http/boundary/OsuUserRecentScoreInfo';
 import {ModAcronym} from '../../../src/primitives/ModAcronym';
 
-describe('OsuRecentScoresDao', function () {
+describe('OsuUserRecentScoresDao', function () {
   let tables: SqlDbTable[];
-  let dao: OsuRecentScoresDao;
+  let dao: OsuUserRecentScoresDao;
   {
     const apis = [new FakeBanchoApi()];
     const db = new SqliteDb(':memory:');
@@ -33,7 +33,11 @@ describe('OsuRecentScoresDao', function () {
       requestsSummariesDao
     );
     tables = [osuUserSnapshots, appUserApiRequestsCounts];
-    dao = new OsuRecentScoresDaoImpl(apis, osuUserSnapshots, recentApiRequests);
+    dao = new OsuUserRecentScoresDaoImpl(
+      apis,
+      osuUserSnapshots,
+      recentApiRequests
+    );
   }
 
   before(async function () {
@@ -74,7 +78,8 @@ describe('OsuRecentScoresDao', function () {
       const osuId = 1;
       const ruleset = OsuRuleset.osu;
       const fakeScores = getFakeRecentScoreInfos(osuId, ruleset);
-      const modAcronyms = (s: RecentScoreInfo) => s.mods.map(m => m.acronym);
+      const modAcronyms = (s: OsuUserRecentScoreInfo) =>
+        s.mods.map(m => m.acronym);
       const hdDtScores = fakeScores.filter(
         s =>
           s.mods.length === 2 &&

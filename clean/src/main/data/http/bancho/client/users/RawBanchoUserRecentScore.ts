@@ -9,7 +9,7 @@ import {MapStatus} from '../common_types/MapStatus';
 import {BeatmapsetCovers} from '../common_types/BeatmapsetCovers';
 
 // many attributes were 'eyeballed', so TODO revise this when oficial docs are good
-export type RecentScore = {
+export type RawBanchoUserRecentScore = {
   // if type is 'solo_score'
   ranked?: boolean;
   preserve?: boolean;

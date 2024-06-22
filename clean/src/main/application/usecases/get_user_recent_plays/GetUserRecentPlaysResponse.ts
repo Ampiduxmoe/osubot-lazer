@@ -1,7 +1,7 @@
 import {ModAcronym} from '../../../../primitives/ModAcronym';
 import {OsuRuleset} from '../../../../primitives/OsuRuleset';
 
-export type GetRecentPlaysResponse = {
+export type GetUserRecentPlaysResponse = {
   isFailure: boolean;
   failureReason?: 'user not found';
   recentPlays?: OsuUserRecentPlays;
@@ -10,10 +10,10 @@ export type GetRecentPlaysResponse = {
 
 export type OsuUserRecentPlays = {
   username: string;
-  plays: RecentPlay[];
+  plays: OsuUserRecentPlay[];
 };
 
-export type RecentPlay = {
+export type OsuUserRecentPlay = {
   absolutePosition: number;
   beatmapset: {
     status: BeatmapsetRankStatus;

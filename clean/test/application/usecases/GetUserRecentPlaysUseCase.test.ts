@@ -11,18 +11,18 @@ import {AppUserApiRequestsSummariesDaoImpl} from '../../../src/main/data/dao/App
 import {AppUserApiRequestsCountsTable} from '../../../src/main/data/persistence/db/tables/AppUserApiRequestsCountsTable';
 import {TimeWindowsTable} from '../../../src/main/data/persistence/db/tables/TimeWindowsTable';
 import {SqlDbTable} from '../../../src/main/data/persistence/db/SqlDbTable';
-import {GetRecentPlaysUseCase} from '../../../src/main/application/usecases/get_recent_plays/GetRecentPlaysUseCase';
-import {OsuRecentScoresDaoImpl} from '../../../src/main/data/dao/OsuRecentScoresDaoImpl';
+import {GetUserRecentPlaysUseCase} from '../../../src/main/application/usecases/get_user_recent_plays/GetUserRecentPlaysUseCase';
+import {OsuUserRecentScoresDaoImpl} from '../../../src/main/data/dao/OsuUserRecentScoresDaoImpl';
 import {FakeScoreSimulationApi} from '../../mocks/data/http/ScoreSimulationApi';
 import {ScoreSimulationsDaoImpl} from '../../../src/main/data/dao/ScoreSimulationsDaoImpl';
 import {CachedOsuUsersDaoImpl} from '../../../src/main/data/dao/CachedOsuUsersDaoImpl';
-import {GetRecentPlaysRequest} from '../../../src/main/application/usecases/get_recent_plays/GetRecentPlaysRequest';
+import {GetUserRecentPlaysRequest} from '../../../src/main/application/usecases/get_user_recent_plays/GetUserRecentPlaysRequest';
 import {getFakeOsuUserInfo} from '../../mocks/Generators';
 import {ModAcronym} from '../../../src/primitives/ModAcronym';
 
-describe('GetRecentPlaysUseCase', function () {
+describe('GetUserRecentPlaysUseCase', function () {
   let tables: SqlDbTable[];
-  let usecase: GetRecentPlaysUseCase;
+  let usecase: GetUserRecentPlaysUseCase;
   {
     const apis = [new FakeBanchoApi()];
     const scoreSimApi = new FakeScoreSimulationApi();
@@ -44,14 +44,14 @@ describe('GetRecentPlaysUseCase', function () {
     );
     const cachedOsuUsersDao = new CachedOsuUsersDaoImpl(osuUserSnapshots);
     const scoreSimulationsDao = new ScoreSimulationsDaoImpl(scoreSimApi);
-    const recentScoresDao = new OsuRecentScoresDaoImpl(
+    const recentScoresDao = new OsuUserRecentScoresDaoImpl(
       apis,
       osuUserSnapshots,
       recentApiRequestsDao
     );
 
     tables = [osuUserSnapshots, appUserApiRequestsCounts, timeWindows];
-    usecase = new GetRecentPlaysUseCase(
+    usecase = new GetUserRecentPlaysUseCase(
       recentScoresDao,
       scoreSimulationsDao,
       cachedOsuUsersDao,
@@ -70,7 +70,7 @@ describe('GetRecentPlaysUseCase', function () {
       const username = 'this username should not exist';
       for (const server of servers) {
         for (const ruleset of rulesets) {
-          const request: GetRecentPlaysRequest = {
+          const request: GetUserRecentPlaysRequest = {
             appUserId: 'should be irrelevant',
             server: OsuServer[server],
             username: username,
@@ -105,7 +105,7 @@ describe('GetRecentPlaysUseCase', function () {
         });
       });
       for (const user of usersThatShouldExist) {
-        const request: GetRecentPlaysRequest = {
+        const request: GetUserRecentPlaysRequest = {
           appUserId: 'should be irrelevant',
           server: user.server,
           username: user.username,
@@ -140,7 +140,7 @@ describe('GetRecentPlaysUseCase', function () {
         );
       });
       for (const user of usersThatShouldExist) {
-        const request: GetRecentPlaysRequest = {
+        const request: GetUserRecentPlaysRequest = {
           appUserId: 'should be irrelevant',
           server: user.server,
           username: user.username,

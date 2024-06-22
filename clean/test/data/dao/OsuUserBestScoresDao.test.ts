@@ -13,7 +13,7 @@ import {SqlDbTable} from '../../../src/main/data/persistence/db/SqlDbTable';
 import {OsuUserBestScoresDaoImpl} from '../../../src/main/data/dao/OsuUserBestScoresDaoImpl';
 import {OsuUserBestScoresDao} from '../../../src/main/application/requirements/dao/OsuUserBestScoresDao';
 import {getFakeUserBestScoreInfos} from '../../mocks/Generators';
-import {UserBestScoreInfo} from '../../../src/main/data/http/boundary/UserBestScoreInfo';
+import {OsuUserBestScoreInfo} from '../../../src/main/data/http/boundary/OsuUserBestScoreInfo';
 import {ModAcronym} from '../../../src/primitives/ModAcronym';
 
 describe('OsuUserBestScoresDao', function () {
@@ -76,7 +76,8 @@ describe('OsuUserBestScoresDao', function () {
       const osuId = 1;
       const ruleset = OsuRuleset.osu;
       const fakeScores = getFakeUserBestScoreInfos(osuId, ruleset);
-      const modAcronyms = (s: UserBestScoreInfo) => s.mods.map(m => m.acronym);
+      const modAcronyms = (s: OsuUserBestScoreInfo) =>
+        s.mods.map(m => m.acronym);
       const hdDtScores = fakeScores.filter(
         s =>
           s.mods.length === 2 &&

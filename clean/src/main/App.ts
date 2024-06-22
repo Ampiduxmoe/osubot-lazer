@@ -1,7 +1,7 @@
 import {VK} from 'vk-io';
 import {AppConfig, VkGroup} from './AppConfig';
 import {VkClient} from './presentation/vk/VkClient';
-import {GetRecentPlaysUseCase} from './application/usecases/get_recent_plays/GetRecentPlaysUseCase';
+import {GetUserRecentPlaysUseCase} from './application/usecases/get_user_recent_plays/GetUserRecentPlaysUseCase';
 import {BanchoApi} from './data/http/bancho/BanchoApi';
 import {OsuUsersDaoImpl} from './data/dao/OsuUsersDaoImpl';
 import {GetOsuUserInfoUseCase} from './application/usecases/get_osu_user_info/GetOsuUserInfoUseCase';
@@ -16,7 +16,7 @@ import {GetAppUserInfoUseCase} from './application/usecases/get_app_user_info/Ge
 import {OsuUserSnapshotsTable} from './data/persistence/db/tables/OsuUserSnapshotsTable';
 import {AppUserApiRequestsCountsTable} from './data/persistence/db/tables/AppUserApiRequestsCountsTable';
 import {AppUsersDaoImpl} from './data/dao/AppUsersDaoImpl';
-import {OsuRecentScoresDaoImpl} from './data/dao/OsuRecentScoresDaoImpl';
+import {OsuUserRecentScoresDaoImpl} from './data/dao/OsuUserRecentScoresDaoImpl';
 import {CachedOsuUsersDaoImpl} from './data/dao/CachedOsuUsersDaoImpl';
 import {Help} from './presentation/vk/commands/Help';
 import {ScoreSimulationsDaoImpl} from './data/dao/ScoreSimulationsDaoImpl';
@@ -115,7 +115,7 @@ export class App {
       recentApiRequestsDao
     );
     const appUsersDao = new AppUsersDaoImpl(appUsers);
-    const recentScoresDao = new OsuRecentScoresDaoImpl(
+    const recentScoresDao = new OsuUserRecentScoresDaoImpl(
       osuApiList,
       osuUserSnapshots,
       recentApiRequestsDao
@@ -131,7 +131,7 @@ export class App {
     const getOsuUserInfoUseCase = new GetOsuUserInfoUseCase(osuUsersDao);
     const getAppUserInfoUseCase = new GetAppUserInfoUseCase(appUsersDao);
     const setUsernameUseCase = new SetUsernameUseCase(appUsersDao, osuUsersDao);
-    const getRecentPlaysUseCase = new GetRecentPlaysUseCase(
+    const getRecentPlaysUseCase = new GetUserRecentPlaysUseCase(
       recentScoresDao,
       scoreSimulationsDao,
       cachedOsuUsersDao,
@@ -246,7 +246,7 @@ type VkClientCreationParams = {
   getOsuUserInfoUseCase: GetOsuUserInfoUseCase;
   getAppUserInfoUseCase: GetAppUserInfoUseCase;
   setUsernameUseCase: SetUsernameUseCase;
-  getRecentPlaysUseCase: GetRecentPlaysUseCase;
+  getRecentPlaysUseCase: GetUserRecentPlaysUseCase;
   getUserBestPlaysUseCase: GetUserBestPlaysUseCase;
   getApiUsageSummaryUseCase: GetApiUsageSummaryUseCase;
 };

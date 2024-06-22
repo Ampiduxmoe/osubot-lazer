@@ -2,7 +2,7 @@ import {OsuRuleset} from '../../../../primitives/OsuRuleset';
 import {BeatmapScore} from '../../../domain/entities/BeatmapScore';
 import {Hitcounts} from '../../../domain/entities/hitcounts/Hitcounts';
 import {Mode} from '../../../domain/entities/mode/Mode';
-import {RecentScore} from '../../requirements/dao/OsuRecentScoresDao';
+import {OsuUserRecentScore} from '../../requirements/dao/OsuUserRecentScoresDao';
 import {getMods} from './mods/Mods';
 import {getHitcounts} from './Hitcounts';
 import {getMapMaxCombo} from './MapMaxCombo';
@@ -14,15 +14,15 @@ import {getMode} from './Mode';
 import {Beatmapset} from '../../../domain/entities/Beatmapset';
 import {Song} from '../../../domain/entities/Song';
 
-export class RecentScoreAdapter {
+export class UserRecentScoreAdapter {
   scoreSimulations: ScoreSimulationsDao;
 
   constructor(scoreSimulations: ScoreSimulationsDao) {
     this.scoreSimulations = scoreSimulations;
   }
 
-  recentScoreToBeatmapScore(
-    score: RecentScore,
+  createBeatmapScore(
+    score: OsuUserRecentScore,
     ruleset: OsuRuleset
   ): BeatmapScore<Mode, Hitcounts> {
     const [starRatingEstimationProvider, ppEstimationProvider] =

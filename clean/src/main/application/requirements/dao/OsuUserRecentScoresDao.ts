@@ -1,7 +1,26 @@
+import {OsuServer} from '../../../../primitives/OsuServer';
+import {OsuRuleset} from '../../../../primitives/OsuRuleset';
 import {ModAcronym} from '../../../../primitives/ModAcronym';
 
-export type RecentScoreInfo = {
+export interface OsuUserRecentScoresDao {
+  get(
+    appUserId: string,
+    osuUserId: number,
+    server: OsuServer,
+    includeFails: boolean,
+    mods: {
+      acronym: ModAcronym;
+      isOptional: boolean;
+    }[],
+    quantity: number,
+    startPosition: number,
+    ruleset: OsuRuleset | undefined
+  ): Promise<OsuUserRecentScore[]>;
+}
+
+export type OsuUserRecentScore = {
   id: number;
+  absolutePosition: number;
   userId: number;
   mods: {
     acronym: ModAcronym;
@@ -46,9 +65,7 @@ export type RecentScoreInfo = {
   };
   rank: 'SS' | 'S' | 'A' | 'B' | 'C' | 'D' | 'F';
   accuracy: number;
-  startedAt: string | null;
   endedAt: string;
-  isPerfectCombo: boolean;
   maxCombo: number;
   passed: boolean;
   pp: number | null;
@@ -78,13 +95,13 @@ export type RecentScoreInfo = {
     title: string;
     coverUrl: string;
     status:
-      | 'graveyard'
-      | 'wip'
-      | 'pending'
-      | 'ranked'
-      | 'approved'
-      | 'qualified'
-      | 'loved';
+      | 'Graveyard'
+      | 'Wip'
+      | 'Pending'
+      | 'Ranked'
+      | 'Approved'
+      | 'Qualified'
+      | 'Loved';
   };
   user: {
     id: number;

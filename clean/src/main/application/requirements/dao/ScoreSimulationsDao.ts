@@ -1,8 +1,4 @@
 import {ModAcronym} from '../../../../primitives/ModAcronym';
-import {ScoreSimulationInfoCtb} from '../../../data/http/boundary/ScoreSimulationInfoCtb';
-import {ScoreSimulationInfoMania} from '../../../data/http/boundary/ScoreSimulationInfoMania';
-import {ScoreSimulationInfoOsu} from '../../../data/http/boundary/ScoreSimulationInfoOsu';
-import {ScoreSimulationInfoTaiko} from '../../../data/http/boundary/ScoreSimulationInfoTaiko';
 
 export interface ScoreSimulationsDao {
   getForOsu(
@@ -40,22 +36,29 @@ export interface ScoreSimulationsDao {
   ): Promise<SimulatedScoreMania | undefined>;
 }
 
-export type SimulatedScoreOsu = Pick<
-  ScoreSimulationInfoOsu,
-  keyof ScoreSimulationInfoOsu
->;
+export type SimulatedScoreOsu = {
+  performanceAttributes: {
+    pp: number;
+  };
+  difficultyAttributes: {
+    starRating: number;
+  };
+};
 
-export type SimulatedScoreTaiko = Pick<
-  ScoreSimulationInfoTaiko,
-  keyof ScoreSimulationInfoTaiko
->;
+export type SimulatedScoreTaiko = {
+  difficultyAttributes: {
+    starRating: number;
+  };
+};
 
-export type SimulatedScoreCtb = Pick<
-  ScoreSimulationInfoCtb,
-  keyof ScoreSimulationInfoCtb
->;
+export type SimulatedScoreCtb = {
+  difficultyAttributes: {
+    starRating: number;
+  };
+};
 
-export type SimulatedScoreMania = Pick<
-  ScoreSimulationInfoMania,
-  keyof ScoreSimulationInfoMania
->;
+export type SimulatedScoreMania = {
+  difficultyAttributes: {
+    starRating: number;
+  };
+};

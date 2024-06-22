@@ -1,9 +1,9 @@
 import {sum} from '../../../../primitives/Arrays';
 import {OsuRuleset} from '../../../../primitives/OsuRuleset';
-import {RecentScore} from '../../requirements/dao/OsuRecentScoresDao';
+import {OsuUserRecentScore} from '../../requirements/dao/OsuUserRecentScoresDao';
 
 export function getMapProgress(
-  score: RecentScore,
+  score: OsuUserRecentScore,
   ruleset: OsuRuleset
 ): number {
   const mapProgressCalculators = [
@@ -29,7 +29,7 @@ export function getMapProgress(
 type MapProgressCalculator = {
   ruleset: OsuRuleset;
   isLegacy: boolean;
-  calculate(score: RecentScore): number;
+  calculate(score: OsuUserRecentScore): number;
 };
 
 function getSum(...arr: (number | undefined)[]): number {
@@ -39,7 +39,7 @@ function getSum(...arr: (number | undefined)[]): number {
 const MapProgressCalculatorOsu: MapProgressCalculator = {
   ruleset: OsuRuleset.osu,
   isLegacy: false,
-  calculate(score: RecentScore): number {
+  calculate(score: OsuUserRecentScore): number {
     const s = score.statistics;
     const sMax = score.maximumStatistics;
     const totalHits = getSum(s.great, s.ok, s.meh, s.miss);
@@ -57,7 +57,7 @@ const MapProgressCalculatorOsuLegacy: MapProgressCalculator = {
 const MapProgressCalculatorTaiko: MapProgressCalculator = {
   ruleset: OsuRuleset.taiko,
   isLegacy: false,
-  calculate(score: RecentScore): number {
+  calculate(score: OsuUserRecentScore): number {
     const s = score.statistics;
     const sMax = score.maximumStatistics;
     const totalHits = getSum(s.great, s.ok, s.miss);
@@ -75,7 +75,7 @@ const MapProgressCalculatorTaikoLegacy: MapProgressCalculator = {
 const MapProgressCalculatorCtb: MapProgressCalculator = {
   ruleset: OsuRuleset.ctb,
   isLegacy: false,
-  calculate(score: RecentScore): number {
+  calculate(score: OsuUserRecentScore): number {
     const s = score.statistics;
     const sMax = score.maximumStatistics;
     const totalHits = getSum(s.great, s.largeTickHit, s.largeTickMiss, s.miss);
@@ -93,7 +93,7 @@ const MapProgressCalculatorCtbLegacy: MapProgressCalculator = {
 const MapProgressCalculatorMania: MapProgressCalculator = {
   ruleset: OsuRuleset.mania,
   isLegacy: false,
-  calculate(score: RecentScore): number {
+  calculate(score: OsuUserRecentScore): number {
     const s = score.statistics;
     const sMax = score.maximumStatistics;
     const totalHits = getSum(s.perfect, s.great, s.good, s.ok, s.meh, s.miss);

@@ -1,7 +1,10 @@
 import {UseCase} from '../UseCase';
-import {GetRecentPlaysRequest} from './GetRecentPlaysRequest';
-import {GetRecentPlaysResponse, RecentPlay} from './GetRecentPlaysResponse';
-import {OsuRecentScoresDao} from '../../requirements/dao/OsuRecentScoresDao';
+import {GetUserRecentPlaysRequest} from './GetUserRecentPlaysRequest';
+import {
+  GetUserRecentPlaysResponse,
+  OsuUserRecentPlay,
+} from './GetUserRecentPlaysResponse';
+import {OsuUserRecentScoresDao} from '../../requirements/dao/OsuUserRecentScoresDao';
 import {CachedOsuUsersDao} from '../../requirements/dao/CachedOsuUsersDao';
 import {OsuUsersDao} from '../../requirements/dao/OsuUsersDao';
 import {ScoreSimulationsDao} from '../../requirements/dao/ScoreSimulationsDao';
@@ -13,7 +16,7 @@ import {Hitcounts} from '../../../domain/entities/hitcounts/Hitcounts';
 import {Mode} from '../../../domain/entities/mode/Mode';
 import {HitcountsOsu} from '../../../domain/entities/hitcounts/HitcountsOsu';
 import {ModeOsu} from '../../../domain/entities/mode/ModeOsu';
-import {RecentScoreAdapter} from '../../adapters/recent_score/RecentScoreAdapter';
+import {UserRecentScoreAdapter} from '../../adapters/user_recent_score/UserRecentScoreAdapter';
 import {ModeTaiko} from '../../../domain/entities/mode/ModeTaiko';
 import {HitcountsTaiko} from '../../../domain/entities/hitcounts/HitcountsTaiko';
 import {ModeCtb} from '../../../domain/entities/mode/ModeCtb';
@@ -21,15 +24,15 @@ import {HitcountsCtb} from '../../../domain/entities/hitcounts/HitcountsCtb';
 import {ModeMania} from '../../../domain/entities/mode/ModeMania';
 import {HitcountsMania} from '../../../domain/entities/hitcounts/HitcountsMania';
 
-export class GetRecentPlaysUseCase
-  implements UseCase<GetRecentPlaysRequest, GetRecentPlaysResponse>
+export class GetUserRecentPlaysUseCase
+  implements UseCase<GetUserRecentPlaysRequest, GetUserRecentPlaysResponse>
 {
-  recentScores: OsuRecentScoresDao;
+  recentScores: OsuUserRecentScoresDao;
   cachedOsuUsers: CachedOsuUsersDao;
   osuUsers: OsuUsersDao;
-  recentScoreAdapter: RecentScoreAdapter;
+  recentScoreAdapter: UserRecentScoreAdapter;
   constructor(
-    recentScores: OsuRecentScoresDao,
+    recentScores: OsuUserRecentScoresDao,
     scoreSimulations: ScoreSimulationsDao,
     cachedOsuUsers: CachedOsuUsersDao,
     osuUsers: OsuUsersDao
@@ -37,11 +40,11 @@ export class GetRecentPlaysUseCase
     this.recentScores = recentScores;
     this.cachedOsuUsers = cachedOsuUsers;
     this.osuUsers = osuUsers;
-    this.recentScoreAdapter = new RecentScoreAdapter(scoreSimulations);
+    this.recentScoreAdapter = new UserRecentScoreAdapter(scoreSimulations);
   }
   async execute(
-    params: GetRecentPlaysRequest
-  ): Promise<GetRecentPlaysResponse> {
+    params: GetUserRecentPlaysRequest
+  ): Promise<GetUserRecentPlaysResponse> {
     const {appUserId, username, server, ruleset} = params;
     const userSnapshot = await this.cachedOsuUsers.get(username, server);
     let targetOsuId = userSnapshot?.id;
@@ -80,7 +83,7 @@ export class GetRecentPlaysUseCase
       targetRuleset
     );
     const recentPlayPromises = rawRecentScores.map(score => {
-      const beatmapScore = this.recentScoreAdapter.recentScoreToBeatmapScore(
+      const beatmapScore = this.recentScoreAdapter.createBeatmapScore(
         score,
         targetRuleset
       );
@@ -91,7 +94,7 @@ export class GetRecentPlaysUseCase
     });
     const recentPlays = await Promise.all(recentPlayPromises);
     if (recentPlays.length === 1) {
-      const beatmapScore = this.recentScoreAdapter.recentScoreToBeatmapScore(
+      const beatmapScore = this.recentScoreAdapter.createBeatmapScore(
         rawRecentScores[0],
         targetRuleset
       );
@@ -236,7 +239,7 @@ async function getManiaFcAndSsEstimations(
 async function getRecentPlayWithoutFcAndSsEstimations(
   score: BeatmapScore<Mode, Hitcounts>,
   absolutePosition: number
-): Promise<RecentPlay> {
+): Promise<OsuUserRecentPlay> {
   const estimatedStarRating = score.hasStarRatingChangingMods
     ? await score.getEstimatedStarRating()
     : score.baseBeatmap.starRating;

@@ -29,16 +29,16 @@ import {
 import {AppUser} from '../../src/main/data/repository/models/AppUser';
 import {VkIdConverter} from '../../src/main/presentation/vk/VkIdConverter';
 import {GetAppUserInfoUseCase} from '../../src/main/application/usecases/get_app_user_info/GetAppUserInfoUseCase';
-import {OsuRecentScoresDaoImpl} from '../../src/main/data/dao/OsuRecentScoresDaoImpl';
+import {OsuUserRecentScoresDaoImpl} from '../../src/main/data/dao/OsuUserRecentScoresDaoImpl';
 import {FakeScoreSimulationApi} from '../mocks/data/http/ScoreSimulationApi';
 import {ScoreSimulationsDaoImpl} from '../../src/main/data/dao/ScoreSimulationsDaoImpl';
-import {GetRecentPlaysUseCase} from '../../src/main/application/usecases/get_recent_plays/GetRecentPlaysUseCase';
+import {GetUserRecentPlaysUseCase} from '../../src/main/application/usecases/get_user_recent_plays/GetUserRecentPlaysUseCase';
 import {CachedOsuUsersDaoImpl} from '../../src/main/data/dao/CachedOsuUsersDaoImpl';
 import {
   OsuUserRecentPlays,
-  RecentPlay,
-} from '../../src/main/application/usecases/get_recent_plays/GetRecentPlaysResponse';
-import {RecentScoreInfo} from '../../src/main/data/http/boundary/RecentScoreInfo';
+  OsuUserRecentPlay,
+} from '../../src/main/application/usecases/get_user_recent_plays/GetUserRecentPlaysResponse';
+import {OsuUserRecentScoreInfo} from '../../src/main/data/http/boundary/OsuUserRecentScoreInfo';
 import {ModAcronym} from '../../src/primitives/ModAcronym';
 
 describe('UserRecentPlays', function () {
@@ -59,7 +59,7 @@ describe('UserRecentPlays', function () {
     const recentApiRequestsDao = new AppUserRecentApiRequestsDaoImpl(
       requestsSummariesDao
     );
-    const recentScoresDao = new OsuRecentScoresDaoImpl(
+    const recentScoresDao = new OsuUserRecentScoresDaoImpl(
       apis,
       osuUserSnapshots,
       recentApiRequestsDao
@@ -74,7 +74,7 @@ describe('UserRecentPlays', function () {
     );
     const appUsersDao = new AppUsersDaoImpl(appUsers);
 
-    const getRecentPlaysUseCase = new GetRecentPlaysUseCase(
+    const getRecentPlaysUseCase = new GetUserRecentPlaysUseCase(
       recentScoresDao,
       scoreSimulationsDao,
       cachedOsuUsersDao,
@@ -541,7 +541,9 @@ describe('UserRecentPlays', function () {
   });
 });
 
-function scoreInfoToRecentPlay(recentScoreInfo: RecentScoreInfo): RecentPlay {
+function scoreInfoToRecentPlay(
+  recentScoreInfo: OsuUserRecentScoreInfo
+): OsuUserRecentPlay {
   const s = recentScoreInfo;
   return {
     absolutePosition: 100,

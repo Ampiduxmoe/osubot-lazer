@@ -1,17 +1,17 @@
 import {OsuServer} from '../../../primitives/OsuServer';
 import {OsuRuleset} from '../../../primitives/OsuRuleset';
 import {
-  OsuRecentScoresDao,
-  RecentScore,
-} from '../../application/requirements/dao/OsuRecentScoresDao';
+  OsuUserRecentScoresDao,
+  OsuUserRecentScore,
+} from '../../application/requirements/dao/OsuUserRecentScoresDao';
 import {OsuApi} from '../http/OsuAPI';
 import {AppUserRecentApiRequestsDao} from '../../application/requirements/dao/AppUserRecentApiRequestsDao';
 import {COMMON_REQUEST_SUBTARGETS} from './AppUserApiRequestsSummariesDaoImpl';
 import {OsuUserSnapshotsRepository} from '../repository/repositories/OsuUserSnapshotsRepository';
 import {ModAcronym} from '../../../primitives/ModAcronym';
-import {RecentScoreInfo} from '../http/boundary/RecentScoreInfo';
+import {OsuUserRecentScoreInfo} from '../http/boundary/OsuUserRecentScoreInfo';
 
-export class OsuRecentScoresDaoImpl implements OsuRecentScoresDao {
+export class OsuUserRecentScoresDaoImpl implements OsuUserRecentScoresDao {
   private apis: OsuApi[];
   private osuUserSnapshotsTable: OsuUserSnapshotsRepository;
   private recentApiRequests: AppUserRecentApiRequestsDao;
@@ -36,7 +36,7 @@ export class OsuRecentScoresDaoImpl implements OsuRecentScoresDao {
     quantity: number,
     startPosition: number,
     ruleset: OsuRuleset | undefined
-  ): Promise<RecentScore[]> {
+  ): Promise<OsuUserRecentScore[]> {
     const api = this.apis.find(api => api.server === server);
     if (api === undefined) {
       throw Error(`Could not find API for server ${OsuServer[server]}`);
@@ -68,7 +68,7 @@ export class OsuRecentScoresDaoImpl implements OsuRecentScoresDao {
       subtarget: COMMON_REQUEST_SUBTARGETS.userRecentPlays,
       count: 1,
     });
-    const scoreInfos = await api.getRecentPlays(
+    const scoreInfos = await api.getUserRecentPlays(
       osuUserId,
       includeFails,
       adjustedQuantity,
@@ -84,7 +84,7 @@ export class OsuRecentScoresDaoImpl implements OsuRecentScoresDao {
       );
     }
     const recentScores = scoreInfos.map((s, i) => {
-      const recentScore: RecentScore = {
+      const recentScore: OsuUserRecentScore = {
         id: s.id,
         absolutePosition: adjustedStartPosition + i,
         userId: s.userId,
@@ -178,7 +178,7 @@ export class OsuRecentScoresDaoImpl implements OsuRecentScoresDao {
 }
 
 function capitalizeBeatmapsetStatus(
-  score: RecentScoreInfo
+  score: OsuUserRecentScoreInfo
 ): CapitalizedBeatmapsetStatus {
   switch (score.beatmapset.status) {
     case 'graveyard':

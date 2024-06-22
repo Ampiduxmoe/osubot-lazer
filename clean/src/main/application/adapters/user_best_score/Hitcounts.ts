@@ -4,10 +4,10 @@ import {HitcountsCtb} from '../../../domain/entities/hitcounts/HitcountsCtb';
 import {HitcountsMania} from '../../../domain/entities/hitcounts/HitcountsMania';
 import {HitcountsOsu} from '../../../domain/entities/hitcounts/HitcountsOsu';
 import {HitcountsTaiko} from '../../../domain/entities/hitcounts/HitcountsTaiko';
-import {UserBestScore} from '../../requirements/dao/OsuUserBestScoresDao';
+import {OsuUserBestScore} from '../../requirements/dao/OsuUserBestScoresDao';
 
 export function getHitcounts(
-  score: UserBestScore,
+  score: OsuUserBestScore,
   ruleset: OsuRuleset
 ): Hitcounts {
   switch (ruleset) {
@@ -22,7 +22,7 @@ export function getHitcounts(
   }
 }
 
-function getHitcountsOsu(score: UserBestScore): HitcountsOsu {
+function getHitcountsOsu(score: OsuUserBestScore): HitcountsOsu {
   return new HitcountsOsu({
     great: score.statistics.great,
     ok: score.statistics.ok,
@@ -31,7 +31,7 @@ function getHitcountsOsu(score: UserBestScore): HitcountsOsu {
   });
 }
 
-function getHitcountsTaiko(score: UserBestScore): HitcountsTaiko {
+function getHitcountsTaiko(score: OsuUserBestScore): HitcountsTaiko {
   return new HitcountsTaiko({
     great: score.statistics.great,
     ok: score.statistics.ok,
@@ -39,7 +39,7 @@ function getHitcountsTaiko(score: UserBestScore): HitcountsTaiko {
   });
 }
 
-function getHitcountsCtb(score: UserBestScore): HitcountsCtb {
+function getHitcountsCtb(score: OsuUserBestScore): HitcountsCtb {
   return new HitcountsCtb({
     great: score.statistics.great,
     largeTickHit: score.statistics.largeTickHit,
@@ -49,7 +49,7 @@ function getHitcountsCtb(score: UserBestScore): HitcountsCtb {
   });
 }
 
-function getHitcountsMania(score: UserBestScore): HitcountsMania {
+function getHitcountsMania(score: OsuUserBestScore): HitcountsMania {
   return new HitcountsMania({
     perfect: score.statistics.perfect,
     great: score.statistics.great,

@@ -68,11 +68,10 @@ export class GetUserBestPlaysUseCase
       targetRuleset
     );
     const bestPlayPromises = rawBestScores.map(score => {
-      const beatmapScore =
-        this.userBestScoreAdapter.userBestScoreToBeatmapScore(
-          score,
-          targetRuleset
-        );
+      const beatmapScore = this.userBestScoreAdapter.createBeatmapScore(
+        score,
+        targetRuleset
+      );
       return getBestPlay(beatmapScore, score.absolutePosition);
     });
     const bestPlays = await Promise.all(bestPlayPromises);

@@ -2,7 +2,7 @@ import {OsuRuleset} from '../../../../primitives/OsuRuleset';
 import {BeatmapScore} from '../../../domain/entities/BeatmapScore';
 import {Hitcounts} from '../../../domain/entities/hitcounts/Hitcounts';
 import {Mode} from '../../../domain/entities/mode/Mode';
-import {UserBestScore} from '../../requirements/dao/OsuUserBestScoresDao';
+import {OsuUserBestScore} from '../../requirements/dao/OsuUserBestScoresDao';
 import {getMods} from './mods/Mods';
 import {getHitcounts} from './Hitcounts';
 import {getMapMaxCombo} from './MapMaxCombo';
@@ -21,8 +21,8 @@ export class UserBestScoreAdapter {
     this.scoreSimulations = scoreSimulations;
   }
 
-  userBestScoreToBeatmapScore(
-    score: UserBestScore,
+  createBeatmapScore(
+    score: OsuUserBestScore,
     ruleset: OsuRuleset
   ): BeatmapScore<Mode, Hitcounts> {
     const [starRatingEstimationProvider, ppEstimationProvider] =

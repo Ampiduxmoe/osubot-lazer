@@ -3,11 +3,11 @@ import {OsuServer} from '../../../../primitives/OsuServer';
 import {BanchoClient} from './client/BanchoClient';
 import {OsuRuleset} from '../../../../primitives/OsuRuleset';
 import {OsuUserInfo} from '../boundary/OsuUserInfo';
-import {RecentScoreInfo} from '../boundary/RecentScoreInfo';
+import {OsuUserRecentScoreInfo} from '../boundary/OsuUserRecentScoreInfo';
 import {Playmode} from './client/common_types/Playmode';
-import {RecentScore} from './client/users/RecentScore';
-import {BestScore} from './client/users/BestScore';
-import {UserBestScoreInfo} from '../boundary/UserBestScoreInfo';
+import {RawBanchoUserRecentScore} from './client/users/RawBanchoUserRecentScore';
+import {RawBanchoUserBestScore} from './client/users/RawBanchoUserBestScore';
+import {OsuUserBestScoreInfo} from '../boundary/OsuUserBestScoreInfo';
 import {ModAcronym} from '../../../../primitives/ModAcronym';
 
 export class BanchoApi implements OsuApi {
@@ -48,13 +48,13 @@ export class BanchoApi implements OsuApi {
     };
   }
 
-  async getRecentPlays(
+  async getUserRecentPlays(
     osuUserId: number,
     includeFails: boolean,
     quantity: number,
     startPosition: number,
     ruleset: OsuRuleset | undefined
-  ): Promise<RecentScoreInfo[]> {
+  ): Promise<OsuUserRecentScoreInfo[]> {
     const scores = await this.client.users.getRecentScores(
       osuUserId,
       includeFails,
@@ -63,16 +63,16 @@ export class BanchoApi implements OsuApi {
       ruleset
     );
     return scores.map(s => {
-      return recentScoreInternalToExternal(s);
+      return userRecentScoreInternalToExternal(s);
     });
   }
 
-  async getUserBest(
+  async getUserBestPlays(
     osuUserId: number,
     quantity: number,
     startPosition: number,
     ruleset: OsuRuleset | undefined
-  ): Promise<UserBestScoreInfo[]> {
+  ): Promise<OsuUserBestScoreInfo[]> {
     const scores = await this.client.users.getBestScores(
       osuUserId,
       quantity,
@@ -100,7 +100,9 @@ function playmodeToRuleset(playmode: Playmode): OsuRuleset {
   }
 }
 
-function recentScoreInternalToExternal(score: RecentScore): RecentScoreInfo {
+function userRecentScoreInternalToExternal(
+  score: RawBanchoUserRecentScore
+): OsuUserRecentScoreInfo {
   return {
     id: score.id,
     userId: score.user_id,
@@ -185,7 +187,9 @@ function recentScoreInternalToExternal(score: RecentScore): RecentScoreInfo {
   };
 }
 
-function userBestScoreInternalToExternal(score: BestScore): UserBestScoreInfo {
+function userBestScoreInternalToExternal(
+  score: RawBanchoUserBestScore
+): OsuUserBestScoreInfo {
   return {
     id: score.id,
     userId: score.user_id,

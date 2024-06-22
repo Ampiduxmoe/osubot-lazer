@@ -1,7 +1,7 @@
 import {OsuApi} from '../../../../src/main/data/http/OsuAPI';
 import {OsuUserInfo} from '../../../../src/main/data/http/boundary/OsuUserInfo';
-import {RecentScoreInfo} from '../../../../src/main/data/http/boundary/RecentScoreInfo';
-import {UserBestScoreInfo} from '../../../../src/main/data/http/boundary/UserBestScoreInfo';
+import {OsuUserRecentScoreInfo} from '../../../../src/main/data/http/boundary/OsuUserRecentScoreInfo';
+import {OsuUserBestScoreInfo} from '../../../../src/main/data/http/boundary/OsuUserBestScoreInfo';
 import {OsuRuleset} from '../../../../src/primitives/OsuRuleset';
 import {OsuServer} from '../../../../src/primitives/OsuServer';
 import {
@@ -23,13 +23,13 @@ export class FakeBanchoApi implements OsuApi {
     }
     return getFakeOsuUserInfo(userId, ruleset);
   }
-  async getRecentPlays(
+  async getUserRecentPlays(
     osuUserId: number,
     includeFails: boolean,
     quantity: number,
     startPosition: number,
     ruleset: OsuRuleset | undefined
-  ): Promise<RecentScoreInfo[]> {
+  ): Promise<OsuUserRecentScoreInfo[]> {
     return getFakeRecentScoreInfos(osuUserId, ruleset)
       .filter(x => {
         if (includeFails) {
@@ -39,12 +39,12 @@ export class FakeBanchoApi implements OsuApi {
       })
       .slice(startPosition - 1, startPosition - 1 + quantity);
   }
-  async getUserBest(
+  async getUserBestPlays(
     osuUserId: number,
     quantity: number,
     startPosition: number,
     ruleset: OsuRuleset | undefined
-  ): Promise<UserBestScoreInfo[]> {
+  ): Promise<OsuUserBestScoreInfo[]> {
     return getFakeUserBestScoreInfos(osuUserId, ruleset).slice(
       startPosition - 1,
       startPosition - 1 + quantity

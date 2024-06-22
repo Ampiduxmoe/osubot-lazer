@@ -22,9 +22,7 @@ describe('ScoreSimulationsDao', function () {
         }
       );
       assert.notStrictEqual(
-        result?.score &&
-          result.difficultyAttributes &&
-          result.performanceAttributes,
+        result?.difficultyAttributes && result.performanceAttributes,
         undefined
       );
     });

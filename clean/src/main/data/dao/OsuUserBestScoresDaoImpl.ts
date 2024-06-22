@@ -4,12 +4,12 @@ import {OsuApi} from '../http/OsuAPI';
 import {AppUserRecentApiRequestsDao} from '../../application/requirements/dao/AppUserRecentApiRequestsDao';
 import {
   OsuUserBestScoresDao,
-  UserBestScore,
+  OsuUserBestScore,
 } from '../../application/requirements/dao/OsuUserBestScoresDao';
 import {COMMON_REQUEST_SUBTARGETS} from './AppUserApiRequestsSummariesDaoImpl';
 import {OsuUserSnapshotsRepository} from '../repository/repositories/OsuUserSnapshotsRepository';
 import {ModAcronym} from '../../../primitives/ModAcronym';
-import {UserBestScoreInfo} from '../http/boundary/UserBestScoreInfo';
+import {OsuUserBestScoreInfo} from '../http/boundary/OsuUserBestScoreInfo';
 
 export class OsuUserBestScoresDaoImpl implements OsuUserBestScoresDao {
   private apis: OsuApi[];
@@ -35,7 +35,7 @@ export class OsuUserBestScoresDaoImpl implements OsuUserBestScoresDao {
     quantity: number,
     startPosition: number,
     ruleset: OsuRuleset | undefined
-  ): Promise<UserBestScore[]> {
+  ): Promise<OsuUserBestScore[]> {
     const api = this.apis.find(api => api.server === server);
     if (api === undefined) {
       throw Error(`Could not find API for server ${OsuServer[server]}`);
@@ -67,7 +67,7 @@ export class OsuUserBestScoresDaoImpl implements OsuUserBestScoresDao {
       subtarget: COMMON_REQUEST_SUBTARGETS.userBestPlays,
       count: 1,
     });
-    const scoreInfos = await api.getUserBest(
+    const scoreInfos = await api.getUserBestPlays(
       osuUserId,
       adjustedQuantity,
       adjustedStartPosition,
@@ -82,7 +82,7 @@ export class OsuUserBestScoresDaoImpl implements OsuUserBestScoresDao {
       );
     }
     const bestScores = scoreInfos.map((s, i) => {
-      const bestScore: UserBestScore = {
+      const bestScore: OsuUserBestScore = {
         id: s.id,
         absolutePosition: adjustedStartPosition + i,
         userId: s.userId,
@@ -176,7 +176,7 @@ export class OsuUserBestScoresDaoImpl implements OsuUserBestScoresDao {
 }
 
 function capitalizeBeatmapsetStatus(
-  score: UserBestScoreInfo
+  score: OsuUserBestScoreInfo
 ): CapitalizedBeatmapsetStatus {
   switch (score.beatmapset.status) {
     case 'graveyard':

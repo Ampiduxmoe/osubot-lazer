@@ -38,7 +38,7 @@ import {
   BestPlay,
   OsuUserBestPlays,
 } from '../../src/main/application/usecases/get_user_best_plays/GetUserBestPlaysResponse';
-import {UserBestScoreInfo} from '../../src/main/data/http/boundary/UserBestScoreInfo';
+import {OsuUserBestScoreInfo} from '../../src/main/data/http/boundary/OsuUserBestScoreInfo';
 import {ModAcronym} from '../../src/primitives/ModAcronym';
 
 describe('UserBestPlays', function () {
@@ -513,7 +513,7 @@ describe('UserBestPlays', function () {
   });
 });
 
-function scoreInfoToBestPlay(bestScoreInfo: UserBestScoreInfo): BestPlay {
+function scoreInfoToBestPlay(bestScoreInfo: OsuUserBestScoreInfo): BestPlay {
   const s = bestScoreInfo;
   return {
     absolutePosition: 100,

@@ -1,9 +1,9 @@
 import {sum} from '../../../../primitives/Arrays';
 import {OsuRuleset} from '../../../../primitives/OsuRuleset';
-import {RecentScore} from '../../requirements/dao/OsuRecentScoresDao';
+import {OsuUserRecentScore} from '../../requirements/dao/OsuUserRecentScoresDao';
 
 export function getMapMaxCombo(
-  score: RecentScore,
+  score: OsuUserRecentScore,
   ruleset: OsuRuleset
 ): number {
   const mapMaxComboCalculators = [
@@ -29,7 +29,7 @@ export function getMapMaxCombo(
 type MapMaxComboCalculator = {
   ruleset: OsuRuleset;
   isLegacy: boolean;
-  calculate(score: RecentScore): number;
+  calculate(score: OsuUserRecentScore): number;
 };
 
 function getSum(...arr: (number | undefined)[]): number {
@@ -39,7 +39,7 @@ function getSum(...arr: (number | undefined)[]): number {
 const MapMaxComboCalculatorOsu: MapMaxComboCalculator = {
   ruleset: OsuRuleset.osu,
   isLegacy: false,
-  calculate(score: RecentScore): number {
+  calculate(score: OsuUserRecentScore): number {
     const sMax = score.maximumStatistics;
     return getSum(sMax.great, sMax.sliderTailHit);
   },
@@ -48,7 +48,7 @@ const MapMaxComboCalculatorOsu: MapMaxComboCalculator = {
 const MapMaxComboCalculatorOsuLegacy: MapMaxComboCalculator = {
   ruleset: OsuRuleset.osu,
   isLegacy: true,
-  calculate(score: RecentScore): number {
+  calculate(score: OsuUserRecentScore): number {
     const sMax = score.maximumStatistics;
     return getSum(sMax.great, sMax.legacyComboIncrease);
   },
@@ -57,7 +57,7 @@ const MapMaxComboCalculatorOsuLegacy: MapMaxComboCalculator = {
 const MapMaxComboCalculatorTaiko: MapMaxComboCalculator = {
   ruleset: OsuRuleset.taiko,
   isLegacy: false,
-  calculate(score: RecentScore): number {
+  calculate(score: OsuUserRecentScore): number {
     const sMax = score.maximumStatistics;
     return sMax.great ?? 0;
   },
@@ -72,7 +72,7 @@ const MapMaxComboCalculatorTaikoLegacy: MapMaxComboCalculator = {
 const MapMaxComboCalculatorCtb: MapMaxComboCalculator = {
   ruleset: OsuRuleset.ctb,
   isLegacy: false,
-  calculate(score: RecentScore): number {
+  calculate(score: OsuUserRecentScore): number {
     const sMax = score.maximumStatistics;
     return getSum(sMax.great, sMax.largeTickHit);
   },
@@ -87,7 +87,7 @@ const MapMaxComboCalculatorCtbLegacy: MapMaxComboCalculator = {
 const MapMaxComboCalculatorMania: MapMaxComboCalculator = {
   ruleset: OsuRuleset.mania,
   isLegacy: false,
-  calculate(score: RecentScore): number {
+  calculate(score: OsuUserRecentScore): number {
     const sMax = score.maximumStatistics;
     return sMax.perfect ?? 0;
   },
@@ -96,7 +96,7 @@ const MapMaxComboCalculatorMania: MapMaxComboCalculator = {
 const MapMaxComboCalculatorManiaLegacy: MapMaxComboCalculator = {
   ruleset: OsuRuleset.mania,
   isLegacy: true,
-  calculate(score: RecentScore): number {
+  calculate(score: OsuUserRecentScore): number {
     const map = score.beatmap;
     return map.countCircles + 2 * map.countSliders;
   },

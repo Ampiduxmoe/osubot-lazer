@@ -8,10 +8,10 @@ import {HalfTime} from '../../../../domain/entities/mods/osu/HalfTime';
 import {HardRock} from '../../../../domain/entities/mods/osu/HardRock';
 import {Nightcore} from '../../../../domain/entities/mods/osu/Nighcore';
 import {TargetPractice} from '../../../../domain/entities/mods/osu/TargetPractice';
-import {RecentScore} from '../../../requirements/dao/OsuRecentScoresDao';
+import {OsuUserRecentScore} from '../../../requirements/dao/OsuUserRecentScoresDao';
 
 export function getModsOsu(
-  score: RecentScore
+  score: OsuUserRecentScore
 ): (Mod<ModeOsu, object> | UnremarkableMod)[] {
   return score.mods.map(m => {
     if (m.acronym.is('DA')) {

@@ -2,7 +2,7 @@ import {ModAcronym} from '../../../../primitives/ModAcronym';
 import {OsuRuleset} from '../../../../primitives/OsuRuleset';
 import {OsuServer} from '../../../../primitives/OsuServer';
 
-export type GetRecentPlaysRequest = {
+export type GetUserRecentPlaysRequest = {
   appUserId: string;
   server: OsuServer;
   username: string;

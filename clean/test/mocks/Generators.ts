@@ -1,6 +1,6 @@
 import {OsuUserInfo} from '../../src/main/data/http/boundary/OsuUserInfo';
-import {RecentScoreInfo} from '../../src/main/data/http/boundary/RecentScoreInfo';
-import {UserBestScoreInfo} from '../../src/main/data/http/boundary/UserBestScoreInfo';
+import {OsuUserRecentScoreInfo} from '../../src/main/data/http/boundary/OsuUserRecentScoreInfo';
+import {OsuUserBestScoreInfo} from '../../src/main/data/http/boundary/OsuUserBestScoreInfo';
 import {minBy} from '../../src/primitives/Arrays';
 import {ModAcronym} from '../../src/primitives/ModAcronym';
 import {OsuRuleset} from '../../src/primitives/OsuRuleset';
@@ -104,7 +104,7 @@ export function getFakeOsuUserInfo(
 export function getFakeRecentScoreInfos(
   osuId: number,
   ruleset: OsuRuleset | undefined
-): RecentScoreInfo[] {
+): OsuUserRecentScoreInfo[] {
   const user = getFakeOsuUserInfo(osuId, ruleset);
   if (user === undefined) {
     return [];
@@ -196,7 +196,7 @@ export function getFakeRecentScoreInfos(
 export function getFakeUserBestScoreInfos(
   osuId: number,
   ruleset: OsuRuleset | undefined
-): UserBestScoreInfo[] {
+): OsuUserBestScoreInfo[] {
   const user = getFakeOsuUserInfo(osuId, ruleset);
   if (user === undefined) {
     return [];

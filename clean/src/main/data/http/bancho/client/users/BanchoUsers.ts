@@ -1,9 +1,9 @@
 import {AxiosInstance} from 'axios';
 import {OsuRuleset} from '../../../../../../primitives/OsuRuleset';
-import {UserExtended} from './UserExtended';
+import {RawBanchoUserExtended} from './RawBanchoUserExtended';
 import {Playmode} from '../common_types/Playmode';
-import {RecentScore} from './RecentScore';
-import {BestScore} from './BestScore';
+import {RawBanchoUserRecentScore} from './RawBanchoUserRecentScore';
+import {RawBanchoUserBestScore} from './RawBanchoUserBestScore';
 
 export class BanchoUsers {
   private url = '/users';
@@ -15,7 +15,7 @@ export class BanchoUsers {
   async getByUsername(
     username: string,
     ruleset: OsuRuleset | undefined
-  ): Promise<UserExtended | undefined> {
+  ): Promise<RawBanchoUserExtended | undefined> {
     const rulesetName = ruleset === undefined ? 'default' : OsuRuleset[ruleset];
     console.log(`Trying to fetch Bancho user ${username} (${rulesetName})`);
     const httpClient = await this.getHttpClient();
@@ -30,7 +30,7 @@ export class BanchoUsers {
       console.log(`Bancho user with username ${username} was not found`);
       return undefined;
     }
-    const rawUser: UserExtended = response.data;
+    const rawUser: RawBanchoUserExtended = response.data;
     console.log(
       `Successfully fetched Bancho user ${username} (${rulesetName})`
     );
@@ -43,7 +43,7 @@ export class BanchoUsers {
     quantity: number,
     startPosition: number,
     ruleset: OsuRuleset | undefined
-  ): Promise<RecentScore[]> {
+  ): Promise<RawBanchoUserRecentScore[]> {
     const type: UserScoresType = 'recent';
     const rulesetName = ruleset === undefined ? 'default' : OsuRuleset[ruleset];
     console.log(
@@ -74,7 +74,7 @@ export class BanchoUsers {
       },
       params: params,
     });
-    const scores: RecentScore[] = response.data;
+    const scores: RawBanchoUserRecentScore[] = response.data;
     console.log(
       `Successfully fetched Bancho '${type}' scores for ${userId} (${rulesetName})`
     );
@@ -86,7 +86,7 @@ export class BanchoUsers {
     quantity: number,
     startPosition: number,
     ruleset: OsuRuleset | undefined
-  ): Promise<BestScore[]> {
+  ): Promise<RawBanchoUserBestScore[]> {
     const type: UserScoresType = 'best';
     const rulesetName = ruleset === undefined ? 'default' : OsuRuleset[ruleset];
     console.log(
@@ -115,7 +115,7 @@ export class BanchoUsers {
       },
       params: params,
     });
-    const scores: BestScore[] = response.data;
+    const scores: RawBanchoUserBestScore[] = response.data;
     console.log(
       `Successfully fetched Bancho '${type}' scores for ${userId} (${rulesetName})`
     );
