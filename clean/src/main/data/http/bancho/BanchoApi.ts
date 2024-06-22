@@ -72,7 +72,7 @@ export class BanchoApi implements OsuApi {
     quantity: number,
     startPosition: number,
     ruleset: OsuRuleset | undefined
-  ): Promise<RecentScoreInfo[]> {
+  ): Promise<UserBestScoreInfo[]> {
     const scores = await this.client.users.getBestScores(
       osuUserId,
       quantity,
