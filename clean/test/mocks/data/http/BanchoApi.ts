@@ -1,4 +1,4 @@
-import {OsuApi} from '../../../../src/main/data/http/OsuAPI';
+import {OsuApi} from '../../../../src/main/data/http/OsuApi';
 import {OsuUserInfo} from '../../../../src/main/data/http/boundary/OsuUserInfo';
 import {OsuUserRecentScoreInfo} from '../../../../src/main/data/http/boundary/OsuUserRecentScoreInfo';
 import {OsuUserBestScoreInfo} from '../../../../src/main/data/http/boundary/OsuUserBestScoreInfo';
@@ -10,6 +10,7 @@ import {
   getFakeRecentScoreInfos,
   getFakeUserBestScoreInfos,
 } from '../../Generators';
+import {OsuBeatmapInfo} from '../../../../src/main/data/http/boundary/OsuBeatmapInfo';
 
 export class FakeBanchoApi implements OsuApi {
   server = OsuServer.Bancho;
@@ -49,5 +50,8 @@ export class FakeBanchoApi implements OsuApi {
       startPosition - 1,
       startPosition - 1 + quantity
     );
+  }
+  getBeatmap(beatmapId: number): Promise<OsuBeatmapInfo | undefined> {
+    throw new Error('Method not implemented.');
   }
 }

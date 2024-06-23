@@ -4,7 +4,7 @@ import {
   OsuUserRecentScoresDao,
   OsuUserRecentScore,
 } from '../../application/requirements/dao/OsuUserRecentScoresDao';
-import {OsuApi} from '../http/OsuAPI';
+import {OsuApi} from '../http/OsuApi';
 import {AppUserRecentApiRequestsDao} from '../../application/requirements/dao/AppUserRecentApiRequestsDao';
 import {COMMON_REQUEST_SUBTARGETS} from './AppUserApiRequestsSummariesDaoImpl';
 import {OsuUserSnapshotsRepository} from '../repository/repositories/OsuUserSnapshotsRepository';

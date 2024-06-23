@@ -1,4 +1,4 @@
-import {OsuApi} from '../OsuAPI';
+import {OsuApi} from '../OsuApi';
 import {OsuServer} from '../../../../primitives/OsuServer';
 import {BanchoClient} from './client/BanchoClient';
 import {OsuRuleset} from '../../../../primitives/OsuRuleset';
@@ -9,6 +9,8 @@ import {RawBanchoUserRecentScore} from './client/users/RawBanchoUserRecentScore'
 import {RawBanchoUserBestScore} from './client/users/RawBanchoUserBestScore';
 import {OsuUserBestScoreInfo} from '../boundary/OsuUserBestScoreInfo';
 import {ModAcronym} from '../../../../primitives/ModAcronym';
+import {OsuBeatmapInfo} from '../boundary/OsuBeatmapInfo';
+import {RawBanchoBeatmapExtended} from './client/users/RawBanchoBeatmapExtended';
 
 export class BanchoApi implements OsuApi {
   private client: BanchoClient;
@@ -82,6 +84,14 @@ export class BanchoApi implements OsuApi {
     return scores.map(s => {
       return userBestScoreInternalToExternal(s);
     });
+  }
+
+  async getBeatmap(beatmapId: number): Promise<OsuBeatmapInfo | undefined> {
+    const beatmap = await this.client.beatmaps.getById(beatmapId);
+    if (beatmap === undefined) {
+      return undefined;
+    }
+    return beatmapInternalToExternal(beatmap);
   }
 }
 
@@ -272,5 +282,75 @@ function userBestScoreInternalToExternal(
       id: score.user.id,
       username: score.user.username,
     },
+  };
+}
+
+function beatmapInternalToExternal(
+  beatmap: RawBanchoBeatmapExtended
+): OsuBeatmapInfo {
+  return {
+    beatmapsetId: beatmap.beatmapset_id,
+    difficultyRating: beatmap.difficulty_rating,
+    id: beatmap.id,
+    mode: playmodeToRuleset(beatmap.mode),
+    totalLength: beatmap.total_length,
+    userId: beatmap.user_id,
+    version: beatmap.version,
+    ar: beatmap.ar,
+    cs: beatmap.cs,
+    od: beatmap.accuracy,
+    hp: beatmap.drain,
+    bpm: beatmap.bpm,
+    convert: beatmap.convert,
+    countCircles: beatmap.count_circles,
+    countSliders: beatmap.count_sliders,
+    countSpinners: beatmap.count_spinners,
+    deletedAt:
+      beatmap.deleted_at === null
+        ? null
+        : Date.parse(beatmap.deleted_at as string),
+    hitLength: beatmap.hit_length,
+    lastUpdated: Date.parse(beatmap.last_updated as string),
+    passcount: beatmap.passcount,
+    playcount: beatmap.playcount,
+    url: beatmap.url,
+    beatmapset: {
+      artist: beatmap.beatmapset.artist,
+      coverUrl: beatmap.beatmapset.covers.cover,
+      creator: beatmap.beatmapset.creator,
+      favouriteCount: beatmap.beatmapset.favourite_count,
+      hype: beatmap.beatmapset.hype,
+      id: beatmap.beatmapset.id,
+      nsfw: beatmap.beatmapset.nsfw,
+      offset: beatmap.beatmapset.offset,
+      playCount: beatmap.beatmapset.play_count,
+      previewUrl: beatmap.beatmapset.preview_url,
+      source: beatmap.beatmapset.source,
+      spotlight: beatmap.beatmapset.spotlight,
+      status: beatmap.beatmapset.status,
+      title: beatmap.beatmapset.title,
+      userId: beatmap.beatmapset.user_id,
+      video: beatmap.beatmapset.video,
+      bpm: beatmap.beatmapset.bpm,
+      deletedAt:
+        beatmap.beatmapset.deleted_at === null
+          ? null
+          : Date.parse(beatmap.beatmapset.deleted_at as string),
+      lastUpdated: Date.parse(beatmap.beatmapset.last_updated as string),
+      rankedDate: Date.parse(beatmap.beatmapset.ranked_date as string),
+      storyboard: beatmap.beatmapset.storyboard,
+      submittedDate: Date.parse(beatmap.beatmapset.submitted_date as string),
+      tags: beatmap.beatmapset.tags,
+      availability: {
+        downloadDisabled: beatmap.beatmapset.availability.download_disabled,
+        moreInformation: beatmap.beatmapset.availability.more_information,
+      },
+      ratings: beatmap.beatmapset.ratings,
+    },
+    failtimes: {
+      fail: beatmap.failtimes.fail,
+      exit: beatmap.failtimes.exit,
+    },
+    maxCombo: beatmap.max_combo,
   };
 }

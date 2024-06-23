@@ -1,6 +1,6 @@
 import {OsuServer} from '../../../primitives/OsuServer';
 import {OsuRuleset} from '../../../primitives/OsuRuleset';
-import {OsuApi} from '../http/OsuAPI';
+import {OsuApi} from '../http/OsuApi';
 import {AppUserRecentApiRequestsDao} from '../../application/requirements/dao/AppUserRecentApiRequestsDao';
 import {
   OsuUserBestScoresDao,

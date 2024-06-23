@@ -2,6 +2,7 @@ import axios from 'axios';
 import {OsuOauthAccessToken} from '../OsuOauthAccessToken';
 import {Timespan} from '../../../../../primitives/Timespan';
 import {BanchoUsers} from './users/BanchoUsers';
+import {BanchoBeatmaps} from './users/BanchoBeatmaps';
 
 export class BanchoClient {
   private ouathClientId: number;
@@ -27,10 +28,12 @@ export class BanchoClient {
   private ouathToken: OsuOauthAccessToken | undefined = undefined;
   private tokenSafetyMargin = new Timespan().addHours(1);
 
-  users = new BanchoUsers(async () => {
+  private getHttpClient = async () => {
     await this.refreshTokenIfNeeded();
     return this.httpClient;
-  });
+  };
+  users = new BanchoUsers(this.getHttpClient);
+  beatmaps = new BanchoBeatmaps(this.getHttpClient);
 
   constructor(config: BanchoClientConfig) {
     this.ouathClientId = config.ouathClientId;

@@ -33,6 +33,9 @@ import {OsuUserBestScoresDaoImpl} from './data/dao/OsuUserBestScoresDaoImpl';
 import {BanchoClient} from './data/http/bancho/client/BanchoClient';
 import {JsonObjectsTable} from './data/persistence/db/tables/JsonObjectsTable';
 import {OsuOauthAccessToken} from './data/http/bancho/OsuOauthAccessToken';
+import {BeatmapInfo} from './presentation/vk/commands/BeatmapInfo';
+import {GetBeatmapInfoUseCase} from './application/usecases/get_beatmap_info/GetBeatmapInfoUseCase';
+import {OsuBeatmapsDaoImpl} from './data/dao/OsuBeatmapsDaoImpl';
 
 export const APP_CODE_NAME = 'osubot-lazer';
 
@@ -125,6 +128,10 @@ export class App {
       osuUserSnapshots,
       recentApiRequestsDao
     );
+    const osuBeatmapsDao = new OsuBeatmapsDaoImpl(
+      osuApiList,
+      recentApiRequestsDao
+    );
     const scoreSimulationsDao = new ScoreSimulationsDaoImpl(scoreSimulationApi);
     const cachedOsuUsersDao = new CachedOsuUsersDaoImpl(osuUserSnapshots);
 
@@ -146,6 +153,7 @@ export class App {
     const getApiUsageSummaryUseCase = new GetApiUsageSummaryUseCase(
       requestSummariesDao
     );
+    const getBeatmapInfoUseCase = new GetBeatmapInfoUseCase(osuBeatmapsDao);
 
     this.vkClient = this.createVkClient({
       group: this.currentVkGroup,
@@ -155,6 +163,7 @@ export class App {
       getRecentPlaysUseCase: getRecentPlaysUseCase,
       getUserBestPlaysUseCase: getUserBestPlaysUseCase,
       getApiUsageSummaryUseCase: getApiUsageSummaryUseCase,
+      getBeatmapInfoUseCase: getBeatmapInfoUseCase,
     });
 
     this.startHandlers.push(async () => {
@@ -186,6 +195,7 @@ export class App {
     const {getRecentPlaysUseCase} = params;
     const {getUserBestPlaysUseCase} = params;
     const {getApiUsageSummaryUseCase} = params;
+    const {getBeatmapInfoUseCase} = params;
     const vk = new VK({
       pollingGroupId: group.id,
       token: group.token,
@@ -196,6 +206,7 @@ export class App {
       new SetUsername(setUsernameUseCase),
       new UserRecentPlays(getRecentPlaysUseCase, getAppUserInfoUseCase),
       new UserBestPlays(getUserBestPlaysUseCase, getAppUserInfoUseCase),
+      new BeatmapInfo(getBeatmapInfoUseCase),
     ];
     const adminCommands = [
       new ApiUsageSummary([group.owner], getApiUsageSummaryUseCase),
@@ -249,4 +260,5 @@ type VkClientCreationParams = {
   getRecentPlaysUseCase: GetUserRecentPlaysUseCase;
   getUserBestPlaysUseCase: GetUserBestPlaysUseCase;
   getApiUsageSummaryUseCase: GetApiUsageSummaryUseCase;
+  getBeatmapInfoUseCase: GetBeatmapInfoUseCase;
 };

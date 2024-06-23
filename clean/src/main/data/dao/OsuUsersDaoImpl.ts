@@ -3,7 +3,7 @@ import {
   OsuUser,
   OsuUsersDao,
 } from '../../application/requirements/dao/OsuUsersDao';
-import {OsuApi} from '../http/OsuAPI';
+import {OsuApi} from '../http/OsuApi';
 import {
   OsuUserSnapshot,
   OsuUserSnapshotKey,
