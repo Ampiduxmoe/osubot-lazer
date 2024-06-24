@@ -51,7 +51,7 @@ export function getFakeOsuUserUsername(osuId: number): string | undefined {
   return `FakeUsername${osuId}`;
 }
 
-export function getFakeOsuUserId(username: string) {
+export function getFakeOsuUserId(username: string): number | undefined {
   const id = parseInt(username.toLowerCase().replace('fakeusername', ''));
   if (isNaN(id)) {
     return undefined;
