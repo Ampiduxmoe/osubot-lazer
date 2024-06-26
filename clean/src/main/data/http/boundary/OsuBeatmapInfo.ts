@@ -32,7 +32,7 @@ export type OsuBeatmapInfo = {
     id: number;
     nsfw: boolean;
     offset: number;
-    playCount: number;
+    playcount: number;
     previewUrl: string;
     source: string;
     spotlight: boolean;

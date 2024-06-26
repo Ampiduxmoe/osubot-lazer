@@ -60,7 +60,7 @@ export class OsuBeatmapsDaoImpl implements OsuBeatmapsDao {
         creator: beatmap.beatmapset.creator,
         favouriteCount: beatmap.beatmapset.favouriteCount,
         id: beatmap.beatmapset.id,
-        playCount: beatmap.beatmapset.playCount,
+        playcount: beatmap.beatmapset.playcount,
         previewUrl: beatmap.beatmapset.previewUrl,
         status: capitalizeBeatmapsetStatus(beatmap),
         title: beatmap.beatmapset.title,

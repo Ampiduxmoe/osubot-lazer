@@ -17,6 +17,7 @@ import {OsuRuleset} from '../../../../primitives/OsuRuleset';
 import {NUMBER} from '../../common/arg_processing/CommandArguments';
 import {MapInfo} from '../../../application/usecases/get_beatmap_info/GetBeatmapInfoResponse';
 import {Timespan} from '../../../../primitives/Timespan';
+import {integerShortForm} from '../../../../primitives/Numbers';
 
 export class BeatmapInfo extends VkCommand<
   BeatmapInfoExecutionArgs,
@@ -139,17 +140,17 @@ export class BeatmapInfo extends VkCommand<
     const {bpm} = mapInfo;
     const sr = mapInfo.starRating;
     const {ar, cs, od, hp} = mapInfo;
-    const {playcount} = mapInfo;
-    const favcount = mapInfo.beatmapset.favouriteCount;
+    const mapPlaycount = integerShortForm(mapInfo.playcount);
+    const totalPlaycount = integerShortForm(mapInfo.beatmapset.playcount);
+    const totalFavcount = integerShortForm(mapInfo.beatmapset.favouriteCount);
     const mapUrlShort = mapInfo.url.replace('beatmaps', 'b');
     const text = `
-[Server: ${serverString}]
-Mode: ${modeString}
+[Server: ${serverString}, Mode: ${modeString}]
 ${artist} - ${title} [${diffname}] by ${mapperName} (${mapStatus})
+▷ ${totalPlaycount} [${mapPlaycount}]　♡ ${totalFavcount}
 
 ${lengthString} (${drainString})　${bpm} BPM　${sr}★
 AR: ${ar}　CS: ${cs}　OD: ${od}　HP: ${hp}
-▷ ${playcount}　♡ ${favcount}
 
 URL: ${mapUrlShort}
     `.trim();

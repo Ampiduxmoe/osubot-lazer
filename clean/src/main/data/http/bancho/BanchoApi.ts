@@ -323,7 +323,7 @@ function beatmapInternalToExternal(
       id: beatmap.beatmapset.id,
       nsfw: beatmap.beatmapset.nsfw,
       offset: beatmap.beatmapset.offset,
-      playCount: beatmap.beatmapset.play_count,
+      playcount: beatmap.beatmapset.play_count,
       previewUrl: beatmap.beatmapset.preview_url,
       source: beatmap.beatmapset.source,
       spotlight: beatmap.beatmapset.spotlight,

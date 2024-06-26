@@ -34,7 +34,7 @@ export type OsuBeatmap = {
     creator: string;
     favouriteCount: number;
     id: number;
-    playCount: number;
+    playcount: number;
     previewUrl: string;
     status:
       | 'Graveyard'

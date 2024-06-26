@@ -27,7 +27,7 @@ export type MapInfo = {
     bpm: number;
     creator: string;
     status: BeatmapsetRankStatus;
-    playCount: number;
+    playcount: number;
     favouriteCount: number;
     coverUrl: string;
     previewUrl: string;

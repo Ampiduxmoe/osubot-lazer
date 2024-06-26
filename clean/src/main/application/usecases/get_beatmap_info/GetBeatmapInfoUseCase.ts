@@ -48,7 +48,7 @@ export class GetBeatmapInfoUseCase
           bpm: map.beatmapset.bpm,
           creator: map.beatmapset.creator,
           status: map.beatmapset.status,
-          playCount: map.beatmapset.playCount,
+          playcount: map.beatmapset.playcount,
           favouriteCount: map.beatmapset.favouriteCount,
           coverUrl: map.beatmapset.coverUrl,
           previewUrl: map.beatmapset.previewUrl,
