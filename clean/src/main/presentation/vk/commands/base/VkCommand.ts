@@ -10,6 +10,7 @@ export abstract class VkCommand<TExecutionArgs, TViewParams> {
   abstract readonly longDescription: string;
   abstract readonly prefixes: CommandPrefixes;
   readonly commandStructure: Readonly<CommandStructureElement>[];
+  readonly argGroups: Readonly<Record<string, readonly number[]>> = {};
 
   constructor(commandStructure: Readonly<CommandStructureElement>[]) {
     this.commandStructure = commandStructure;
