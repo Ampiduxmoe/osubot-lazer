@@ -37,6 +37,14 @@ export interface ScoreSimulationsDao {
 }
 
 export type SimulatedScoreOsu = {
+  score: {
+    statistics: {
+      great: number;
+      ok: number;
+      meh: number;
+      miss: number;
+    };
+  };
   performanceAttributes: {
     pp: number;
   };

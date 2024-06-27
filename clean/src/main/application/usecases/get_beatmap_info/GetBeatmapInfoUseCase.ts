@@ -2,57 +2,80 @@ import {UseCase} from '../UseCase';
 import {GetBeatmapInfoRequest} from './GetBeatmapInfoRequest';
 import {GetBeatmapInfoResponse} from './GetBeatmapInfoResponse';
 import {OsuBeatmapsDao} from '../../requirements/dao/OsuBeatmapsDao';
+import {BeatmapInfoAdapter} from '../../adapters/beatmap_info/BeatmapInfoAdapter';
+import {ScoreSimulationsDao} from '../../requirements/dao/ScoreSimulationsDao';
 
 export class GetBeatmapInfoUseCase
   implements UseCase<GetBeatmapInfoRequest, GetBeatmapInfoResponse>
 {
   beatmaps: OsuBeatmapsDao;
-  constructor(osuUsers: OsuBeatmapsDao) {
+  beatmapInfoAdapter: BeatmapInfoAdapter;
+  constructor(osuUsers: OsuBeatmapsDao, scoreSimulations: ScoreSimulationsDao) {
     this.beatmaps = osuUsers;
+    this.beatmapInfoAdapter = new BeatmapInfoAdapter(scoreSimulations);
   }
 
   async execute(
     params: GetBeatmapInfoRequest
   ): Promise<GetBeatmapInfoResponse> {
-    const map = await this.beatmaps.get(
+    const rawMap = await this.beatmaps.get(
       params.appUserId,
       params.beatmapId,
       params.server
     );
-    if (map === undefined) {
+    if (rawMap === undefined) {
       return {
         beatmapInfo: undefined,
       };
     }
+    const beatmapScore = this.beatmapInfoAdapter.createBeatmapScore({
+      map: rawMap,
+      ruleset: rawMap.mode,
+      useAccuracyForPp: true,
+    });
     return {
       beatmapInfo: {
-        id: map.id,
-        beatmapsetId: map.beatmapsetId,
-        mode: map.mode,
-        starRating: map.difficultyRating,
-        totalLength: map.totalLength,
-        hitLength: map.hitLength,
-        maxCombo: map.maxCombo,
-        version: map.version,
-        ar: map.ar,
-        cs: map.cs,
-        od: map.od,
-        hp: map.hp,
-        bpm: map.bpm,
-        playcount: map.playcount,
-        url: map.url,
+        id: rawMap.id,
+        beatmapsetId: rawMap.beatmapsetId,
+        mode: rawMap.mode,
+        starRating: rawMap.difficultyRating,
+        totalLength: rawMap.totalLength,
+        hitLength: rawMap.hitLength,
+        maxCombo: rawMap.maxCombo,
+        version: rawMap.version,
+        ar: rawMap.ar,
+        cs: rawMap.cs,
+        od: rawMap.od,
+        hp: rawMap.hp,
+        bpm: rawMap.bpm,
+        playcount: rawMap.playcount,
+        url: rawMap.url,
         beatmapset: {
-          id: map.beatmapset.id,
-          artist: map.beatmapset.artist,
-          title: map.beatmapset.title,
-          bpm: map.beatmapset.bpm,
-          creator: map.beatmapset.creator,
-          status: map.beatmapset.status,
-          playcount: map.beatmapset.playcount,
-          favouriteCount: map.beatmapset.favouriteCount,
-          coverUrl: map.beatmapset.coverUrl,
-          previewUrl: map.beatmapset.previewUrl,
+          id: rawMap.beatmapset.id,
+          artist: rawMap.beatmapset.artist,
+          title: rawMap.beatmapset.title,
+          bpm: rawMap.beatmapset.bpm,
+          creator: rawMap.beatmapset.creator,
+          status: rawMap.beatmapset.status,
+          playcount: rawMap.beatmapset.playcount,
+          favouriteCount: rawMap.beatmapset.favouriteCount,
+          coverUrl: rawMap.beatmapset.coverUrl,
+          previewUrl: rawMap.beatmapset.previewUrl,
         },
+        ppEstimations: [
+          {
+            accuracy: 100,
+            ppValue: await beatmapScore.copy({accuracy: 100}).getEstimatedPp(),
+          },
+          {
+            accuracy: 99,
+            ppValue: await beatmapScore.copy({accuracy: 99}).getEstimatedPp(),
+          },
+          {
+            accuracy: 98,
+            ppValue: await beatmapScore.copy({accuracy: 98}).getEstimatedPp(),
+          },
+        ],
       },
     };
   }

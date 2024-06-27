@@ -153,7 +153,10 @@ export class App {
     const getApiUsageSummaryUseCase = new GetApiUsageSummaryUseCase(
       requestSummariesDao
     );
-    const getBeatmapInfoUseCase = new GetBeatmapInfoUseCase(osuBeatmapsDao);
+    const getBeatmapInfoUseCase = new GetBeatmapInfoUseCase(
+      osuBeatmapsDao,
+      scoreSimulationsDao
+    );
 
     this.vkClient = this.createVkClient({
       group: this.currentVkGroup,

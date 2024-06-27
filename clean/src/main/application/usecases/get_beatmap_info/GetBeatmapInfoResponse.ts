@@ -32,6 +32,10 @@ export type MapInfo = {
     coverUrl: string;
     previewUrl: string;
   };
+  ppEstimations: {
+    accuracy: number;
+    ppValue: number | undefined;
+  }[];
 };
 
 export type BeatmapsetRankStatus =

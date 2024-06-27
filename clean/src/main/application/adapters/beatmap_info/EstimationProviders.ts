@@ -9,10 +9,15 @@ import {ScoreSimEstimationProviderMania} from '../../score_sim_estimation_provid
 import {ScoreSimEstimationProviderOsu} from '../../score_sim_estimation_provider/ScoreSimEstimationProviderOsu';
 import {ScoreSimEstimationProviderTaiko} from '../../score_sim_estimation_provider/ScoreSimEstimationProviderTaiko';
 
-export function getEstimationProviders(
-  ruleset: OsuRuleset,
-  scoreSimulations: ScoreSimulationsDao
-): [
+export function getEstimationProviders({
+  ruleset,
+  scoreSimulations,
+  useAccuracy,
+}: {
+  ruleset: OsuRuleset;
+  scoreSimulations: ScoreSimulationsDao;
+  useAccuracy: boolean;
+}): [
   StarRatingEstimationProvider<Mode, Hitcounts>,
   PpEstimationProvider<Mode, Hitcounts>,
 ] {
@@ -20,7 +25,7 @@ export function getEstimationProviders(
     case OsuRuleset.osu: {
       const scoreSimProvider = new ScoreSimEstimationProviderOsu({
         scoreSimulations: scoreSimulations,
-        useAccuracy: false,
+        useAccuracy: useAccuracy,
       });
       return [
         scoreSimProvider.starRatingEstimationProvider,

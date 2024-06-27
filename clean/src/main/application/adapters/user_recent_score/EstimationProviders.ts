@@ -18,9 +18,10 @@ export function getEstimationProviders(
 ] {
   switch (ruleset) {
     case OsuRuleset.osu: {
-      const scoreSimProvider = new ScoreSimEstimationProviderOsu(
-        scoreSimulations
-      );
+      const scoreSimProvider = new ScoreSimEstimationProviderOsu({
+        scoreSimulations: scoreSimulations,
+        useAccuracy: false,
+      });
       return [
         scoreSimProvider.starRatingEstimationProvider,
         scoreSimProvider.ppEstimationProvider,
