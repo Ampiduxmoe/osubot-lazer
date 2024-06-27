@@ -243,6 +243,8 @@ async function getRecentPlayWithoutFcAndSsEstimations(
   const estimatedStarRating = score.hasStarRatingChangingMods
     ? await score.getEstimatedStarRating()
     : score.baseBeatmap.starRating;
+  const estimatedPpValue =
+    score.pp === null ? await score.getEstimatedPp() : score.pp;
   return {
     absolutePosition: absolutePosition,
     beatmapset: {
@@ -280,7 +282,7 @@ async function getRecentPlayWithoutFcAndSsEstimations(
     accuracy: score.accuracy,
     pp: {
       value: score.pp ?? undefined,
-      estimatedValue: estimatedStarRating,
+      estimatedValue: estimatedPpValue,
       ifFc: undefined,
       ifSs: undefined,
     },
