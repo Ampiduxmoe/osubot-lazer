@@ -332,22 +332,24 @@ ${couldNotGetSomeStatsMessage}
     const max_combo = play.beatmap.maxCombo;
     const comboString = `${combo}x/${max_combo}x`;
     const acc = (play.accuracy * 100).toFixed(2);
-    const ppValue = play.pp.value;
-    const ppValueEstimation = play.pp.estimatedValue;
-    const pp = (ppValue ?? ppValueEstimation)?.toFixed(2) ?? '—';
+    const ppValue = play.pp.value?.toFixed(2);
+    const ppValueEstimation = play.pp.estimatedValue?.toFixed(0);
+    const pp = ppValue ?? ppValueEstimation ?? '—';
     const ppEstimationMark =
       ppValue === undefined && ppValueEstimation !== undefined ? '~' : '';
-    const ppFc = play.pp.ifFc?.toFixed(2) ?? '—';
-    const ppSs = play.pp.ifSs?.toFixed(2) ?? '—';
+    const ppFc =
+      play.pp.ifFc === undefined ? '—' : `~${play.pp.ifFc.toFixed(0)}`;
+    const ppSs =
+      play.pp.ifSs === undefined ? '—' : `~${play.pp.ifSs.toFixed(0)}`;
     const ppForFcAndSsString = [play.pp.ifFc, play.pp.ifSs].includes(undefined)
       ? ''
-      : `　⯈ FC: ${ppFc}　⯈ SS: ${ppSs}`;
+      : `　FC: ${ppFc}　SS: ${ppSs}`;
     const hitcounts = play.orderedHitcounts;
     const hitcountsString = hitcounts.join('/');
     const {grade} = play;
     const mapProgress = play.mapProgress;
     const completionPercent = (mapProgress * 100).toFixed(2);
-    const mapCompletionString = play.passed ? '' : `(${completionPercent}%)`;
+    const mapCompletionString = play.passed ? '' : ` (${completionPercent}%)`;
     const mapUrlShort = map.url.replace('beatmaps', 'b');
     return `
 ${absPos}. ${artist} - ${title} [${diffname}] by ${mapperName} (${mapStatus})
@@ -358,7 +360,7 @@ Score: ${totalScore}　Combo: ${comboString}
 Accuracy: ${acc}%
 PP: ${ppEstimationMark}${pp}${ppForFcAndSsString}
 Hitcounts: ${hitcountsString}
-Grade: ${grade} ${mapCompletionString}
+Grade: ${grade}${mapCompletionString}
 
 Beatmap: ${mapUrlShort}
     `.trim();
@@ -404,15 +406,15 @@ Beatmap: ${mapUrlShort}
     const max_combo = play.beatmap.maxCombo;
     const comboString = `${combo}x/${max_combo}x`;
     const acc = (play.accuracy * 100).toFixed(2);
-    const ppValue = play.pp.value;
-    const ppValueEstimation = play.pp.estimatedValue;
-    const pp = (ppValue ?? ppValueEstimation)?.toFixed(2) ?? '—';
+    const ppValue = play.pp.value?.toFixed(2);
+    const ppValueEstimation = play.pp.estimatedValue?.toFixed(0);
+    const pp = ppValue ?? ppValueEstimation ?? '—';
     const ppEstimationMark =
       ppValue === undefined && ppValueEstimation !== undefined ? '~' : '';
     const {grade} = play;
     const mapProgress = play.mapProgress;
     const completionPercent = (mapProgress * 100).toFixed(2);
-    const mapCompletionString = play.passed ? '' : `(${completionPercent}%)`;
+    const mapCompletionString = play.passed ? '' : ` (${completionPercent}%)`;
     const mapUrlShort = map.url.replace('beatmaps', 'b');
     return `
 ${absPos}. ${title} [${diffname}] ${modsPlusSign}${modsString}
