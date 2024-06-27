@@ -51,7 +51,13 @@ const MapProgressCalculatorOsu: MapProgressCalculator = {
 const MapProgressCalculatorOsuLegacy: MapProgressCalculator = {
   ruleset: OsuRuleset.osu,
   isLegacy: true,
-  calculate: MapProgressCalculatorOsu.calculate,
+  calculate(score: OsuUserRecentScore): number {
+    const s = score.statistics;
+    const map = score.beatmap;
+    const totalHits = getSum(s.great, s.ok, s.meh, s.miss);
+    const maxHits = map.countCircles + map.countSliders + map.countSpinners;
+    return totalHits / maxHits;
+  },
 };
 
 const MapProgressCalculatorTaiko: MapProgressCalculator = {
