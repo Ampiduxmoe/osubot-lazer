@@ -65,15 +65,15 @@ export class GetBeatmapInfoUseCase
         ppEstimations: [
           {
             accuracy: 100,
-            ppValue: await beatmapScore.copy({accuracy: 100}).getEstimatedPp(),
+            ppValue: await beatmapScore.copy({accuracy: 1}).getEstimatedPp(),
           },
           {
             accuracy: 99,
-            ppValue: await beatmapScore.copy({accuracy: 99}).getEstimatedPp(),
+            ppValue: await beatmapScore.copy({accuracy: 0.99}).getEstimatedPp(),
           },
           {
             accuracy: 98,
-            ppValue: await beatmapScore.copy({accuracy: 98}).getEstimatedPp(),
+            ppValue: await beatmapScore.copy({accuracy: 0.98}).getEstimatedPp(),
           },
         ],
       },

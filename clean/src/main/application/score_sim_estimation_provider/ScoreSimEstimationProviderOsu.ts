@@ -161,7 +161,7 @@ async function getScoreSimPromise(
   // accuracy * 6 * totalHits = 6x + 2 * hitsAvailable - 2x + count50
   // 4x = 6 * totalHits * accuracy - 2 * hitsAvailable - count50
   const th = totalHits;
-  const acc = score.accuracy / 100;
+  const acc = score.accuracy;
   const ha = hitsAvailable;
   const c50 = count50;
   const x = Math.round((6 * th * acc - 2 * ha - c50) / 4);
