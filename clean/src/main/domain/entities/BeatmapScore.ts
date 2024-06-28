@@ -109,7 +109,7 @@ export class BeatmapScore<
     })();
     this.moddedBeatmap = (() => {
       let beatmap = this.baseBeatmap;
-      for (const acronym in beatmap.mode.modApplyOrder) {
+      for (const acronym of beatmap.mode.modApplyOrder) {
         const modToApply = this.mods.find(m => m.acronym.is(acronym));
         if (modToApply !== undefined) {
           beatmap = modToApply.apply(beatmap);
