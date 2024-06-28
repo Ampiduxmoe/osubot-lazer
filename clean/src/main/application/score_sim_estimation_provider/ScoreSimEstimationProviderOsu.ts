@@ -198,7 +198,7 @@ function getSimulationParams(
     }
   }
   const htLike: HalfTime | Daycore | undefined = mods.find(
-    m => m instanceof DoubleTime || m instanceof Nightcore
+    m => m instanceof HalfTime || m instanceof Daycore
   );
   if (htLike !== undefined) {
     const speedChange = htLike.settings.speedChange;
