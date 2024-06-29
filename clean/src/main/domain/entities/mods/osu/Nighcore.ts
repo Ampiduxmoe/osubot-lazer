@@ -29,6 +29,11 @@ export class Nightcore extends Mod<ModeOsu, NightcoreSettings> {
         od: newOd,
         hp: map.stats.hp,
       },
+      song: map.song.copy({
+        bpm: map.song.bpm * speedChange,
+        length: map.song.length / speedChange,
+      }),
+      length: map.length / speedChange,
     });
   }
 

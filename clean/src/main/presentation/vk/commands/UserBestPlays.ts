@@ -169,8 +169,6 @@ export class UserBestPlays extends VkCommand<
             usernameInput: args.username,
             bestPlays: undefined,
           };
-        default:
-          throw Error('Switch case is not exhaustive');
       }
     }
     return {
@@ -220,8 +218,9 @@ export class UserBestPlays extends VkCommand<
       })
       .join('\n\n');
     const couldNotGetSomeStatsMessage =
-      bestPlays.plays.find(play => play.estimatedStarRating === undefined) !==
-      undefined
+      bestPlays.plays.find(
+        play => play.beatmap.estimatedStarRating === undefined
+      ) !== undefined
         ? '\n(Не удалось получить часть статистики)'
         : '';
     const text = `
@@ -241,44 +240,33 @@ ${couldNotGetSomeStatsMessage}
   verboseScoreDescription(play: BestPlay): string {
     const map = play.beatmap;
     const mapset = play.beatmapset;
-
-    let speed = 1;
-    const dtMod = play.mods.find(m => m.acronym.is('DT'));
-    if (dtMod !== undefined) {
-      speed = 1.5;
-    }
-    const htMod = play.mods.find(m => m.acronym.is('HT'));
-    if (htMod !== undefined) {
-      speed = 0.75;
-    }
-
     const absPos = `\\${play.absolutePosition}`;
     const {artist, title} = mapset;
     const diffname = map.difficultyName;
     const mapperName = mapset.creator;
     const [lengthString, drainString] = (() => {
-      const totalLength = new Timespan().addSeconds(map.totalLength / speed);
+      const totalLength = new Timespan().addSeconds(map.totalLength);
       const z0 = totalLength.minutes <= 9 ? '0' : '';
       const z1 = totalLength.seconds <= 9 ? '0' : '';
-      const drainLength = new Timespan().addSeconds(map.drainLength / speed);
+      const drainLength = new Timespan().addSeconds(map.drainLength);
       const z2 = drainLength.minutes <= 9 ? '0' : '';
       const z3 = drainLength.seconds <= 9 ? '0' : '';
       const lengthString = `${z0}${totalLength.minutes}:${z1}${totalLength.seconds}`;
       const drainString = `${z2}${drainLength.minutes}:${z3}${drainLength.seconds}`;
       return [lengthString, drainString];
     })();
-    const bpm = round(map.bpm * speed, 2);
-    const sr = play.estimatedStarRating?.toFixed(2) ?? '—';
+    const bpm = round(map.bpm, 2);
+    const sr = play.beatmap.estimatedStarRating?.toFixed(2) ?? '—';
     const modAcronyms = play.mods.map(m => m.acronym);
     const modsString = modAcronyms.join('');
     let modsPlusSign = '';
     if (modAcronyms.length) {
       modsPlusSign = '+';
     }
-    const ar = round(play.ar, 2);
-    const cs = round(play.cs, 2);
-    const od = round(play.od, 2);
-    const hp = round(play.hp, 2);
+    const ar = round(play.beatmap.ar, 2);
+    const cs = round(play.beatmap.cs, 2);
+    const od = round(play.beatmap.od, 2);
+    const hp = round(play.beatmap.hp, 2);
     const {totalScore} = play;
     const combo = play.combo;
     const maxCombo = play.beatmap.maxCombo ?? '—';
@@ -309,38 +297,27 @@ Beatmap: ${mapUrlShort}
   defaultScoreDescription(play: BestPlay): string {
     const map = play.beatmap;
     const mapset = play.beatmapset;
-
-    let speed = 1;
-    const dtMod = play.mods.find(m => m.acronym.is('DT'));
-    if (dtMod !== undefined) {
-      speed = 1.5;
-    }
-    const htMod = play.mods.find(m => m.acronym.is('HT'));
-    if (htMod !== undefined) {
-      speed = 0.75;
-    }
-
     const absPos = `\\${play.absolutePosition}`;
     const {title} = mapset;
     const diffname = map.difficultyName;
     const lengthString = (() => {
-      const totalLength = new Timespan().addSeconds(map.totalLength / speed);
+      const totalLength = new Timespan().addSeconds(map.totalLength);
       const z0 = totalLength.minutes <= 9 ? '0' : '';
       const z1 = totalLength.seconds <= 9 ? '0' : '';
       return `${z0}${totalLength.minutes}:${z1}${totalLength.seconds}`;
     })();
-    const bpm = round(map.bpm * speed, 2);
-    const sr = play.estimatedStarRating?.toFixed(2) ?? '—';
+    const bpm = round(map.bpm, 2);
+    const sr = play.beatmap.estimatedStarRating?.toFixed(2) ?? '—';
     const modAcronyms = play.mods.map(m => m.acronym);
     const modsString = modAcronyms.join('');
     let modsPlusSign = '';
     if (modAcronyms.length) {
       modsPlusSign = '+';
     }
-    const ar = round(play.ar, 2);
-    const cs = round(play.cs, 2);
-    const od = round(play.od, 2);
-    const hp = round(play.hp, 2);
+    const ar = round(play.beatmap.ar, 2);
+    const cs = round(play.beatmap.cs, 2);
+    const od = round(play.beatmap.od, 2);
+    const hp = round(play.beatmap.hp, 2);
     const combo = play.combo;
     const maxCombo = play.beatmap.maxCombo ?? '—';
     const comboString = `${combo}x/${maxCombo}x`;
@@ -369,7 +346,7 @@ ${mapUrlShort}
     const absPos = `\\${play.absolutePosition}`;
     const {title} = mapset;
     const diffname = map.difficultyName;
-    const sr = play.estimatedStarRating?.toFixed(2) ?? '—';
+    const sr = play.beatmap.estimatedStarRating?.toFixed(2) ?? '—';
     const modAcronyms = play.mods.map(m => m.acronym);
     const modsString = modAcronyms.join('');
     let modsPlusSign = '';

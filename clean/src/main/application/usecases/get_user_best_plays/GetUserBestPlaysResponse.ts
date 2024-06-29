@@ -26,7 +26,7 @@ export type BestPlay = {
     totalLength: number;
     drainLength: number;
     bpm: number;
-    stars: number;
+    estimatedStarRating: number | undefined;
     ar: number;
     cs: number;
     od: number;
@@ -37,11 +37,6 @@ export type BestPlay = {
   mods: {
     acronym: ModAcronym;
   }[];
-  estimatedStarRating: number | undefined;
-  ar: number;
-  cs: number;
-  od: number;
-  hp: number;
   passed: boolean;
   totalScore: number;
   combo: number;

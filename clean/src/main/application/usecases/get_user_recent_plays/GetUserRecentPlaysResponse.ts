@@ -26,7 +26,7 @@ export type OsuUserRecentPlay = {
     totalLength: number;
     drainLength: number;
     bpm: number;
-    stars: number;
+    estimatedStarRating: number | undefined;
     ar: number;
     cs: number;
     od: number;
@@ -38,11 +38,6 @@ export type OsuUserRecentPlay = {
     acronym: ModAcronym;
     settings?: ModSettings | object;
   }[];
-  estimatedStarRating: number | undefined;
-  ar: number;
-  cs: number;
-  od: number;
-  hp: number;
   passed: boolean;
   mapProgress: number;
   totalScore: number;
