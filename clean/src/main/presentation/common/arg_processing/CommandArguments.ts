@@ -210,6 +210,114 @@ export const MODE: CommandArgument<OsuRuleset> = {
   },
 };
 
+export const SCORE_COMBO: CommandArgument<number> = {
+  displayName: '?x',
+  description: 'комбо',
+  get usageExample(): string {
+    return pickRandom([100, 250, 375, 500, 727]) + 'x';
+  },
+  match: function (token: string): boolean {
+    return /^\d+?x$/i.test(token);
+  },
+  parse: function (token: string): number {
+    return parseInt(token.replace('x', ''));
+  },
+};
+
+export const MISSCOUNT: CommandArgument<number> = {
+  displayName: '?xm',
+  description: 'количество миссов',
+  get usageExample(): string {
+    return pickRandom([1, 2, 5, 10, 25]) + 'xm';
+  },
+  match: function (token: string): boolean {
+    return /^\d+?xm$/i.test(token);
+  },
+  parse: function (token: string): number {
+    return parseInt(token.replace('xm', ''));
+  },
+};
+
+export const ACCURACY: CommandArgument<number> = {
+  displayName: '?%',
+  description: 'точность',
+  get usageExample(): string {
+    return pickRandom([72.7, 92, 95.67, 98.5, 99.71]) + '%';
+  },
+  match: function (token: string): boolean {
+    return /^\d+?(\.\d+?)?%$/i.test(token);
+  },
+  parse: function (token: string): number {
+    return parseFloat(token.replace('%', ''));
+  },
+};
+
+export const FIFTYCOUNT: CommandArgument<number> = {
+  displayName: '?x50',
+  description: 'количество 50',
+  get usageExample(): string {
+    return pickRandom([2, 4, 8, 16, 32]) + 'x50';
+  },
+  match: function (token: string): boolean {
+    return /^\d+?x50$/i.test(token);
+  },
+  parse: function (token: string): number {
+    return parseInt(token.replace('x50', ''));
+  },
+};
+
+export const HUNDREDCOUNT: CommandArgument<number> = {
+  displayName: '?x100',
+  description: 'количество 100',
+  get usageExample(): string {
+    return pickRandom([1, 2, 3, 5, 8, 13, 21, 34]) + 'x100';
+  },
+  match: function (token: string): boolean {
+    return /^\d+?x100$/i.test(token);
+  },
+  parse: function (token: string): number {
+    return parseInt(token.replace('x100', ''));
+  },
+};
+
+export const SPEED_RATE: CommandArgument<number> = {
+  displayName: '?.?x',
+  description: 'скорость карты для модов HT/DC/DT/NC',
+  get usageExample(): string {
+    return 'speed=' + pickRandom([1.01, 1.25, 1.67, 2, 0.99, 0.75, 0.67, 0.5]);
+  },
+  match: function (token: string): boolean {
+    return /^\d\.\d+x$/i.test(token);
+  },
+  parse: function (token: string): number {
+    return parseFloat(token.replace('x', ''));
+  },
+};
+
+type ArgDA = {
+  ar?: number;
+  cs?: number;
+  od?: number;
+  hp?: number;
+};
+
+export const DIFFICULTY_ADJUST_SETTING: CommandArgument<ArgDA> = {
+  displayName: 'ar?|cs?|od?|hp?',
+  description: 'настройки для DA мода',
+  get usageExample(): string {
+    return pickRandom(['ar', 'cs', 'od', 'hp']) + pickRandom([6.7, 8, 9.5, 10]);
+  },
+  match: function (token: string): boolean {
+    return /^(ar|cs|od|hp)\d+(\.\d)?$/i.test(token);
+  },
+  parse: function (token: string): ArgDA {
+    const stat = token.substring(0, 2) as 'ar' | 'cs' | 'od' | 'hp';
+    const output = {} as ArgDA;
+    output[stat] = parseFloat(token.substring(2, token.length));
+    return output;
+  },
+};
+
 export const WORD: (word: string) => CommandArgument<string> = word => ({
   displayName: word,
   description: `слово ${word}`,

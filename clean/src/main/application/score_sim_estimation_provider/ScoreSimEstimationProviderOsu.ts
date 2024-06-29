@@ -166,7 +166,7 @@ async function getScoreSimPromise(
   const c50 = count50;
   const x = Math.round((6 * th * acc - 2 * ha - c50) / 4);
   if (x < 0 || x > hitsAvailable) {
-    return undefined;
+    throw Error('Impossible score requested');
   }
   const count300 = x;
   const count100 = hitsAvailable - count300;

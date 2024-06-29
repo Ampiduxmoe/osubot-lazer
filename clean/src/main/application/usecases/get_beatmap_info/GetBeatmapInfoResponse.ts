@@ -1,3 +1,4 @@
+import {ModAcronym} from '../../../../primitives/ModAcronym';
 import {OsuRuleset} from '../../../../primitives/OsuRuleset';
 
 export type GetBeatmapInfoResponse = {
@@ -24,7 +25,6 @@ export type MapInfo = {
     id: number;
     artist: string;
     title: string;
-    bpm: number;
     creator: string;
     status: BeatmapsetRankStatus;
     playcount: number;
@@ -36,6 +36,16 @@ export type MapInfo = {
     accuracy: number;
     ppValue: number | undefined;
   }[];
+  simulationParams:
+    | undefined
+    | {
+        mods: ModAcronym[];
+        combo: number;
+        accuracy: number;
+        speed?: number;
+        misses: number;
+        mehs: number;
+      };
 };
 
 export type BeatmapsetRankStatus =
