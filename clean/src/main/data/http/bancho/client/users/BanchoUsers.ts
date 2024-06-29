@@ -50,13 +50,11 @@ export class BanchoUsers {
       `Trying to fetch Bancho '${type}' scores for ${userId} (${rulesetName})`
     );
     const httpClient = await this.getHttpClient();
-    const playmode =
-      ruleset === undefined ? undefined : rulesetToPlaymode(ruleset);
     const url = `${this.url}/${userId}/scores/${type}`;
     const params: {
       legacy_only?: 0 | 1;
       include_fails?: 0 | 1;
-      mode?: 'osu' | 'taiko' | 'fruits' | 'mania';
+      mode?: Playmode;
       limit?: number;
       offset?: number;
     } = {
@@ -65,8 +63,8 @@ export class BanchoUsers {
       limit: quantity,
       offset: startPosition - 1,
     };
-    if (playmode !== undefined) {
-      params.mode = playmode;
+    if (ruleset !== undefined) {
+      params.mode = rulesetToPlaymode(ruleset);
     }
     const response = await httpClient.get(url, {
       headers: {
@@ -93,12 +91,10 @@ export class BanchoUsers {
       `Trying to fetch Bancho '${type}' scores for ${userId} (${rulesetName})`
     );
     const httpClient = await this.getHttpClient();
-    const playmode =
-      ruleset === undefined ? undefined : rulesetToPlaymode(ruleset);
     const url = `${this.url}/${userId}/scores/${type}`;
     const params: {
       legacy_only?: 0 | 1;
-      mode?: 'osu' | 'taiko' | 'fruits' | 'mania';
+      mode?: Playmode;
       limit?: number;
       offset?: number;
     } = {
@@ -106,8 +102,8 @@ export class BanchoUsers {
       limit: quantity,
       offset: startPosition - 1,
     };
-    if (playmode !== undefined) {
-      params.mode = playmode;
+    if (ruleset !== undefined) {
+      params.mode = rulesetToPlaymode(ruleset);
     }
     const response = await httpClient.get(url, {
       headers: {
@@ -133,8 +129,6 @@ function rulesetToPlaymode(ruleset: OsuRuleset): Playmode {
       return 'fruits';
     case OsuRuleset.mania:
       return 'mania';
-    default:
-      throw Error('Unknown ruleset');
   }
 }
 
