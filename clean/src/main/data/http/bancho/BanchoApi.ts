@@ -10,7 +10,7 @@ import {RawBanchoUserBestScore} from './client/users/RawBanchoUserBestScore';
 import {OsuUserBestScoreInfo} from '../boundary/OsuUserBestScoreInfo';
 import {ModAcronym} from '../../../../primitives/ModAcronym';
 import {OsuBeatmapInfo} from '../boundary/OsuBeatmapInfo';
-import {RawBanchoBeatmapExtended} from './client/users/RawBanchoBeatmapExtended';
+import {RawBanchoBeatmapExtended} from './client/beatmaps/RawBanchoBeatmapExtended';
 
 export class BanchoApi implements OsuApi {
   private client: BanchoClient;
