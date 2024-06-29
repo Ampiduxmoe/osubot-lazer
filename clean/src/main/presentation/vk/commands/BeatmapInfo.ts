@@ -41,7 +41,7 @@ export class BeatmapInfo extends VkCommand<
 
   private static COMMAND_PREFIX = new OWN_COMMAND_PREFIX(this.prefixes);
   private COMMAND_PREFIX = BeatmapInfo.COMMAND_PREFIX;
-  private static BEATMAP_ID = NUMBER('ID карты', 0, 1e9);
+  private static BEATMAP_ID = NUMBER('map_id', 'ID карты', 0, 1e9);
   private BEATMAP_ID = BeatmapInfo.BEATMAP_ID;
   private static commandStructure = [
     {argument: SERVER_PREFIX, isOptional: false}, // 0

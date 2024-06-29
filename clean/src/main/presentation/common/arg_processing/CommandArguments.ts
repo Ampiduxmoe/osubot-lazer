@@ -91,7 +91,7 @@ export const USERNAME: CommandArgument<string> = {
 };
 
 export const START_POSITION: CommandArgument<number> = {
-  displayName: '\\position',
+  displayName: '\\?',
   description: 'номер скора, с которого начинать поиск',
   get usageExample(): string {
     const randPos = 1 + Math.floor(Math.random() * 9);
@@ -113,7 +113,7 @@ export const START_POSITION: CommandArgument<number> = {
 };
 
 export const QUANTITY: CommandArgument<number> = {
-  displayName: ':quantity',
+  displayName: ':?',
   description: 'количество скоров',
   get usageExample(): string {
     const randPos = 1 + Math.floor(Math.random() * 9);
@@ -284,7 +284,7 @@ export const SPEED_RATE: CommandArgument<number> = {
   displayName: '?.?x',
   description: 'скорость карты для модов HT/DC/DT/NC',
   get usageExample(): string {
-    return 'speed=' + pickRandom([1.01, 1.25, 1.67, 2, 0.99, 0.75, 0.67, 0.5]);
+    return pickRandom([1.01, 1.25, 1.67, 2, 0.99, 0.75, 0.67, 0.5]) + 'x';
   },
   match: function (token: string): boolean {
     return /^\d\.\d+x$/i.test(token);
@@ -339,7 +339,7 @@ export const ANY_WORD: (
   displayName: name,
   description: description,
   get usageExample(): string {
-    return pickRandom(['foo', 'bar']);
+    return pickRandom(['something', 'othersomething']);
   },
   match: function (token: string): boolean {
     return /^\w+$/.test(token);
@@ -356,7 +356,7 @@ export const ANY_STRING: (
   displayName: name,
   description: description,
   get usageExample(): string {
-    return pickRandom(['foo123!', '321[]bar']);
+    return pickRandom(['something', 'othersomething']);
   },
   match: function (): boolean {
     return true;
@@ -367,7 +367,7 @@ export const ANY_STRING: (
 });
 
 export const DAY_OFFSET: CommandArgument<number> = {
-  displayName: 'today{±N}',
+  displayName: 'today{±?}',
   description: 'номер дня относительно сегодня',
   get usageExample(): string {
     const randInt = Math.floor(Math.random() * 5);
@@ -385,7 +385,7 @@ export const DAY_OFFSET: CommandArgument<number> = {
 };
 
 export const DATE: CommandArgument<Date> = {
-  displayName: 'date|today[±N]',
+  displayName: 'date|today[±?]',
   description: 'дата в формате ISO8601 или номер дня относительно сегодня',
   get usageExample(): string {
     const date = new Date().toISOString().substring(0, 10);
@@ -407,11 +407,12 @@ export const DATE: CommandArgument<Date> = {
 };
 
 export const NUMBER: (
+  displayName: string,
   description: string,
   min: number | undefined,
   max: number | undefined
-) => CommandArgument<number> = (description, min, max) => ({
-  displayName: 'N',
+) => CommandArgument<number> = (displayName, description, min, max) => ({
+  displayName: displayName,
   description: description,
   get usageExample(): string {
     const exampleMin = min ?? -999999;
@@ -438,5 +439,8 @@ export const NUMBER: (
   },
 });
 
-export const APP_USER_ID = ANY_STRING('ID', 'ID пользователя приложения');
-export const VK_USER_ID = NUMBER('ID пользователя VK', 0, +Infinity);
+export const APP_USER_ID = ANY_STRING(
+  'app_user_id',
+  'ID пользователя приложения'
+);
+export const VK_USER_ID = NUMBER('vk_id', 'ID пользователя VK', 0, 99999999);
