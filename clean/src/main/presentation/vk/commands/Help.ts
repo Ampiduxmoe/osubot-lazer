@@ -247,7 +247,17 @@ ${optionalsHint}
     return {
       text: text,
       attachment: undefined,
-      buttons: [[{text: usageString, command: usageString}]],
+      buttons: [
+        [
+          {
+            text:
+              usageString.length <= 40
+                ? usageString
+                : usageString.substring(0, 37) + '...',
+            command: usageString,
+          },
+        ],
+      ],
     };
   }
 }
