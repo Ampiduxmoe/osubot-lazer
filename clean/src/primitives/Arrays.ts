@@ -14,6 +14,14 @@ export function sumBy<T>(fn: (x: T) => number, array: readonly T[]): number {
   return array.reduce((partialSum, a) => partialSum + fn(a), 0);
 }
 
+export async function sumByAsync<T>(
+  fn: (x: T) => Promise<number>,
+  array: readonly T[]
+): Promise<number> {
+  const transformResult = await Promise.all(array.map(x => fn(x)));
+  return sum(transformResult);
+}
+
 export function max(array: readonly number[]): number {
   return maxBy(x => x, array);
 }
@@ -34,9 +42,30 @@ export function maxBy<T>(fn: (x: T) => number, array: readonly T[]): T {
   return maxElement;
 }
 
+export async function maxByAsync<T>(
+  fn: (x: T) => Promise<number>,
+  array: readonly T[]
+): Promise<T> {
+  const elementTransofmResults = await Promise.all(
+    array.map(async e => ({
+      e: e,
+      transformResult: await fn(e),
+    }))
+  );
+  return maxBy(x => x.transformResult, elementTransofmResults).e;
+}
+
 export function maxOf<T>(fn: (x: T) => number, array: readonly T[]): number {
   const maxElement = maxBy(fn, array);
   return fn(maxElement);
+}
+
+export async function maxOfAsync<T>(
+  fn: (x: T) => Promise<number>,
+  array: readonly T[]
+): Promise<number> {
+  const maxElement = await maxByAsync(fn, array);
+  return await fn(maxElement);
 }
 
 export function min(array: readonly number[]): number {
@@ -59,7 +88,28 @@ export function minBy<T>(fn: (x: T) => number, array: readonly T[]): T {
   return minElement;
 }
 
+export async function minByAsync<T>(
+  fn: (x: T) => Promise<number>,
+  array: readonly T[]
+): Promise<T> {
+  const elementTransofmResults = await Promise.all(
+    array.map(async e => ({
+      e: e,
+      transformResult: await fn(e),
+    }))
+  );
+  return minBy(x => x.transformResult, elementTransofmResults).e;
+}
+
 export function minOf<T>(fn: (x: T) => number, array: readonly T[]): number {
   const minElement = minBy(fn, array);
   return fn(minElement);
+}
+
+export async function minOfAsync<T>(
+  fn: (x: T) => Promise<number>,
+  array: readonly T[]
+): Promise<number> {
+  const maxElement = await minByAsync(fn, array);
+  return await fn(maxElement);
 }
