@@ -4,6 +4,7 @@ import {OsuUserInfo} from './boundary/OsuUserInfo';
 import {OsuUserRecentScoreInfo} from './boundary/OsuUserRecentScoreInfo';
 import {OsuUserBestScoreInfo} from './boundary/OsuUserBestScoreInfo';
 import {OsuBeatmapInfo} from './boundary/OsuBeatmapInfo';
+import {OsuBeatmapUserScoreInfo} from './boundary/OsuBeatmapUserScoreInfo';
 
 export interface OsuApi {
   readonly server: OsuServer;
@@ -29,4 +30,10 @@ export interface OsuApi {
   ): Promise<OsuUserBestScoreInfo[]>;
 
   getBeatmap(beatmapId: number): Promise<OsuBeatmapInfo | undefined>;
+
+  getBeatmapUserScores(
+    beatmapId: number,
+    osuUserId: number,
+    ruleset: OsuRuleset | undefined
+  ): Promise<OsuBeatmapUserScoreInfo[] | undefined>;
 }

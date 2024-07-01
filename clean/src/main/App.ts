@@ -36,6 +36,9 @@ import {OsuOauthAccessToken} from './data/http/bancho/OsuOauthAccessToken';
 import {BeatmapInfo} from './presentation/vk/commands/BeatmapInfo';
 import {GetBeatmapInfoUseCase} from './application/usecases/get_beatmap_info/GetBeatmapInfoUseCase';
 import {OsuBeatmapsDaoImpl} from './data/dao/OsuBeatmapsDaoImpl';
+import {GetBeatmapUsersBestScoresUseCase} from './application/usecases/get_beatmap_users_best_score/GetBeatmapUsersBestScoresUseCase';
+import {OsuBeatmapUserScoresDaoImpl} from './data/dao/OsuBeatmapUserScoresDaoImpl';
+import {BeatmapLeaderboard} from './presentation/vk/commands/BeatmapLeaderboard';
 
 export const APP_CODE_NAME = 'osubot-lazer';
 
@@ -132,6 +135,10 @@ export class App {
       osuApiList,
       recentApiRequestsDao
     );
+    const osuBeatmapUserScoresDao = new OsuBeatmapUserScoresDaoImpl(
+      osuApiList,
+      recentApiRequestsDao
+    );
     const scoreSimulationsDao = new ScoreSimulationsDaoImpl(scoreSimulationApi);
     const cachedOsuUsersDao = new CachedOsuUsersDaoImpl(osuUserSnapshots);
 
@@ -157,6 +164,14 @@ export class App {
       osuBeatmapsDao,
       scoreSimulationsDao
     );
+    const getBeatmapUsersBestScoresUseCase =
+      new GetBeatmapUsersBestScoresUseCase(
+        osuBeatmapsDao,
+        osuBeatmapUserScoresDao,
+        scoreSimulationsDao,
+        cachedOsuUsersDao,
+        osuUsersDao
+      );
 
     this.vkClient = this.createVkClient({
       group: this.currentVkGroup,
@@ -167,6 +182,7 @@ export class App {
       getUserBestPlaysUseCase: getUserBestPlaysUseCase,
       getApiUsageSummaryUseCase: getApiUsageSummaryUseCase,
       getBeatmapInfoUseCase: getBeatmapInfoUseCase,
+      getBeatmapUsersBestScoresUseCase: getBeatmapUsersBestScoresUseCase,
     });
 
     this.startHandlers.push(async () => {
@@ -199,23 +215,37 @@ export class App {
     const {getUserBestPlaysUseCase} = params;
     const {getApiUsageSummaryUseCase} = params;
     const {getBeatmapInfoUseCase} = params;
+    const {getBeatmapUsersBestScoresUseCase} = params;
     const vk = new VK({
       pollingGroupId: group.id,
       token: group.token,
     });
     const vkClient = new VkClient(vk);
-    const commands = [
+    const getConversationMembers = async (
+      chatId: number
+    ): Promise<number[]> => {
+      const chatMembers = await vk.api.messages.getConversationMembers({
+        peer_id: chatId,
+      });
+      return chatMembers.profiles.map(x => x.id);
+    };
+    const publicCommands = [
       new UserInfo(getOsuUserInfoUseCase, getAppUserInfoUseCase),
       new SetUsername(setUsernameUseCase),
       new UserRecentPlays(getRecentPlaysUseCase, getAppUserInfoUseCase),
       new UserBestPlays(getUserBestPlaysUseCase, getAppUserInfoUseCase),
       new BeatmapInfo(getBeatmapInfoUseCase),
+      new BeatmapLeaderboard(
+        getConversationMembers,
+        getBeatmapUsersBestScoresUseCase,
+        getAppUserInfoUseCase
+      ),
     ];
     const adminCommands = [
       new ApiUsageSummary([group.owner], getApiUsageSummaryUseCase),
     ];
-    const helpCommand = new Help(commands);
-    vkClient.addCommands([helpCommand, ...commands]);
+    const helpCommand = new Help(publicCommands);
+    vkClient.addCommands([helpCommand, ...publicCommands]);
     vkClient.addCommands(adminCommands);
     return vkClient;
   }
@@ -264,4 +294,5 @@ type VkClientCreationParams = {
   getUserBestPlaysUseCase: GetUserBestPlaysUseCase;
   getApiUsageSummaryUseCase: GetApiUsageSummaryUseCase;
   getBeatmapInfoUseCase: GetBeatmapInfoUseCase;
+  getBeatmapUsersBestScoresUseCase: GetBeatmapUsersBestScoresUseCase;
 };

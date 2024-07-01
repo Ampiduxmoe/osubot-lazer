@@ -11,6 +11,7 @@ import {
   getFakeUserBestScoreInfos,
 } from '../../Generators';
 import {OsuBeatmapInfo} from '../../../../src/main/data/http/boundary/OsuBeatmapInfo';
+import {OsuBeatmapUserScoreInfo} from '../../../../src/main/data/http/boundary/OsuBeatmapUserScoreInfo';
 
 export class FakeBanchoApi implements OsuApi {
   server = OsuServer.Bancho;
@@ -52,6 +53,13 @@ export class FakeBanchoApi implements OsuApi {
     );
   }
   getBeatmap(beatmapId: number): Promise<OsuBeatmapInfo | undefined> {
+    throw new Error('Method not implemented.');
+  }
+  getBeatmapUserScores(
+    beatmapId: number,
+    osuUserId: number,
+    ruleset: OsuRuleset | undefined
+  ): Promise<OsuBeatmapUserScoreInfo[] | undefined> {
     throw new Error('Method not implemented.');
   }
 }

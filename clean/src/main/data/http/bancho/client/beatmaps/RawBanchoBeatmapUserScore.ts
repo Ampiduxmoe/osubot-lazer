@@ -1,0 +1,38 @@
+import {MaximumStatistics} from '../common_types/MaximumStatistics';
+import {Mod} from '../common_types/Mod';
+import {ScoreGrade} from '../common_types/ScoreGrade';
+import {ScoreStatistics} from '../common_types/ScoreStatistics';
+import {ScoreType} from '../common_types/ScoreType';
+import {ISO8601Timestamp} from '../common_types/ISO8601Timestamp';
+
+export type RawBanchoBeatmapUserScore = {
+  classic_total_score: number;
+  preserve?: boolean;
+  processed?: boolean;
+  ranked?: boolean;
+  maximum_statistics: MaximumStatistics;
+  mods: Mod[];
+  statistics: ScoreStatistics;
+  beatmap_id: number;
+  best_id: number | null;
+  id: number;
+  rank: ScoreGrade;
+  type: ScoreType;
+  user_id: number;
+  accuracy: number;
+  build_id: number | null;
+  ended_at: ISO8601Timestamp;
+  has_replay: boolean;
+  is_perfect_combo: boolean;
+  legacy_perfect: boolean;
+  legacy_score_id: number | null;
+  legacy_total_score: number;
+  max_combo: number;
+  passed: boolean;
+  pp: number | null;
+  ruleset_id: number;
+  started_at: ISO8601Timestamp;
+  total_score: number;
+  replay: boolean;
+  current_user_attributes: unknown;
+};

@@ -11,6 +11,11 @@ import {OsuUserBestScoreInfo} from '../boundary/OsuUserBestScoreInfo';
 import {ModAcronym} from '../../../../primitives/ModAcronym';
 import {OsuBeatmapInfo} from '../boundary/OsuBeatmapInfo';
 import {RawBanchoBeatmapExtended} from './client/beatmaps/RawBanchoBeatmapExtended';
+import {OsuBeatmapUserScoreInfo} from '../boundary/OsuBeatmapUserScoreInfo';
+import {RawBanchoBeatmapUserScore} from './client/beatmaps/RawBanchoBeatmapUserScore';
+import {Mod} from './client/common_types/Mod';
+import {MaximumStatistics} from './client/common_types/MaximumStatistics';
+import {ScoreStatistics} from './client/common_types/ScoreStatistics';
 
 export class BanchoApi implements OsuApi {
   private client: BanchoClient;
@@ -93,6 +98,22 @@ export class BanchoApi implements OsuApi {
     }
     return beatmapInternalToExternal(beatmap);
   }
+
+  async getBeatmapUserScores(
+    beatmapId: number,
+    osuUserId: number,
+    ruleset: OsuRuleset | undefined
+  ): Promise<OsuBeatmapUserScoreInfo[] | undefined> {
+    const scores = await this.client.beatmaps.getUserScores(
+      beatmapId,
+      osuUserId,
+      ruleset
+    );
+    if (scores === undefined) {
+      return undefined;
+    }
+    return scores.map(s => beatmapUserScoreInternalToExternal(s));
+  }
 }
 
 function playmodeToRuleset(playmode: Playmode): OsuRuleset {
@@ -105,8 +126,6 @@ function playmodeToRuleset(playmode: Playmode): OsuRuleset {
       return OsuRuleset.ctb;
     case 'mania':
       return OsuRuleset.mania;
-    default:
-      throw Error('Unknown playmode');
   }
 }
 
@@ -116,45 +135,11 @@ function userRecentScoreInternalToExternal(
   return {
     id: score.id,
     userId: score.user_id,
-    mods: score.mods.map(m => ({
-      acronym: new ModAcronym(m.acronym),
-      settings:
-        m.settings === undefined
-          ? undefined
-          : {
-              speedChange: m.settings.speed_change,
-              adjustPitch: m.settings.adjust_pitch,
-              ar: m.settings.approach_rate,
-              cs: m.settings.circle_size,
-              od: m.settings.overall_difficulty,
-              hp: m.settings.drain_rate,
-              retries: m.settings.retries,
-              seed: m.settings.seed,
-              metronome: m.settings.metronome,
-            },
-    })),
-    maximumStatistics: {
-      great: score.maximum_statistics.great,
-      perfect: score.maximum_statistics.perfect,
-      legacyComboIncrease: score.maximum_statistics.legacy_combo_increase,
-      ignoreHit: score.maximum_statistics.ignore_hit,
-      largeBonus: score.maximum_statistics.large_bonus,
-      smallBonus: score.maximum_statistics.small_bonus,
-      largeTickHit: score.maximum_statistics.large_tick_hit,
-      smallTickHit: score.maximum_statistics.small_tick_hit,
-      sliderTailHit: score.maximum_statistics.slider_tail_hit,
-    },
-    statistics: {
-      great: score.statistics.great,
-      ok: score.statistics.ok,
-      meh: score.statistics.meh,
-      miss: score.statistics.miss,
-      largeTickHit: score.statistics.large_tick_hit,
-      smallTickHit: score.statistics.small_tick_hit,
-      smallTickMiss: score.statistics.small_tick_miss,
-      perfect: score.statistics.perfect,
-      good: score.statistics.good,
-    },
+    mods: score.mods.map(m => modInternalToExternal(m)),
+    maximumStatistics: maximumStatisticsInternalToExternal(
+      score.maximum_statistics
+    ),
+    statistics: scoreStatisticsInternalToExternal(score.statistics),
     rank: score.rank,
     accuracy: score.accuracy,
     startedAt: score.started_at as string | null,
@@ -203,46 +188,11 @@ function userBestScoreInternalToExternal(
   return {
     id: score.id,
     userId: score.user_id,
-    mods: score.mods.map(m => ({
-      acronym: new ModAcronym(m.acronym),
-      settings:
-        m.settings === undefined
-          ? undefined
-          : {
-              speedChange: m.settings.speed_change,
-              adjustPitch: m.settings.adjust_pitch,
-              ar: m.settings.approach_rate,
-              cs: m.settings.circle_size,
-              od: m.settings.overall_difficulty,
-              hp: m.settings.drain_rate,
-              retries: m.settings.retries,
-              seed: m.settings.seed,
-              metronome: m.settings.metronome,
-            },
-    })),
-    maximumStatistics: {
-      great: score.maximum_statistics.great,
-      perfect: score.maximum_statistics.perfect,
-      legacyComboIncrease: score.maximum_statistics.legacy_combo_increase,
-      ignoreHit: score.maximum_statistics.ignore_hit,
-      largeBonus: score.maximum_statistics.large_bonus,
-      smallBonus: score.maximum_statistics.small_bonus,
-      largeTickHit: score.maximum_statistics.large_tick_hit,
-      smallTickHit: score.maximum_statistics.small_tick_hit,
-      sliderTailHit: score.maximum_statistics.slider_tail_hit,
-    },
-    statistics: {
-      great: score.statistics.great,
-      ok: score.statistics.ok,
-      meh: score.statistics.meh,
-      miss: score.statistics.miss,
-      largeTickHit: score.statistics.large_tick_hit,
-      largeTickMiss: score.statistics.large_tick_miss,
-      smallTickHit: score.statistics.small_tick_hit,
-      smallTickMiss: score.statistics.small_tick_miss,
-      perfect: score.statistics.perfect,
-      good: score.statistics.good,
-    },
+    mods: score.mods.map(m => modInternalToExternal(m)),
+    maximumStatistics: maximumStatisticsInternalToExternal(
+      score.maximum_statistics
+    ),
+    statistics: scoreStatisticsInternalToExternal(score.statistics),
     rank: score.rank,
     accuracy: score.accuracy,
     startedAt: score.started_at as string | null,
@@ -352,5 +302,110 @@ function beatmapInternalToExternal(
       exit: beatmap.failtimes.exit,
     },
     maxCombo: beatmap.max_combo,
+  };
+}
+
+function beatmapUserScoreInternalToExternal(
+  score: RawBanchoBeatmapUserScore
+): OsuBeatmapUserScoreInfo {
+  return {
+    id: score.id,
+    userId: score.user_id,
+    mods: score.mods.map(m => modInternalToExternal(m)),
+    maximumStatistics: maximumStatisticsInternalToExternal(
+      score.maximum_statistics
+    ),
+    statistics: scoreStatisticsInternalToExternal(score.statistics),
+    rank: score.rank,
+    accuracy: score.accuracy,
+    startedAt: score.started_at as string | null,
+    endedAt: score.ended_at as string,
+    isPerfectCombo: score.is_perfect_combo,
+    maxCombo: score.max_combo,
+    passed: score.passed,
+    pp: score.pp,
+    totalScore: score.total_score,
+  };
+}
+
+function modInternalToExternal(mod: Mod): {
+  acronym: ModAcronym;
+  settings?: {
+    speedChange?: number;
+    adjustPitch?: boolean;
+    ar?: number;
+    cs?: number;
+    od?: number;
+    hp?: number;
+    retries?: number;
+    seed?: number;
+    metronome?: boolean;
+  };
+} {
+  return {
+    acronym: new ModAcronym(mod.acronym),
+    settings:
+      mod.settings === undefined
+        ? undefined
+        : {
+            speedChange: mod.settings.speed_change,
+            adjustPitch: mod.settings.adjust_pitch,
+            ar: mod.settings.approach_rate,
+            cs: mod.settings.circle_size,
+            od: mod.settings.overall_difficulty,
+            hp: mod.settings.drain_rate,
+            retries: mod.settings.retries,
+            seed: mod.settings.seed,
+            metronome: mod.settings.metronome,
+          },
+  };
+}
+
+function maximumStatisticsInternalToExternal(statistics: MaximumStatistics): {
+  great?: number;
+  perfect?: number;
+  legacyComboIncrease?: number;
+  ignoreHit?: number;
+  largeBonus?: number;
+  smallBonus?: number;
+  largeTickHit?: number;
+  smallTickHit?: number;
+  sliderTailHit?: number;
+} {
+  return {
+    great: statistics.great,
+    perfect: statistics.perfect,
+    legacyComboIncrease: statistics.legacy_combo_increase,
+    ignoreHit: statistics.ignore_hit,
+    largeBonus: statistics.large_bonus,
+    smallBonus: statistics.small_bonus,
+    largeTickHit: statistics.large_tick_hit,
+    smallTickHit: statistics.small_tick_hit,
+    sliderTailHit: statistics.slider_tail_hit,
+  };
+}
+
+function scoreStatisticsInternalToExternal(statistics: ScoreStatistics): {
+  great?: number;
+  ok?: number;
+  meh?: number;
+  miss?: number;
+  largeTickHit?: number;
+  largeTickMiss?: number;
+  smallTickHit?: number;
+  smallTickMiss?: number;
+  perfect?: number;
+  good?: number;
+} {
+  return {
+    great: statistics.great,
+    ok: statistics.ok,
+    meh: statistics.meh,
+    miss: statistics.miss,
+    largeTickHit: statistics.large_tick_hit,
+    smallTickHit: statistics.small_tick_hit,
+    smallTickMiss: statistics.small_tick_miss,
+    perfect: statistics.perfect,
+    good: statistics.good,
   };
 }

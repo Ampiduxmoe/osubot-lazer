@@ -90,6 +90,45 @@ export const USERNAME: CommandArgument<string> = {
   },
 };
 
+type UsernameList = {
+  usernames: string[];
+  isAdditive: boolean;
+};
+export const USERNAME_LIST: CommandArgument<UsernameList> = {
+  displayName: '~usernames',
+  description:
+    'ники игроков, через запятую; используйте вариант ~~name1,name2 ' +
+    'для того чтобы ники "добавились" к никами этого чата',
+  get usageExample(): string {
+    const someUsernames = [
+      'mrekk',
+      'Accolibed',
+      'lifeline',
+      'chud son',
+      'gnahus',
+      'ninerik',
+      'Chicony',
+      'Ivaxa',
+      'Flaro',
+      'aknzx',
+    ];
+    const username1 = pickRandom(someUsernames);
+    const username2 = pickRandom(someUsernames.filter(x => x !== username1));
+    return `~${username1},${username2}`;
+  },
+  match: function (token: string): boolean {
+    return /^~~?[a-zA-Z0-9_ [\-\]]+?(,[a-zA-Z0-9_ [\-\]]+?)*?$/.test(token);
+  },
+  parse: function (token: string): UsernameList {
+    const usernames = token.replace('~', '').replace('~', '').split(',');
+    const isAdditive = token.startsWith('~~');
+    return {
+      usernames: usernames,
+      isAdditive: isAdditive,
+    };
+  },
+};
+
 export const START_POSITION: CommandArgument<number> = {
   displayName: '\\?',
   description: 'номер скора, с которого начинать поиск',
