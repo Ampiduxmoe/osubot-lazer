@@ -479,3 +479,23 @@ export const APP_USER_ID = ANY_STRING(
   'ID пользователя приложения'
 );
 export const VK_USER_ID = NUMBER('vk_id', 'ID пользователя VK', 0, 99999999);
+
+export const BEATMAP_ID: CommandArgument<number> = (() => {
+  const number_arg = NUMBER('', '', 0, 1e9);
+  return {
+    displayName: '*map_id',
+    description: 'ID карты',
+    get usageExample(): string {
+      return '*' + number_arg.usageExample;
+    },
+    match: function (token: string): boolean {
+      if (!token.startsWith('*')) {
+        return false;
+      }
+      return number_arg.match(token.substring(1));
+    },
+    parse: function (token: string): number {
+      return parseInt(token.substring(1));
+    },
+  };
+})();

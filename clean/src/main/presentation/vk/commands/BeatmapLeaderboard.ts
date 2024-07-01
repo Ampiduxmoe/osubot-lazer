@@ -12,8 +12,8 @@ import {
   OWN_COMMAND_PREFIX,
   MODS,
   SERVER_PREFIX,
-  NUMBER,
   USERNAME_LIST,
+  BEATMAP_ID,
 } from '../../common/arg_processing/CommandArguments';
 import {MainArgsProcessor} from '../../common/arg_processing/MainArgsProcessor';
 import {Timespan} from '../../../../primitives/Timespan';
@@ -41,12 +41,10 @@ export class BeatmapLeaderboard extends VkCommand<
 
   private static COMMAND_PREFIX = OWN_COMMAND_PREFIX(this.prefixes);
   private COMMAND_PREFIX = BeatmapLeaderboard.COMMAND_PREFIX;
-  private static BEATMAP_ID = NUMBER('map_id', 'ID карты', 0, 1e9);
-  private BEATMAP_ID = BeatmapLeaderboard.BEATMAP_ID;
   private static commandStructure = [
     {argument: SERVER_PREFIX, isOptional: false},
     {argument: this.COMMAND_PREFIX, isOptional: false},
-    {argument: this.BEATMAP_ID, isOptional: true},
+    {argument: BEATMAP_ID, isOptional: true},
     {argument: USERNAME_LIST, isOptional: true},
     {argument: MODS, isOptional: true},
   ];
@@ -87,7 +85,7 @@ export class BeatmapLeaderboard extends VkCommand<
     );
     const server = argsProcessor.use(SERVER_PREFIX).at(0).extract();
     const ownPrefix = argsProcessor.use(this.COMMAND_PREFIX).at(0).extract();
-    const beatmapId = argsProcessor.use(this.BEATMAP_ID).extract();
+    const beatmapId = argsProcessor.use(BEATMAP_ID).extract();
     const usernameList = argsProcessor.use(USERNAME_LIST).extract();
     const mods = argsProcessor.use(MODS).extract();
 

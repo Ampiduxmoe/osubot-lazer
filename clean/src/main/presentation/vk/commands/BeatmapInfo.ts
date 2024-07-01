@@ -9,6 +9,7 @@ import {APP_CODE_NAME} from '../../../App';
 import {VkIdConverter} from '../VkIdConverter';
 import {
   ACCURACY,
+  BEATMAP_ID,
   DIFFICULTY_ADJUST_SETTING,
   FIFTYCOUNT,
   HUNDREDCOUNT,
@@ -22,7 +23,6 @@ import {
 import {MainArgsProcessor} from '../../common/arg_processing/MainArgsProcessor';
 import {CommandPrefixes} from '../../common/CommandPrefixes';
 import {OsuRuleset} from '../../../../primitives/OsuRuleset';
-import {NUMBER} from '../../common/arg_processing/CommandArguments';
 import {MapInfo} from '../../../application/usecases/get_beatmap_info/GetBeatmapInfoResponse';
 import {Timespan} from '../../../../primitives/Timespan';
 import {integerShortForm, round} from '../../../../primitives/Numbers';
@@ -41,12 +41,10 @@ export class BeatmapInfo extends VkCommand<
 
   private static COMMAND_PREFIX = OWN_COMMAND_PREFIX(this.prefixes);
   private COMMAND_PREFIX = BeatmapInfo.COMMAND_PREFIX;
-  private static BEATMAP_ID = NUMBER('map_id', 'ID карты', 0, 1e9);
-  private BEATMAP_ID = BeatmapInfo.BEATMAP_ID;
   private static commandStructure = [
     {argument: SERVER_PREFIX, isOptional: false}, // 0
     {argument: this.COMMAND_PREFIX, isOptional: false}, // 1
-    {argument: this.BEATMAP_ID, isOptional: true}, // 2
+    {argument: BEATMAP_ID, isOptional: true}, // 2
 
     {argument: MODS, isOptional: true}, // 3
     {argument: SCORE_COMBO, isOptional: true}, // 4
@@ -92,7 +90,7 @@ export class BeatmapInfo extends VkCommand<
     );
     const server = argsProcessor.use(SERVER_PREFIX).at(0).extract();
     const ownPrefix = argsProcessor.use(this.COMMAND_PREFIX).at(0).extract();
-    const beatmapId = argsProcessor.use(this.BEATMAP_ID).extract();
+    const beatmapId = argsProcessor.use(BEATMAP_ID).extract();
     const mods = argsProcessor.use(MODS).extract();
     const scoreCombo = argsProcessor.use(SCORE_COMBO).extract();
     const misscount = argsProcessor.use(MISSCOUNT).extract();
