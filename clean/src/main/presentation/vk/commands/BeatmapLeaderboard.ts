@@ -86,8 +86,7 @@ export class BeatmapLeaderboard extends VkCommand<
       this.commandStructure.map(e => e.argument)
     );
     const server = argsProcessor.use(SERVER_PREFIX).at(0).extract();
-    // eslint-disable-next-line prettier/prettier
-    const commandPrefix = argsProcessor.use(this.COMMAND_PREFIX).at(0).extract();
+    const ownPrefix = argsProcessor.use(this.COMMAND_PREFIX).at(0).extract();
     const beatmapId = argsProcessor.use(this.BEATMAP_ID).extract();
     const usernameList = argsProcessor.use(USERNAME_LIST).extract();
     const mods = argsProcessor.use(MODS).extract();
@@ -97,12 +96,9 @@ export class BeatmapLeaderboard extends VkCommand<
     }
     if (
       server === undefined ||
-      commandPrefix === undefined ||
+      ownPrefix === undefined ||
       beatmapId === undefined
     ) {
-      return fail;
-    }
-    if (!this.prefixes.matchIgnoringCase(commandPrefix)) {
       return fail;
     }
     return CommandMatchResult.ok({

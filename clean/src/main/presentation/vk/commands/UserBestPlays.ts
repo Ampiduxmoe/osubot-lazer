@@ -83,8 +83,7 @@ export class UserBestPlays extends VkCommand<
       this.commandStructure.map(e => e.argument)
     );
     const server = argsProcessor.use(SERVER_PREFIX).at(0).extract();
-    // eslint-disable-next-line prettier/prettier
-    const commandPrefix = argsProcessor.use(this.COMMAND_PREFIX).at(0).extract();
+    const ownPrefix = argsProcessor.use(this.COMMAND_PREFIX).at(0).extract();
     const startPosition = argsProcessor.use(START_POSITION).extract();
     const quantity = argsProcessor.use(QUANTITY).extract();
     const mods = argsProcessor.use(MODS).extract();
@@ -103,10 +102,7 @@ export class UserBestPlays extends VkCommand<
     if (argsProcessor.remainingTokens.length > 0) {
       return fail;
     }
-    if (server === undefined || commandPrefix === undefined) {
-      return fail;
-    }
-    if (!this.prefixes.matchIgnoringCase(commandPrefix)) {
+    if (server === undefined || ownPrefix === undefined) {
       return fail;
     }
     return CommandMatchResult.ok({

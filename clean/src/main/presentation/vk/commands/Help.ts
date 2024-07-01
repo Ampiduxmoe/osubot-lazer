@@ -71,8 +71,7 @@ export class Help extends VkCommand<HelpExecutionArgs, HelpViewParams> {
       .use(this.FOREIGN_COMMAND_PREFIX)
       .at(0)
       .extract();
-    // eslint-disable-next-line prettier/prettier
-    const usageVariant = argsProcessor
+    const commandUsageVariant = argsProcessor
       .use(this.USAGE_VARIANT)
       .at(0)
       .extract();
@@ -83,12 +82,9 @@ export class Help extends VkCommand<HelpExecutionArgs, HelpViewParams> {
     if (ownCommandPrefix === undefined) {
       return fail;
     }
-    if (!this.prefixes.matchIgnoringCase(ownCommandPrefix)) {
-      return fail;
-    }
     return CommandMatchResult.ok({
       commandPrefix: commandPrefix,
-      usageVariant: usageVariant,
+      usageVariant: commandUsageVariant,
     });
   }
 

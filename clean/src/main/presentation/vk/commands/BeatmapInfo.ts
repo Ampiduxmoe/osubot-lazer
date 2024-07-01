@@ -91,10 +91,7 @@ export class BeatmapInfo extends VkCommand<
       this.commandStructure.map(e => e.argument)
     );
     const server = argsProcessor.use(SERVER_PREFIX).at(0).extract();
-    const commandPrefix = argsProcessor
-      .use(this.COMMAND_PREFIX)
-      .at(0)
-      .extract();
+    const ownPrefix = argsProcessor.use(this.COMMAND_PREFIX).at(0).extract();
     const beatmapId = argsProcessor.use(this.BEATMAP_ID).extract();
     const mods = argsProcessor.use(MODS).extract();
     const scoreCombo = argsProcessor.use(SCORE_COMBO).extract();
@@ -114,7 +111,7 @@ export class BeatmapInfo extends VkCommand<
     }
     if (
       server === undefined ||
-      commandPrefix === undefined ||
+      ownPrefix === undefined ||
       beatmapId === undefined
     ) {
       return fail;

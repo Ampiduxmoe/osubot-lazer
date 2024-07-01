@@ -72,10 +72,7 @@ export class UserInfo extends VkCommand<
       this.commandStructure.map(e => e.argument)
     );
     const server = argsProcessor.use(SERVER_PREFIX).at(0).extract();
-    const commandPrefix = argsProcessor
-      .use(this.COMMAND_PREFIX)
-      .at(0)
-      .extract();
+    const ownPrefix = argsProcessor.use(this.COMMAND_PREFIX).at(0).extract();
     const mode = argsProcessor.use(MODE).extract();
     const usernameParts: string[] = [];
     let usernamePart = argsProcessor.use(USERNAME).extract();
@@ -91,10 +88,7 @@ export class UserInfo extends VkCommand<
     if (argsProcessor.remainingTokens.length > 0) {
       return fail;
     }
-    if (server === undefined || commandPrefix === undefined) {
-      return fail;
-    }
-    if (!this.prefixes.matchIgnoringCase(commandPrefix)) {
+    if (server === undefined || ownPrefix === undefined) {
       return fail;
     }
     return CommandMatchResult.ok({
