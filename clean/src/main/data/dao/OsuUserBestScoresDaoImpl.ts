@@ -13,15 +13,15 @@ import {OsuUserBestScoreInfo} from '../http/boundary/OsuUserBestScoreInfo';
 
 export class OsuUserBestScoresDaoImpl implements OsuUserBestScoresDao {
   private apis: OsuApi[];
-  private osuUserSnapshotsTable: OsuUserSnapshotsRepository;
+  private osuUserSnapshotsRepository: OsuUserSnapshotsRepository;
   private recentApiRequests: AppUserRecentApiRequestsDao;
   constructor(
     apis: OsuApi[],
-    osuUserSnapshotsTable: OsuUserSnapshotsRepository,
+    osuUserSnapshotsRepository: OsuUserSnapshotsRepository,
     recentApiRequests: AppUserRecentApiRequestsDao
   ) {
     this.apis = apis;
-    this.osuUserSnapshotsTable = osuUserSnapshotsTable;
+    this.osuUserSnapshotsRepository = osuUserSnapshotsRepository;
     this.recentApiRequests = recentApiRequests;
   }
   async get(
@@ -164,13 +164,13 @@ export class OsuUserBestScoresDaoImpl implements OsuUserBestScoresDao {
     server: OsuServer,
     id: number
   ): Promise<void> {
-    const existingIdAndUsername = await this.osuUserSnapshotsTable.get({
+    const existingIdAndUsername = await this.osuUserSnapshotsRepository.get({
       username: username,
       server: server,
     });
     if (existingIdAndUsername !== undefined) {
       existingIdAndUsername.id = id;
-      await this.osuUserSnapshotsTable.update(existingIdAndUsername);
+      await this.osuUserSnapshotsRepository.update(existingIdAndUsername);
     }
   }
 }

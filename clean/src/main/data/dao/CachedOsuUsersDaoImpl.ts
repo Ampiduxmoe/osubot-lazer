@@ -6,15 +6,15 @@ import {
 import {OsuUserSnapshotsRepository} from '../repository/repositories/OsuUserSnapshotsRepository';
 
 export class CachedOsuUsersDaoImpl implements CachedOsuUsersDao {
-  private osuUserSnapshotsTable: OsuUserSnapshotsRepository;
-  constructor(osuUserSnapshotsTable: OsuUserSnapshotsRepository) {
-    this.osuUserSnapshotsTable = osuUserSnapshotsTable;
+  private osuUserSnapshotsRepository: OsuUserSnapshotsRepository;
+  constructor(osuUserSnapshotsRepository: OsuUserSnapshotsRepository) {
+    this.osuUserSnapshotsRepository = osuUserSnapshotsRepository;
   }
   async get(
     username: string,
     server: OsuServer
   ): Promise<CachedOsuUser | undefined> {
-    const userSnapshot = await this.osuUserSnapshotsTable.get({
+    const userSnapshot = await this.osuUserSnapshotsRepository.get({
       username: username,
       server: server,
     });

@@ -7,12 +7,12 @@ import {
 import {AppUsersRepository} from '../repository/repositories/AppUsersRepository';
 
 export class AppUsersDaoImpl implements AppUsersDao {
-  private appUsersTable: AppUsersRepository;
-  constructor(appUsersTable: AppUsersRepository) {
-    this.appUsersTable = appUsersTable;
+  private appUsersRepository: AppUsersRepository;
+  constructor(appUsersRepository: AppUsersRepository) {
+    this.appUsersRepository = appUsersRepository;
   }
   async get(id: string, server: OsuServer): Promise<AppUserInfo | undefined> {
-    const appUser = await this.appUsersTable.get({
+    const appUser = await this.appUsersRepository.get({
       id: id,
       server: server,
     });
@@ -35,13 +35,13 @@ export class AppUsersDaoImpl implements AppUsersDao {
       username: appUserInfo.username,
       ruleset: appUserInfo.ruleset,
     };
-    const existingAppUserInfo = await this.appUsersTable.get(
+    const existingAppUserInfo = await this.appUsersRepository.get(
       appUser as AppUserKey
     );
     if (existingAppUserInfo === undefined) {
-      await this.appUsersTable.add(appUser);
+      await this.appUsersRepository.add(appUser);
     } else {
-      await this.appUsersTable.update(appUser);
+      await this.appUsersRepository.update(appUser);
     }
   }
 }

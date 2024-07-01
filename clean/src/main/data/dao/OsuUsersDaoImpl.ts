@@ -16,15 +16,15 @@ import {OsuUserSnapshotsRepository} from '../repository/repositories/OsuUserSnap
 
 export class OsuUsersDaoImpl implements OsuUsersDao {
   private apis: OsuApi[];
-  private osuUserSnapshotsTable: OsuUserSnapshotsRepository;
+  private osuUserSnapshotsRepository: OsuUserSnapshotsRepository;
   private recentApiRequests: AppUserRecentApiRequestsDao;
   constructor(
     apis: OsuApi[],
-    osuUserSnapshotsTable: OsuUserSnapshotsRepository,
+    osuUserSnapshotsRepository: OsuUserSnapshotsRepository,
     recentApiRequests: AppUserRecentApiRequestsDao
   ) {
     this.apis = apis;
-    this.osuUserSnapshotsTable = osuUserSnapshotsTable;
+    this.osuUserSnapshotsRepository = osuUserSnapshotsRepository;
     this.recentApiRequests = recentApiRequests;
   }
   async getByUsername(
@@ -61,13 +61,13 @@ export class OsuUsersDaoImpl implements OsuUsersDao {
       id: osuUserInfo.id,
       preferredMode: osuUserInfo.preferredMode,
     };
-    const existingIdAndUsername = await this.osuUserSnapshotsTable.get(
+    const existingIdAndUsername = await this.osuUserSnapshotsRepository.get(
       newSnapshot as OsuUserSnapshotKey
     );
     if (existingIdAndUsername === undefined) {
-      await this.osuUserSnapshotsTable.add(newSnapshot);
+      await this.osuUserSnapshotsRepository.add(newSnapshot);
     } else {
-      await this.osuUserSnapshotsTable.update(newSnapshot);
+      await this.osuUserSnapshotsRepository.update(newSnapshot);
     }
   }
 }
