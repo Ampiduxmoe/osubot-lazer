@@ -55,7 +55,7 @@ export class UserRecentPlays extends VkCommand<
   );
   prefixes = UserRecentPlays.prefixes;
 
-  private static COMMAND_PREFIX = new OWN_COMMAND_PREFIX(this.prefixes);
+  private static COMMAND_PREFIX = OWN_COMMAND_PREFIX(this.prefixes);
   private COMMAND_PREFIX = UserRecentPlays.COMMAND_PREFIX;
   private static commandStructure = [
     {argument: SERVER_PREFIX, isOptional: false},

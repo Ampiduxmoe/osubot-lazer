@@ -27,7 +27,7 @@ export class Help extends VkCommand<HelpExecutionArgs, HelpViewParams> {
 
   commands: VkCommand<unknown, unknown>[];
   constructor(commands: VkCommand<unknown, unknown>[]) {
-    const COMMAND_PREFIX = new OWN_COMMAND_PREFIX(Help.prefixes);
+    const COMMAND_PREFIX = OWN_COMMAND_PREFIX(Help.prefixes);
     const FOREIGN_COMMAND_PREFIX = VK_FOREIGN_COMMAND_PREFIX(
       new CommandPrefixes(
         ...Help.prefixes,

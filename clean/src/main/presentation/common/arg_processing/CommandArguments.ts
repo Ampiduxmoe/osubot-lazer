@@ -21,25 +21,21 @@ export const SERVER_PREFIX: CommandArgument<OsuServer> = {
   },
 };
 
-export class OWN_COMMAND_PREFIX implements CommandArgument<string> {
-  displayName: string;
-  description = undefined;
+export const OWN_COMMAND_PREFIX: (
+  validPrefixes: CommandPrefixes
+) => CommandArgument<string> = validPrefixes => ({
+  displayName: validPrefixes.join('|'),
+  description: undefined,
   get usageExample(): string {
-    return pickRandom(this.prefixes);
-  }
-  match(): boolean {
-    return true;
-  }
+    return pickRandom(validPrefixes);
+  },
+  match: function (token: string): boolean {
+    return validPrefixes.matchIgnoringCase(token);
+  },
   parse(token: string): string {
     return token;
-  }
-
-  private prefixes: CommandPrefixes;
-  constructor(prefixes: CommandPrefixes) {
-    this.prefixes = prefixes;
-    this.displayName = prefixes.join('|');
-  }
-}
+  },
+});
 
 export const VK_FOREIGN_COMMAND_PREFIX: (
   validPrefixes: CommandPrefixes

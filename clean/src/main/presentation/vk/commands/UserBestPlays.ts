@@ -39,7 +39,7 @@ export class UserBestPlays extends VkCommand<
   static prefixes = new CommandPrefixes('t', 'top');
   prefixes = UserBestPlays.prefixes;
 
-  private static COMMAND_PREFIX = new OWN_COMMAND_PREFIX(this.prefixes);
+  private static COMMAND_PREFIX = OWN_COMMAND_PREFIX(this.prefixes);
   private COMMAND_PREFIX = UserBestPlays.COMMAND_PREFIX;
   private static commandStructure = [
     {argument: SERVER_PREFIX, isOptional: false},
