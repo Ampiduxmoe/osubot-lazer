@@ -135,6 +135,8 @@ export class ChatLeaderboardOnMap extends VkCommand<
       }
       return args.usernameList.usernames;
     })();
+    const isChatLb =
+      args.usernameList === undefined || args.usernameList.isAdditive;
     if (usernames.length === 0) {
       return {
         server: args.server,
@@ -144,6 +146,7 @@ export class ChatLeaderboardOnMap extends VkCommand<
         map: undefined,
         plays: undefined,
         missingUsernames: undefined,
+        isChatLb: isChatLb,
       };
     }
     const leaderboardResponse = await this.getBeatmapBestScores.execute({
@@ -166,6 +169,7 @@ export class ChatLeaderboardOnMap extends VkCommand<
             map: undefined,
             plays: undefined,
             missingUsernames: undefined,
+            isChatLb: isChatLb,
           };
       }
     }
@@ -177,6 +181,7 @@ export class ChatLeaderboardOnMap extends VkCommand<
       map: leaderboardResponse.map!,
       plays: leaderboardResponse.mapPlays!,
       missingUsernames: leaderboardResponse.missingUsernames!,
+      isChatLb: isChatLb,
     };
   }
 
@@ -189,6 +194,7 @@ export class ChatLeaderboardOnMap extends VkCommand<
       map,
       plays,
       missingUsernames,
+      isChatLb,
     } = params;
     if (usernames.length === 0) {
       return this.createNoUsernamesMessage(server);
@@ -207,7 +213,8 @@ export class ChatLeaderboardOnMap extends VkCommand<
       plays,
       server,
       mode!,
-      missingUsernames!
+      missingUsernames!,
+      isChatLb
     );
   }
 
@@ -216,7 +223,8 @@ export class ChatLeaderboardOnMap extends VkCommand<
     mapPlays: OsuMapUserBestPlays[],
     server: OsuServer,
     mode: OsuRuleset,
-    missingUsernames: string[]
+    missingUsernames: string[],
+    isChatLb: boolean
   ): VkOutputMessage {
     const serverString = OsuServer[server];
     const modeString = OsuRuleset[mode];
@@ -267,9 +275,11 @@ export class ChatLeaderboardOnMap extends VkCommand<
       missingUsernames.length > 0
         ? '\nНе удалось найти игроков с никами:\n' + missingUsernames.join(', ')
         : '';
-    const mapUrlShort = map.beatmap.url.replace('beatmap', 'b');
+    const mapUrlShort = map.beatmap.url.replace('beatmaps', 'b');
     const text = `
 [Server: ${serverString}, Mode: ${modeString}]
+Топ ${isChatLb ? 'чата' : 'выбранных игроков'} на карте
+
 ${artist} - ${title} [${diffname}] by ${mapperName} (${mapStatus})
 ${lengthString} (${drainString})　${bpm} BPM　${sr}★
 AR: ${ar}　CS: ${cs}　OD: ${od}　HP: ${hp}
@@ -351,14 +361,14 @@ ${pos}. ${username}　${modsString}
     const comboString = `${combo}x`;
     const misses = play.orderedHitcounts[play.orderedHitcounts.length - 1];
     const acc = (play.accuracy * 100).toFixed(2);
-    const ppValue = play.pp.value?.toFixed(2);
+    const ppValue = play.pp.value?.toFixed(0);
     const ppValueEstimation = play.pp.estimatedValue?.toFixed(0);
     const pp = ppValue ?? ppValueEstimation ?? '—';
     const ppEstimationMark =
       ppValue === undefined && ppValueEstimation !== undefined ? '~' : '';
     return `
 ${pos}. ${username}　${modsString}
-${acc}%　${misses}X　${comboString}　${ppEstimationMark}${pp}pp
+　 ${acc}%　${misses}X　${comboString}　${ppEstimationMark}${pp}pp
     `.trim();
   }
 
@@ -444,6 +454,7 @@ type ChatLeaderboardOnMapViewParams = {
   map: OsuMap | undefined;
   plays: OsuMapUserBestPlays[] | undefined;
   missingUsernames: string[] | undefined;
+  isChatLb: boolean;
 };
 
 function getScoreDateString(date: Date): string {
