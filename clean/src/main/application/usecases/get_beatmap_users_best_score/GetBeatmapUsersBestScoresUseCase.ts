@@ -3,6 +3,7 @@ import {GetBeatmapUsersBestScoresRequest} from './GetBeatmapUsersBestScoresReque
 import {
   GetBeatmapUsersBestScoresResponse,
   OsuMapUserBestPlays,
+  OsuMapUserPlay,
 } from './GetBeatmapUsersBestScoresResponse';
 import {CachedOsuUsersDao} from '../../requirements/dao/CachedOsuUsersDao';
 import {OsuUsersDao} from '../../requirements/dao/OsuUsersDao';
@@ -56,8 +57,15 @@ export class GetBeatmapUsersBestScoresUseCase
   async execute(
     params: GetBeatmapUsersBestScoresRequest
   ): Promise<GetBeatmapUsersBestScoresResponse> {
-    const {appUserId, server, beatmapId, usernames, quantityPerUser, mods} =
-      params;
+    const {
+      appUserId,
+      server,
+      beatmapId,
+      usernames,
+      startPosition,
+      quantityPerUser,
+      mods,
+    } = params;
     const beatmap = await this.beatmaps.get(appUserId, beatmapId, server);
     if (beatmap === undefined) {
       return {
@@ -106,7 +114,11 @@ export class GetBeatmapUsersBestScoresUseCase
     }));
     const usernamesScores = await Promise.all(usernameScoresPromises);
     const scoreCount = sumBy(
-      x => Math.min(x.rawScores?.length ?? 0, quantityPerUser),
+      x =>
+        Math.min(
+          Math.max((x.rawScores?.length ?? 0) - startPosition + 1, 0),
+          quantityPerUser
+        ),
       usernamesScores
     );
     const bestScoresOutput: OsuMapUserBestPlays[] = [];
@@ -148,14 +160,17 @@ export class GetBeatmapUsersBestScoresUseCase
           })(),
         }))
       );
-      bestScoresOutput.push({
-        username: username,
-        plays: await Promise.all(
-          beatmapScoreSortValues
-            .sort((a, b) => b.sortValue - a.sortValue)
-            .map(e => e.s)
-            .slice(0, quantityPerUser)
-            .map(async mapScore => ({
+      const offset = startPosition - 1;
+      const playerScores: OsuMapUserPlay[] = await Promise.all(
+        beatmapScoreSortValues
+          .sort((a, b) => b.sortValue - a.sortValue)
+          .map((e, i) => ({pos: i + 1, score: e.s}))
+          .slice(offset, offset + quantityPerUser)
+          .map(async entry => {
+            const pos = entry.pos;
+            const mapScore = entry.score;
+            return {
+              sortedPosition: pos,
               mods: mapScore.mods.map(m => ({
                 acronym: m.acronym,
                 settings: m.settings,
@@ -181,9 +196,15 @@ export class GetBeatmapUsersBestScoresUseCase
               orderedHitcounts: [...mapScore.hitcounts.orderedValues],
               grade: mapScore.rank,
               date: mapScore.endedAt.getTime(),
-            }))
-        ),
-      });
+            };
+          })
+      );
+      if (playerScores.length > 0) {
+        bestScoresOutput.push({
+          username: username,
+          plays: playerScores,
+        });
+      }
     }
     return {
       isFailure: false,

@@ -6,6 +6,7 @@ export type GetBeatmapUsersBestScoresRequest = {
   server: OsuServer;
   beatmapId: number;
   usernames: string[];
+  startPosition: number;
   quantityPerUser: number;
   mods: {
     acronym: ModAcronym;

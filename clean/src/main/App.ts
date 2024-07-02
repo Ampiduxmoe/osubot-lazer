@@ -39,6 +39,7 @@ import {OsuBeatmapsDaoImpl} from './data/dao/OsuBeatmapsDaoImpl';
 import {GetBeatmapUsersBestScoresUseCase} from './application/usecases/get_beatmap_users_best_score/GetBeatmapUsersBestScoresUseCase';
 import {OsuBeatmapUserScoresDaoImpl} from './data/dao/OsuBeatmapUserScoresDaoImpl';
 import {BeatmapLeaderboard} from './presentation/vk/commands/BeatmapLeaderboard';
+import {UserBestPlaysOnMap} from './presentation/vk/commands/UserBestPlaysOnMap';
 
 export const APP_CODE_NAME = 'osubot-lazer';
 
@@ -237,6 +238,10 @@ export class App {
       new BeatmapInfo(getBeatmapInfoUseCase),
       new BeatmapLeaderboard(
         getConversationMembers,
+        getBeatmapUsersBestScoresUseCase,
+        getAppUserInfoUseCase
+      ),
+      new UserBestPlaysOnMap(
         getBeatmapUsersBestScoresUseCase,
         getAppUserInfoUseCase
       ),

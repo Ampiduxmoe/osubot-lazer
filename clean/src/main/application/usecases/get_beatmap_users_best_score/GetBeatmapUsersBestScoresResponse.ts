@@ -38,6 +38,7 @@ export type OsuMapUserBestPlays = {
 };
 
 export type OsuMapUserPlay = {
+  sortedPosition: number;
   mods: {
     acronym: ModAcronym;
     settings?:

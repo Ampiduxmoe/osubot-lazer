@@ -7,13 +7,15 @@ import {OsuServer} from '../../../../primitives/OsuServer';
 import {APP_CODE_NAME} from '../../../App';
 import {GetAppUserInfoUseCase} from '../../../application/usecases/get_app_user_info/GetAppUserInfoUseCase';
 import {VkIdConverter} from '../VkIdConverter';
-import {round} from '../../../../primitives/Numbers';
+import {clamp, round} from '../../../../primitives/Numbers';
 import {
   OWN_COMMAND_PREFIX,
   MODS,
   SERVER_PREFIX,
-  USERNAME_LIST,
   BEATMAP_ID,
+  START_POSITION,
+  QUANTITY,
+  USERNAME,
 } from '../../common/arg_processing/CommandArguments';
 import {MainArgsProcessor} from '../../common/arg_processing/MainArgsProcessor';
 import {Timespan} from '../../../../primitives/Timespan';
@@ -23,50 +25,47 @@ import {OsuRuleset} from '../../../../primitives/OsuRuleset';
 import {GetBeatmapUsersBestScoresUseCase} from '../../../application/usecases/get_beatmap_users_best_score/GetBeatmapUsersBestScoresUseCase';
 import {
   OsuMap,
-  OsuMapUserBestPlays,
   OsuMapUserPlay,
 } from '../../../application/usecases/get_beatmap_users_best_score/GetBeatmapUsersBestScoresResponse';
 
-export class BeatmapLeaderboard extends VkCommand<
-  BeatmapLeaderboardExecutionArgs,
-  BeatmapLeaderboardViewParams
+export class UserBestPlaysOnMap extends VkCommand<
+  UserBestPlaysOnMapExecutionArgs,
+  UserBestPlaysOnMapViewParams
 > {
-  internalName = BeatmapLeaderboard.name;
-  shortDescription = 'топ скоры на карте';
-  longDescription =
-    'показывает лучшие скоры игроков на карте (по умолчанию игроки беседы)';
+  internalName = UserBestPlaysOnMap.name;
+  shortDescription = 'топ скоры игрока на карте';
+  longDescription = 'Показывает ваши лучшие скоры выбранной на карте';
 
-  static prefixes = new CommandPrefixes('lb', 'leaderboard');
-  prefixes = BeatmapLeaderboard.prefixes;
+  static prefixes = new CommandPrefixes('mp', 'mpb', 'MapPersonalBest');
+  prefixes = UserBestPlaysOnMap.prefixes;
 
   private static COMMAND_PREFIX = OWN_COMMAND_PREFIX(this.prefixes);
-  private COMMAND_PREFIX = BeatmapLeaderboard.COMMAND_PREFIX;
+  private COMMAND_PREFIX = UserBestPlaysOnMap.COMMAND_PREFIX;
   private static commandStructure = [
     {argument: SERVER_PREFIX, isOptional: false},
     {argument: this.COMMAND_PREFIX, isOptional: false},
     {argument: BEATMAP_ID, isOptional: true},
-    {argument: USERNAME_LIST, isOptional: true},
+    {argument: USERNAME, isOptional: true},
+    {argument: START_POSITION, isOptional: true},
+    {argument: QUANTITY, isOptional: true},
     {argument: MODS, isOptional: true},
   ];
 
-  getChatMemberIds: (chatId: number) => Promise<number[]>;
   getBeatmapBestScores: GetBeatmapUsersBestScoresUseCase;
   getAppUserInfo: GetAppUserInfoUseCase;
   constructor(
-    getChatMemberIds: (chatId: number) => Promise<number[]>,
     getBeatmapBestScores: GetBeatmapUsersBestScoresUseCase,
     getAppUserInfo: GetAppUserInfoUseCase
   ) {
-    super(BeatmapLeaderboard.commandStructure);
-    this.getChatMemberIds = getChatMemberIds;
+    super(UserBestPlaysOnMap.commandStructure);
     this.getBeatmapBestScores = getBeatmapBestScores;
     this.getAppUserInfo = getAppUserInfo;
   }
 
   matchVkMessage(
     ctx: VkMessageContext
-  ): CommandMatchResult<BeatmapLeaderboardExecutionArgs> {
-    const fail = CommandMatchResult.fail<BeatmapLeaderboardExecutionArgs>();
+  ): CommandMatchResult<UserBestPlaysOnMapExecutionArgs> {
+    const fail = CommandMatchResult.fail<UserBestPlaysOnMapExecutionArgs>();
     let command: string | undefined = undefined;
     if (ctx.hasMessagePayload && ctx.messagePayload!.target === APP_CODE_NAME) {
       command = ctx.messagePayload!.command;
@@ -86,8 +85,10 @@ export class BeatmapLeaderboard extends VkCommand<
     const server = argsProcessor.use(SERVER_PREFIX).at(0).extract();
     const ownPrefix = argsProcessor.use(this.COMMAND_PREFIX).at(0).extract();
     const beatmapId = argsProcessor.use(BEATMAP_ID).extract();
-    const usernameList = argsProcessor.use(USERNAME_LIST).extract();
+    const username = argsProcessor.use(USERNAME).extract();
     const mods = argsProcessor.use(MODS).extract();
+    const startPosition = argsProcessor.use(START_POSITION).extract();
+    const quantity = argsProcessor.use(QUANTITY).extract();
 
     if (argsProcessor.remainingTokens.length > 0) {
       return fail;
@@ -101,56 +102,47 @@ export class BeatmapLeaderboard extends VkCommand<
     }
     return CommandMatchResult.ok({
       vkUserId: ctx.senderId,
-      vkChatId: ctx.chatId,
       server: server,
       beatmapId: beatmapId,
-      usernameList: usernameList,
+      username: username,
       mods: mods,
+      startPosition: startPosition,
+      quantity: quantity,
     });
   }
 
   async process(
-    args: BeatmapLeaderboardExecutionArgs
-  ): Promise<BeatmapLeaderboardViewParams> {
-    const usernames = await (async () => {
-      if (args.usernameList === undefined || args.usernameList.isAdditive) {
-        const conversationMembers =
-          args.vkChatId === undefined
-            ? [args.vkUserId]
-            : await this.getChatMemberIds(args.vkChatId);
-        const appUserInfoResponses = await Promise.all(
-          conversationMembers.map(id =>
-            this.getAppUserInfo.execute({
-              id: VkIdConverter.vkUserIdToAppUserId(id),
-              server: args.server,
-            })
-          )
-        );
-        const chatUsernames = appUserInfoResponses
-          .filter(x => x.userInfo !== undefined)
-          .map(x => x.userInfo!.username);
-        return [...chatUsernames, ...(args.usernameList?.usernames ?? [])];
+    args: UserBestPlaysOnMapExecutionArgs
+  ): Promise<UserBestPlaysOnMapViewParams> {
+    const username = await (async () => {
+      if (args.username !== undefined) {
+        return args.username;
       }
-      return args.usernameList.usernames;
+      const appUserInfoResponse = await this.getAppUserInfo.execute({
+        id: VkIdConverter.vkUserIdToAppUserId(args.vkUserId),
+        server: args.server,
+      });
+      return appUserInfoResponse.userInfo?.username;
     })();
-    if (usernames.length === 0) {
+    if (username === undefined) {
       return {
         server: args.server,
-        usernames: [],
         beatmapIdInput: args.beatmapId,
+        usernameInput: undefined,
+        username: undefined,
         mode: undefined,
         map: undefined,
         plays: undefined,
-        missingUsernames: undefined,
+        startPosition: undefined,
       };
     }
     const leaderboardResponse = await this.getBeatmapBestScores.execute({
       appUserId: VkIdConverter.vkUserIdToAppUserId(args.vkUserId),
       server: args.server,
       beatmapId: args.beatmapId,
-      usernames: usernames,
-      startPosition: 1,
-      quantityPerUser: 1,
+      usernames: [username],
+      startPosition: Math.max(args.startPosition ?? 1, 1),
+      quantityPerUser: clamp(args.quantity ?? 1, 1, 10),
       mods: args.mods ?? [],
     });
     if (leaderboardResponse.failureReason !== undefined) {
@@ -158,63 +150,73 @@ export class BeatmapLeaderboard extends VkCommand<
         case 'beatmap not found':
           return {
             server: args.server,
-            usernames: usernames,
             beatmapIdInput: args.beatmapId,
+            usernameInput: args.username,
+            username: username,
             mode: undefined,
             map: undefined,
             plays: undefined,
-            missingUsernames: undefined,
+            startPosition: undefined,
           };
       }
     }
+    if (leaderboardResponse.mapPlays!.length === 0) {
+      return {
+        server: args.server,
+        beatmapIdInput: args.beatmapId,
+        usernameInput: args.username,
+        username: username,
+        mode: leaderboardResponse.ruleset!,
+        map: leaderboardResponse.map!,
+        plays: undefined,
+        startPosition: undefined,
+      };
+    }
     return {
       server: args.server,
-      usernames: usernames,
       beatmapIdInput: args.beatmapId,
+      usernameInput: args.username,
+      username: leaderboardResponse.mapPlays![0].username,
       mode: leaderboardResponse.ruleset!,
       map: leaderboardResponse.map!,
-      plays: leaderboardResponse.mapPlays!,
-      missingUsernames: leaderboardResponse.missingUsernames!,
+      plays:
+        args.quantity === undefined && args.startPosition !== undefined
+          ? leaderboardResponse.mapPlays![0].plays.slice(0, args.startPosition)
+          : leaderboardResponse.mapPlays![0].plays.slice(
+              0,
+              (args.startPosition ?? 1) + (args.quantity ?? 1) - 1
+            ),
+      startPosition: args.startPosition ?? 1,
     };
   }
 
-  createOutputMessage(params: BeatmapLeaderboardViewParams): VkOutputMessage {
-    const {
-      server,
-      usernames,
-      beatmapIdInput,
-      mode,
-      map,
-      plays,
-      missingUsernames,
-    } = params;
-    if (usernames.length === 0) {
-      return this.createNoUsernamesMessage(server);
+  createOutputMessage(params: UserBestPlaysOnMapViewParams): VkOutputMessage {
+    const {server, beatmapIdInput, usernameInput, username, mode, map, plays} =
+      params;
+    if (username === undefined) {
+      if (usernameInput === undefined) {
+        return this.createUsernameNotBoundMessage(server);
+      }
+      return this.createUserNotFoundMessage(server, usernameInput);
     }
-    if (map === undefined || plays === undefined) {
+    if (map === undefined) {
       if (beatmapIdInput === undefined) {
         return this.createBeatmapIdNotSpecifiedMessage(server);
       }
       return this.createMapNotFoundMessage(server, beatmapIdInput);
     }
-    if (plays.length === 0) {
-      return this.createNoMapPlaysMessage(server, mode!, missingUsernames!);
+    if (plays === undefined) {
+      return this.createNoMapPlaysMessage(server, mode!);
     }
-    return this.createMapPlaysMessage(
-      map,
-      plays,
-      server,
-      mode!,
-      missingUsernames!
-    );
+    return this.createMapPlaysMessage(map, plays, server, mode!, username);
   }
 
   createMapPlaysMessage(
     map: OsuMap,
-    mapPlays: OsuMapUserBestPlays[],
+    mapPlays: OsuMapUserPlay[],
     server: OsuServer,
     mode: OsuRuleset,
-    missingUsernames: string[]
+    username: string
   ): VkOutputMessage {
     const serverString = OsuServer[server];
     const modeString = OsuRuleset[mode];
@@ -239,44 +241,36 @@ export class BeatmapLeaderboard extends VkCommand<
     const cs = round(map.beatmap.cs, 2);
     const od = round(map.beatmap.od, 2);
     const hp = round(map.beatmap.hp, 2);
-    const maxCombo = map.beatmap.maxCombo;
     const fewScores = mapPlays.length <= 5;
-    const sortedMapPlays = mapPlays.sort((a, b) => {
-      const aPp = a.plays[0].pp.estimatedValue ?? 0;
-      const bPp = b.plays[0].pp.estimatedValue ?? 0;
-      if (aPp === bPp) {
-        return b.plays[0].totalScore - a.plays[0].totalScore;
-      }
-      return bPp - aPp;
-    });
-    const scoresText = sortedMapPlays
-      .map((p, i) =>
+    const oneScore = mapPlays.length === 1;
+    const maxCombo = map.beatmap.maxCombo;
+    const scoresString = oneScore ? 'Лучший скор' : 'Лучшие скоры';
+    const maxComboString = oneScore ? '' : `\nMax combo: ${maxCombo}x`;
+    const scoresText = mapPlays
+      .map(p =>
         fewScores
-          ? this.verboseScoreDescription(i + 1, p.username, p.plays[0])
-          : this.shortScoreDescription(i + 1, p.username, p.plays[0])
+          ? oneScore
+            ? this.verboseScoreDescription(p, maxCombo)
+            : this.normalScoreDescription(p)
+          : this.shortScoreDescription(p)
       )
       .join(fewScores ? '\n' : '\n');
     const couldNotGetSomeStatsMessage =
-      mapPlays.find(play => play.plays[0].pp.estimatedValue === undefined) !==
-      undefined
+      mapPlays.find(play => play.pp.estimatedValue === undefined) !== undefined
         ? '\n(Не удалось получить часть статистики)'
         : '';
-    const missingUsernamesMessage =
-      missingUsernames.length > 0
-        ? '\nНе удалось найти игроков с никами:\n' + missingUsernames.join(', ')
-        : '';
-    const mapUrlShort = map.beatmap.url.replace('beatmap', 'b');
+    const mapUrlShort = map.beatmap.url.replace('beatmaps', 'b');
     const text = `
 [Server: ${serverString}, Mode: ${modeString}]
+${scoresString} ${username} на карте
+
 ${artist} - ${title} [${diffname}] by ${mapperName} (${mapStatus})
 ${lengthString} (${drainString})　${bpm} BPM　${sr}★
-AR: ${ar}　CS: ${cs}　OD: ${od}　HP: ${hp}
-Max combo: ${maxCombo}x
+AR: ${ar}　CS: ${cs}　OD: ${od}　HP: ${hp}${maxComboString}
 ${mapUrlShort}
 
 ${scoresText}
 ${couldNotGetSomeStatsMessage}
-${missingUsernamesMessage}
     `.trim();
     return {
       text: text,
@@ -285,11 +279,7 @@ ${missingUsernamesMessage}
     };
   }
 
-  verboseScoreDescription(
-    pos: number,
-    username: string,
-    play: OsuMapUserPlay
-  ): string {
+  verboseScoreDescription(play: OsuMapUserPlay, mapMaxCombo: number): string {
     let speed = 1;
     const dtMod = play.mods.find(m => m.acronym.isAnyOf('DT', 'NC'));
     if (dtMod !== undefined && dtMod.settings !== undefined) {
@@ -300,6 +290,56 @@ ${missingUsernamesMessage}
       speed = (htMod.settings as {speedChange: number}).speedChange ?? 0.75;
     }
 
+    const pos = play.sortedPosition;
+    const modAcronyms = play.mods.map(m => m.acronym);
+    let modsString = modAcronyms.length > 0 ? '+' + modAcronyms.join('') : '';
+    const defaultSpeeds = [1, 1.5, 0.75];
+    if (!defaultSpeeds.includes(speed)) {
+      modsString += ` (${speed}x)`;
+    }
+    const grade = play.grade;
+    const combo = play.combo;
+    const totalScore = play.totalScore;
+    const dateString = getScoreDateStringWithTime(new Date(play.date));
+    const comboString = `${combo}x/${mapMaxCombo}x`;
+    const hitcountsString = play.orderedHitcounts.join('/');
+    const acc = (play.accuracy * 100).toFixed(2);
+    const ppValue = play.pp.value?.toFixed(2);
+    const ppValueEstimation = play.pp.estimatedValue?.toFixed(0);
+    const pp = ppValue ?? ppValueEstimation ?? '—';
+    const ppEstimationMark =
+      ppValue === undefined && ppValueEstimation !== undefined ? '~' : '';
+    const ppFc =
+      play.pp.ifFc === undefined ? '—' : `~${play.pp.ifFc.toFixed(0)}`;
+    const ppSs =
+      play.pp.ifSs === undefined ? '—' : `~${play.pp.ifSs.toFixed(0)}`;
+    const ppForFcAndSsString = [play.pp.ifFc, play.pp.ifSs].includes(undefined)
+      ? ''
+      : `　FC: ${ppFc}　SS: ${ppSs}`;
+    return `
+${pos}. ${modsString}
+Score: ${totalScore}
+Combo: ${comboString}
+Accuracy: ${acc}%
+PP: ${ppEstimationMark}${pp}${ppForFcAndSsString}
+Hitcounts: ${hitcountsString}
+Grade: ${grade}
+${dateString}
+    `.trim();
+  }
+
+  normalScoreDescription(play: OsuMapUserPlay): string {
+    let speed = 1;
+    const dtMod = play.mods.find(m => m.acronym.isAnyOf('DT', 'NC'));
+    if (dtMod !== undefined && dtMod.settings !== undefined) {
+      speed = (dtMod.settings as {speedChange: number}).speedChange ?? 1.5;
+    }
+    const htMod = play.mods.find(m => m.acronym.isAnyOf('HT', 'DC'));
+    if (htMod !== undefined && htMod.settings !== undefined) {
+      speed = (htMod.settings as {speedChange: number}).speedChange ?? 0.75;
+    }
+
+    const pos = play.sortedPosition;
     const modAcronyms = play.mods.map(m => m.acronym);
     let modsString = modAcronyms.length > 0 ? '+' + modAcronyms.join('') : '';
     const defaultSpeeds = [1, 1.5, 0.75];
@@ -318,17 +358,13 @@ ${missingUsernamesMessage}
     const ppEstimationMark =
       ppValue === undefined && ppValueEstimation !== undefined ? '~' : '';
     return `
-${pos}. ${username}　${modsString}
+${pos}. ${modsString}
 　 ${acc}%　${misses}X　${ppEstimationMark}${pp}pp
 　 ${totalScore}　${comboString}　${dateString}
     `.trim();
   }
 
-  shortScoreDescription(
-    pos: number,
-    username: string,
-    play: OsuMapUserPlay
-  ): string {
+  shortScoreDescription(play: OsuMapUserPlay): string {
     let speed = 1;
     const dtMod = play.mods.find(m => m.acronym.isAnyOf('DT', 'NC'));
     if (dtMod !== undefined && dtMod.settings !== undefined) {
@@ -339,6 +375,7 @@ ${pos}. ${username}　${modsString}
       speed = (htMod.settings as {speedChange: number}).speedChange ?? 0.75;
     }
 
+    const pos = play.sortedPosition;
     const modAcronyms = play.mods.map(m => m.acronym);
     let modsString = modAcronyms.length > 0 ? '+' + modAcronyms.join('') : '';
     const defaultSpeeds = [1, 1.5, 0.75];
@@ -349,14 +386,14 @@ ${pos}. ${username}　${modsString}
     const comboString = `${combo}x`;
     const misses = play.orderedHitcounts[play.orderedHitcounts.length - 1];
     const acc = (play.accuracy * 100).toFixed(2);
-    const ppValue = play.pp.value?.toFixed(2);
+    const ppValue = play.pp.value?.toFixed(0);
     const ppValueEstimation = play.pp.estimatedValue?.toFixed(0);
     const pp = ppValue ?? ppValueEstimation ?? '—';
     const ppEstimationMark =
       ppValue === undefined && ppValueEstimation !== undefined ? '~' : '';
     return `
-${pos}. ${username}　${modsString}
-${acc}%　${misses}X　${comboString}　${ppEstimationMark}${pp}pp
+${pos}. ${modsString}
+　 ${acc}%　${misses}X　${comboString}　${ppEstimationMark}${pp}pp
     `.trim();
   }
 
@@ -373,12 +410,27 @@ ${acc}%　${misses}X　${comboString}　${ppEstimationMark}${pp}pp
     };
   }
 
-  createNoUsernamesMessage(server: OsuServer): VkOutputMessage {
+  createUserNotFoundMessage(
+    server: OsuServer,
+    usernameInput: string
+  ): VkOutputMessage {
     const serverString = OsuServer[server];
     const text = `
 [Server: ${serverString}]
-Невозможно выполнить команду для пустого списка игроков!
-Привяжите ник к аккаунту или явно укажите список ников для отображения.
+Пользователь с ником ${usernameInput} не найден
+    `.trim();
+    return {
+      text: text,
+      attachment: undefined,
+      buttons: undefined,
+    };
+  }
+
+  createUsernameNotBoundMessage(server: OsuServer): VkOutputMessage {
+    const serverString = OsuServer[server];
+    const text = `
+[Server: ${serverString}]
+Не установлен ник!
     `.trim();
     return {
       text: text,
@@ -402,20 +454,13 @@ ${acc}%　${misses}X　${comboString}　${ppEstimationMark}${pp}pp
 
   createNoMapPlaysMessage(
     server: OsuServer,
-    mode: OsuRuleset,
-    missingUsernames: string[]
+    mode: OsuRuleset
   ): VkOutputMessage {
     const serverString = OsuServer[server];
     const modeString = OsuRuleset[mode];
-    const missingUsernamesMessage =
-      missingUsernames.length > 0
-        ? '\nНе удалось найти игроков с никами:\n' + missingUsernames.join(', ')
-        : '';
     const text = `
 [Server: ${serverString}, Mode: ${modeString}]
 Скоры на карте не найдены
-
-${missingUsernamesMessage}
     `.trim();
     return {
       text: text,
@@ -425,23 +470,25 @@ ${missingUsernamesMessage}
   }
 }
 
-type BeatmapLeaderboardExecutionArgs = {
+type UserBestPlaysOnMapExecutionArgs = {
   vkUserId: number;
-  vkChatId: number | undefined;
   server: OsuServer;
   beatmapId: number;
-  usernameList: {usernames: string[]; isAdditive: boolean} | undefined;
+  username: string | undefined;
   mods: ModArg[] | undefined;
+  startPosition: number | undefined;
+  quantity: number | undefined;
 };
 
-type BeatmapLeaderboardViewParams = {
+type UserBestPlaysOnMapViewParams = {
   server: OsuServer;
-  usernames: string[];
   beatmapIdInput: number | undefined;
+  usernameInput: string | undefined;
+  username: string | undefined;
   mode: OsuRuleset | undefined;
   map: OsuMap | undefined;
-  plays: OsuMapUserBestPlays[] | undefined;
-  missingUsernames: string[] | undefined;
+  plays: OsuMapUserPlay[] | undefined;
+  startPosition: number | undefined;
 };
 
 function getScoreDateString(date: Date): string {
@@ -452,4 +499,19 @@ function getScoreDateString(date: Date): string {
   const year = date.getUTCFullYear();
   const datePart = `${dayFormatted}.${monthFormatted}.${year}`;
   return `${datePart}`;
+}
+
+function getScoreDateStringWithTime(date: Date): string {
+  const day = date.getUTCDate();
+  const dayFormatted = (day > 9 ? '' : '0') + day;
+  const month = date.getUTCMonth() + 1;
+  const monthFormatted = (month > 9 ? '' : '0') + month;
+  const year = date.getUTCFullYear();
+  const hours = date.getUTCHours();
+  const hoursFormatted = (hours > 9 ? '' : '0') + hours;
+  const minutes = date.getUTCMinutes();
+  const minutesFormatted = (minutes > 9 ? '' : '0') + minutes;
+  const datePart = `${dayFormatted}.${monthFormatted}.${year}`;
+  const timePart = `${hoursFormatted}:${minutesFormatted}`;
+  return `${datePart} ${timePart}`;
 }
