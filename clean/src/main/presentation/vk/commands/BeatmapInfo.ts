@@ -36,7 +36,7 @@ export class BeatmapInfo extends VkCommand<
   shortDescription = 'показать карту';
   longDescription = 'Отображает основную информацию о карте';
 
-  static prefixes = new CommandPrefixes('m', 'map');
+  static prefixes = new CommandPrefixes('m', 'Map');
   prefixes = BeatmapInfo.prefixes;
 
   private static COMMAND_PREFIX = OWN_COMMAND_PREFIX(this.prefixes);

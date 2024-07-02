@@ -47,8 +47,8 @@ export class UserRecentPlays extends VkCommand<
     UserRecentPlays.recentPassesPrefixes.map(s => `"${s}"`).join(' или ') +
     ' для пассов';
 
-  static recentPlaysPrefixes = new CommandPrefixes('r', 'recent');
-  static recentPassesPrefixes = new CommandPrefixes('rp', 'recentpass');
+  static recentPlaysPrefixes = new CommandPrefixes('r', 'Recent');
+  static recentPassesPrefixes = new CommandPrefixes('rp', 'RecentPass');
   static prefixes = new CommandPrefixes(
     ...UserRecentPlays.recentPlaysPrefixes,
     ...UserRecentPlays.recentPassesPrefixes

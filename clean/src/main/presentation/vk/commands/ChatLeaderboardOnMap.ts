@@ -27,20 +27,22 @@ import {
   OsuMapUserPlay,
 } from '../../../application/usecases/get_beatmap_users_best_score/GetBeatmapUsersBestScoresResponse';
 
-export class BeatmapLeaderboard extends VkCommand<
-  BeatmapLeaderboardExecutionArgs,
-  BeatmapLeaderboardViewParams
+export class ChatLeaderboardOnMap extends VkCommand<
+  ChatLeaderboardOnMapExecutionArgs,
+  ChatLeaderboardOnMapViewParams
 > {
-  internalName = BeatmapLeaderboard.name;
-  shortDescription = 'топ скоры на карте';
+  internalName = ChatLeaderboardOnMap.name;
+  shortDescription = 'топ чата на карте';
   longDescription =
-    'показывает лучшие скоры игроков на карте (по умолчанию игроки беседы)';
+    'На выбранной карте показывает топ, ' +
+    'составленный из скоров игроков ' +
+    '(по умолчанию игроки беседы)';
 
-  static prefixes = new CommandPrefixes('lb', 'leaderboard');
-  prefixes = BeatmapLeaderboard.prefixes;
+  static prefixes = new CommandPrefixes('ml', 'mlb', 'MapLeaderboard');
+  prefixes = ChatLeaderboardOnMap.prefixes;
 
   private static COMMAND_PREFIX = OWN_COMMAND_PREFIX(this.prefixes);
-  private COMMAND_PREFIX = BeatmapLeaderboard.COMMAND_PREFIX;
+  private COMMAND_PREFIX = ChatLeaderboardOnMap.COMMAND_PREFIX;
   private static commandStructure = [
     {argument: SERVER_PREFIX, isOptional: false},
     {argument: this.COMMAND_PREFIX, isOptional: false},
@@ -57,7 +59,7 @@ export class BeatmapLeaderboard extends VkCommand<
     getBeatmapBestScores: GetBeatmapUsersBestScoresUseCase,
     getAppUserInfo: GetAppUserInfoUseCase
   ) {
-    super(BeatmapLeaderboard.commandStructure);
+    super(ChatLeaderboardOnMap.commandStructure);
     this.getChatMemberIds = getChatMemberIds;
     this.getBeatmapBestScores = getBeatmapBestScores;
     this.getAppUserInfo = getAppUserInfo;
@@ -65,8 +67,8 @@ export class BeatmapLeaderboard extends VkCommand<
 
   matchVkMessage(
     ctx: VkMessageContext
-  ): CommandMatchResult<BeatmapLeaderboardExecutionArgs> {
-    const fail = CommandMatchResult.fail<BeatmapLeaderboardExecutionArgs>();
+  ): CommandMatchResult<ChatLeaderboardOnMapExecutionArgs> {
+    const fail = CommandMatchResult.fail<ChatLeaderboardOnMapExecutionArgs>();
     let command: string | undefined = undefined;
     if (ctx.hasMessagePayload && ctx.messagePayload!.target === APP_CODE_NAME) {
       command = ctx.messagePayload!.command;
@@ -110,8 +112,8 @@ export class BeatmapLeaderboard extends VkCommand<
   }
 
   async process(
-    args: BeatmapLeaderboardExecutionArgs
-  ): Promise<BeatmapLeaderboardViewParams> {
+    args: ChatLeaderboardOnMapExecutionArgs
+  ): Promise<ChatLeaderboardOnMapViewParams> {
     const usernames = await (async () => {
       if (args.usernameList === undefined || args.usernameList.isAdditive) {
         const conversationMembers =
@@ -178,7 +180,7 @@ export class BeatmapLeaderboard extends VkCommand<
     };
   }
 
-  createOutputMessage(params: BeatmapLeaderboardViewParams): VkOutputMessage {
+  createOutputMessage(params: ChatLeaderboardOnMapViewParams): VkOutputMessage {
     const {
       server,
       usernames,
@@ -425,7 +427,7 @@ ${missingUsernamesMessage}
   }
 }
 
-type BeatmapLeaderboardExecutionArgs = {
+type ChatLeaderboardOnMapExecutionArgs = {
   vkUserId: number;
   vkChatId: number | undefined;
   server: OsuServer;
@@ -434,7 +436,7 @@ type BeatmapLeaderboardExecutionArgs = {
   mods: ModArg[] | undefined;
 };
 
-type BeatmapLeaderboardViewParams = {
+type ChatLeaderboardOnMapViewParams = {
   server: OsuServer;
   usernames: string[];
   beatmapIdInput: number | undefined;

@@ -33,10 +33,10 @@ export class UserBestPlays extends VkCommand<
   UserBestPlaysViewParams
 > {
   internalName = UserBestPlays.name;
-  shortDescription = 'топ скоры';
+  shortDescription = 'топ скоры игрока';
   longDescription = 'Отображает лучшие скоры игрока';
 
-  static prefixes = new CommandPrefixes('t', 'top');
+  static prefixes = new CommandPrefixes('p', 'pb', 'PersonalBest');
   prefixes = UserBestPlays.prefixes;
 
   private static COMMAND_PREFIX = OWN_COMMAND_PREFIX(this.prefixes);
