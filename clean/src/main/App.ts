@@ -232,16 +232,11 @@ export class App {
       return chatMembers.profiles.map(x => x.id);
     };
     const publicCommands = [
-      new UserInfo(getOsuUserInfoUseCase, getAppUserInfoUseCase),
       new SetUsername(setUsernameUseCase),
+      new UserInfo(getOsuUserInfoUseCase, getAppUserInfoUseCase),
+      new BeatmapInfo(getBeatmapInfoUseCase),
       new UserRecentPlays(getRecentPlaysUseCase, getAppUserInfoUseCase),
       new UserBestPlays(getUserBestPlaysUseCase, getAppUserInfoUseCase),
-      new BeatmapInfo(getBeatmapInfoUseCase),
-      new ChatLeaderboardOnMap(
-        getConversationMembers,
-        getBeatmapUsersBestScoresUseCase,
-        getAppUserInfoUseCase
-      ),
       new UserBestPlaysOnMap(
         getBeatmapUsersBestScoresUseCase,
         getAppUserInfoUseCase
@@ -249,6 +244,11 @@ export class App {
       new ChatLeaderboard(
         getConversationMembers,
         getOsuUserInfoUseCase,
+        getAppUserInfoUseCase
+      ),
+      new ChatLeaderboardOnMap(
+        getConversationMembers,
+        getBeatmapUsersBestScoresUseCase,
         getAppUserInfoUseCase
       ),
     ];
