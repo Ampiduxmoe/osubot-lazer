@@ -237,12 +237,12 @@ export const MODE: CommandArgument<OsuRuleset> = {
     return modeRegex.test(token);
   },
   parse: function (token: string): OsuRuleset {
-    const modeName = token.replace('mode=', '');
-    const ruleset = OsuRuleset[modeName as keyof typeof OsuRuleset];
+    const modeName = token.toLowerCase().replace('mode=', '');
+    const ruleset = ALL_OSU_RULESETS.find(x => x.toLowerCase() === modeName);
     if (ruleset === undefined) {
       throw Error('Token should be a valid OsuRuleset key');
     }
-    return ruleset;
+    return OsuRuleset[ruleset];
   },
 };
 
@@ -256,7 +256,7 @@ export const SCORE_COMBO: CommandArgument<number> = {
     return /^\d+?x$/i.test(token);
   },
   parse: function (token: string): number {
-    return parseInt(token.replace('x', ''));
+    return parseInt(token.toLowerCase().replace('x', ''));
   },
 };
 
@@ -270,7 +270,7 @@ export const MISSCOUNT: CommandArgument<number> = {
     return /^\d+?xm$/i.test(token);
   },
   parse: function (token: string): number {
-    return parseInt(token.replace('xm', ''));
+    return parseInt(token.toLowerCase().replace('xm', ''));
   },
 };
 
@@ -298,7 +298,7 @@ export const FIFTYCOUNT: CommandArgument<number> = {
     return /^\d+?x50$/i.test(token);
   },
   parse: function (token: string): number {
-    return parseInt(token.replace('x50', ''));
+    return parseInt(token.toLowerCase().replace('x50', ''));
   },
 };
 
@@ -312,7 +312,7 @@ export const HUNDREDCOUNT: CommandArgument<number> = {
     return /^\d+?x100$/i.test(token);
   },
   parse: function (token: string): number {
-    return parseInt(token.replace('x100', ''));
+    return parseInt(token.toLowerCase().replace('x100', ''));
   },
 };
 
@@ -326,7 +326,7 @@ export const SPEED_RATE: CommandArgument<number> = {
     return /^\d\.\d+x$/i.test(token);
   },
   parse: function (token: string): number {
-    return parseFloat(token.replace('x', ''));
+    return parseFloat(token.toLowerCase().replace('x', ''));
   },
 };
 
@@ -347,7 +347,11 @@ export const DIFFICULTY_ADJUST_SETTING: CommandArgument<ArgDA> = {
     return /^(ar|cs|od|hp)\d+(\.\d)?$/i.test(token);
   },
   parse: function (token: string): ArgDA {
-    const stat = token.substring(0, 2) as 'ar' | 'cs' | 'od' | 'hp';
+    const stat = token.toLowerCase().substring(0, 2) as
+      | 'ar'
+      | 'cs'
+      | 'od'
+      | 'hp';
     const output = {} as ArgDA;
     output[stat] = parseFloat(token.substring(2, token.length));
     return output;
@@ -416,7 +420,9 @@ export const DAY_OFFSET: CommandArgument<number> = {
     return /^today({[+-]\d+})?$/i.test(token);
   },
   parse: function (token: string): number {
-    return parseInt(token.replace('today{', '').replace('}', '')) || 0;
+    return (
+      parseInt(token.toLowerCase().replace('today{', '').replace('}', '')) || 0
+    );
   },
 };
 
