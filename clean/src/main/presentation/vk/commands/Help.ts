@@ -143,14 +143,14 @@ export class Help extends VkCommand<HelpExecutionArgs, HelpViewParams> {
       const allPrefixes = command.prefixes.join(' | ');
       const description = command.shortDescription;
       // eslint-disable-next-line no-irregular-whitespace
-      return `　${allPrefixes} - ${description}`;
+      return `　${allPrefixes} — ${description}`;
     });
     const helpPrefix = this.prefixes[0];
     const text = `
 Список команд:
 ${commandBriefs.join('\n')}
 
-Используйте "${helpPrefix} имя_команды" для получения подробной информации о команде
+Используйте «${helpPrefix} имя_команды» для получения подробной информации о команде
     `.trim();
     return {
       text: text,
@@ -164,6 +164,8 @@ ${commandBriefs.join('\n')}
     command: VkCommand<unknown, unknown>,
     argGroup: string | undefined
   ): VkOutputMessage {
+    const inputPrefixLowercase = commandPrefixInput.toLowerCase();
+    const inputPrefixUppercase = commandPrefixInput.toUpperCase();
     const structureElements: string[] = [];
     const usageElements: string[] = [];
     const argDescriptions: string[] = [];
@@ -178,7 +180,7 @@ ${commandBriefs.join('\n')}
 Команда ${targetCommandPrefix} имеет следующие варианты использования: 
 ${argGroupKeysString}.
 
-Используйте "${this.prefixes[0]} ${targetCommandPrefix} ${argGroupKeys.join('|')}" для получения подробностей по каждому варианту.
+Используйте «${this.prefixes[0]} ${targetCommandPrefix} ${argGroupKeys.join('|')}» для получения подробностей по каждому варианту.
         `.trim(),
         attachment: undefined,
         buttons: [[{text: exampleUsage, command: exampleUsage}]],
@@ -200,7 +202,7 @@ ${argGroupKeysString}.
       return {
         text: `
 Заданного варианта использования команды ${targetCommandPrefix} не существует.
-Доступные значения: ${argGroupKeys.map(x => `"${x}"`).join(',')}.
+Доступные значения: ${argGroupKeys.map(x => `«${x}»`).join(',')}.
         `.trim(),
         attachment: undefined,
         buttons: [],
@@ -209,36 +211,63 @@ ${argGroupKeysString}.
     for (const structureElement of targetCommandStructure) {
       const {argument, isOptional} = structureElement;
       hasOptionalArgs ||= isOptional;
-      const argString = isOptional
-        ? `[${argument.displayName}]`
+      const isOwnCommandPrefix =
+        OWN_COMMAND_PREFIX(command.prefixes).displayName ===
+        argument.displayName;
+      const adjustedDisplayName = isOwnCommandPrefix
+        ? inputPrefixLowercase
         : argument.displayName;
+      const argString = isOptional
+        ? `[${adjustedDisplayName}]`
+        : adjustedDisplayName;
       structureElements.push(argString);
       if (!isOptional || pickRandom([true, false])) {
         if (argument !== this.USAGE_VARIANT) {
-          usageElements.push(argument.usageExample);
+          usageElements.push(
+            isOwnCommandPrefix
+              ? pickRandom([
+                  commandPrefixInput,
+                  inputPrefixLowercase,
+                  inputPrefixUppercase,
+                ])
+              : argument.usageExample
+          );
         }
       }
       if (argument.description === undefined) {
         continue;
       }
       // eslint-disable-next-line no-irregular-whitespace
-      argDescriptions.push(`　${argString} - ${argument.description}`);
+      argDescriptions.push(`　${argString} — ${argument.description}`);
     }
     const description = command.longDescription;
+    const synonymsString =
+      command.prefixes.length > 1
+        ? '\nСинонимы: ' +
+          command.prefixes
+            .map(x => x.toLowerCase())
+            .filter(x => x !== inputPrefixLowercase)
+            .join(', ')
+        : '';
     const structureString = structureElements.join('　');
-    const usageString = usageElements.join(' ');
+    const usage = usageElements.join(' ');
+    const usageString = pickRandom([
+      usage,
+      usage.toLowerCase(),
+      usage.toUpperCase(),
+    ]);
     const optionalsHint = hasOptionalArgs
       ? '\nАргументы в [квадратных скобках] указывать не обязательно\n'
       : '';
     const text = `
-Команда ${commandPrefixInput.toLowerCase()}
-${description}
+Команда ${inputPrefixLowercase}
+${description}${synonymsString}
 
 Использование:
 ${structureString}
 ${argDescriptions.join('\n')}
 ${optionalsHint}
-Пример: "${usageString}"
+Пример: «${usageString}»
     `.trim();
     return {
       text: text,

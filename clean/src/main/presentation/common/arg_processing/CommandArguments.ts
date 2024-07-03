@@ -8,10 +8,11 @@ import {ALL_OSU_RULESETS, OsuRuleset} from '../../../../primitives/OsuRuleset';
 import {ModAcronym} from '../../../../primitives/ModAcronym';
 
 export const SERVER_PREFIX: CommandArgument<OsuServer> = {
-  displayName: 'server',
+  displayName: 'сервер',
   description: 'буква или название сервера',
   get usageExample(): string {
-    return pickRandom(SERVERS).prefix;
+    const prefix = pickRandom(SERVERS).prefix;
+    return pickRandom([prefix, prefix.toLowerCase(), prefix.toUpperCase()]);
   },
   match: function (token: string): boolean {
     return SERVERS.getServerByPrefixIgnoringCase(token) !== undefined;
@@ -40,7 +41,7 @@ export const OWN_COMMAND_PREFIX: (
 export const VK_FOREIGN_COMMAND_PREFIX: (
   validPrefixes: CommandPrefixes
 ) => CommandArgument<string> = validPrefixes => ({
-  displayName: 'command',
+  displayName: 'команда',
   description: 'буква или название команды',
   get usageExample(): string {
     return pickRandom(validPrefixes);
@@ -54,7 +55,7 @@ export const VK_FOREIGN_COMMAND_PREFIX: (
 });
 
 export const USERNAME: CommandArgument<string> = {
-  displayName: 'username',
+  displayName: 'ник',
   description: 'ник игрока',
   get usageExample(): string {
     const someUsernames = [
@@ -91,10 +92,10 @@ type UsernameList = {
   isAdditive: boolean;
 };
 export const USERNAME_LIST: CommandArgument<UsernameList> = {
-  displayName: '~usernames',
+  displayName: '~ники',
   description:
-    'ники игроков, через запятую; используйте вариант ~~name1,name2 ' +
-    'для того чтобы ники "добавились" к никами этого чата',
+    'ники игроков, через запятую; используйте вариант ~~ники ' +
+    'для того чтобы ники «добавились» к никами этого чата',
   get usageExample(): string {
     const someUsernames = [
       'mrekk',
@@ -126,7 +127,7 @@ export const USERNAME_LIST: CommandArgument<UsernameList> = {
 };
 
 export const START_POSITION: CommandArgument<number> = {
-  displayName: '\\?',
+  displayName: '\\номер',
   description: 'номер скора, с которого начинать поиск',
   get usageExample(): string {
     const randPos = 1 + Math.floor(Math.random() * 9);
@@ -148,7 +149,7 @@ export const START_POSITION: CommandArgument<number> = {
 };
 
 export const QUANTITY: CommandArgument<number> = {
-  displayName: ':?',
+  displayName: ':количество',
   description: 'количество скоров',
   get usageExample(): string {
     const randPos = 1 + Math.floor(Math.random() * 9);
@@ -170,9 +171,9 @@ export const QUANTITY: CommandArgument<number> = {
 };
 
 export const MODS: CommandArgument<ModArg[]> = {
-  displayName: '+mods',
+  displayName: '+моды',
   description:
-    'список модов; если мод указан в скобках, то его наличие допускается, но не является необходимым',
+    'список модов, слитно; если мод указан в скобках, то его наличие допускается, но не является необходимым',
   get usageExample(): string {
     const maybeHd = pickRandom(['hd', 'HD', '(hd)', '(HD)', '']);
     const dtOrHr = pickRandom(['dt', 'DT', 'hr', 'HR']);
@@ -224,7 +225,7 @@ export const MODE: CommandArgument<OsuRuleset> = {
   displayName: 'mode=?',
   description:
     'режим игры; возможные значения: ' +
-    ALL_OSU_RULESETS.map(x => `"${x}"`).join(', '),
+    ALL_OSU_RULESETS.map(x => `«${x}»`).join(', '),
   get usageExample(): string {
     return 'mode=' + pickRandom(ALL_OSU_RULESETS);
   },
@@ -374,7 +375,7 @@ export const ANY_WORD: (
   displayName: name,
   description: description,
   get usageExample(): string {
-    return pickRandom(['something', 'othersomething']);
+    return pickRandom(['любоеслово', 'другоеслово']);
   },
   match: function (token: string): boolean {
     return /^\w+$/.test(token);
@@ -391,7 +392,7 @@ export const ANY_STRING: (
   displayName: name,
   description: description,
   get usageExample(): string {
-    return pickRandom(['something', 'othersomething']);
+    return pickRandom(['любаястрока', 'другаястрока']);
   },
   match: function (): boolean {
     return true;
@@ -420,7 +421,7 @@ export const DAY_OFFSET: CommandArgument<number> = {
 };
 
 export const DATE: CommandArgument<Date> = {
-  displayName: 'date|today[±?]',
+  displayName: 'дата|' + DAY_OFFSET.displayName,
   description: 'дата в формате ISO8601 или номер дня относительно сегодня',
   get usageExample(): string {
     const date = new Date().toISOString().substring(0, 10);
@@ -475,15 +476,15 @@ export const NUMBER: (
 });
 
 export const APP_USER_ID = ANY_STRING(
-  'app_user_id',
+  'ид_польз_прил',
   'ID пользователя приложения'
 );
-export const VK_USER_ID = NUMBER('vk_id', 'ID пользователя VK', 0, 99999999);
+export const VK_USER_ID = NUMBER('ид_вк', 'ID пользователя VK', 0, 99999999);
 
 export const BEATMAP_ID: CommandArgument<number> = (() => {
   const number_arg = NUMBER('', '', 0, 1e9);
   return {
-    displayName: '*map_id',
+    displayName: '*ид_карты',
     description: 'ID карты',
     get usageExample(): string {
       return '*' + number_arg.usageExample;
