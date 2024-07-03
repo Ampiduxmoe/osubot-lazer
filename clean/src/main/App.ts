@@ -40,6 +40,7 @@ import {GetBeatmapUsersBestScoresUseCase} from './application/usecases/get_beatm
 import {OsuBeatmapUserScoresDaoImpl} from './data/dao/OsuBeatmapUserScoresDaoImpl';
 import {ChatLeaderboardOnMap} from './presentation/vk/commands/ChatLeaderboardOnMap';
 import {UserBestPlaysOnMap} from './presentation/vk/commands/UserBestPlaysOnMap';
+import {ChatLeaderboard} from './presentation/vk/commands/ChatLeaderboard';
 
 export const APP_CODE_NAME = 'osubot-lazer';
 
@@ -243,6 +244,11 @@ export class App {
       ),
       new UserBestPlaysOnMap(
         getBeatmapUsersBestScoresUseCase,
+        getAppUserInfoUseCase
+      ),
+      new ChatLeaderboard(
+        getConversationMembers,
+        getOsuUserInfoUseCase,
         getAppUserInfoUseCase
       ),
     ];
