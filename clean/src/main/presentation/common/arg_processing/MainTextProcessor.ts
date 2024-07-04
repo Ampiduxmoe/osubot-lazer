@@ -97,11 +97,7 @@ export class MainTextProcessor implements TextProcessor {
   detokenize(tokens: string[]): string {
     return tokens
       .map(t =>
-        !(
-          t.includes(this.quoteChar) ||
-          t.includes(this.escapeChar) ||
-          t.includes(this.separatorChar)
-        )
+        !(t.includes(this.quoteChar) || t.includes(this.separatorChar))
           ? t
           : this.quoteChar +
             t

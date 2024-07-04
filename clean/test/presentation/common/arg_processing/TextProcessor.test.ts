@@ -195,9 +195,9 @@ describe('TextProcessor', function () {
       assert.strictEqual(text, "'\\'fo\\\\o\\''");
     });
 
-    it("should return \"'fo\\\\o' 'b\\'ar'\" for tokens [fo\\o, b'ar]", function () {
+    it("should return \"fo\\o 'b\\'ar'\" for tokens [fo\\o, b'ar]", function () {
       const text = textProcessor.detokenize(['fo\\o', "b'ar"]);
-      assert.strictEqual(text, "'fo\\\\o' 'b\\'ar'");
+      assert.strictEqual(text, "fo\\o 'b\\'ar'");
     });
 
     it("should return \"' ' ' \\\\ '\" for tokens [ ,   ]", function () {
