@@ -1,36 +1,53 @@
 /* eslint-disable prefer-arrow-callback */
 import assert from 'assert';
-import {UserInfo} from '../../src/main/presentation/vk/commands/UserInfo';
-import {GetAppUserInfoUseCase} from '../../src/main/application/usecases/get_app_user_info/GetAppUserInfoUseCase';
-import {GetOsuUserInfoUseCase} from '../../src/main/application/usecases/get_osu_user_info/GetOsuUserInfoUseCase';
+import {UserRecentPlays} from '../../../../src/main/presentation/vk/commands/UserRecentPlays';
 import {
   createWithOnlyText,
   createWithPayload,
-} from '../mocks/presentation/VkMessageContext';
-import {VkMessageContext} from '../../src/main/presentation/vk/VkMessageContext';
-import {SERVERS} from '../../src/main/presentation/common/OsuServers';
-import {APP_CODE_NAME} from '../../src/main/App';
-import {OsuServer} from '../../src/primitives/OsuServer';
-import {OsuRuleset} from '../../src/primitives/OsuRuleset';
-import {FakeBanchoApi} from '../mocks/data/http/BanchoApi';
-import {SqliteDb} from '../../src/main/data/persistence/db/SqliteDb';
-import {OsuUserSnapshotsTable} from '../../src/main/data/persistence/db/tables/OsuUserSnapshotsTable';
-import {AppUserApiRequestsCountsTable} from '../../src/main/data/persistence/db/tables/AppUserApiRequestsCountsTable';
-import {TimeWindowsTable} from '../../src/main/data/persistence/db/tables/TimeWindowsTable';
-import {AppUserApiRequestsSummariesDaoImpl} from '../../src/main/data/dao/AppUserApiRequestsSummariesDaoImpl';
-import {AppUserRecentApiRequestsDaoImpl} from '../../src/main/data/dao/AppUserRecentApiRequestsDaoImpl';
-import {OsuUsersDaoImpl} from '../../src/main/data/dao/OsuUsersDaoImpl';
-import {AppUsersTable} from '../../src/main/data/persistence/db/tables/AppUsersTable';
-import {AppUsersDaoImpl} from '../../src/main/data/dao/AppUsersDaoImpl';
-import {SqlDbTable} from '../../src/main/data/persistence/db/SqlDbTable';
-import {getFakeOsuUserInfo, getFakeOsuUserUsername} from '../mocks/Generators';
-import {AppUser} from '../../src/main/data/repository/models/AppUser';
-import {VkIdConverter} from '../../src/main/presentation/vk/VkIdConverter';
+} from '../../../mocks/presentation/VkMessageContext';
+import {VkMessageContext} from '../../../../src/main/presentation/vk/VkMessageContext';
+import {SERVERS} from '../../../../src/main/presentation/common/OsuServers';
+import {APP_CODE_NAME} from '../../../../src/main/App';
+import {OsuServer} from '../../../../src/primitives/OsuServer';
+import {
+  ALL_OSU_RULESETS,
+  OsuRuleset,
+} from '../../../../src/primitives/OsuRuleset';
+import {FakeBanchoApi} from '../../../mocks/data/http/BanchoApi';
+import {SqliteDb} from '../../../../src/main/data/persistence/db/SqliteDb';
+import {OsuUserSnapshotsTable} from '../../../../src/main/data/persistence/db/tables/OsuUserSnapshotsTable';
+import {AppUserApiRequestsCountsTable} from '../../../../src/main/data/persistence/db/tables/AppUserApiRequestsCountsTable';
+import {TimeWindowsTable} from '../../../../src/main/data/persistence/db/tables/TimeWindowsTable';
+import {AppUserApiRequestsSummariesDaoImpl} from '../../../../src/main/data/dao/AppUserApiRequestsSummariesDaoImpl';
+import {AppUserRecentApiRequestsDaoImpl} from '../../../../src/main/data/dao/AppUserRecentApiRequestsDaoImpl';
+import {OsuUsersDaoImpl} from '../../../../src/main/data/dao/OsuUsersDaoImpl';
+import {AppUsersTable} from '../../../../src/main/data/persistence/db/tables/AppUsersTable';
+import {AppUsersDaoImpl} from '../../../../src/main/data/dao/AppUsersDaoImpl';
+import {SqlDbTable} from '../../../../src/main/data/persistence/db/SqlDbTable';
+import {
+  getFakeOsuUserInfo,
+  getFakeOsuUserUsername,
+  getFakeRecentScoreInfos,
+} from '../../../mocks/Generators';
+import {AppUser} from '../../../../src/main/data/repository/models/AppUser';
+import {VkIdConverter} from '../../../../src/main/presentation/vk/VkIdConverter';
+import {GetAppUserInfoUseCase} from '../../../../src/main/application/usecases/get_app_user_info/GetAppUserInfoUseCase';
+import {OsuUserRecentScoresDaoImpl} from '../../../../src/main/data/dao/OsuUserRecentScoresDaoImpl';
+import {FakeScoreSimulationApi} from '../../../mocks/data/http/ScoreSimulationApi';
+import {ScoreSimulationsDaoImpl} from '../../../../src/main/data/dao/ScoreSimulationsDaoImpl';
+import {GetUserRecentPlaysUseCase} from '../../../../src/main/application/usecases/get_user_recent_plays/GetUserRecentPlaysUseCase';
+import {CachedOsuUsersDaoImpl} from '../../../../src/main/data/dao/CachedOsuUsersDaoImpl';
+import {
+  OsuUserRecentPlays,
+  OsuUserRecentPlay,
+} from '../../../../src/main/application/usecases/get_user_recent_plays/GetUserRecentPlaysResponse';
+import {OsuUserRecentScoreInfo} from '../../../../src/main/data/http/boundary/OsuUserRecentScoreInfo';
+import {ModAcronym} from '../../../../src/primitives/ModAcronym';
 
-describe('UserInfo', function () {
+describe('UserRecentPlays', function () {
   let tables: SqlDbTable[];
   let appUsers: AppUsersTable;
-  let command: UserInfo;
+  let command: UserRecentPlays;
   {
     const apis = [new FakeBanchoApi()];
     const db = new SqliteDb(':memory:');
@@ -45,6 +62,14 @@ describe('UserInfo', function () {
     const recentApiRequestsDao = new AppUserRecentApiRequestsDaoImpl(
       requestsSummariesDao
     );
+    const recentScoresDao = new OsuUserRecentScoresDaoImpl(
+      apis,
+      osuUserSnapshots,
+      recentApiRequestsDao
+    );
+    const scoreSimApi = new FakeScoreSimulationApi();
+    const scoreSimulationsDao = new ScoreSimulationsDaoImpl(scoreSimApi);
+    const cachedOsuUsersDao = new CachedOsuUsersDaoImpl(osuUserSnapshots);
     const osuUsersDao = new OsuUsersDaoImpl(
       apis,
       osuUserSnapshots,
@@ -52,8 +77,13 @@ describe('UserInfo', function () {
     );
     const appUsersDao = new AppUsersDaoImpl(appUsers);
 
-    const getOsuUserInfo = new GetOsuUserInfoUseCase(osuUsersDao);
-    const getAppUserInfo = new GetAppUserInfoUseCase(appUsersDao);
+    const getRecentPlaysUseCase = new GetUserRecentPlaysUseCase(
+      recentScoresDao,
+      scoreSimulationsDao,
+      cachedOsuUsersDao,
+      osuUsersDao
+    );
+    const getAppUserInfoUseCase = new GetAppUserInfoUseCase(appUsersDao);
 
     tables = [
       osuUserSnapshots,
@@ -61,7 +91,7 @@ describe('UserInfo', function () {
       timeWindows,
       appUsers,
     ];
-    command = new UserInfo(getOsuUserInfo, getAppUserInfo);
+    command = new UserRecentPlays(getRecentPlaysUseCase, getAppUserInfoUseCase);
   }
 
   const exampleAppUser: AppUser = {
@@ -170,10 +200,28 @@ describe('UserInfo', function () {
       }
     });
     it('should match full form with username', function () {
+      const startPosition = 2;
+      const quantity = 5;
+      const mods = [
+        {acronym: 'hd', isOptional: true},
+        {acronym: 'dt', isOptional: false},
+      ];
+      const modsString =
+        '+' +
+        mods
+          .filter(m => m.isOptional)
+          .map(m => `(${m.acronym})`)
+          .join('') +
+        mods
+          .filter(m => !m.isOptional)
+          .map(m => m.acronym)
+          .join('');
+      const mode = OsuRuleset.osu;
+      const modeString = `mode=${OsuRuleset[mode]}`;
       for (const serverAndPrefix of SERVERS) {
         for (const prefix of command.prefixes) {
           const username = 'username';
-          const goodText = `${serverAndPrefix.prefix} ${prefix} ${username} mode=mania`;
+          const goodText = `${serverAndPrefix.prefix} ${prefix} ${username} \\${startPosition} :${quantity} ${modsString} ${modeString}`;
           const msg = createWithOnlyText({
             senderId: 1,
             text: goodText,
@@ -185,6 +233,16 @@ describe('UserInfo', function () {
             serverAndPrefix.server
           );
           assert.strictEqual(matchResult.commandArgs?.username, username);
+          assert.strictEqual(
+            matchResult.commandArgs?.startPosition,
+            startPosition
+          );
+          assert.strictEqual(matchResult.commandArgs?.quantity, quantity);
+          assert.strictEqual(
+            matchResult.commandArgs?.mods?.length,
+            mods.length
+          );
+          assert.strictEqual(matchResult.commandArgs?.mode, mode);
         }
       }
     });
@@ -211,10 +269,28 @@ describe('UserInfo', function () {
       }
     });
     it('should match full form payload with username', function () {
+      const startPosition = 3;
+      const quantity = 6;
+      const mods = [
+        {acronym: 'hd', isOptional: true},
+        {acronym: 'hr', isOptional: false},
+      ];
+      const modsString =
+        '+' +
+        mods
+          .filter(m => m.isOptional)
+          .map(m => `(${m.acronym})`)
+          .join('') +
+        mods
+          .filter(m => !m.isOptional)
+          .map(m => m.acronym)
+          .join('');
+      const mode = OsuRuleset.osu;
+      const modeString = `mode=${OsuRuleset[mode]}`;
       for (const serverAndPrefix of SERVERS) {
         for (const prefix of command.prefixes) {
           const username = 'username';
-          const goodText = `${serverAndPrefix.prefix} ${prefix} ${username} mode=ctb`;
+          const goodText = `${serverAndPrefix.prefix} ${prefix} ${username} \\${startPosition} :${quantity} ${modsString} ${modeString}`;
           const msg = createWithPayload({
             senderId: 1,
             text: 'lorem ipsum',
@@ -230,45 +306,74 @@ describe('UserInfo', function () {
             serverAndPrefix.server
           );
           assert.strictEqual(matchResult.commandArgs?.username, username);
+          assert.strictEqual(
+            matchResult.commandArgs?.startPosition,
+            startPosition
+          );
+          assert.strictEqual(matchResult.commandArgs?.quantity, quantity);
+          assert.strictEqual(
+            matchResult.commandArgs?.mods?.length,
+            mods.length
+          );
+          assert.strictEqual(matchResult.commandArgs?.mode, mode);
         }
       }
     });
   });
   describe('#process()', function () {
-    it('should return OsuUserInfo as undefined when there is no user with specified username', async function () {
+    it('should return OsuUserRecentPlays as undefined when there is no user with specified username', async function () {
       const usernameInput = 'alskdjfhg';
       const server = OsuServer.Bancho;
       const mode = OsuRuleset.osu;
+      const passesOnly = false;
       const viewParams = await command.process({
-        server: server,
-        mode: mode,
-        username: usernameInput,
         vkUserId: -1,
+        server: server,
+        passesOnly: passesOnly,
+        username: usernameInput,
+        startPosition: 2,
+        quantity: 3,
+        mods: [
+          {acronym: new ModAcronym('HD'), isOptional: true},
+          {acronym: new ModAcronym('DT'), isOptional: false},
+        ],
+        mode: mode,
       });
       assert.strictEqual(viewParams.server, server);
       assert.strictEqual(viewParams.mode, mode);
+      assert.strictEqual(viewParams.passesOnly, passesOnly);
       assert.strictEqual(viewParams.usernameInput, usernameInput);
-      assert.strictEqual(viewParams.userInfo, undefined);
+      assert.strictEqual(viewParams.recentPlays, undefined);
     });
-    it('should return OsuUserInfo as undefined when there is no AppUser associated with sender VK id', async function () {
+    it('should return OsuUserRecentPlays as undefined when there is no AppUser associated with sender VK id', async function () {
       const server = OsuServer.Bancho;
       const mode = OsuRuleset.osu;
+      const passesOnly = false;
       const viewParams = await command.process({
-        server: server,
-        mode: mode,
-        username: undefined,
         vkUserId: -1,
+        server: server,
+        passesOnly: passesOnly,
+        username: undefined,
+        startPosition: 2,
+        quantity: 3,
+        mods: [
+          {acronym: new ModAcronym('HD'), isOptional: true},
+          {acronym: new ModAcronym('DT'), isOptional: false},
+        ],
+        mode: mode,
       });
       assert.strictEqual(viewParams.server, server);
       assert.strictEqual(viewParams.mode, mode);
+      assert.strictEqual(viewParams.passesOnly, passesOnly);
       assert.strictEqual(viewParams.usernameInput, undefined);
-      assert.strictEqual(viewParams.userInfo, undefined);
+      assert.strictEqual(viewParams.recentPlays, undefined);
     });
-    it('should return OsuUserInfo when there is user with specified username', async function () {
+    it('should return OsuUserRecentPlays when there is user with specified username', async function () {
       const server = OsuServer.Bancho;
       const osuUsers = [1, 3, 5, 7, 9].map(n =>
         getFakeOsuUserInfo(n, undefined)
       );
+      const passesOnly = false;
       for (const osuUser of osuUsers) {
         if (osuUser === undefined) {
           throw Error('All osu user ids used in this test should be valid');
@@ -280,21 +385,29 @@ describe('UserInfo', function () {
         ];
         for (const username of usernameVariants) {
           const viewParams = await command.process({
-            server: server,
-            mode: undefined,
-            username: username,
             vkUserId: -1,
+            server: server,
+            passesOnly: passesOnly,
+            username: username,
+            startPosition: 2,
+            quantity: 3,
+            mods: [
+              {acronym: new ModAcronym('HD'), isOptional: true},
+              {acronym: new ModAcronym('DT'), isOptional: false},
+            ],
+            mode: undefined,
           });
           assert.strictEqual(viewParams.server, server);
           assert.strictEqual(viewParams.mode, osuUser.preferredMode);
+          assert.strictEqual(viewParams.passesOnly, passesOnly);
           assert.strictEqual(viewParams.usernameInput, username);
-          assert.strictEqual(viewParams.userInfo?.username, osuUser.username);
+          assert.notStrictEqual(viewParams.recentPlays?.plays.length, 0);
         }
       }
     });
-    it('should correctly return OsuUserInfo for specified mode', async function () {
+    it('should correctly return OsuUserRecentPlays for specified mode', async function () {
       const server = OsuServer.Bancho;
-      const ruleset = OsuRuleset.taiko;
+      const passesOnly = true;
       const osuUsers = [1, 3, 5, 7, 9].map(n =>
         getFakeOsuUserInfo(n, undefined)
       );
@@ -302,47 +415,66 @@ describe('UserInfo', function () {
         if (osuUser === undefined) {
           throw Error('All osu user ids used in this test should be valid');
         }
-        const usernameVariants = [
-          osuUser.username,
-          osuUser.username.toLowerCase(),
-          osuUser.username.toUpperCase(),
-        ];
-        for (const username of usernameVariants) {
+        const modes = ALL_OSU_RULESETS;
+        for (const mode of modes) {
           const viewParams = await command.process({
-            server: server,
-            mode: ruleset,
-            username: username,
             vkUserId: -1,
+            server: server,
+            passesOnly: passesOnly,
+            username: osuUser.username,
+            startPosition: 2,
+            quantity: 3,
+            mods: [
+              {acronym: new ModAcronym('HD'), isOptional: true},
+              {acronym: new ModAcronym('DT'), isOptional: false},
+            ],
+            mode: OsuRuleset[mode],
           });
           assert.strictEqual(viewParams.server, server);
-          assert.strictEqual(viewParams.mode, ruleset);
-          assert.strictEqual(viewParams.usernameInput, username);
-          assert.strictEqual(viewParams.userInfo?.username, osuUser.username);
+          assert.strictEqual(viewParams.mode, OsuRuleset[mode]);
+          assert.strictEqual(viewParams.passesOnly, passesOnly);
+          assert.strictEqual(viewParams.usernameInput, osuUser.username);
+          assert.strictEqual(
+            viewParams.recentPlays?.username,
+            osuUser.username
+          );
         }
       }
     });
-    it('should return OsuUserInfo when there is AppUser associated with sender VK id', async function () {
+    it('should return OsuUserRecentPlays when there is AppUser associated with sender VK id', async function () {
       const appUser = existingAppAndOsuUser.appUser;
+      const passesOnly = false;
       const viewParams = await command.process({
-        server: appUser.server,
-        mode: undefined,
-        username: undefined,
         vkUserId: VkIdConverter.appUserIdToVkUserId(appUser.id),
+        server: appUser.server,
+        passesOnly: passesOnly,
+        username: undefined,
+        startPosition: 2,
+        quantity: 3,
+        mods: [
+          {acronym: new ModAcronym('HD'), isOptional: true},
+          {acronym: new ModAcronym('DT'), isOptional: false},
+        ],
+        mode: undefined,
       });
       assert.strictEqual(viewParams.server, appUser.server);
       assert.strictEqual(viewParams.mode, appUser.ruleset);
+      assert.strictEqual(viewParams.passesOnly, passesOnly);
       assert.strictEqual(viewParams.usernameInput, undefined);
-      assert.strictEqual(viewParams.userInfo?.username, appUser.username);
+      assert.strictEqual(viewParams.recentPlays?.username, appUser.username);
+      assert.notStrictEqual(viewParams.recentPlays?.plays.length, 0);
     });
   });
   describe('#createOutputMessage()', function () {
     it('should return "username not bound" message if username is not specified and there is no username bound to this VK account', function () {
       const server = OsuServer.Bancho;
+      const passesOnly = true;
       const outputMessage = command.createOutputMessage({
         server: server,
         mode: undefined,
+        passesOnly: passesOnly,
         usernameInput: undefined,
-        userInfo: undefined,
+        recentPlays: undefined,
       });
       assert.strictEqual(
         outputMessage.text,
@@ -351,79 +483,105 @@ describe('UserInfo', function () {
     });
     it('should return "user not found" message if username is specified and there is no information about corresponding user', function () {
       const server = OsuServer.Bancho;
+      const passesOnly = true;
       const usernameInput = 'loremipsum';
       const outputMessage = command.createOutputMessage({
         server: server,
         mode: undefined,
+        passesOnly: passesOnly,
         usernameInput: usernameInput,
-        userInfo: undefined,
+        recentPlays: undefined,
       });
       assert.strictEqual(
         outputMessage.text,
         command.createUserNotFoundMessage(server, usernameInput).text
       );
     });
-    it('should return "user info" message if username is not specified but there is bound account info', function () {
+    it('should return "user plays" message if username is not specified but there is bound account info', function () {
       const server = OsuServer.Bancho;
       const mode = OsuRuleset.ctb;
+      const passesOnly = false;
       const usernameInput = undefined;
-      const userInfo = {
-        username: 'CoolGuy',
-        rankGlobal: 777,
-        rankGlobalHighest: 666,
-        rankGlobalHighestDate: '1970-01-01T00:00:00.000Z',
-        countryCode: 'FAKE',
-        rankCountry: 55,
-        playcount: 99999,
-        lvl: 101,
-        playtimeDays: 20,
-        playtimeHours: 10,
-        playtimeMinutes: 0,
-        pp: 19727,
-        accuracy: 99.25,
-        userId: 123,
+      const recentPlays: OsuUserRecentPlays = {
+        username: 'usrnm',
+        plays: [scoreInfoToRecentPlay(getFakeRecentScoreInfos(123, mode)[0])],
       };
       const outputMessage = command.createOutputMessage({
         server: server,
         mode: mode,
+        passesOnly: passesOnly,
         usernameInput: usernameInput,
-        userInfo: userInfo,
+        recentPlays: recentPlays,
       });
       assert.strictEqual(
         outputMessage.text,
-        command.createUserInfoMessage(server, mode, userInfo).text
+        command.createRecentPlaysMessage(recentPlays, server, mode, passesOnly)
+          .text
       );
     });
-    it('should return "user info" message if username is specified and there is corresponding account info', function () {
+    it('should return "user plays" message if username is specified and there is corresponding account info', function () {
       const server = OsuServer.Bancho;
       const mode = OsuRuleset.ctb;
+      const passesOnly = false;
       const usernameInput = 'loremipsum';
-      const userInfo = {
-        username: 'LoremIpsum',
-        rankGlobal: 777,
-        rankGlobalHighest: 666,
-        rankGlobalHighestDate: '1970-01-01T00:00:00.000Z',
-        countryCode: 'FAKE',
-        rankCountry: 55,
-        playcount: 99999,
-        lvl: 101,
-        playtimeDays: 20,
-        playtimeHours: 10,
-        playtimeMinutes: 0,
-        pp: 19727,
-        accuracy: 99.25,
-        userId: 123,
+      const recentPlays: OsuUserRecentPlays = {
+        username: 'usrnm',
+        plays: [scoreInfoToRecentPlay(getFakeRecentScoreInfos(123, mode)[0])],
       };
       const outputMessage = command.createOutputMessage({
         server: server,
         mode: mode,
+        passesOnly: passesOnly,
         usernameInput: usernameInput,
-        userInfo: userInfo,
+        recentPlays: recentPlays,
       });
       assert.strictEqual(
         outputMessage.text,
-        command.createUserInfoMessage(server, mode, userInfo).text
+        command.createRecentPlaysMessage(recentPlays, server, mode, passesOnly)
+          .text
       );
     });
   });
 });
+
+function scoreInfoToRecentPlay(
+  recentScoreInfo: OsuUserRecentScoreInfo
+): OsuUserRecentPlay {
+  const s = recentScoreInfo;
+  return {
+    absolutePosition: 100,
+    beatmapset: {
+      status: 'Ranked',
+      artist: s.beatmapset.artist,
+      title: s.beatmapset.title,
+      creator: s.beatmapset.creator,
+    },
+    beatmap: {
+      difficultyName: s.beatmap.version,
+      totalLength: s.beatmap.totalLength,
+      drainLength: s.beatmap.hitLength,
+      bpm: s.beatmap.bpm,
+      estimatedStarRating: s.beatmap.difficultyRating,
+      ar: s.beatmap.ar,
+      cs: s.beatmap.cs,
+      od: s.beatmap.od,
+      hp: s.beatmap.hp,
+      maxCombo: 100,
+      url: s.beatmap.url,
+    },
+    mods: s.mods,
+    passed: s.passed,
+    mapProgress: s.passed ? 1 : 0.5,
+    totalScore: s.totalScore,
+    combo: s.maxCombo,
+    accuracy: s.accuracy,
+    pp: {
+      value: s.pp ?? undefined,
+      estimatedValue: undefined,
+      ifFc: undefined,
+      ifSs: undefined,
+    },
+    orderedHitcounts: [1, 2, 3, 4, 5, 6],
+    grade: s.rank,
+  };
+}
