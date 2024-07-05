@@ -67,13 +67,16 @@ export class UserRecentPlays extends VkCommand<
     {argument: MODE, isOptional: true},
   ];
 
+  tokenize: (text: string) => string[];
   getRecentPlays: GetUserRecentPlaysUseCase;
   getAppUserInfo: GetAppUserInfoUseCase;
   constructor(
+    tokenize: (text: string) => string[],
     getRecentPlays: GetUserRecentPlaysUseCase,
     getAppUserInfo: GetAppUserInfoUseCase
   ) {
     super(UserRecentPlays.commandStructure);
+    this.tokenize = tokenize;
     this.getRecentPlays = getRecentPlays;
     this.getAppUserInfo = getAppUserInfo;
   }
@@ -92,8 +95,7 @@ export class UserRecentPlays extends VkCommand<
       return fail;
     }
 
-    const splitSequence = ' ';
-    const tokens = command.split(splitSequence);
+    const tokens = this.tokenize(command);
     const argsProcessor = new MainArgsProcessor(
       [...tokens],
       this.commandStructure.map(e => e.argument)
@@ -104,16 +106,7 @@ export class UserRecentPlays extends VkCommand<
     const quantity = argsProcessor.use(QUANTITY).extract();
     const mods = argsProcessor.use(MODS).extract();
     const mode = argsProcessor.use(MODE).extract();
-    const usernameParts: string[] = [];
-    let usernamePart = argsProcessor.use(USERNAME).extract();
-    while (usernamePart !== undefined) {
-      usernameParts.push(usernamePart);
-      usernamePart = argsProcessor.use(USERNAME).extract();
-    }
-    const username =
-      usernameParts.length === 0
-        ? undefined
-        : usernameParts.join(splitSequence);
+    const username = argsProcessor.use(USERNAME).extract();
 
     if (argsProcessor.remainingTokens.length > 0) {
       return fail;

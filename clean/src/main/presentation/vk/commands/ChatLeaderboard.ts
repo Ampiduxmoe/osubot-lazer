@@ -40,15 +40,18 @@ export class ChatLeaderboard extends VkCommand<
     {argument: MODE, isOptional: true},
   ];
 
+  tokenize: (text: string) => string[];
   getChatMemberIds: (chatId: number) => Promise<number[]>;
   getOsuUserInfo: GetOsuUserInfoUseCase;
   getAppUserInfo: GetAppUserInfoUseCase;
   constructor(
+    tokenize: (text: string) => string[],
     getChatMemberIds: (chatId: number) => Promise<number[]>,
     getOsuUserInfo: GetOsuUserInfoUseCase,
     getAppUserInfo: GetAppUserInfoUseCase
   ) {
     super(ChatLeaderboard.commandStructure);
+    this.tokenize = tokenize;
     this.getChatMemberIds = getChatMemberIds;
     this.getOsuUserInfo = getOsuUserInfo;
     this.getAppUserInfo = getAppUserInfo;
@@ -68,8 +71,7 @@ export class ChatLeaderboard extends VkCommand<
       return fail;
     }
 
-    const splitSequence = ' ';
-    const tokens = command.split(splitSequence);
+    const tokens = this.tokenize(command);
     const argsProcessor = new MainArgsProcessor(
       [...tokens],
       this.commandStructure.map(e => e.argument)

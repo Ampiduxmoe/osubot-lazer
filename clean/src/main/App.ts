@@ -41,6 +41,7 @@ import {OsuBeatmapUserScoresDaoImpl} from './data/dao/OsuBeatmapUserScoresDaoImp
 import {ChatLeaderboardOnMap} from './presentation/vk/commands/ChatLeaderboardOnMap';
 import {UserBestPlaysOnMap} from './presentation/vk/commands/UserBestPlaysOnMap';
 import {ChatLeaderboard} from './presentation/vk/commands/ChatLeaderboard';
+import {MainTextProcessor} from './presentation/common/arg_processing/MainTextProcessor';
 
 export const APP_CODE_NAME = 'osubot-lazer';
 
@@ -231,31 +232,44 @@ export class App {
       });
       return chatMembers.profiles.map(x => x.id);
     };
+    const mainTextProcessor = new MainTextProcessor(' ', "'", '\\');
+    const tokenize = (text: string) => mainTextProcessor.tokenize(text);
     const publicCommands = [
-      new SetUsername(setUsernameUseCase),
-      new UserInfo(getOsuUserInfoUseCase, getAppUserInfoUseCase),
-      new BeatmapInfo(getBeatmapInfoUseCase),
-      new UserRecentPlays(getRecentPlaysUseCase, getAppUserInfoUseCase),
-      new UserBestPlays(getUserBestPlaysUseCase, getAppUserInfoUseCase),
+      new SetUsername(tokenize, setUsernameUseCase),
+      new UserInfo(tokenize, getOsuUserInfoUseCase, getAppUserInfoUseCase),
+      new BeatmapInfo(tokenize, getBeatmapInfoUseCase),
+      new UserRecentPlays(
+        tokenize,
+        getRecentPlaysUseCase,
+        getAppUserInfoUseCase
+      ),
+      new UserBestPlays(
+        tokenize,
+        getUserBestPlaysUseCase,
+        getAppUserInfoUseCase
+      ),
       new UserBestPlaysOnMap(
+        tokenize,
         getBeatmapUsersBestScoresUseCase,
         getAppUserInfoUseCase
       ),
       new ChatLeaderboard(
+        tokenize,
         getConversationMembers,
         getOsuUserInfoUseCase,
         getAppUserInfoUseCase
       ),
       new ChatLeaderboardOnMap(
+        tokenize,
         getConversationMembers,
         getBeatmapUsersBestScoresUseCase,
         getAppUserInfoUseCase
       ),
     ];
     const adminCommands = [
-      new ApiUsageSummary([group.owner], getApiUsageSummaryUseCase),
+      new ApiUsageSummary([group.owner], tokenize, getApiUsageSummaryUseCase),
     ];
-    const helpCommand = new Help(publicCommands);
+    const helpCommand = new Help(tokenize, publicCommands);
     vkClient.addCommands([helpCommand, ...publicCommands]);
     vkClient.addCommands(adminCommands);
     return vkClient;

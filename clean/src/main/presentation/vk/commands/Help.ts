@@ -25,8 +25,12 @@ export class Help extends VkCommand<HelpExecutionArgs, HelpViewParams> {
   private FOREIGN_COMMAND_PREFIX: CommandArgument<string>;
   private USAGE_VARIANT: CommandArgument<string>;
 
+  tokenize: (text: string) => string[];
   commands: VkCommand<unknown, unknown>[];
-  constructor(commands: VkCommand<unknown, unknown>[]) {
+  constructor(
+    tokenize: (text: string) => string[],
+    commands: VkCommand<unknown, unknown>[]
+  ) {
     const COMMAND_PREFIX = OWN_COMMAND_PREFIX(Help.prefixes);
     const FOREIGN_COMMAND_PREFIX = VK_FOREIGN_COMMAND_PREFIX(
       new CommandPrefixes(
@@ -43,6 +47,7 @@ export class Help extends VkCommand<HelpExecutionArgs, HelpViewParams> {
     this.COMMAND_PREFIX = COMMAND_PREFIX;
     this.FOREIGN_COMMAND_PREFIX = FOREIGN_COMMAND_PREFIX;
     this.USAGE_VARIANT = USAGE_VARIANT;
+    this.tokenize = tokenize;
     this.commands = commands;
   }
 
@@ -57,8 +62,8 @@ export class Help extends VkCommand<HelpExecutionArgs, HelpViewParams> {
     if (command === undefined) {
       return fail;
     }
-    const splitSequence = ' ';
-    const tokens = command.split(splitSequence);
+
+    const tokens = this.tokenize(command);
     const argsProcessor = new MainArgsProcessor(
       [...tokens],
       this.commandStructure.map(e => e.argument)

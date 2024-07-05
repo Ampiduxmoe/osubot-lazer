@@ -62,9 +62,14 @@ export class BeatmapInfo extends VkCommand<
     mania: [0, 1, 2],
   };
 
+  tokenize: (text: string) => string[];
   getBeatmapInfo: GetBeatmapInfoUseCase;
-  constructor(getBeatmapInfo: GetBeatmapInfoUseCase) {
+  constructor(
+    tokenize: (text: string) => string[],
+    getBeatmapInfo: GetBeatmapInfoUseCase
+  ) {
     super(BeatmapInfo.commandStructure);
+    this.tokenize = tokenize;
     this.getBeatmapInfo = getBeatmapInfo;
   }
 
@@ -82,8 +87,7 @@ export class BeatmapInfo extends VkCommand<
       return fail;
     }
 
-    const splitSequence = ' ';
-    const tokens = command.split(splitSequence);
+    const tokens = this.tokenize(command);
     const argsProcessor = new MainArgsProcessor(
       [...tokens],
       this.commandStructure.map(e => e.argument)

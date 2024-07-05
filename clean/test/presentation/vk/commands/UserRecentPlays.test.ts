@@ -43,6 +43,7 @@ import {
 } from '../../../../src/main/application/usecases/get_user_recent_plays/GetUserRecentPlaysResponse';
 import {OsuUserRecentScoreInfo} from '../../../../src/main/data/http/boundary/OsuUserRecentScoreInfo';
 import {ModAcronym} from '../../../../src/primitives/ModAcronym';
+import {MainTextProcessor} from '../../../../src/main/presentation/common/arg_processing/MainTextProcessor';
 
 describe('UserRecentPlays', function () {
   let tables: SqlDbTable[];
@@ -91,7 +92,13 @@ describe('UserRecentPlays', function () {
       timeWindows,
       appUsers,
     ];
-    command = new UserRecentPlays(getRecentPlaysUseCase, getAppUserInfoUseCase);
+    const mainTextProcessor = new MainTextProcessor(' ', "'", '\\');
+    const tokenize = (text: string) => mainTextProcessor.tokenize(text);
+    command = new UserRecentPlays(
+      tokenize,
+      getRecentPlaysUseCase,
+      getAppUserInfoUseCase
+    );
   }
 
   const exampleAppUser: AppUser = {

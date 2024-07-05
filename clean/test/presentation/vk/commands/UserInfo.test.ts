@@ -29,6 +29,7 @@ import {
 } from '../../../mocks/Generators';
 import {AppUser} from '../../../../src/main/data/repository/models/AppUser';
 import {VkIdConverter} from '../../../../src/main/presentation/vk/VkIdConverter';
+import {MainTextProcessor} from '../../../../src/main/presentation/common/arg_processing/MainTextProcessor';
 
 describe('UserInfo', function () {
   let tables: SqlDbTable[];
@@ -64,7 +65,9 @@ describe('UserInfo', function () {
       timeWindows,
       appUsers,
     ];
-    command = new UserInfo(getOsuUserInfo, getAppUserInfo);
+    const mainTextProcessor = new MainTextProcessor(' ', "'", '\\');
+    const tokenize = (text: string) => mainTextProcessor.tokenize(text);
+    command = new UserInfo(tokenize, getOsuUserInfo, getAppUserInfo);
   }
 
   const exampleAppUser: AppUser = {

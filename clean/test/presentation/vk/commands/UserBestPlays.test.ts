@@ -43,6 +43,7 @@ import {
 } from '../../../../src/main/application/usecases/get_user_best_plays/GetUserBestPlaysResponse';
 import {OsuUserBestScoreInfo} from '../../../../src/main/data/http/boundary/OsuUserBestScoreInfo';
 import {ModAcronym} from '../../../../src/primitives/ModAcronym';
+import {MainTextProcessor} from '../../../../src/main/presentation/common/arg_processing/MainTextProcessor';
 
 describe('UserBestPlays', function () {
   let tables: SqlDbTable[];
@@ -91,7 +92,13 @@ describe('UserBestPlays', function () {
       timeWindows,
       appUsers,
     ];
-    command = new UserBestPlays(getUserBestPlaysUseCase, getAppUserInfoUseCase);
+    const mainTextProcessor = new MainTextProcessor(' ', "'", '\\');
+    const tokenize = (text: string) => mainTextProcessor.tokenize(text);
+    command = new UserBestPlays(
+      tokenize,
+      getUserBestPlaysUseCase,
+      getAppUserInfoUseCase
+    );
   }
 
   const exampleAppUser: AppUser = {

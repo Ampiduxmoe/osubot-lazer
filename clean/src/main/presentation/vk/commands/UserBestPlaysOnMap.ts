@@ -51,13 +51,16 @@ export class UserBestPlaysOnMap extends VkCommand<
     {argument: MODS, isOptional: true},
   ];
 
+  tokenize: (text: string) => string[];
   getBeatmapBestScores: GetBeatmapUsersBestScoresUseCase;
   getAppUserInfo: GetAppUserInfoUseCase;
   constructor(
+    tokenize: (text: string) => string[],
     getBeatmapBestScores: GetBeatmapUsersBestScoresUseCase,
     getAppUserInfo: GetAppUserInfoUseCase
   ) {
     super(UserBestPlaysOnMap.commandStructure);
+    this.tokenize = tokenize;
     this.getBeatmapBestScores = getBeatmapBestScores;
     this.getAppUserInfo = getAppUserInfo;
   }
@@ -76,8 +79,7 @@ export class UserBestPlaysOnMap extends VkCommand<
       return fail;
     }
 
-    const splitSequence = ' ';
-    const tokens = command.split(splitSequence);
+    const tokens = this.tokenize(command);
     const argsProcessor = new MainArgsProcessor(
       [...tokens],
       this.commandStructure.map(e => e.argument)

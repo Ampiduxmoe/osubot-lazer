@@ -38,13 +38,16 @@ export class ApiUsageSummary extends VkCommand<
   ];
 
   adminVkIds: number[];
+  tokenize: (text: string) => string[];
   getApiUsageSummary: GetApiUsageSummaryUseCase;
   constructor(
     adminVkIds: number[],
+    tokenize: (text: string) => string[],
     getApiUsageSummary: GetApiUsageSummaryUseCase
   ) {
     super(ApiUsageSummary.commandStructure);
     this.adminVkIds = adminVkIds;
+    this.tokenize = tokenize;
     this.getApiUsageSummary = getApiUsageSummary;
   }
 
