@@ -223,7 +223,7 @@ describe('UserBestPlays', function () {
           .map(m => m.acronym)
           .join('');
       const mode = OsuRuleset.osu;
-      const modeString = `mode=${OsuRuleset[mode]}`;
+      const modeString = `-${OsuRuleset[mode]}`;
       for (const serverAndPrefix of SERVERS) {
         for (const prefix of command.prefixes) {
           const username = 'username';
@@ -292,7 +292,7 @@ describe('UserBestPlays', function () {
           .map(m => m.acronym)
           .join('');
       const mode = OsuRuleset.osu;
-      const modeString = `mode=${OsuRuleset[mode]}`;
+      const modeString = `-${OsuRuleset[mode]}`;
       for (const serverAndPrefix of SERVERS) {
         for (const prefix of command.prefixes) {
           const username = 'username';

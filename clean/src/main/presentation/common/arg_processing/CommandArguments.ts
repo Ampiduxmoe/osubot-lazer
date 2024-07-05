@@ -95,7 +95,7 @@ export const USERNAME_LIST: CommandArgument<UsernameList> = {
   displayName: '~ники',
   description:
     'ники игроков, через запятую; используйте вариант ~~ники ' +
-    'для того чтобы ники «добавились» к никами этого чата',
+    'для того чтобы ники «добавились» к никам этого чата',
   get usageExample(): string {
     const someUsernames = [
       'mrekk',
@@ -222,22 +222,19 @@ export const MODS: CommandArgument<ModArg[]> = {
 };
 
 export const MODE: CommandArgument<OsuRuleset> = {
-  displayName: 'mode=?',
+  displayName: '-режим',
   description:
     'режим игры; возможные значения: ' +
     ALL_OSU_RULESETS.map(x => `«${x}»`).join(', '),
   get usageExample(): string {
-    return 'mode=' + pickRandom(ALL_OSU_RULESETS);
+    return '-' + pickRandom(ALL_OSU_RULESETS);
   },
   match: function (token: string): boolean {
-    const modeRegex = new RegExp(
-      `^${ALL_OSU_RULESETS.map(x => 'mode=' + x).join('|')}$`,
-      'i'
-    );
+    const modeRegex = new RegExp(`^-(${ALL_OSU_RULESETS.join('|')})$`, 'i');
     return modeRegex.test(token);
   },
   parse: function (token: string): OsuRuleset {
-    const modeName = token.toLowerCase().replace('mode=', '');
+    const modeName = token.toLowerCase().replace('-', '');
     const ruleset = ALL_OSU_RULESETS.find(x => x.toLowerCase() === modeName);
     if (ruleset === undefined) {
       throw Error('Token should be a valid OsuRuleset key');
