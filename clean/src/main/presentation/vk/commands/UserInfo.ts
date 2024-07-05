@@ -1,7 +1,7 @@
 import {VkMessageContext} from '../VkMessageContext';
 import {CommandMatchResult} from '../../common/CommandMatchResult';
 import {VkOutputMessage} from './base/VkOutputMessage';
-import {VkCommand} from './base/VkCommand';
+import {NOTICE_ABOUT_SPACES_IN_USERNAMES, VkCommand} from './base/VkCommand';
 import {OsuServer} from '../../../../primitives/OsuServer';
 import {GetOsuUserInfoUseCase} from '../../../application/usecases/get_osu_user_info/GetOsuUserInfoUseCase';
 import {Timespan} from '../../../../primitives/Timespan';
@@ -28,6 +28,7 @@ export class UserInfo extends VkCommand<
   internalName = UserInfo.name;
   shortDescription = 'статы игрока';
   longDescription = 'Отображает основную информацию об игроке';
+  notice = NOTICE_ABOUT_SPACES_IN_USERNAMES;
 
   static prefixes = new CommandPrefixes('u', 'User');
   prefixes = UserInfo.prefixes;

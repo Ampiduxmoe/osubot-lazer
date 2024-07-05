@@ -2,7 +2,7 @@
 import {VkMessageContext} from '../VkMessageContext';
 import {CommandMatchResult} from '../../common/CommandMatchResult';
 import {VkOutputMessage} from './base/VkOutputMessage';
-import {VkCommand} from './base/VkCommand';
+import {NOTICE_ABOUT_SPACES_IN_USERNAMES, VkCommand} from './base/VkCommand';
 import {OsuServer} from '../../../../primitives/OsuServer';
 import {APP_CODE_NAME} from '../../../App';
 import {GetAppUserInfoUseCase} from '../../../application/usecases/get_app_user_info/GetAppUserInfoUseCase';
@@ -28,6 +28,7 @@ export class ChatLeaderboard extends VkCommand<
   internalName = ChatLeaderboard.name;
   shortDescription = 'топ чата';
   longDescription = 'Показывает топ игроков (по умолчанию игроки беседы)';
+  notice = NOTICE_ABOUT_SPACES_IN_USERNAMES;
 
   static prefixes = new CommandPrefixes('l', 'lb', 'Leaderboard');
   prefixes = ChatLeaderboard.prefixes;

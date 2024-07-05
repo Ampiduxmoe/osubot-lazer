@@ -9,6 +9,7 @@ export abstract class VkCommand<TExecutionArgs, TViewParams> {
   abstract readonly internalName: string;
   abstract readonly shortDescription: string;
   abstract readonly longDescription: string;
+  abstract readonly notice: string | undefined;
   abstract readonly prefixes: CommandPrefixes;
   abstract readonly textProcessor: TextProcessor;
   readonly commandStructure: Readonly<CommandStructureElement>[];
@@ -29,3 +30,6 @@ type CommandStructureElement = {
   argument: CommandArgument<unknown>;
   isOptional: boolean;
 };
+
+export const NOTICE_ABOUT_SPACES_IN_USERNAMES =
+  'Если аргумент содержит в себе пробелы (например ник), нужно писать его в одинарных кавычках';

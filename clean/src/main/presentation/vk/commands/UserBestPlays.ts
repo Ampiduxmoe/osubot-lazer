@@ -2,7 +2,7 @@
 import {VkMessageContext} from '../VkMessageContext';
 import {CommandMatchResult} from '../../common/CommandMatchResult';
 import {VkOutputMessage} from './base/VkOutputMessage';
-import {VkCommand} from './base/VkCommand';
+import {NOTICE_ABOUT_SPACES_IN_USERNAMES, VkCommand} from './base/VkCommand';
 import {OsuServer} from '../../../../primitives/OsuServer';
 import {APP_CODE_NAME} from '../../../App';
 import {GetAppUserInfoUseCase} from '../../../application/usecases/get_app_user_info/GetAppUserInfoUseCase';
@@ -36,6 +36,7 @@ export class UserBestPlays extends VkCommand<
   internalName = UserBestPlays.name;
   shortDescription = 'топ скоры игрока';
   longDescription = 'Отображает лучшие скоры игрока';
+  notice = NOTICE_ABOUT_SPACES_IN_USERNAMES;
 
   static prefixes = new CommandPrefixes('p', 'pb', 'PersonalBest');
   prefixes = UserBestPlays.prefixes;

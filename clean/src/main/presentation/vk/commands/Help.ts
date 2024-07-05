@@ -18,6 +18,7 @@ export class Help extends VkCommand<HelpExecutionArgs, HelpViewParams> {
   internalName = Help.name;
   shortDescription = 'информация о командах';
   longDescription = 'Отображает информацию о доступных командах';
+  notice = undefined;
 
   static prefixes = new CommandPrefixes('osubot', 'osubot-help');
   prefixes = Help.prefixes;
@@ -205,10 +206,14 @@ ${argGroupKeysString}.
     if (targetCommandStructure.length === 0) {
       const targetCommandPrefix = commandPrefixInput.toLowerCase();
       const argGroupKeys = Object.keys(command.argGroups);
+      const usageVariantsString =
+        argGroupKeys.length === 0
+          ? ''
+          : `Доступные значения: ${argGroupKeys.map(x => `«${x}»`).join(',')}.`;
       return {
         text: `
 Заданного варианта использования команды ${targetCommandPrefix} не существует.
-Доступные значения: ${argGroupKeys.map(x => `«${x}»`).join(',')}.
+${usageVariantsString}
         `.trim(),
         attachment: undefined,
         buttons: [],
@@ -262,8 +267,10 @@ ${argGroupKeysString}.
       usage.toLowerCase(),
       usage.toUpperCase(),
     ]);
+    const commmandNoticeString =
+      command.notice === undefined ? '' : '\n\n' + command.notice;
     const optionalsHint = hasOptionalArgs
-      ? '\nАргументы в [квадратных скобках] указывать не обязательно\n'
+      ? '\n\nАргументы в [квадратных скобках] указывать не обязательно'
       : '';
     const text = `
 Команда ${inputPrefixLowercase}
@@ -271,8 +278,8 @@ ${description}${synonymsString}
 
 Использование:
 ${structureString}
-${argDescriptions.join('\n')}
-${optionalsHint}
+${argDescriptions.join('\n')}${commmandNoticeString}${optionalsHint}
+
 Пример: «${usageString}»
     `.trim();
     return {

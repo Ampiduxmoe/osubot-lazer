@@ -2,7 +2,7 @@
 import {VkMessageContext} from '../VkMessageContext';
 import {CommandMatchResult} from '../../common/CommandMatchResult';
 import {VkOutputMessage} from './base/VkOutputMessage';
-import {VkCommand} from './base/VkCommand';
+import {NOTICE_ABOUT_SPACES_IN_USERNAMES, VkCommand} from './base/VkCommand';
 import {GetUserRecentPlaysUseCase} from '../../../application/usecases/get_user_recent_plays/GetUserRecentPlaysUseCase';
 import {OsuServer} from '../../../../primitives/OsuServer';
 import {APP_CODE_NAME} from '../../../App';
@@ -47,6 +47,7 @@ export class UserRecentPlays extends VkCommand<
     ' для всех скоров, и ' +
     UserRecentPlays.recentPassesPrefixes.map(s => `«${s}»`).join(' или ') +
     ' для пассов';
+  notice = NOTICE_ABOUT_SPACES_IN_USERNAMES;
 
   static recentPlaysPrefixes = new CommandPrefixes('r', 'Recent');
   static recentPassesPrefixes = new CommandPrefixes('rp', 'RecentPass');
