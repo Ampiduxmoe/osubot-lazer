@@ -66,8 +66,7 @@ describe('UserInfo', function () {
       appUsers,
     ];
     const mainTextProcessor = new MainTextProcessor(' ', "'", '\\');
-    const tokenize = (text: string) => mainTextProcessor.tokenize(text);
-    command = new UserInfo(tokenize, getOsuUserInfo, getAppUserInfo);
+    command = new UserInfo(mainTextProcessor, getOsuUserInfo, getAppUserInfo);
   }
 
   const exampleAppUser: AppUser = {

@@ -15,6 +15,7 @@ import {
 import {MainArgsProcessor} from '../../common/arg_processing/MainArgsProcessor';
 import {CommandPrefixes} from '../../common/CommandPrefixes';
 import {OsuRuleset} from '../../../../primitives/OsuRuleset';
+import {TextProcessor} from '../../common/arg_processing/TextProcessor';
 
 export class SetUsername extends VkCommand<
   SetUsernameExecutionArgs,
@@ -36,14 +37,11 @@ export class SetUsername extends VkCommand<
     {argument: MODE, isOptional: true},
   ];
 
-  tokenize: (text: string) => string[];
+  textProcessor: TextProcessor;
   setUsername: SetUsernameUseCase;
-  constructor(
-    tokenize: (text: string) => string[],
-    setUsername: SetUsernameUseCase
-  ) {
+  constructor(textProcessor: TextProcessor, setUsername: SetUsernameUseCase) {
     super(SetUsername.commandStructure);
-    this.tokenize = tokenize;
+    this.textProcessor = textProcessor;
     this.setUsername = setUsername;
   }
 
@@ -61,7 +59,7 @@ export class SetUsername extends VkCommand<
       return fail;
     }
 
-    const tokens = this.tokenize(command);
+    const tokens = this.textProcessor.tokenize(command);
     const argsProcessor = new MainArgsProcessor(
       [...tokens],
       this.commandStructure.map(e => e.argument)

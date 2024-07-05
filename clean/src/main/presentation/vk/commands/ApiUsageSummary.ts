@@ -14,6 +14,7 @@ import {TimeIntervalUsageSummary} from '../../../application/usecases/get_api_us
 import {Timespan} from '../../../../primitives/Timespan';
 import {sumBy} from '../../../../primitives/Arrays';
 import {CommandPrefixes} from '../../common/CommandPrefixes';
+import {TextProcessor} from '../../common/arg_processing/TextProcessor';
 
 export class ApiUsageSummary extends VkCommand<
   ApiUsageSummaryExecutionArgs,
@@ -38,16 +39,16 @@ export class ApiUsageSummary extends VkCommand<
   ];
 
   adminVkIds: number[];
-  tokenize: (text: string) => string[];
+  textProcessor: TextProcessor;
   getApiUsageSummary: GetApiUsageSummaryUseCase;
   constructor(
     adminVkIds: number[],
-    tokenize: (text: string) => string[],
+    textProcessor: TextProcessor,
     getApiUsageSummary: GetApiUsageSummaryUseCase
   ) {
     super(ApiUsageSummary.commandStructure);
     this.adminVkIds = adminVkIds;
-    this.tokenize = tokenize;
+    this.textProcessor = textProcessor;
     this.getApiUsageSummary = getApiUsageSummary;
   }
 
@@ -68,8 +69,7 @@ export class ApiUsageSummary extends VkCommand<
       return fail;
     }
 
-    const splitSequence = ' ';
-    const tokens = command.split(splitSequence);
+    const tokens = this.textProcessor.tokenize(command);
     const argsProcessor = new MainArgsProcessor(
       [...tokens],
       this.commandStructure.map(e => e.argument)

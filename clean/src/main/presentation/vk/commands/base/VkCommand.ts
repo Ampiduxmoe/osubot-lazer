@@ -3,12 +3,14 @@ import {VkMessageContext} from '../../VkMessageContext';
 import {CommandMatchResult} from '../../../common/CommandMatchResult';
 import {VkOutputMessage} from './VkOutputMessage';
 import {CommandPrefixes} from '../../../common/CommandPrefixes';
+import {TextProcessor} from '../../../common/arg_processing/TextProcessor';
 
 export abstract class VkCommand<TExecutionArgs, TViewParams> {
   abstract readonly internalName: string;
   abstract readonly shortDescription: string;
   abstract readonly longDescription: string;
   abstract readonly prefixes: CommandPrefixes;
+  abstract readonly textProcessor: TextProcessor;
   readonly commandStructure: Readonly<CommandStructureElement>[];
   readonly argGroups: Readonly<Record<string, readonly number[]>> = {};
 

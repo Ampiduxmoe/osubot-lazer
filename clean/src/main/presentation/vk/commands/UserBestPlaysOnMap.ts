@@ -27,6 +27,7 @@ import {
   OsuMap,
   OsuMapUserPlay,
 } from '../../../application/usecases/get_beatmap_users_best_score/GetBeatmapUsersBestScoresResponse';
+import {TextProcessor} from '../../common/arg_processing/TextProcessor';
 
 export class UserBestPlaysOnMap extends VkCommand<
   UserBestPlaysOnMapExecutionArgs,
@@ -51,16 +52,16 @@ export class UserBestPlaysOnMap extends VkCommand<
     {argument: MODS, isOptional: true},
   ];
 
-  tokenize: (text: string) => string[];
+  textProcessor: TextProcessor;
   getBeatmapBestScores: GetBeatmapUsersBestScoresUseCase;
   getAppUserInfo: GetAppUserInfoUseCase;
   constructor(
-    tokenize: (text: string) => string[],
+    textProcessor: TextProcessor,
     getBeatmapBestScores: GetBeatmapUsersBestScoresUseCase,
     getAppUserInfo: GetAppUserInfoUseCase
   ) {
     super(UserBestPlaysOnMap.commandStructure);
-    this.tokenize = tokenize;
+    this.textProcessor = textProcessor;
     this.getBeatmapBestScores = getBeatmapBestScores;
     this.getAppUserInfo = getAppUserInfo;
   }
@@ -79,7 +80,7 @@ export class UserBestPlaysOnMap extends VkCommand<
       return fail;
     }
 
-    const tokens = this.tokenize(command);
+    const tokens = this.textProcessor.tokenize(command);
     const argsProcessor = new MainArgsProcessor(
       [...tokens],
       this.commandStructure.map(e => e.argument)

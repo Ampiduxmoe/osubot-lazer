@@ -27,6 +27,7 @@ import {MapInfo} from '../../../application/usecases/get_beatmap_info/GetBeatmap
 import {Timespan} from '../../../../primitives/Timespan';
 import {integerShortForm, round} from '../../../../primitives/Numbers';
 import {ModAcronym} from '../../../../primitives/ModAcronym';
+import {TextProcessor} from '../../common/arg_processing/TextProcessor';
 
 export class BeatmapInfo extends VkCommand<
   BeatmapInfoExecutionArgs,
@@ -62,14 +63,14 @@ export class BeatmapInfo extends VkCommand<
     mania: [0, 1, 2],
   };
 
-  tokenize: (text: string) => string[];
+  textProcessor: TextProcessor;
   getBeatmapInfo: GetBeatmapInfoUseCase;
   constructor(
-    tokenize: (text: string) => string[],
+    textProcessor: TextProcessor,
     getBeatmapInfo: GetBeatmapInfoUseCase
   ) {
     super(BeatmapInfo.commandStructure);
-    this.tokenize = tokenize;
+    this.textProcessor = textProcessor;
     this.getBeatmapInfo = getBeatmapInfo;
   }
 
@@ -87,7 +88,7 @@ export class BeatmapInfo extends VkCommand<
       return fail;
     }
 
-    const tokens = this.tokenize(command);
+    const tokens = this.textProcessor.tokenize(command);
     const argsProcessor = new MainArgsProcessor(
       [...tokens],
       this.commandStructure.map(e => e.argument)

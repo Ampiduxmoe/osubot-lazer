@@ -32,6 +32,7 @@ import {Timespan} from '../../../../primitives/Timespan';
 import {ModArg} from '../../common/arg_processing/ModArg';
 import {CommandPrefixes} from '../../common/CommandPrefixes';
 import {OsuRuleset} from '../../../../primitives/OsuRuleset';
+import {TextProcessor} from '../../common/arg_processing/TextProcessor';
 
 export class UserRecentPlays extends VkCommand<
   UserRecentPlaysExecutionArgs,
@@ -67,16 +68,16 @@ export class UserRecentPlays extends VkCommand<
     {argument: MODE, isOptional: true},
   ];
 
-  tokenize: (text: string) => string[];
+  textProcessor: TextProcessor;
   getRecentPlays: GetUserRecentPlaysUseCase;
   getAppUserInfo: GetAppUserInfoUseCase;
   constructor(
-    tokenize: (text: string) => string[],
+    textProcessor: TextProcessor,
     getRecentPlays: GetUserRecentPlaysUseCase,
     getAppUserInfo: GetAppUserInfoUseCase
   ) {
     super(UserRecentPlays.commandStructure);
-    this.tokenize = tokenize;
+    this.textProcessor = textProcessor;
     this.getRecentPlays = getRecentPlays;
     this.getAppUserInfo = getAppUserInfo;
   }
@@ -95,7 +96,7 @@ export class UserRecentPlays extends VkCommand<
       return fail;
     }
 
-    const tokens = this.tokenize(command);
+    const tokens = this.textProcessor.tokenize(command);
     const argsProcessor = new MainArgsProcessor(
       [...tokens],
       this.commandStructure.map(e => e.argument)

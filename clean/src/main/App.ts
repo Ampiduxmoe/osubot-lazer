@@ -233,43 +233,50 @@ export class App {
       return chatMembers.profiles.map(x => x.id);
     };
     const mainTextProcessor = new MainTextProcessor(' ', "'", '\\');
-    const tokenize = (text: string) => mainTextProcessor.tokenize(text);
     const publicCommands = [
-      new SetUsername(tokenize, setUsernameUseCase),
-      new UserInfo(tokenize, getOsuUserInfoUseCase, getAppUserInfoUseCase),
-      new BeatmapInfo(tokenize, getBeatmapInfoUseCase),
+      new SetUsername(mainTextProcessor, setUsernameUseCase),
+      new UserInfo(
+        mainTextProcessor,
+        getOsuUserInfoUseCase,
+        getAppUserInfoUseCase
+      ),
+      new BeatmapInfo(mainTextProcessor, getBeatmapInfoUseCase),
       new UserRecentPlays(
-        tokenize,
+        mainTextProcessor,
         getRecentPlaysUseCase,
         getAppUserInfoUseCase
       ),
       new UserBestPlays(
-        tokenize,
+        mainTextProcessor,
         getUserBestPlaysUseCase,
         getAppUserInfoUseCase
       ),
       new UserBestPlaysOnMap(
-        tokenize,
+        mainTextProcessor,
         getBeatmapUsersBestScoresUseCase,
         getAppUserInfoUseCase
       ),
       new ChatLeaderboard(
-        tokenize,
+        mainTextProcessor,
         getConversationMembers,
         getOsuUserInfoUseCase,
         getAppUserInfoUseCase
       ),
       new ChatLeaderboardOnMap(
-        tokenize,
+        mainTextProcessor,
         getConversationMembers,
         getBeatmapUsersBestScoresUseCase,
         getAppUserInfoUseCase
       ),
     ];
     const adminCommands = [
-      new ApiUsageSummary([group.owner], tokenize, getApiUsageSummaryUseCase),
+      new ApiUsageSummary(
+        [group.owner],
+        mainTextProcessor,
+        getApiUsageSummaryUseCase
+      ),
     ];
-    const helpCommand = new Help(tokenize, publicCommands);
+    const helpCommand = new Help(mainTextProcessor, publicCommands);
     vkClient.addCommands([helpCommand, ...publicCommands]);
     vkClient.addCommands(adminCommands);
     return vkClient;

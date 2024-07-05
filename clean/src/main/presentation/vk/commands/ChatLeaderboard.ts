@@ -19,6 +19,7 @@ import {ALL_OSU_RULESETS, OsuRuleset} from '../../../../primitives/OsuRuleset';
 import {GetOsuUserInfoUseCase} from '../../../application/usecases/get_osu_user_info/GetOsuUserInfoUseCase';
 import {OsuUserInfo} from '../../../application/usecases/get_osu_user_info/GetOsuUserInfoResponse';
 import {maxBy} from '../../../../primitives/Arrays';
+import {TextProcessor} from '../../common/arg_processing/TextProcessor';
 
 export class ChatLeaderboard extends VkCommand<
   ChatLeaderboardExecutionArgs,
@@ -40,18 +41,18 @@ export class ChatLeaderboard extends VkCommand<
     {argument: MODE, isOptional: true},
   ];
 
-  tokenize: (text: string) => string[];
+  textProcessor: TextProcessor;
   getChatMemberIds: (chatId: number) => Promise<number[]>;
   getOsuUserInfo: GetOsuUserInfoUseCase;
   getAppUserInfo: GetAppUserInfoUseCase;
   constructor(
-    tokenize: (text: string) => string[],
+    textProcessor: TextProcessor,
     getChatMemberIds: (chatId: number) => Promise<number[]>,
     getOsuUserInfo: GetOsuUserInfoUseCase,
     getAppUserInfo: GetAppUserInfoUseCase
   ) {
     super(ChatLeaderboard.commandStructure);
-    this.tokenize = tokenize;
+    this.textProcessor = textProcessor;
     this.getChatMemberIds = getChatMemberIds;
     this.getOsuUserInfo = getOsuUserInfo;
     this.getAppUserInfo = getAppUserInfo;
@@ -71,7 +72,7 @@ export class ChatLeaderboard extends VkCommand<
       return fail;
     }
 
-    const tokens = this.tokenize(command);
+    const tokens = this.textProcessor.tokenize(command);
     const argsProcessor = new MainArgsProcessor(
       [...tokens],
       this.commandStructure.map(e => e.argument)

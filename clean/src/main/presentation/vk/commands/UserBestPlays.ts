@@ -27,6 +27,7 @@ import {
   BestPlay,
   OsuUserBestPlays,
 } from '../../../application/usecases/get_user_best_plays/GetUserBestPlaysResponse';
+import {TextProcessor} from '../../common/arg_processing/TextProcessor';
 
 export class UserBestPlays extends VkCommand<
   UserBestPlaysExecutionArgs,
@@ -51,16 +52,16 @@ export class UserBestPlays extends VkCommand<
     {argument: MODE, isOptional: true},
   ];
 
-  tokenize: (text: string) => string[];
+  textProcessor: TextProcessor;
   getUserBestPlays: GetUserBestPlaysUseCase;
   getAppUserInfo: GetAppUserInfoUseCase;
   constructor(
-    tokenize: (text: string) => string[],
+    textProcessor: TextProcessor,
     getUserBestPlays: GetUserBestPlaysUseCase,
     getAppUserInfo: GetAppUserInfoUseCase
   ) {
     super(UserBestPlays.commandStructure);
-    this.tokenize = tokenize;
+    this.textProcessor = textProcessor;
     this.getUserBestPlays = getUserBestPlays;
     this.getAppUserInfo = getAppUserInfo;
   }
@@ -79,7 +80,7 @@ export class UserBestPlays extends VkCommand<
       return fail;
     }
 
-    const tokens = this.tokenize(command);
+    const tokens = this.textProcessor.tokenize(command);
     const argsProcessor = new MainArgsProcessor(
       [...tokens],
       this.commandStructure.map(e => e.argument)

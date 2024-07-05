@@ -19,6 +19,7 @@ import {
 import {MainArgsProcessor} from '../../common/arg_processing/MainArgsProcessor';
 import {CommandPrefixes} from '../../common/CommandPrefixes';
 import {OsuRuleset} from '../../../../primitives/OsuRuleset';
+import {TextProcessor} from '../../common/arg_processing/TextProcessor';
 
 export class UserInfo extends VkCommand<
   UserInfoExecutionArgs,
@@ -40,16 +41,16 @@ export class UserInfo extends VkCommand<
     {argument: MODE, isOptional: true},
   ];
 
-  tokenize: (text: string) => string[];
+  textProcessor: TextProcessor;
   getOsuUserInfo: GetOsuUserInfoUseCase;
   getAppUserInfo: GetAppUserInfoUseCase;
   constructor(
-    tokenize: (text: string) => string[],
+    textProcessor: TextProcessor,
     getRecentPlays: GetOsuUserInfoUseCase,
     getAppUserInfo: GetAppUserInfoUseCase
   ) {
     super(UserInfo.commandStructure);
-    this.tokenize = tokenize;
+    this.textProcessor = textProcessor;
     this.getOsuUserInfo = getRecentPlays;
     this.getAppUserInfo = getAppUserInfo;
   }
@@ -68,7 +69,7 @@ export class UserInfo extends VkCommand<
       return fail;
     }
 
-    const tokens = this.tokenize(command);
+    const tokens = this.textProcessor.tokenize(command);
     const argsProcessor = new MainArgsProcessor(
       [...tokens],
       this.commandStructure.map(e => e.argument)

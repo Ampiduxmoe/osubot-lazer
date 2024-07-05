@@ -26,6 +26,7 @@ import {
   OsuMapUserBestPlays,
   OsuMapUserPlay,
 } from '../../../application/usecases/get_beatmap_users_best_score/GetBeatmapUsersBestScoresResponse';
+import {TextProcessor} from '../../common/arg_processing/TextProcessor';
 
 export class ChatLeaderboardOnMap extends VkCommand<
   ChatLeaderboardOnMapExecutionArgs,
@@ -51,18 +52,18 @@ export class ChatLeaderboardOnMap extends VkCommand<
     {argument: MODS, isOptional: true},
   ];
 
-  tokenize: (text: string) => string[];
+  textProcessor: TextProcessor;
   getChatMemberIds: (chatId: number) => Promise<number[]>;
   getBeatmapBestScores: GetBeatmapUsersBestScoresUseCase;
   getAppUserInfo: GetAppUserInfoUseCase;
   constructor(
-    tokenize: (text: string) => string[],
+    textProcessor: TextProcessor,
     getChatMemberIds: (chatId: number) => Promise<number[]>,
     getBeatmapBestScores: GetBeatmapUsersBestScoresUseCase,
     getAppUserInfo: GetAppUserInfoUseCase
   ) {
     super(ChatLeaderboardOnMap.commandStructure);
-    this.tokenize = tokenize;
+    this.textProcessor = textProcessor;
     this.getChatMemberIds = getChatMemberIds;
     this.getBeatmapBestScores = getBeatmapBestScores;
     this.getAppUserInfo = getAppUserInfo;
@@ -82,7 +83,7 @@ export class ChatLeaderboardOnMap extends VkCommand<
       return fail;
     }
 
-    const tokens = this.tokenize(command);
+    const tokens = this.textProcessor.tokenize(command);
     const argsProcessor = new MainArgsProcessor(
       [...tokens],
       this.commandStructure.map(e => e.argument)

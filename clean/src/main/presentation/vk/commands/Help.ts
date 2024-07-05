@@ -12,6 +12,7 @@ import {pickRandom} from '../../../../primitives/Arrays';
 import {MainArgsProcessor} from '../../common/arg_processing/MainArgsProcessor';
 import {CommandPrefixes} from '../../common/CommandPrefixes';
 import {CommandArgument} from '../../common/arg_processing/CommandArgument';
+import {TextProcessor} from '../../common/arg_processing/TextProcessor';
 
 export class Help extends VkCommand<HelpExecutionArgs, HelpViewParams> {
   internalName = Help.name;
@@ -25,10 +26,10 @@ export class Help extends VkCommand<HelpExecutionArgs, HelpViewParams> {
   private FOREIGN_COMMAND_PREFIX: CommandArgument<string>;
   private USAGE_VARIANT: CommandArgument<string>;
 
-  tokenize: (text: string) => string[];
+  textProcessor: TextProcessor;
   commands: VkCommand<unknown, unknown>[];
   constructor(
-    tokenize: (text: string) => string[],
+    textProcessor: TextProcessor,
     commands: VkCommand<unknown, unknown>[]
   ) {
     const COMMAND_PREFIX = OWN_COMMAND_PREFIX(Help.prefixes);
@@ -47,7 +48,7 @@ export class Help extends VkCommand<HelpExecutionArgs, HelpViewParams> {
     this.COMMAND_PREFIX = COMMAND_PREFIX;
     this.FOREIGN_COMMAND_PREFIX = FOREIGN_COMMAND_PREFIX;
     this.USAGE_VARIANT = USAGE_VARIANT;
-    this.tokenize = tokenize;
+    this.textProcessor = textProcessor;
     this.commands = commands;
   }
 
@@ -63,7 +64,7 @@ export class Help extends VkCommand<HelpExecutionArgs, HelpViewParams> {
       return fail;
     }
 
-    const tokens = this.tokenize(command);
+    const tokens = this.textProcessor.tokenize(command);
     const argsProcessor = new MainArgsProcessor(
       [...tokens],
       this.commandStructure.map(e => e.argument)
@@ -255,7 +256,7 @@ ${argGroupKeysString}.
             .join(', ')
         : '';
     const structureString = structureElements.join('　');
-    const usage = usageElements.join(' ');
+    const usage = command.textProcessor.detokenize(usageElements);
     const usageString = pickRandom([
       usage,
       usage.toLowerCase(),

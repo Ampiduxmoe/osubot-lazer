@@ -93,9 +93,8 @@ describe('UserRecentPlays', function () {
       appUsers,
     ];
     const mainTextProcessor = new MainTextProcessor(' ', "'", '\\');
-    const tokenize = (text: string) => mainTextProcessor.tokenize(text);
     command = new UserRecentPlays(
-      tokenize,
+      mainTextProcessor,
       getRecentPlaysUseCase,
       getAppUserInfoUseCase
     );
