@@ -117,7 +117,11 @@ export const USERNAME_LIST: CommandArgument<UsernameList> = {
     return /^~~?[a-zA-Z0-9_ [\-\]]+?(,[a-zA-Z0-9_ [\-\]]+?)*?$/.test(token);
   },
   parse: function (token: string): UsernameList {
-    const usernames = token.replace('~', '').replace('~', '').split(',');
+    const usernames = token
+      .replace('~', '')
+      .replace('~', '')
+      .split(',')
+      .map(x => x.trim());
     const isAdditive = token.startsWith('~~');
     return {
       usernames: usernames,
