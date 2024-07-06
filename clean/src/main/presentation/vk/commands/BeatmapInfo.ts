@@ -333,6 +333,44 @@ URL: ${mapUrlShort}
       buttons: undefined,
     };
   }
+
+  unparse(args: BeatmapInfoExecutionArgs): string {
+    const tokens = [
+      SERVER_PREFIX.unparse(args.server),
+      this.COMMAND_PREFIX.unparse(this.prefixes[0]),
+    ];
+    const simulationOsu = args.mapScoreSimulationOsu;
+    if (simulationOsu.mods !== undefined) {
+      tokens.push(
+        MODS.unparse(
+          simulationOsu.mods.map(x => ({acronym: x, isOptional: false}))
+        )
+      );
+    }
+    if (simulationOsu.combo !== undefined) {
+      tokens.push(SCORE_COMBO.unparse(simulationOsu.combo));
+    }
+    if (simulationOsu.misses !== undefined) {
+      tokens.push(MISSCOUNT.unparse(simulationOsu.misses));
+    }
+    if (simulationOsu.accuracy !== undefined) {
+      tokens.push(ACCURACY.unparse(simulationOsu.accuracy));
+    }
+    if (simulationOsu.mehs !== undefined) {
+      tokens.push(FIFTYCOUNT.unparse(simulationOsu.mehs));
+    }
+    if (simulationOsu.goods !== undefined) {
+      tokens.push(HUNDREDCOUNT.unparse(simulationOsu.goods));
+    }
+    if (simulationOsu.speed !== undefined) {
+      tokens.push(SPEED_RATE.unparse(simulationOsu.speed));
+    }
+    const da = simulationOsu;
+    if ((da.ar || da.cs || da.od || da.hp) !== undefined) {
+      tokens.push(...DIFFICULTY_ADJUST_SETTING.unparse(da).split(' '));
+    }
+    return this.textProcessor.detokenize(tokens);
+  }
 }
 
 type BeatmapInfoExecutionArgs = {

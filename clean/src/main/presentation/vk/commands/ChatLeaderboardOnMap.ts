@@ -439,6 +439,23 @@ ${missingUsernamesMessage}
       buttons: undefined,
     };
   }
+
+  unparse(args: ChatLeaderboardOnMapExecutionArgs): string {
+    const tokens = [
+      SERVER_PREFIX.unparse(args.server),
+      this.COMMAND_PREFIX.unparse(this.prefixes[0]),
+    ];
+    if (args.beatmapId !== undefined) {
+      tokens.push(BEATMAP_ID.unparse(args.beatmapId));
+    }
+    if (args.usernameList !== undefined) {
+      tokens.push(USERNAME_LIST.unparse(args.usernameList));
+    }
+    if (args.mods !== undefined) {
+      tokens.push(MODS.unparse(args.mods));
+    }
+    return this.textProcessor.detokenize(tokens);
+  }
 }
 
 type ChatLeaderboardOnMapExecutionArgs = {

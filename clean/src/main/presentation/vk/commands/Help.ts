@@ -141,7 +141,17 @@ export class Help extends VkCommand<HelpExecutionArgs, HelpViewParams> {
     return {
       text: `Команда ${commandPrefixInput} не найдена`,
       attachment: undefined,
-      buttons: [[{text: 'Список команд', command: this.prefixes[0]}]],
+      buttons: [
+        [
+          {
+            text: 'Список команд',
+            command: this.unparse({
+              commandPrefix: undefined,
+              usageVariant: undefined,
+            }),
+          },
+        ],
+      ],
     };
   }
 
@@ -180,14 +190,26 @@ ${commandBriefs.join('\n')}
     if (argGroup === undefined && Object.keys(command.argGroups).length > 0) {
       const targetCommandPrefix = commandPrefixInput.toLowerCase();
       const argGroupKeys = Object.keys(command.argGroups);
+      const prefixArg = this.COMMAND_PREFIX.unparse(this.prefixes[0]);
+      const targetPrefixArg =
+        this.FOREIGN_COMMAND_PREFIX.unparse(targetCommandPrefix);
+      const usageVariantArg = this.USAGE_VARIANT.unparse(argGroupKeys[0]);
+      const usageVariantsArg = usageVariantArg.replace(
+        argGroupKeys[0],
+        argGroupKeys.join('|')
+      );
+      const toSeeDetailsString = `${prefixArg} ${targetPrefixArg} ${usageVariantsArg}`;
       const argGroupKeysString = argGroupKeys.join(', ');
-      const exampleUsage = `${this.prefixes[0]} ${targetCommandPrefix} ${pickRandom(argGroupKeys)}`;
+      const exampleUsage = this.unparse({
+        commandPrefix: targetCommandPrefix,
+        usageVariant: pickRandom(argGroupKeys),
+      });
       return {
         text: `
 Команда ${targetCommandPrefix} имеет следующие варианты использования: 
 ${argGroupKeysString}.
 
-Используйте «${this.prefixes[0]} ${targetCommandPrefix} ${argGroupKeys.join('|')}» для получения подробностей по каждому варианту.
+Используйте «${toSeeDetailsString}» для получения подробностей по каждому варианту.
         `.trim(),
         attachment: undefined,
         buttons: [[{text: exampleUsage, command: exampleUsage}]],
@@ -297,6 +319,17 @@ ${argDescriptions.join('\n')}${commmandNoticeString}${optionalsHint}
         ],
       ],
     };
+  }
+
+  unparse(args: HelpExecutionArgs): string {
+    const tokens = [this.COMMAND_PREFIX.unparse(this.prefixes[0])];
+    if (args.commandPrefix !== undefined) {
+      tokens.push(this.FOREIGN_COMMAND_PREFIX.unparse(args.commandPrefix));
+    }
+    if (args.usageVariant !== undefined) {
+      tokens.push(this.USAGE_VARIANT.unparse(args.usageVariant));
+    }
+    return this.textProcessor.detokenize(tokens);
   }
 }
 

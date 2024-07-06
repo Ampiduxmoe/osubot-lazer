@@ -403,6 +403,29 @@ ${pp}pp　 ${mapUrlShort}
       buttons: undefined,
     };
   }
+
+  unparse(args: UserBestPlaysExecutionArgs): string {
+    const tokens = [
+      SERVER_PREFIX.unparse(args.server),
+      this.COMMAND_PREFIX.unparse(this.prefixes[0]),
+    ];
+    if (args.username !== undefined) {
+      tokens.push(USERNAME.unparse(args.username));
+    }
+    if (args.startPosition !== undefined) {
+      tokens.push(START_POSITION.unparse(args.startPosition));
+    }
+    if (args.quantity !== undefined) {
+      tokens.push(QUANTITY.unparse(args.quantity));
+    }
+    if (args.mods !== undefined) {
+      tokens.push(MODS.unparse(args.mods));
+    }
+    if (args.mode !== undefined) {
+      tokens.push(MODE.unparse(args.mode));
+    }
+    return this.textProcessor.detokenize(tokens);
+  }
 }
 
 type UserBestPlaysExecutionArgs = {

@@ -314,6 +314,20 @@ ${missingUsernamesMessage}
       buttons: undefined,
     };
   }
+
+  unparse(args: ChatLeaderboardExecutionArgs): string {
+    const tokens = [
+      SERVER_PREFIX.unparse(args.server),
+      this.COMMAND_PREFIX.unparse(this.prefixes[0]),
+    ];
+    if (args.usernameList !== undefined) {
+      tokens.push(USERNAME_LIST.unparse(args.usernameList));
+    }
+    if (args.mode !== undefined) {
+      tokens.push(MODE.unparse(args.mode));
+    }
+    return this.textProcessor.detokenize(tokens);
+  }
 }
 
 type ChatLeaderboardExecutionArgs = {

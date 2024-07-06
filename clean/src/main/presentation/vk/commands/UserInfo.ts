@@ -1,12 +1,11 @@
 import {VkMessageContext} from '../VkMessageContext';
 import {CommandMatchResult} from '../../common/CommandMatchResult';
-import {VkOutputMessage} from './base/VkOutputMessage';
+import {VkOutputMessage, VkOutputMessageButton} from './base/VkOutputMessage';
 import {NOTICE_ABOUT_SPACES_IN_USERNAMES, VkCommand} from './base/VkCommand';
 import {OsuServer} from '../../../../primitives/OsuServer';
 import {GetOsuUserInfoUseCase} from '../../../application/usecases/get_osu_user_info/GetOsuUserInfoUseCase';
 import {Timespan} from '../../../../primitives/Timespan';
 import {APP_CODE_NAME} from '../../../App';
-import {SERVERS} from '../../common/OsuServers';
 import {UserRecentPlays} from './UserRecentPlays';
 import {GetAppUserInfoUseCase} from '../../../application/usecases/get_app_user_info/GetAppUserInfoUseCase';
 import {VkIdConverter} from '../VkIdConverter';
@@ -20,6 +19,7 @@ import {MainArgsProcessor} from '../../common/arg_processing/MainArgsProcessor';
 import {CommandPrefixes} from '../../common/CommandPrefixes';
 import {OsuRuleset} from '../../../../primitives/OsuRuleset';
 import {TextProcessor} from '../../common/arg_processing/TextProcessor';
+import {UserBestPlays} from './UserBestPlays';
 
 export class UserInfo extends VkCommand<
   UserInfoExecutionArgs,
@@ -219,33 +219,61 @@ Accuracy: ${accuracy}%
 https://osu.ppy.sh/u/${userId}
     `.trim();
 
-    const serverPrefix = SERVERS.getPrefixByServer(server);
-    const bestPlaysPrefix = 't'; // TODO: use UserBestPlays.prefixes
-    const recentPlaysPrefix = UserRecentPlays.recentPlaysPrefixes[0];
-    const recentPassesPrefix = UserRecentPlays.recentPassesPrefixes[0];
+    const buttons: VkOutputMessageButton[] = [];
+    const userBestPlaysCommand = this.otherCommands.find(
+      x => x instanceof UserBestPlays
+    );
+    if (userBestPlaysCommand !== undefined) {
+      buttons.push({
+        text: `Топ скоры ${username}`,
+        command: userBestPlaysCommand.unparse({
+          server: server,
+          username: username,
+          mode: mode,
+          vkUserId: 0,
+          startPosition: undefined,
+          quantity: undefined,
+          mods: undefined,
+        }),
+      });
+    }
+    const userRecentPlaysCommand = this.otherCommands.find(
+      x => x instanceof UserRecentPlays
+    );
+    if (userRecentPlaysCommand !== undefined) {
+      buttons.push(
+        {
+          text: `Последний скор ${username}`,
+          command: userRecentPlaysCommand.unparse({
+            passesOnly: false,
+            server: server,
+            username: username,
+            mode: mode,
+            vkUserId: 0,
+            startPosition: undefined,
+            quantity: undefined,
+            mods: undefined,
+          }),
+        },
+        {
+          text: `Последний пасс ${username}`,
+          command: userRecentPlaysCommand.unparse({
+            passesOnly: true,
+            server: server,
+            username: username,
+            mode: mode,
+            vkUserId: 0,
+            startPosition: undefined,
+            quantity: undefined,
+            mods: undefined,
+          }),
+        }
+      );
+    }
     return {
       text: text,
       attachment: undefined,
-      buttons: [
-        [
-          {
-            text: `Топ скоры ${username}`,
-            command: `${serverPrefix} ${bestPlaysPrefix} ${username} mode=${modeString}`,
-          },
-        ],
-        [
-          {
-            text: `Последний скор ${username}`,
-            command: `${serverPrefix} ${recentPlaysPrefix} ${username} mode=${modeString}`,
-          },
-        ],
-        [
-          {
-            text: `Последний пасс ${username}`,
-            command: `${serverPrefix} ${recentPassesPrefix} ${username} mode=${modeString}`,
-          },
-        ],
-      ],
+      buttons: buttons.map(b => [b]),
     };
   }
 
@@ -276,6 +304,20 @@ https://osu.ppy.sh/u/${userId}
       attachment: undefined,
       buttons: undefined,
     };
+  }
+
+  unparse(args: UserInfoExecutionArgs): string {
+    const tokens = [
+      SERVER_PREFIX.unparse(args.server),
+      this.COMMAND_PREFIX.unparse(this.prefixes[0]),
+    ];
+    if (args.username !== undefined) {
+      tokens.push(USERNAME.unparse(args.username));
+    }
+    if (args.mode !== undefined) {
+      tokens.push(MODE.unparse(args.mode));
+    }
+    return this.textProcessor.detokenize(tokens);
   }
 }
 

@@ -269,6 +269,9 @@ export class App {
         getAppUserInfoUseCase
       ),
     ];
+    for (const command of publicCommands) {
+      command.link(publicCommands);
+    }
     const adminCommands = [
       new ApiUsageSummary(
         [group.owner],

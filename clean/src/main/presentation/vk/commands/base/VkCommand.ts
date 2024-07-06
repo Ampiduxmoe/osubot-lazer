@@ -19,11 +19,17 @@ export abstract class VkCommand<TExecutionArgs, TViewParams> {
     this.commandStructure = commandStructure;
   }
 
+  protected otherCommands: VkCommand<unknown, unknown>[] = [];
+  link(otherCommands: VkCommand<unknown, unknown>[]) {
+    this.otherCommands = otherCommands;
+  }
+
   abstract matchVkMessage(
     ctx: VkMessageContext
   ): CommandMatchResult<TExecutionArgs>;
   abstract process(args: TExecutionArgs): Promise<TViewParams>;
   abstract createOutputMessage(params: TViewParams): VkOutputMessage;
+  abstract unparse(args: TExecutionArgs): string;
 }
 
 type CommandStructureElement = {

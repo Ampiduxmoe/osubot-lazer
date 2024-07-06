@@ -180,6 +180,20 @@ export class SetUsername extends VkCommand<
       buttons: undefined,
     };
   }
+
+  unparse(args: SetUsernameExecutionArgs): string {
+    const tokens = [
+      SERVER_PREFIX.unparse(args.server),
+      this.COMMAND_PREFIX.unparse(this.prefixes[0]),
+    ];
+    if (args.username !== undefined) {
+      tokens.push(USERNAME.unparse(args.username));
+    }
+    if (args.mode !== undefined) {
+      tokens.push(MODE.unparse(args.mode));
+    }
+    return this.textProcessor.detokenize(tokens);
+  }
 }
 
 type SetUsernameExecutionArgs = {

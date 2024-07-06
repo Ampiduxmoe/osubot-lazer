@@ -472,6 +472,29 @@ ${pos}. ${modsString}
       buttons: undefined,
     };
   }
+
+  unparse(args: UserBestPlaysOnMapExecutionArgs): string {
+    const tokens = [
+      SERVER_PREFIX.unparse(args.server),
+      this.COMMAND_PREFIX.unparse(this.prefixes[0]),
+    ];
+    if (args.beatmapId !== undefined) {
+      tokens.push(BEATMAP_ID.unparse(args.beatmapId));
+    }
+    if (args.username !== undefined) {
+      tokens.push(USERNAME.unparse(args.username));
+    }
+    if (args.mods !== undefined) {
+      tokens.push(MODS.unparse(args.mods));
+    }
+    if (args.startPosition !== undefined) {
+      tokens.push(START_POSITION.unparse(args.startPosition));
+    }
+    if (args.quantity !== undefined) {
+      tokens.push(QUANTITY.unparse(args.quantity));
+    }
+    return this.textProcessor.detokenize(tokens);
+  }
 }
 
 type UserBestPlaysOnMapExecutionArgs = {

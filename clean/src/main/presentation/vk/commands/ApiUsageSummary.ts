@@ -224,6 +224,18 @@ ${userContributionRows.join('\n')}
       buttons: undefined,
     };
   }
+
+  unparse(args: ApiUsageSummaryExecutionArgs): string {
+    const tokens = [
+      this.WORD_API.unparse(''),
+      this.WORD_USAGE.unparse(''),
+      DATE.unparse(args.date),
+    ];
+    if (args.appUserId !== undefined) {
+      tokens.push(APP_USER_ID.unparse(args.appUserId));
+    }
+    return this.textProcessor.detokenize(tokens);
+  }
 }
 
 type ApiUsageSummaryExecutionArgs = {
