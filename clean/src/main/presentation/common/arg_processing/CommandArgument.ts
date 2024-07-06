@@ -4,4 +4,5 @@ export interface CommandArgument<T> {
   readonly usageExample: string;
   match(token: string): boolean;
   parse(token: string): T;
+  unparse(value: T): string;
 }

@@ -44,6 +44,15 @@ import {
 import {OsuUserRecentScoreInfo} from '../../../../src/main/data/http/boundary/OsuUserRecentScoreInfo';
 import {ModAcronym} from '../../../../src/primitives/ModAcronym';
 import {MainTextProcessor} from '../../../../src/main/presentation/common/arg_processing/MainTextProcessor';
+import {
+  MODE,
+  MODS,
+  OWN_COMMAND_PREFIX,
+  QUANTITY,
+  SERVER_PREFIX,
+  START_POSITION,
+  USERNAME,
+} from '../../../../src/main/presentation/common/arg_processing/CommandArguments';
 
 describe('UserRecentPlays', function () {
   let tables: SqlDbTable[];
@@ -189,8 +198,13 @@ describe('UserRecentPlays', function () {
     });
     it('should match short form', function () {
       for (const serverAndPrefix of SERVERS) {
+        const server = serverAndPrefix.server;
+        const serverArg = SERVER_PREFIX.unparse(server);
         for (const prefix of command.prefixes) {
-          const goodText = `${serverAndPrefix.prefix} ${prefix}`;
+          const prefixArg = OWN_COMMAND_PREFIX(command.prefixes).unparse(
+            prefix
+          );
+          const goodText = `${serverArg} ${prefixArg}`;
           const msg = createWithOnlyText({
             senderId: 1,
             text: goodText,
@@ -206,28 +220,28 @@ describe('UserRecentPlays', function () {
       }
     });
     it('should match full form with username', function () {
+      const username = 'username';
       const startPosition = 2;
       const quantity = 5;
       const mods = [
-        {acronym: 'hd', isOptional: true},
-        {acronym: 'dt', isOptional: false},
+        {acronym: new ModAcronym('hd'), isOptional: true},
+        {acronym: new ModAcronym('dt'), isOptional: false},
       ];
-      const modsString =
-        '+' +
-        mods
-          .filter(m => m.isOptional)
-          .map(m => `(${m.acronym})`)
-          .join('') +
-        mods
-          .filter(m => !m.isOptional)
-          .map(m => m.acronym)
-          .join('');
       const mode = OsuRuleset.osu;
-      const modeString = `-${OsuRuleset[mode]}`;
+
+      const usernameArg = USERNAME.unparse(username);
+      const startPositionArg = START_POSITION.unparse(startPosition);
+      const quantityArg = QUANTITY.unparse(quantity);
+      const modeArg = MODE.unparse(mode);
+      const modsArg = MODS.unparse(mods);
       for (const serverAndPrefix of SERVERS) {
+        const server = serverAndPrefix.server;
+        const serverArg = SERVER_PREFIX.unparse(server);
         for (const prefix of command.prefixes) {
-          const username = 'username';
-          const goodText = `${serverAndPrefix.prefix} ${prefix} ${username} \\${startPosition} :${quantity} ${modsString} ${modeString}`;
+          const prefixArg = OWN_COMMAND_PREFIX(command.prefixes).unparse(
+            prefix
+          );
+          const goodText = `${serverArg} ${prefixArg} ${usernameArg} ${startPositionArg} ${quantityArg} ${modsArg} ${modeArg}`;
           const msg = createWithOnlyText({
             senderId: 1,
             text: goodText,
@@ -254,8 +268,13 @@ describe('UserRecentPlays', function () {
     });
     it('should match short form payload', function () {
       for (const serverAndPrefix of SERVERS) {
+        const server = serverAndPrefix.server;
+        const serverArg = SERVER_PREFIX.unparse(server);
         for (const prefix of command.prefixes) {
-          const goodText = `${serverAndPrefix.prefix} ${prefix}`;
+          const prefixArg = OWN_COMMAND_PREFIX(command.prefixes).unparse(
+            prefix
+          );
+          const goodText = `${serverArg} ${prefixArg}`;
           const msg = createWithPayload({
             senderId: 1,
             text: 'lorem ipsum',
@@ -275,28 +294,28 @@ describe('UserRecentPlays', function () {
       }
     });
     it('should match full form payload with username', function () {
+      const username = 'username';
       const startPosition = 3;
       const quantity = 6;
       const mods = [
-        {acronym: 'hd', isOptional: true},
-        {acronym: 'hr', isOptional: false},
+        {acronym: new ModAcronym('hd'), isOptional: true},
+        {acronym: new ModAcronym('hr'), isOptional: false},
       ];
-      const modsString =
-        '+' +
-        mods
-          .filter(m => m.isOptional)
-          .map(m => `(${m.acronym})`)
-          .join('') +
-        mods
-          .filter(m => !m.isOptional)
-          .map(m => m.acronym)
-          .join('');
       const mode = OsuRuleset.osu;
-      const modeString = `-${OsuRuleset[mode]}`;
+
+      const usernameArg = USERNAME.unparse(username);
+      const startPositionArg = START_POSITION.unparse(startPosition);
+      const quantityArg = QUANTITY.unparse(quantity);
+      const modeArg = MODE.unparse(mode);
+      const modsArg = MODS.unparse(mods);
       for (const serverAndPrefix of SERVERS) {
+        const server = serverAndPrefix.server;
+        const serverArg = SERVER_PREFIX.unparse(server);
         for (const prefix of command.prefixes) {
-          const username = 'username';
-          const goodText = `${serverAndPrefix.prefix} ${prefix} ${username} \\${startPosition} :${quantity} ${modsString} ${modeString}`;
+          const prefixArg = OWN_COMMAND_PREFIX(command.prefixes).unparse(
+            prefix
+          );
+          const goodText = `${serverArg} ${prefixArg} ${usernameArg} ${startPositionArg} ${quantityArg} ${modsArg} ${modeArg}`;
           const msg = createWithPayload({
             senderId: 1,
             text: 'lorem ipsum',

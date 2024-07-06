@@ -20,6 +20,14 @@ export const SERVER_PREFIX: CommandArgument<OsuServer> = {
   parse: function (token: string): OsuServer {
     return SERVERS.getServerByPrefixIgnoringCase(token)!;
   },
+  unparse: function (value: OsuServer): string {
+    return (
+      SERVERS.find(x => x.server === value)?.prefix ??
+      (() => {
+        throw Error('Value should be a valid OsuServer');
+      })()
+    );
+  },
 };
 
 export const OWN_COMMAND_PREFIX: (
@@ -36,6 +44,9 @@ export const OWN_COMMAND_PREFIX: (
   parse(token: string): string {
     return token;
   },
+  unparse: function (value: string): string {
+    return value;
+  },
 });
 
 export const VK_FOREIGN_COMMAND_PREFIX: (
@@ -51,6 +62,9 @@ export const VK_FOREIGN_COMMAND_PREFIX: (
   },
   parse: function (token: string): string {
     return token;
+  },
+  unparse: function (value: string): string {
+    return value;
   },
 });
 
@@ -84,6 +98,9 @@ export const USERNAME: CommandArgument<string> = {
   },
   parse: function (token: string): string {
     return token;
+  },
+  unparse: function (value: string): string {
+    return value;
   },
 };
 
@@ -128,6 +145,9 @@ export const USERNAME_LIST: CommandArgument<UsernameList> = {
       isAdditive: isAdditive,
     };
   },
+  unparse: function (value: UsernameList): string {
+    return value.isAdditive ? '~~' : '~' + value.usernames.join(',');
+  },
 };
 
 export const START_POSITION: CommandArgument<number> = {
@@ -150,6 +170,9 @@ export const START_POSITION: CommandArgument<number> = {
   parse: function (token: string): number {
     return parseInt(token.substring(1));
   },
+  unparse: function (value: number): string {
+    return '\\' + value;
+  },
 };
 
 export const QUANTITY: CommandArgument<number> = {
@@ -171,6 +194,9 @@ export const QUANTITY: CommandArgument<number> = {
   },
   parse: function (token: string): number {
     return parseInt(token.substring(1));
+  },
+  unparse: function (value: number): string {
+    return ':' + value;
   },
 };
 
@@ -223,6 +249,12 @@ export const MODS: CommandArgument<ModArg[]> = {
     ];
     return mods;
   },
+  unparse: function (value: ModArg[]): string {
+    return (
+      '+' +
+      value.map(x => (x.isOptional ? `(${x.acronym})` : x.acronym)).join('')
+    );
+  },
 };
 
 export const MODE: CommandArgument<OsuRuleset> = {
@@ -245,6 +277,9 @@ export const MODE: CommandArgument<OsuRuleset> = {
     }
     return OsuRuleset[ruleset];
   },
+  unparse: function (value: OsuRuleset): string {
+    return '-' + OsuRuleset[value];
+  },
 };
 
 export const SCORE_COMBO: CommandArgument<number> = {
@@ -258,6 +293,9 @@ export const SCORE_COMBO: CommandArgument<number> = {
   },
   parse: function (token: string): number {
     return parseInt(token.toLowerCase().replace('x', ''));
+  },
+  unparse: function (value: number): string {
+    return value + 'x';
   },
 };
 
@@ -273,6 +311,9 @@ export const MISSCOUNT: CommandArgument<number> = {
   parse: function (token: string): number {
     return parseInt(token.toLowerCase().replace('xm', ''));
   },
+  unparse: function (value: number): string {
+    return value + 'xm';
+  },
 };
 
 export const ACCURACY: CommandArgument<number> = {
@@ -286,6 +327,9 @@ export const ACCURACY: CommandArgument<number> = {
   },
   parse: function (token: string): number {
     return parseFloat(token.replace('%', ''));
+  },
+  unparse: function (value: number): string {
+    return value + '%';
   },
 };
 
@@ -301,6 +345,9 @@ export const FIFTYCOUNT: CommandArgument<number> = {
   parse: function (token: string): number {
     return parseInt(token.toLowerCase().replace('x50', ''));
   },
+  unparse: function (value: number): string {
+    return value + 'x50';
+  },
 };
 
 export const HUNDREDCOUNT: CommandArgument<number> = {
@@ -315,6 +362,9 @@ export const HUNDREDCOUNT: CommandArgument<number> = {
   parse: function (token: string): number {
     return parseInt(token.toLowerCase().replace('x100', ''));
   },
+  unparse: function (value: number): string {
+    return value + 'x100';
+  },
 };
 
 export const SPEED_RATE: CommandArgument<number> = {
@@ -328,6 +378,9 @@ export const SPEED_RATE: CommandArgument<number> = {
   },
   parse: function (token: string): number {
     return parseFloat(token.toLowerCase().replace('x', ''));
+  },
+  unparse: function (value: number): string {
+    return value + 'x';
   },
 };
 
@@ -348,14 +401,20 @@ export const DIFFICULTY_ADJUST_SETTING: CommandArgument<ArgDA> = {
     return /^(ar|cs|od|hp)\d+(\.\d)?$/i.test(token);
   },
   parse: function (token: string): ArgDA {
-    const stat = token.toLowerCase().substring(0, 2) as
-      | 'ar'
-      | 'cs'
-      | 'od'
-      | 'hp';
+    const stats = token
+      .split(' ')
+      .map(x => x.toLowerCase().substring(0, 2)) as (keyof ArgDA)[];
     const output = {} as ArgDA;
-    output[stat] = parseFloat(token.substring(2, token.length));
+    for (const stat of stats) {
+      output[stat] = parseFloat(token.substring(2, token.length));
+    }
     return output;
+  },
+  unparse: function (value: ArgDA): string {
+    return ['ar', 'cs', 'od', 'hp']
+      .filter(key => value[key as keyof ArgDA] !== undefined)
+      .map(key => key + value[key as keyof ArgDA])
+      .join(' ');
   },
 };
 
@@ -370,6 +429,9 @@ export const WORD: (word: string) => CommandArgument<string> = word => ({
   },
   parse: function (token: string): string {
     return token;
+  },
+  unparse: function (): string {
+    return word;
   },
 });
 
@@ -388,6 +450,9 @@ export const ANY_WORD: (
   parse: function (token: string): string {
     return token;
   },
+  unparse: function (value: string): string {
+    return value;
+  },
 });
 
 export const ANY_STRING: (
@@ -404,6 +469,9 @@ export const ANY_STRING: (
   },
   parse: function (token: string): string {
     return token;
+  },
+  unparse: function (value: string): string {
+    return value;
   },
 });
 
@@ -424,6 +492,9 @@ export const DAY_OFFSET: CommandArgument<number> = {
     return (
       parseInt(token.toLowerCase().replace('today{', '').replace('}', '')) || 0
     );
+  },
+  unparse: function (value: number): string {
+    return `today{${value > 0 ? '+' : ''}${value}}`;
   },
 };
 
@@ -446,6 +517,9 @@ export const DATE: CommandArgument<Date> = {
       return result;
     }
     return new Date(Date.parse(token));
+  },
+  unparse: function (value: Date): string {
+    return value.toISOString().substring(0, 10);
   },
 };
 
@@ -480,6 +554,9 @@ export const NUMBER: (
   parse: function (token: string): number {
     return parseInt(token);
   },
+  unparse: function (value: number): string {
+    return value.toString();
+  },
 });
 
 export const APP_USER_ID = ANY_STRING(
@@ -504,6 +581,9 @@ export const BEATMAP_ID: CommandArgument<number> = (() => {
     },
     parse: function (token: string): number {
       return parseInt(token.substring(1));
+    },
+    unparse: function (value: number): string {
+      return '*' + value;
     },
   };
 })();

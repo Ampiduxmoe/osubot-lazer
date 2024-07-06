@@ -30,6 +30,12 @@ import {
 import {AppUser} from '../../../../src/main/data/repository/models/AppUser';
 import {VkIdConverter} from '../../../../src/main/presentation/vk/VkIdConverter';
 import {MainTextProcessor} from '../../../../src/main/presentation/common/arg_processing/MainTextProcessor';
+import {
+  MODE,
+  OWN_COMMAND_PREFIX,
+  SERVER_PREFIX,
+  USERNAME,
+} from '../../../../src/main/presentation/common/arg_processing/CommandArguments';
 
 describe('UserInfo', function () {
   let tables: SqlDbTable[];
@@ -158,8 +164,13 @@ describe('UserInfo', function () {
     });
     it('should match short form', function () {
       for (const serverAndPrefix of SERVERS) {
+        const server = serverAndPrefix.server;
+        const serverArg = SERVER_PREFIX.unparse(server);
         for (const prefix of command.prefixes) {
-          const goodText = `${serverAndPrefix.prefix} ${prefix}`;
+          const prefixArg = OWN_COMMAND_PREFIX(command.prefixes).unparse(
+            prefix
+          );
+          const goodText = `${serverArg} ${prefixArg}`;
           const msg = createWithOnlyText({
             senderId: 1,
             text: goodText,
@@ -175,10 +186,19 @@ describe('UserInfo', function () {
       }
     });
     it('should match full form with username', function () {
+      const username = 'username';
+      const mode = OsuRuleset.mania;
+
+      const usernameArg = USERNAME.unparse(username);
+      const modeArg = MODE.unparse(mode);
       for (const serverAndPrefix of SERVERS) {
+        const server = serverAndPrefix.server;
+        const serverArg = SERVER_PREFIX.unparse(server);
         for (const prefix of command.prefixes) {
-          const username = 'username';
-          const goodText = `${serverAndPrefix.prefix} ${prefix} ${username} -mania`;
+          const prefixArg = OWN_COMMAND_PREFIX(command.prefixes).unparse(
+            prefix
+          );
+          const goodText = `${serverArg} ${prefixArg} ${usernameArg} ${modeArg}`;
           const msg = createWithOnlyText({
             senderId: 1,
             text: goodText,
@@ -195,8 +215,13 @@ describe('UserInfo', function () {
     });
     it('should match short form payload', function () {
       for (const serverAndPrefix of SERVERS) {
+        const server = serverAndPrefix.server;
+        const serverArg = SERVER_PREFIX.unparse(server);
         for (const prefix of command.prefixes) {
-          const goodText = `${serverAndPrefix.prefix} ${prefix}`;
+          const prefixArg = OWN_COMMAND_PREFIX(command.prefixes).unparse(
+            prefix
+          );
+          const goodText = `${serverArg} ${prefixArg}`;
           const msg = createWithPayload({
             senderId: 1,
             text: 'lorem ipsum',
@@ -216,10 +241,19 @@ describe('UserInfo', function () {
       }
     });
     it('should match full form payload with username', function () {
+      const username = 'username';
+      const mode = OsuRuleset.ctb;
+
+      const usernameArg = USERNAME.unparse(username);
+      const modeArg = MODE.unparse(mode);
       for (const serverAndPrefix of SERVERS) {
+        const server = serverAndPrefix.server;
+        const serverArg = SERVER_PREFIX.unparse(server);
         for (const prefix of command.prefixes) {
-          const username = 'username';
-          const goodText = `${serverAndPrefix.prefix} ${prefix} ${username} -ctb`;
+          const prefixArg = OWN_COMMAND_PREFIX(command.prefixes).unparse(
+            prefix
+          );
+          const goodText = `${serverArg} ${prefixArg} ${usernameArg} ${modeArg}`;
           const msg = createWithPayload({
             senderId: 1,
             text: 'lorem ipsum',
