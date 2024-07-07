@@ -28,6 +28,7 @@ import {
   OsuMapUserPlay,
 } from '../../../application/usecases/get_beatmap_users_best_score/GetBeatmapUsersBestScoresResponse';
 import {TextProcessor} from '../../common/arg_processing/TextProcessor';
+import {VkBeatmapCoversRepository} from '../../data/repositories/VkBeatmapCoversRepository';
 
 export class UserBestPlaysOnMap extends VkCommand<
   UserBestPlaysOnMapExecutionArgs,
@@ -56,15 +57,18 @@ export class UserBestPlaysOnMap extends VkCommand<
   textProcessor: TextProcessor;
   getBeatmapBestScores: GetBeatmapUsersBestScoresUseCase;
   getAppUserInfo: GetAppUserInfoUseCase;
+  vkBeatmapCovers: VkBeatmapCoversRepository;
   constructor(
     textProcessor: TextProcessor,
     getBeatmapBestScores: GetBeatmapUsersBestScoresUseCase,
-    getAppUserInfo: GetAppUserInfoUseCase
+    getAppUserInfo: GetAppUserInfoUseCase,
+    vkBeatmapCovers: VkBeatmapCoversRepository
   ) {
     super(UserBestPlaysOnMap.commandStructure);
     this.textProcessor = textProcessor;
     this.getBeatmapBestScores = getBeatmapBestScores;
     this.getAppUserInfo = getAppUserInfo;
+    this.vkBeatmapCovers = vkBeatmapCovers;
   }
 
   matchVkMessage(
@@ -138,6 +142,7 @@ export class UserBestPlaysOnMap extends VkCommand<
         map: undefined,
         plays: undefined,
         startPosition: undefined,
+        coverAttachment: undefined,
       };
     }
     const leaderboardResponse = await this.getBeatmapBestScores.execute({
@@ -161,6 +166,7 @@ export class UserBestPlaysOnMap extends VkCommand<
             map: undefined,
             plays: undefined,
             startPosition: undefined,
+            coverAttachment: undefined,
           };
       }
     }
@@ -174,8 +180,16 @@ export class UserBestPlaysOnMap extends VkCommand<
         map: leaderboardResponse.map!,
         plays: undefined,
         startPosition: undefined,
+        coverAttachment: undefined,
       };
     }
+    const mapPlays =
+      args.quantity === undefined && args.startPosition !== undefined
+        ? leaderboardResponse.mapPlays![0].plays.slice(0, args.startPosition)
+        : leaderboardResponse.mapPlays![0].plays.slice(
+            0,
+            (args.startPosition ?? 1) + (args.quantity ?? 1) - 1
+          );
     return {
       server: args.server,
       beatmapIdInput: args.beatmapId,
@@ -183,20 +197,29 @@ export class UserBestPlaysOnMap extends VkCommand<
       username: leaderboardResponse.mapPlays![0].username,
       mode: leaderboardResponse.ruleset!,
       map: leaderboardResponse.map!,
-      plays:
-        args.quantity === undefined && args.startPosition !== undefined
-          ? leaderboardResponse.mapPlays![0].plays.slice(0, args.startPosition)
-          : leaderboardResponse.mapPlays![0].plays.slice(
-              0,
-              (args.startPosition ?? 1) + (args.quantity ?? 1) - 1
-            ),
+      plays: mapPlays,
       startPosition: args.startPosition ?? 1,
+      coverAttachment:
+        mapPlays.length === 1
+          ? await getOrDownloadCoverAttachment(
+              leaderboardResponse.map!,
+              this.vkBeatmapCovers
+            )
+          : null,
     };
   }
 
   createOutputMessage(params: UserBestPlaysOnMapViewParams): VkOutputMessage {
-    const {server, beatmapIdInput, usernameInput, username, mode, map, plays} =
-      params;
+    const {
+      server,
+      beatmapIdInput,
+      usernameInput,
+      username,
+      mode,
+      map,
+      plays,
+      coverAttachment,
+    } = params;
     if (username === undefined) {
       if (usernameInput === undefined) {
         return this.createUsernameNotBoundMessage(server);
@@ -212,7 +235,14 @@ export class UserBestPlaysOnMap extends VkCommand<
     if (plays === undefined) {
       return this.createNoMapPlaysMessage(server, mode!);
     }
-    return this.createMapPlaysMessage(map, plays, server, mode!, username);
+    return this.createMapPlaysMessage(
+      map,
+      plays,
+      server,
+      mode!,
+      username,
+      coverAttachment
+    );
   }
 
   createMapPlaysMessage(
@@ -220,7 +250,8 @@ export class UserBestPlaysOnMap extends VkCommand<
     mapPlays: OsuMapUserPlay[],
     server: OsuServer,
     mode: OsuRuleset,
-    username: string
+    username: string,
+    coverAttachment: CoverAttachment
   ): VkOutputMessage {
     const serverString = OsuServer[server];
     const modeString = OsuRuleset[mode];
@@ -264,6 +295,10 @@ export class UserBestPlaysOnMap extends VkCommand<
         ? '\n(Не удалось получить часть статистики)'
         : '';
     const mapUrlShort = map.beatmap.url.replace('beatmaps', 'b');
+    const couldNotAttachCoverMessage =
+      coverAttachment === undefined
+        ? '\n\nБГ карты прикрепить не удалось 😭'
+        : '';
     const text = `
 [Server: ${serverString}, Mode: ${modeString}]
 ${scoresString} ${username} на карте
@@ -274,11 +309,11 @@ AR: ${ar}　CS: ${cs}　OD: ${od}　HP: ${hp}${maxComboString}
 ${mapUrlShort}
 
 ${scoresText}
-${couldNotGetSomeStatsMessage}
+${couldNotGetSomeStatsMessage}${couldNotAttachCoverMessage}
     `.trim();
     return {
       text: text,
-      attachment: undefined,
+      attachment: coverAttachment ?? undefined,
       buttons: undefined,
     };
   }
@@ -516,7 +551,10 @@ type UserBestPlaysOnMapViewParams = {
   map: OsuMap | undefined;
   plays: OsuMapUserPlay[] | undefined;
   startPosition: number | undefined;
+  coverAttachment: CoverAttachment;
 };
+
+type CoverAttachment = string | null | undefined;
 
 function getScoreDateString(date: Date): string {
   const day = date.getUTCDate();
@@ -541,4 +579,28 @@ function getScoreDateStringWithTime(date: Date): string {
   const datePart = `${dayFormatted}.${monthFormatted}.${year}`;
   const timePart = `${hoursFormatted}:${minutesFormatted}`;
   return `${datePart} ${timePart}`;
+}
+
+async function getOrDownloadCoverAttachment(
+  mapInfo: OsuMap,
+  coversRepository: VkBeatmapCoversRepository
+): Promise<CoverAttachment> {
+  const existingAttachment = await coversRepository.get({
+    beatmapsetId: mapInfo.beatmapset.id,
+  });
+  if (existingAttachment !== undefined) {
+    return existingAttachment.attachment;
+  }
+  try {
+    const newAttachment = await coversRepository.downloadAndSave(
+      mapInfo.beatmapset.id,
+      mapInfo.beatmapset.coverUrl
+    );
+    if (newAttachment === undefined) {
+      return null;
+    }
+    return newAttachment;
+  } catch (e) {
+    return undefined;
+  }
 }

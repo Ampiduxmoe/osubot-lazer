@@ -8,8 +8,10 @@ type UnknownExecutionParams = unknown;
 type UnknownViewParams = unknown;
 
 export class VkClient {
-  vk: VK;
-  commands: VkCommand<UnknownExecutionParams, UnknownViewParams>[] = [];
+  readonly vk: VK;
+  readonly commands: VkCommand<UnknownExecutionParams, UnknownViewParams>[] =
+    [];
+  readonly initActions: (() => Promise<void>)[] = [];
 
   constructor(vk: VK) {
     this.vk = vk;
@@ -30,7 +32,14 @@ export class VkClient {
 
   async start(): Promise<void> {
     console.log('VK client starting...');
+
+    const initPromises = this.initActions.map(x => x());
+    await Promise.all(initPromises);
+    console.log('VK client initialized successfully');
+
     await this.vk.updates.start();
+    console.log('VK updates started');
+
     console.log('VK client started!');
   }
 

@@ -210,10 +210,12 @@ export class GetBeatmapUsersBestScoresUseCase
       isFailure: false,
       map: {
         beatmapset: {
+          id: beatmap.beatmapset.id,
           status: beatmap.beatmapset.status,
           artist: beatmap.beatmapset.artist,
           title: beatmap.beatmapset.title,
           creator: beatmap.beatmapset.creator,
+          coverUrl: beatmap.beatmapset.coverUrl,
         },
         beatmap: {
           difficultyName: beatmap.version,

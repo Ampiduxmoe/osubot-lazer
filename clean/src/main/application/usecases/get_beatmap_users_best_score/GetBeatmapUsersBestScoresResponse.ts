@@ -12,10 +12,12 @@ export type GetBeatmapUsersBestScoresResponse = {
 
 export type OsuMap = {
   beatmapset: {
+    id: number;
     status: BeatmapsetRankStatus;
     artist: string;
     title: string;
     creator: string;
+    coverUrl: string;
   };
   beatmap: {
     difficultyName: string;

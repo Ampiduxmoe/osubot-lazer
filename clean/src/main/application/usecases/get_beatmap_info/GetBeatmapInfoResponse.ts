@@ -7,7 +7,6 @@ export type GetBeatmapInfoResponse = {
 
 export type MapInfo = {
   id: number;
-  beatmapsetId: number;
   mode: OsuRuleset;
   starRating: number;
   totalLength: number;

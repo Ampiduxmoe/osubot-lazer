@@ -53,6 +53,7 @@ import {
   START_POSITION,
   USERNAME,
 } from '../../../../src/main/presentation/common/arg_processing/CommandArguments';
+import {VkBeatmapCoversTable} from '../../../../src/main/presentation/data/repositories/VkBeatmapCoversRepository';
 
 describe('UserBestPlays', function () {
   let tables: SqlDbTable[];
@@ -65,6 +66,12 @@ describe('UserBestPlays', function () {
     const appUserApiRequestsCounts = new AppUserApiRequestsCountsTable(db);
     const timeWindows = new TimeWindowsTable(db);
     appUsers = new AppUsersTable(db);
+    const vkBeatmapCovers = new VkBeatmapCoversTable(
+      db,
+      async () => new ArrayBuffer(0),
+      async () => '',
+      false
+    );
     const requestsSummariesDao = new AppUserApiRequestsSummariesDaoImpl(
       appUserApiRequestsCounts,
       timeWindows
@@ -100,12 +107,14 @@ describe('UserBestPlays', function () {
       appUserApiRequestsCounts,
       timeWindows,
       appUsers,
+      vkBeatmapCovers,
     ];
     const mainTextProcessor = new MainTextProcessor(' ', "'", '\\');
     command = new UserBestPlays(
       mainTextProcessor,
       getUserBestPlaysUseCase,
-      getAppUserInfoUseCase
+      getAppUserInfoUseCase,
+      vkBeatmapCovers
     );
   }
 
@@ -480,6 +489,7 @@ describe('UserBestPlays', function () {
         mode: undefined,
         usernameInput: undefined,
         bestPlays: undefined,
+        coverAttachment: undefined,
       });
       assert.strictEqual(
         outputMessage.text,
@@ -494,6 +504,7 @@ describe('UserBestPlays', function () {
         mode: undefined,
         usernameInput: usernameInput,
         bestPlays: undefined,
+        coverAttachment: undefined,
       });
       assert.strictEqual(
         outputMessage.text,
@@ -508,15 +519,18 @@ describe('UserBestPlays', function () {
         username: 'usrnm',
         plays: [scoreInfoToBestPlay(getFakeUserBestScoreInfos(123, mode)[0])],
       };
+      const coverAttachment = undefined;
       const outputMessage = command.createOutputMessage({
         server: server,
         mode: mode,
         usernameInput: usernameInput,
         bestPlays: bestPlays,
+        coverAttachment: coverAttachment,
       });
       assert.strictEqual(
         outputMessage.text,
-        command.createBestPlaysMessage(bestPlays, server, mode).text
+        command.createBestPlaysMessage(bestPlays, server, mode, coverAttachment)
+          .text
       );
     });
     it('should return "user plays" message if username is specified and there is corresponding account info', function () {
@@ -527,15 +541,18 @@ describe('UserBestPlays', function () {
         username: 'usrnm',
         plays: [scoreInfoToBestPlay(getFakeUserBestScoreInfos(123, mode)[0])],
       };
+      const coverAttachment = undefined;
       const outputMessage = command.createOutputMessage({
         server: server,
         mode: mode,
         usernameInput: usernameInput,
         bestPlays: bestPlays,
+        coverAttachment: coverAttachment,
       });
       assert.strictEqual(
         outputMessage.text,
-        command.createBestPlaysMessage(bestPlays, server, mode).text
+        command.createBestPlaysMessage(bestPlays, server, mode, coverAttachment)
+          .text
       );
     });
   });
@@ -546,10 +563,12 @@ function scoreInfoToBestPlay(bestScoreInfo: OsuUserBestScoreInfo): BestPlay {
   return {
     absolutePosition: 100,
     beatmapset: {
+      id: 1,
       status: 'Ranked',
       artist: s.beatmapset.artist,
       title: s.beatmapset.title,
       creator: s.beatmapset.creator,
+      coverUrl: '',
     },
     beatmap: {
       difficultyName: s.beatmap.version,

@@ -207,7 +207,6 @@ export class GetBeatmapInfoUseCase
       return {
         beatmapInfo: {
           id: rawMap.id,
-          beatmapsetId: rawMap.beatmapsetId,
           mode: rawMap.mode,
           starRating: finalScoreStarRating,
           totalLength: finalScore.moddedBeatmap.song.length,
@@ -257,7 +256,6 @@ export class GetBeatmapInfoUseCase
     return {
       beatmapInfo: {
         id: rawMap.id,
-        beatmapsetId: rawMap.beatmapsetId,
         mode: rawMap.mode,
         starRating: rawMap.difficultyRating,
         totalLength: rawMap.totalLength,

@@ -16,10 +16,12 @@ export type OsuUserRecentPlays = {
 export type OsuUserRecentPlay = {
   absolutePosition: number;
   beatmapset: {
+    id: number;
     status: BeatmapsetRankStatus;
     artist: string;
     title: string;
     creator: string;
+    coverUrl: string;
   };
   beatmap: {
     difficultyName: string;

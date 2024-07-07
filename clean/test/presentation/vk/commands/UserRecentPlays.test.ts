@@ -53,6 +53,7 @@ import {
   START_POSITION,
   USERNAME,
 } from '../../../../src/main/presentation/common/arg_processing/CommandArguments';
+import {VkBeatmapCoversTable} from '../../../../src/main/presentation/data/repositories/VkBeatmapCoversRepository';
 
 describe('UserRecentPlays', function () {
   let tables: SqlDbTable[];
@@ -65,6 +66,13 @@ describe('UserRecentPlays', function () {
     const appUserApiRequestsCounts = new AppUserApiRequestsCountsTable(db);
     const timeWindows = new TimeWindowsTable(db);
     appUsers = new AppUsersTable(db);
+    appUsers = new AppUsersTable(db);
+    const vkBeatmapCovers = new VkBeatmapCoversTable(
+      db,
+      async () => new ArrayBuffer(0),
+      async () => '',
+      false
+    );
     const requestsSummariesDao = new AppUserApiRequestsSummariesDaoImpl(
       appUserApiRequestsCounts,
       timeWindows
@@ -100,12 +108,14 @@ describe('UserRecentPlays', function () {
       appUserApiRequestsCounts,
       timeWindows,
       appUsers,
+      vkBeatmapCovers,
     ];
     const mainTextProcessor = new MainTextProcessor(' ', "'", '\\');
     command = new UserRecentPlays(
       mainTextProcessor,
       getRecentPlaysUseCase,
-      getAppUserInfoUseCase
+      getAppUserInfoUseCase,
+      vkBeatmapCovers
     );
   }
 
@@ -500,6 +510,7 @@ describe('UserRecentPlays', function () {
         passesOnly: passesOnly,
         usernameInput: undefined,
         recentPlays: undefined,
+        coverAttachment: undefined,
       });
       assert.strictEqual(
         outputMessage.text,
@@ -516,6 +527,7 @@ describe('UserRecentPlays', function () {
         passesOnly: passesOnly,
         usernameInput: usernameInput,
         recentPlays: undefined,
+        coverAttachment: undefined,
       });
       assert.strictEqual(
         outputMessage.text,
@@ -531,17 +543,24 @@ describe('UserRecentPlays', function () {
         username: 'usrnm',
         plays: [scoreInfoToRecentPlay(getFakeRecentScoreInfos(123, mode)[0])],
       };
+      const coverAttachment = undefined;
       const outputMessage = command.createOutputMessage({
         server: server,
         mode: mode,
         passesOnly: passesOnly,
         usernameInput: usernameInput,
         recentPlays: recentPlays,
+        coverAttachment: coverAttachment,
       });
       assert.strictEqual(
         outputMessage.text,
-        command.createRecentPlaysMessage(recentPlays, server, mode, passesOnly)
-          .text
+        command.createRecentPlaysMessage(
+          recentPlays,
+          server,
+          mode,
+          passesOnly,
+          coverAttachment
+        ).text
       );
     });
     it('should return "user plays" message if username is specified and there is corresponding account info', function () {
@@ -553,17 +572,24 @@ describe('UserRecentPlays', function () {
         username: 'usrnm',
         plays: [scoreInfoToRecentPlay(getFakeRecentScoreInfos(123, mode)[0])],
       };
+      const coverAttachment = undefined;
       const outputMessage = command.createOutputMessage({
         server: server,
         mode: mode,
         passesOnly: passesOnly,
         usernameInput: usernameInput,
         recentPlays: recentPlays,
+        coverAttachment: coverAttachment,
       });
       assert.strictEqual(
         outputMessage.text,
-        command.createRecentPlaysMessage(recentPlays, server, mode, passesOnly)
-          .text
+        command.createRecentPlaysMessage(
+          recentPlays,
+          server,
+          mode,
+          passesOnly,
+          coverAttachment
+        ).text
       );
     });
   });
@@ -576,10 +602,12 @@ function scoreInfoToRecentPlay(
   return {
     absolutePosition: 100,
     beatmapset: {
+      id: 1,
       status: 'Ranked',
       artist: s.beatmapset.artist,
       title: s.beatmapset.title,
       creator: s.beatmapset.creator,
+      coverUrl: '',
     },
     beatmap: {
       difficultyName: s.beatmap.version,

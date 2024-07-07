@@ -28,6 +28,7 @@ import {Timespan} from '../../../../primitives/Timespan';
 import {integerShortForm, round} from '../../../../primitives/Numbers';
 import {ModAcronym} from '../../../../primitives/ModAcronym';
 import {TextProcessor} from '../../common/arg_processing/TextProcessor';
+import {VkBeatmapCoversRepository} from '../../data/repositories/VkBeatmapCoversRepository';
 
 export class BeatmapInfo extends VkCommand<
   BeatmapInfoExecutionArgs,
@@ -66,13 +67,16 @@ export class BeatmapInfo extends VkCommand<
 
   textProcessor: TextProcessor;
   getBeatmapInfo: GetBeatmapInfoUseCase;
+  vkBeatmapCovers: VkBeatmapCoversRepository;
   constructor(
     textProcessor: TextProcessor,
-    getBeatmapInfo: GetBeatmapInfoUseCase
+    getBeatmapInfo: GetBeatmapInfoUseCase,
+    vkBeatmapCovers: VkBeatmapCoversRepository
   ) {
     super(BeatmapInfo.commandStructure);
     this.textProcessor = textProcessor;
     this.getBeatmapInfo = getBeatmapInfo;
+    this.vkBeatmapCovers = vkBeatmapCovers;
   }
 
   matchVkMessage(
@@ -148,15 +152,27 @@ export class BeatmapInfo extends VkCommand<
       mapScoreSimulationOsu: args.mapScoreSimulationOsu,
     });
     const beatmapInfo = beatmapInfoResponse.beatmapInfo;
+    if (beatmapInfo === undefined) {
+      return {
+        server: args.server,
+        beatmapIdInput: args.beatmapId,
+        beatmapInfo: undefined,
+        coverAttachment: undefined,
+      };
+    }
     return {
       server: args.server,
       beatmapIdInput: args.beatmapId,
       beatmapInfo: beatmapInfo,
+      coverAttachment: await getOrDownloadCoverAttachment(
+        beatmapInfo,
+        this.vkBeatmapCovers
+      ),
     };
   }
 
   createOutputMessage(params: BeatmapInfoViewParams): VkOutputMessage {
-    const {server, beatmapIdInput, beatmapInfo} = params;
+    const {server, beatmapIdInput, beatmapInfo, coverAttachment} = params;
     if (beatmapInfo === undefined) {
       if (beatmapIdInput === undefined) {
         return this.createMapIdNotSpecifiedMessage(server);
@@ -164,12 +180,20 @@ export class BeatmapInfo extends VkCommand<
       return this.createMapNotFoundMessage(server, beatmapIdInput);
     }
     if (beatmapInfo.simulationParams !== undefined) {
-      return this.createSimulatedScoreInfoMessage(server, beatmapInfo);
+      return this.createSimulatedScoreInfoMessage(
+        server,
+        beatmapInfo,
+        coverAttachment
+      );
     }
-    return this.createMapInfoMessage(server, beatmapInfo);
+    return this.createMapInfoMessage(server, beatmapInfo, coverAttachment);
   }
 
-  createMapInfoMessage(server: OsuServer, mapInfo: MapInfo) {
+  createMapInfoMessage(
+    server: OsuServer,
+    mapInfo: MapInfo,
+    coverAttachment: CoverAttachment
+  ) {
     const serverString = OsuServer[server];
     const modeString = OsuRuleset[mapInfo.mode];
     const {artist, title} = mapInfo.beatmapset;
@@ -202,6 +226,10 @@ export class BeatmapInfo extends VkCommand<
       })
       .join('　');
     const mapUrlShort = mapInfo.url.replace('beatmaps', 'b');
+    const couldNotAttachCoverMessage =
+      coverAttachment === undefined
+        ? '\n\nБГ карты прикрепить не удалось 😭'
+        : '';
     const text = `
 [Server: ${serverString}, Mode: ${modeString}]
 ${artist} - ${title} [${diffname}] by ${mapperName} (${mapStatus})
@@ -211,16 +239,20 @@ ${lengthString} (${drainString})　${bpm} BPM　${sr}★
 AR: ${ar}　CS: ${cs}　OD: ${od}　HP: ${hp}
 ${ppEstimations}
 
-URL: ${mapUrlShort}
+URL: ${mapUrlShort}${couldNotAttachCoverMessage}
     `.trim();
     return {
       text: text,
-      attachment: undefined,
+      attachment: coverAttachment ?? undefined,
       buttons: [],
     };
   }
 
-  createSimulatedScoreInfoMessage(server: OsuServer, mapInfo: MapInfo) {
+  createSimulatedScoreInfoMessage(
+    server: OsuServer,
+    mapInfo: MapInfo,
+    coverAttachment: CoverAttachment
+  ) {
     if (mapInfo.simulationParams === undefined) {
       throw Error('Simulated stats should not be undefined');
     }
@@ -285,6 +317,10 @@ URL: ${mapUrlShort}
       return `${ppString}`;
     })[0];
     const mapUrlShort = mapInfo.url.replace('beatmaps', 'b');
+    const couldNotAttachCoverMessage =
+      coverAttachment === undefined
+        ? '\n\nБГ карты прикрепить не удалось 😭'
+        : '';
     const text = `
 [Server: ${serverString}, Mode: ${modeString}]
 ${artist} - ${title} [${diffname}] by ${mapperName} (${mapStatus})
@@ -296,11 +332,11 @@ ${lengthString} (${drainString})　${bpm} BPM　${sr}★
 AR: ${ar}　CS: ${cs}　OD: ${od}　HP: ${hp}
 ${ppEstimation}
 
-URL: ${mapUrlShort}
+URL: ${mapUrlShort}${couldNotAttachCoverMessage}
     `.trim();
     return {
       text: text,
-      attachment: undefined,
+      attachment: coverAttachment ?? undefined,
       buttons: [],
     };
   }
@@ -384,7 +420,10 @@ type BeatmapInfoViewParams = {
   server: OsuServer;
   beatmapIdInput: number;
   beatmapInfo: MapInfo | undefined;
+  coverAttachment: CoverAttachment;
 };
+
+type CoverAttachment = string | null | undefined;
 
 type MapScoreSimulationOsu = {
   mods?: ModAcronym[];
@@ -399,3 +438,27 @@ type MapScoreSimulationOsu = {
   od?: number;
   hp?: number;
 };
+
+async function getOrDownloadCoverAttachment(
+  mapInfo: MapInfo,
+  coversRepository: VkBeatmapCoversRepository
+): Promise<CoverAttachment> {
+  const existingAttachment = await coversRepository.get({
+    beatmapsetId: mapInfo.beatmapset.id,
+  });
+  if (existingAttachment !== undefined) {
+    return existingAttachment.attachment;
+  }
+  try {
+    const newAttachment = await coversRepository.downloadAndSave(
+      mapInfo.beatmapset.id,
+      mapInfo.beatmapset.coverUrl
+    );
+    if (newAttachment === undefined) {
+      return null;
+    }
+    return newAttachment;
+  } catch (e) {
+    return undefined;
+  }
+}

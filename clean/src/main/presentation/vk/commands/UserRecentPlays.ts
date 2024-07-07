@@ -32,6 +32,7 @@ import {ModArg} from '../../common/arg_processing/ModArg';
 import {CommandPrefixes} from '../../common/CommandPrefixes';
 import {OsuRuleset} from '../../../../primitives/OsuRuleset';
 import {TextProcessor} from '../../common/arg_processing/TextProcessor';
+import {VkBeatmapCoversRepository} from '../../data/repositories/VkBeatmapCoversRepository';
 
 export class UserRecentPlays extends VkCommand<
   UserRecentPlaysExecutionArgs,
@@ -71,15 +72,18 @@ export class UserRecentPlays extends VkCommand<
   textProcessor: TextProcessor;
   getRecentPlays: GetUserRecentPlaysUseCase;
   getAppUserInfo: GetAppUserInfoUseCase;
+  vkBeatmapCovers: VkBeatmapCoversRepository;
   constructor(
     textProcessor: TextProcessor,
     getRecentPlays: GetUserRecentPlaysUseCase,
-    getAppUserInfo: GetAppUserInfoUseCase
+    getAppUserInfo: GetAppUserInfoUseCase,
+    vkBeatmapCovers: VkBeatmapCoversRepository
   ) {
     super(UserRecentPlays.commandStructure);
     this.textProcessor = textProcessor;
     this.getRecentPlays = getRecentPlays;
     this.getAppUserInfo = getAppUserInfo;
+    this.vkBeatmapCovers = vkBeatmapCovers;
   }
 
   matchVkMessage(
@@ -145,6 +149,7 @@ export class UserRecentPlays extends VkCommand<
           passesOnly: args.passesOnly,
           usernameInput: undefined,
           recentPlays: undefined,
+          coverAttachment: undefined,
         };
       }
       username = boundUser.username;
@@ -173,20 +178,29 @@ export class UserRecentPlays extends VkCommand<
             passesOnly: args.passesOnly,
             usernameInput: args.username,
             recentPlays: undefined,
+            coverAttachment: undefined,
           };
       }
     }
+    const recentPlays = recentPlaysResult.recentPlays!;
     return {
       server: args.server,
       mode: recentPlaysResult.ruleset!,
       passesOnly: args.passesOnly,
       usernameInput: args.username,
-      recentPlays: recentPlaysResult.recentPlays!,
+      recentPlays: recentPlays,
+      coverAttachment:
+        recentPlays.plays.length === 1
+          ? await getOrDownloadCoverAttachment(
+              recentPlays.plays[0],
+              this.vkBeatmapCovers
+            )
+          : null,
     };
   }
 
   createOutputMessage(params: UserRecentPlaysViewParams): VkOutputMessage {
-    const {server, mode, passesOnly, recentPlays} = params;
+    const {server, mode, passesOnly, recentPlays, coverAttachment} = params;
     if (recentPlays === undefined) {
       if (params.usernameInput === undefined) {
         return this.createUsernameNotBoundMessage(params.server);
@@ -209,7 +223,8 @@ export class UserRecentPlays extends VkCommand<
       recentPlays,
       server,
       mode!,
-      passesOnly
+      passesOnly,
+      coverAttachment
     );
   }
 
@@ -217,7 +232,8 @@ export class UserRecentPlays extends VkCommand<
     recentPlays: OsuUserRecentPlays,
     server: OsuServer,
     mode: OsuRuleset,
-    passesOnly: boolean
+    passesOnly: boolean,
+    coverAttachment: CoverAttachment
   ): VkOutputMessage {
     const serverString = OsuServer[server];
     const modeString = OsuRuleset[mode];
@@ -238,16 +254,20 @@ export class UserRecentPlays extends VkCommand<
       ) !== undefined
         ? '\n(Не удалось получить часть статистики)'
         : '';
+    const couldNotAttachCoverMessage =
+      coverAttachment === undefined
+        ? '\n\nБГ карты прикрепить не удалось 😭'
+        : '';
     const text = `
 [Server: ${serverString}, Mode: ${modeString}]
 ${passesOnly ? passesString : scoresString} ${username}
 
 ${scoresText}
-${couldNotGetSomeStatsMessage}
+${couldNotGetSomeStatsMessage}${couldNotAttachCoverMessage}
     `.trim();
     return {
       text: text,
-      attachment: undefined,
+      attachment: coverAttachment ?? undefined,
       buttons: undefined,
     };
   }
@@ -523,4 +543,31 @@ type UserRecentPlaysViewParams = {
   passesOnly: boolean;
   usernameInput: string | undefined;
   recentPlays: OsuUserRecentPlays | undefined;
+  coverAttachment: CoverAttachment;
 };
+
+type CoverAttachment = string | null | undefined;
+
+async function getOrDownloadCoverAttachment(
+  playInfo: OsuUserRecentPlay,
+  coversRepository: VkBeatmapCoversRepository
+): Promise<CoverAttachment> {
+  const existingAttachment = await coversRepository.get({
+    beatmapsetId: playInfo.beatmapset.id,
+  });
+  if (existingAttachment !== undefined) {
+    return existingAttachment.attachment;
+  }
+  try {
+    const newAttachment = await coversRepository.downloadAndSave(
+      playInfo.beatmapset.id,
+      playInfo.beatmapset.coverUrl
+    );
+    if (newAttachment === undefined) {
+      return null;
+    }
+    return newAttachment;
+  } catch (e) {
+    return undefined;
+  }
+}

@@ -96,10 +96,12 @@ async function getBestPlay(
   return {
     absolutePosition: absolutePosition,
     beatmapset: {
+      id: score.baseBeatmap.beatmapset.id,
       status: score.baseBeatmap.beatmapset.status,
       artist: score.baseBeatmap.song.artist,
       title: score.baseBeatmap.song.title,
       creator: score.baseBeatmap.beatmapset.creatorUsername,
+      coverUrl: `https://assets.ppy.sh/beatmaps/${score.baseBeatmap.beatmapset.id}/covers/raw.jpg`,
     },
     beatmap: {
       difficultyName: score.baseBeatmap.difficultyName,

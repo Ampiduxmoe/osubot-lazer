@@ -172,7 +172,7 @@ function userRecentScoreInternalToExternal(
       creator: score.beatmapset.creator,
       artist: score.beatmapset.artist,
       title: score.beatmapset.title,
-      coverUrl: score.beatmapset.covers.cover,
+      coverUrl: `https://assets.ppy.sh/beatmaps/${score.beatmapset.id}/covers/raw.jpg`,
       status: score.beatmapset.status,
     },
     user: {
@@ -225,7 +225,7 @@ function userBestScoreInternalToExternal(
       creator: score.beatmapset.creator,
       artist: score.beatmapset.artist,
       title: score.beatmapset.title,
-      coverUrl: score.beatmapset.covers.cover,
+      coverUrl: `https://assets.ppy.sh/beatmaps/${score.beatmapset.id}/covers/raw.jpg`,
       status: score.beatmapset.status,
     },
     user: {
@@ -266,7 +266,7 @@ function beatmapInternalToExternal(
     url: beatmap.url,
     beatmapset: {
       artist: beatmap.beatmapset.artist,
-      coverUrl: beatmap.beatmapset.covers.cover,
+      coverUrl: `https://assets.ppy.sh/beatmaps/${beatmap.beatmapset.id}/covers/raw.jpg`,
       creator: beatmap.beatmapset.creator,
       favouriteCount: beatmap.beatmapset.favourite_count,
       hype: beatmap.beatmapset.hype,

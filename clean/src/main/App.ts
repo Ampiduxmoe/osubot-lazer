@@ -42,13 +42,16 @@ import {ChatLeaderboardOnMap} from './presentation/vk/commands/ChatLeaderboardOn
 import {UserBestPlaysOnMap} from './presentation/vk/commands/UserBestPlaysOnMap';
 import {ChatLeaderboard} from './presentation/vk/commands/ChatLeaderboard';
 import {MainTextProcessor} from './presentation/common/arg_processing/MainTextProcessor';
+import {VkBeatmapCoversTable} from './presentation/data/repositories/VkBeatmapCoversRepository';
+import axios from 'axios';
 
 export const APP_CODE_NAME = 'osubot-lazer';
 
 export class App {
   readonly config: AppConfig;
 
-  db: SqlDb;
+  appDb: SqlDb;
+  vkDb: SqlDb;
 
   currentVkGroup: VkGroup;
   vkClient: VkClient;
@@ -62,18 +65,20 @@ export class App {
     if (isProd) {
       console.log('Configuring as production configuration');
       this.currentVkGroup = config.vk.group;
-      this.db = new SqliteDb('osu.db');
+      this.appDb = new SqliteDb('osu.db');
+      this.vkDb = new SqliteDb('vk.db');
     } else {
       console.log('Configuring as development configuration');
       this.currentVkGroup = config.vk.group_dev;
-      this.db = new SqliteDb('osu_dev.db');
+      this.appDb = new SqliteDb('osu_dev.db');
+      this.vkDb = new SqliteDb('vk_dev.db');
     }
 
-    const appUsers = new AppUsersTable(this.db);
-    const requestsCounts = new AppUserApiRequestsCountsTable(this.db);
-    const jsonObjects = new JsonObjectsTable(this.db);
-    const osuUserSnapshots = new OsuUserSnapshotsTable(this.db);
-    const timeWindows = new TimeWindowsTable(this.db);
+    const appUsers = new AppUsersTable(this.appDb);
+    const requestsCounts = new AppUserApiRequestsCountsTable(this.appDb);
+    const jsonObjects = new JsonObjectsTable(this.appDb);
+    const osuUserSnapshots = new OsuUserSnapshotsTable(this.appDb);
+    const timeWindows = new TimeWindowsTable(this.appDb);
 
     const allDbTables = [
       appUsers,
@@ -177,6 +182,7 @@ export class App {
       );
 
     this.vkClient = this.createVkClient({
+      vkDb: this.vkDb,
       group: this.currentVkGroup,
       getOsuUserInfoUseCase: getOsuUserInfoUseCase,
       getAppUserInfoUseCase: getAppUserInfoUseCase,
@@ -210,6 +216,7 @@ export class App {
   }
 
   createVkClient(params: VkClientCreationParams): VkClient {
+    const {vkDb} = params;
     const {group} = params;
     const {getOsuUserInfoUseCase} = params;
     const {getAppUserInfoUseCase} = params;
@@ -219,11 +226,15 @@ export class App {
     const {getApiUsageSummaryUseCase} = params;
     const {getBeatmapInfoUseCase} = params;
     const {getBeatmapUsersBestScoresUseCase} = params;
+
     const vk = new VK({
       pollingGroupId: group.id,
       token: group.token,
     });
     const vkClient = new VkClient(vk);
+
+    const mainTextProcessor = new MainTextProcessor(' ', "'", '\\');
+
     const getConversationMembers = async (
       chatId: number
     ): Promise<number[]> => {
@@ -232,7 +243,30 @@ export class App {
       });
       return chatMembers.profiles.map(x => x.id);
     };
-    const mainTextProcessor = new MainTextProcessor(' ', "'", '\\');
+
+    const fetchArrayBuffer = async (url: string): Promise<ArrayBuffer> => {
+      return (
+        await axios.get(url, {
+          responseType: 'arraybuffer',
+        })
+      ).data;
+    };
+    const uploadImageToVk = async (buffer: Buffer): Promise<string> => {
+      return (
+        await vk.upload.messagePhoto({
+          source: {
+            value: buffer,
+          },
+        })
+      ).toString();
+    };
+    const vkBeatmapCovers = new VkBeatmapCoversTable(
+      vkDb,
+      fetchArrayBuffer,
+      uploadImageToVk,
+      true
+    );
+
     const publicCommands = [
       new SetUsername(mainTextProcessor, setUsernameUseCase),
       new UserInfo(
@@ -240,21 +274,28 @@ export class App {
         getOsuUserInfoUseCase,
         getAppUserInfoUseCase
       ),
-      new BeatmapInfo(mainTextProcessor, getBeatmapInfoUseCase),
+      new BeatmapInfo(
+        mainTextProcessor,
+        getBeatmapInfoUseCase,
+        vkBeatmapCovers
+      ),
       new UserRecentPlays(
         mainTextProcessor,
         getRecentPlaysUseCase,
-        getAppUserInfoUseCase
+        getAppUserInfoUseCase,
+        vkBeatmapCovers
       ),
       new UserBestPlays(
         mainTextProcessor,
         getUserBestPlaysUseCase,
-        getAppUserInfoUseCase
+        getAppUserInfoUseCase,
+        vkBeatmapCovers
       ),
       new UserBestPlaysOnMap(
         mainTextProcessor,
         getBeatmapUsersBestScoresUseCase,
-        getAppUserInfoUseCase
+        getAppUserInfoUseCase,
+        vkBeatmapCovers
       ),
       new ChatLeaderboard(
         mainTextProcessor,
@@ -282,6 +323,12 @@ export class App {
     const helpCommand = new Help(mainTextProcessor, publicCommands);
     vkClient.addCommands([helpCommand, ...publicCommands]);
     vkClient.addCommands(adminCommands);
+
+    const initActions: (() => Promise<void>)[] = [
+      () => vkBeatmapCovers.createTable(),
+    ];
+    vkClient.initActions.push(...initActions);
+
     return vkClient;
   }
 
@@ -321,6 +368,7 @@ function isProduction(fallbackValue: boolean): boolean {
 }
 
 type VkClientCreationParams = {
+  vkDb: SqlDb;
   group: VkGroup;
   getOsuUserInfoUseCase: GetOsuUserInfoUseCase;
   getAppUserInfoUseCase: GetAppUserInfoUseCase;

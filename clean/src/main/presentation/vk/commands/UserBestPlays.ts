@@ -28,6 +28,7 @@ import {
   OsuUserBestPlays,
 } from '../../../application/usecases/get_user_best_plays/GetUserBestPlaysResponse';
 import {TextProcessor} from '../../common/arg_processing/TextProcessor';
+import {VkBeatmapCoversRepository} from '../../data/repositories/VkBeatmapCoversRepository';
 
 export class UserBestPlays extends VkCommand<
   UserBestPlaysExecutionArgs,
@@ -56,15 +57,18 @@ export class UserBestPlays extends VkCommand<
   textProcessor: TextProcessor;
   getUserBestPlays: GetUserBestPlaysUseCase;
   getAppUserInfo: GetAppUserInfoUseCase;
+  vkBeatmapCovers: VkBeatmapCoversRepository;
   constructor(
     textProcessor: TextProcessor,
     getUserBestPlays: GetUserBestPlaysUseCase,
-    getAppUserInfo: GetAppUserInfoUseCase
+    getAppUserInfo: GetAppUserInfoUseCase,
+    vkBeatmapCovers: VkBeatmapCoversRepository
   ) {
     super(UserBestPlays.commandStructure);
     this.textProcessor = textProcessor;
     this.getUserBestPlays = getUserBestPlays;
     this.getAppUserInfo = getAppUserInfo;
+    this.vkBeatmapCovers = vkBeatmapCovers;
   }
 
   matchVkMessage(
@@ -128,6 +132,7 @@ export class UserBestPlays extends VkCommand<
           mode: args.mode,
           usernameInput: undefined,
           bestPlays: undefined,
+          coverAttachment: undefined,
         };
       }
       username = boundUser.username;
@@ -159,19 +164,28 @@ export class UserBestPlays extends VkCommand<
             mode: mode,
             usernameInput: args.username,
             bestPlays: undefined,
+            coverAttachment: undefined,
           };
       }
     }
+    const bestPlays = bestPlaysResult.bestPlays!;
     return {
       server: args.server,
       mode: bestPlaysResult.ruleset!,
       usernameInput: args.username,
-      bestPlays: bestPlaysResult.bestPlays!,
+      bestPlays: bestPlays,
+      coverAttachment:
+        bestPlays.plays.length === 1
+          ? await getOrDownloadCoverAttachment(
+              bestPlays.plays[0],
+              this.vkBeatmapCovers
+            )
+          : null,
     };
   }
 
   createOutputMessage(params: UserBestPlaysViewParams): VkOutputMessage {
-    const {server, mode, bestPlays} = params;
+    const {server, mode, bestPlays, coverAttachment} = params;
     if (bestPlays === undefined) {
       if (params.usernameInput === undefined) {
         return this.createUsernameNotBoundMessage(params.server);
@@ -184,13 +198,19 @@ export class UserBestPlays extends VkCommand<
     if (bestPlays.plays.length === 0) {
       return this.createNoBestPlaysMessage(server, mode!);
     }
-    return this.createBestPlaysMessage(bestPlays, server, mode!);
+    return this.createBestPlaysMessage(
+      bestPlays,
+      server,
+      mode!,
+      coverAttachment
+    );
   }
 
   createBestPlaysMessage(
     bestPlays: OsuUserBestPlays,
     server: OsuServer,
-    mode: OsuRuleset
+    mode: OsuRuleset,
+    coverAttachment: CoverAttachment
   ): VkOutputMessage {
     const serverString = OsuServer[server];
     const modeString = OsuRuleset[mode];
@@ -214,16 +234,20 @@ export class UserBestPlays extends VkCommand<
       ) !== undefined
         ? '\n(Не удалось получить часть статистики)'
         : '';
+    const couldNotAttachCoverMessage =
+      coverAttachment === undefined
+        ? '\n\nБГ карты прикрепить не удалось 😭'
+        : '';
     const text = `
 [Server: ${serverString}, Mode: ${modeString}]
 ${scoresString} ${username}
 
 ${scoresText}
-${couldNotGetSomeStatsMessage}
+${couldNotGetSomeStatsMessage}${couldNotAttachCoverMessage}
     `.trim();
     return {
       text: text,
-      attachment: undefined,
+      attachment: coverAttachment ?? undefined,
       buttons: undefined,
     };
   }
@@ -443,7 +467,10 @@ type UserBestPlaysViewParams = {
   mode: OsuRuleset | undefined;
   usernameInput: string | undefined;
   bestPlays: OsuUserBestPlays | undefined;
+  coverAttachment: CoverAttachment;
 };
+
+type CoverAttachment = string | null | undefined;
 
 function getScoreDateString(date: Date): string {
   const day = date.getUTCDate();
@@ -458,4 +485,28 @@ function getScoreDateString(date: Date): string {
   const datePart = `${dayFormatted}.${monthFormatted}.${year}`;
   const timePart = `${hoursFormatted}:${minutesFormatted}`;
   return `${datePart} ${timePart}`;
+}
+
+async function getOrDownloadCoverAttachment(
+  playInfo: BestPlay,
+  coversRepository: VkBeatmapCoversRepository
+): Promise<CoverAttachment> {
+  const existingAttachment = await coversRepository.get({
+    beatmapsetId: playInfo.beatmapset.id,
+  });
+  if (existingAttachment !== undefined) {
+    return existingAttachment.attachment;
+  }
+  try {
+    const newAttachment = await coversRepository.downloadAndSave(
+      playInfo.beatmapset.id,
+      playInfo.beatmapset.coverUrl
+    );
+    if (newAttachment === undefined) {
+      return null;
+    }
+    return newAttachment;
+  } catch (e) {
+    return undefined;
+  }
 }
