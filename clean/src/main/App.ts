@@ -31,7 +31,7 @@ import {UserBestPlays} from './presentation/vk/commands/UserBestPlays';
 import {GetUserBestPlaysUseCase} from './application/usecases/get_user_best_plays/GetUserBestPlaysUseCase';
 import {OsuUserBestScoresDaoImpl} from './data/dao/OsuUserBestScoresDaoImpl';
 import {BanchoClient} from './data/http/bancho/client/BanchoClient';
-import {JsonObjectsTable} from './data/persistence/db/tables/JsonObjectsTable';
+import {SerializedObjectsTable} from './data/persistence/db/tables/SerializedObjectsTable';
 import {OsuOauthAccessToken} from './data/http/bancho/OsuOauthAccessToken';
 import {BeatmapInfo} from './presentation/vk/commands/BeatmapInfo';
 import {GetBeatmapInfoUseCase} from './application/usecases/get_beatmap_info/GetBeatmapInfoUseCase';
@@ -76,14 +76,14 @@ export class App {
 
     const appUsers = new AppUsersTable(this.appDb);
     const requestsCounts = new AppUserApiRequestsCountsTable(this.appDb);
-    const jsonObjects = new JsonObjectsTable(this.appDb);
+    const serializedObjects = new SerializedObjectsTable(this.appDb);
     const osuUserSnapshots = new OsuUserSnapshotsTable(this.appDb);
     const timeWindows = new TimeWindowsTable(this.appDb);
 
     const allDbTables = [
       appUsers,
       requestsCounts,
-      jsonObjects,
+      serializedObjects,
       osuUserSnapshots,
       timeWindows,
     ];
@@ -98,12 +98,15 @@ export class App {
       ouathClientId: banchoOuath.id,
       oauthClientSecret: banchoOuath.secret,
       saveOuathToken: async token => {
-        await jsonObjects.save(token, OsuOauthAccessToken.JsonCacheDescriptor);
+        await serializedObjects.save(
+          token,
+          OsuOauthAccessToken.SerializationDescriptor
+        );
         console.log('Bancho OAuth token saved');
       },
       loadLatestOuathToken: async () => {
-        const token = await jsonObjects.validateAndGet(
-          OsuOauthAccessToken.JsonCacheDescriptor
+        const token = await serializedObjects.validateAndGet(
+          OsuOauthAccessToken.SerializationDescriptor
         );
         if (token === undefined) {
           return undefined;

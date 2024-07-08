@@ -1,17 +1,17 @@
 /* eslint-disable prefer-arrow-callback */
 import {SqliteDb} from '../../../../../src/main/data/persistence/db/SqliteDb';
-import {JsonObjectsTable} from '../../../../../src/main/data/persistence/db/tables/JsonObjectsTable';
+import {SerializedObjectsTable} from '../../../../../src/main/data/persistence/db/tables/SerializedObjectsTable';
 import {
-  JsonObject,
-  JsonObjectKey,
-} from '../../../../../src/main/data/repository/models/JsonObject';
+  SerializedObject,
+  SerializedObjectKey,
+} from '../../../../../src/main/data/repository/models/SerializedObject';
 import {describeBaseTableMethods} from './GenericTableTest';
-import {JsonCacheDescriptor} from '../../../../../src/primitives/JsonCacheDescriptor';
+import {SerializationDescriptor} from '../../../../../src/primitives/SerializationDescriptor';
 import assert from 'assert';
 
-describe('JsonObjectsTable', function () {
+describe('SerializedObjectsTable', function () {
   const db = new SqliteDb(':memory:');
-  const table = new JsonObjectsTable(db);
+  const table = new SerializedObjectsTable(db);
   const firstJsObject = {
     lorem: 'ipsum',
     ipsum: 0,
@@ -26,7 +26,7 @@ describe('JsonObjectsTable', function () {
       sit: [2, 'amet'],
     },
   };
-  const firstCacheDescriptor: JsonCacheDescriptor<object> = {
+  const firstDescriptor: SerializationDescriptor<object> = {
     key: 'first key',
     serialize: o => {
       return JSON.stringify(o);
@@ -39,7 +39,7 @@ describe('JsonObjectsTable', function () {
     two: 2,
     three: 3,
   };
-  const secondCacheDescriptor: JsonCacheDescriptor<object> = {
+  const secondDescriptor: SerializationDescriptor<object> = {
     key: 'second-key',
     serialize: o => {
       return JSON.stringify(o);
@@ -52,35 +52,37 @@ describe('JsonObjectsTable', function () {
     one: 1,
     two: 2,
   };
-  const thirdCacheDescriptor: JsonCacheDescriptor<{one: number; two: number}> =
-    {
-      key: 'third_key',
-      serialize: o => {
-        return `${o.one} ${o.two}`;
-      },
-      deserialize: s => {
-        const tokens = s.split(' ');
-        return {
-          one: Number(tokens[0]),
-          two: Number(tokens[1]),
-        };
-      },
-    };
-  const firstEntity: JsonObject = {
-    jsonKey: firstCacheDescriptor.key,
-    jsonString: firstCacheDescriptor.serialize(firstJsObject),
+  const thirdDescriptor: SerializationDescriptor<{
+    one: number;
+    two: number;
+  }> = {
+    key: 'third_key',
+    serialize: o => {
+      return `${o.one} ${o.two}`;
+    },
+    deserialize: s => {
+      const tokens = s.split(' ');
+      return {
+        one: Number(tokens[0]),
+        two: Number(tokens[1]),
+      };
+    },
   };
-  const firstEntityUpdated: JsonObject = {
-    jsonKey: firstCacheDescriptor.key,
-    jsonString: firstCacheDescriptor.serialize(firstJsObjectUpdated),
+  const firstEntity: SerializedObject = {
+    key: firstDescriptor.key,
+    data: firstDescriptor.serialize(firstJsObject),
   };
-  const secondEntity: JsonObject = {
-    jsonKey: secondCacheDescriptor.key,
-    jsonString: secondCacheDescriptor.serialize(secondJsObject),
+  const firstEntityUpdated: SerializedObject = {
+    key: firstDescriptor.key,
+    data: firstDescriptor.serialize(firstJsObjectUpdated),
   };
-  const thirdEntity: JsonObject = {
-    jsonKey: thirdCacheDescriptor.key,
-    jsonString: thirdCacheDescriptor.serialize(thirdJsObject),
+  const secondEntity: SerializedObject = {
+    key: secondDescriptor.key,
+    data: secondDescriptor.serialize(secondJsObject),
+  };
+  const thirdEntity: SerializedObject = {
+    key: thirdDescriptor.key,
+    data: thirdDescriptor.serialize(thirdJsObject),
   };
   describeBaseTableMethods({
     db: db,
@@ -88,15 +90,15 @@ describe('JsonObjectsTable', function () {
     testEntities: [
       {
         value: firstEntity,
-        key: firstEntity as JsonObjectKey,
+        key: firstEntity as SerializedObjectKey,
       },
       {
         value: secondEntity,
-        key: secondEntity as JsonObjectKey,
+        key: secondEntity as SerializedObjectKey,
       },
       {
         value: thirdEntity,
-        key: thirdEntity as JsonObjectKey,
+        key: thirdEntity as SerializedObjectKey,
       },
     ],
     options: {
@@ -106,14 +108,14 @@ describe('JsonObjectsTable', function () {
       },
       entityToDelete: {
         index: 1,
-        deletionKey: secondEntity as JsonObjectKey,
+        deletionKey: secondEntity as SerializedObjectKey,
       },
     },
   });
   describe('table-specific operations', async function () {
     it('should return undefined when deserialization fails on #validateAndGet()', async function () {
       await table.validateAndGet({
-        key: firstCacheDescriptor.key,
+        key: firstDescriptor.key,
         serialize: () => '',
         deserialize: () => undefined,
       });
@@ -121,18 +123,18 @@ describe('JsonObjectsTable', function () {
       assert.strictEqual(row, undefined);
     });
     it('should return correct object when deserialization succeeds on #validateAndGet()', async function () {
-      const obj = await table.validateAndGet(thirdCacheDescriptor);
+      const obj = await table.validateAndGet(thirdDescriptor);
       assert.deepStrictEqual(obj, thirdJsObject);
     });
     it('#save() should add row when object key does not exist', async function () {
-      await table.save(firstJsObject, firstCacheDescriptor);
+      await table.save(firstJsObject, firstDescriptor);
       const row = await table.get(firstEntity);
-      assert.strictEqual(row?.jsonString, firstEntity.jsonString);
+      assert.strictEqual(row?.key, firstEntity.key);
     });
     it('#save() should update row when object key exists', async function () {
-      await table.save(firstJsObjectUpdated, firstCacheDescriptor);
+      await table.save(firstJsObjectUpdated, firstDescriptor);
       const row = await table.get(firstEntityUpdated);
-      assert.strictEqual(row?.jsonString, firstEntityUpdated.jsonString);
+      assert.strictEqual(row?.key, firstEntityUpdated.key);
     });
   });
 });

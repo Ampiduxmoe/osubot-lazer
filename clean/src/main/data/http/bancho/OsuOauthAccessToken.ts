@@ -1,6 +1,6 @@
 import {Timespan} from '../../../../primitives/Timespan';
 import {RawOauthToken} from './RawOauthToken';
-import {JsonCacheDescriptor} from '../../../../primitives/JsonCacheDescriptor';
+import {SerializationDescriptor} from '../../../../primitives/SerializationDescriptor';
 
 export class OsuOauthAccessToken {
   readonly tokenType: string;
@@ -45,27 +45,28 @@ export class OsuOauthAccessToken {
     return now < this.expirationTime - safetyMargin.totalMiliseconds();
   }
 
-  static JsonCacheDescriptor: JsonCacheDescriptor<OsuOauthAccessToken> = {
-    key: 'osu_oauth_access_token',
-    serialize: function (o: OsuOauthAccessToken): string {
-      const jsonForm: OsuOauthAccessTokenJson = {
-        tokenType: o.tokenType,
-        grantTime: o.grantTime,
-        expirationTime: o.expirationTime,
-        value: o.value,
-      };
-      return JSON.stringify(jsonForm);
-    },
-    deserialize: function (s: string): OsuOauthAccessToken | undefined {
-      const jsonForm: OsuOauthAccessToken = JSON.parse(s);
-      try {
-        return OsuOauthAccessToken.FromJsonForm(jsonForm);
-      } catch (e) {
-        console.log(e);
-        return undefined;
-      }
-    },
-  };
+  static SerializationDescriptor: SerializationDescriptor<OsuOauthAccessToken> =
+    {
+      key: 'osu_oauth_access_token',
+      serialize: function (o: OsuOauthAccessToken): string {
+        const jsonForm: OsuOauthAccessTokenJson = {
+          tokenType: o.tokenType,
+          grantTime: o.grantTime,
+          expirationTime: o.expirationTime,
+          value: o.value,
+        };
+        return JSON.stringify(jsonForm);
+      },
+      deserialize: function (s: string): OsuOauthAccessToken | undefined {
+        const jsonForm: OsuOauthAccessToken = JSON.parse(s);
+        try {
+          return OsuOauthAccessToken.FromJsonForm(jsonForm);
+        } catch (e) {
+          console.log(e);
+          return undefined;
+        }
+      },
+    };
 }
 
 type OsuOauthAccessTokenJson = {
