@@ -44,6 +44,7 @@ import {ChatLeaderboard} from './presentation/vk/commands/ChatLeaderboard';
 import {MainTextProcessor} from './presentation/common/arg_processing/MainTextProcessor';
 import {VkBeatmapCoversTable} from './presentation/data/repositories/VkBeatmapCoversRepository';
 import axios from 'axios';
+import {SqlDbTable} from './data/persistence/db/SqlDbTable';
 
 export const APP_CODE_NAME = 'osubot-lazer';
 
@@ -93,11 +94,35 @@ export class App {
       config.bot.score_simulation.default_timeout
     );
 
+    const ensureTableIsInitialized = (
+      table: SqlDbTable,
+      timeout: number
+    ): Promise<void> => {
+      let isPromiseResolved = false;
+      let isPromiseRejected = false;
+      return new Promise((resolve, reject) => {
+        setTimeout(() => {
+          if (!isPromiseResolved) {
+            reject(
+              Error(`Table ${table.tableName} initialization took too long`)
+            );
+            isPromiseRejected = true;
+          }
+        }, timeout);
+        table.waitUntilInitialized().then(() => {
+          if (!isPromiseRejected) {
+            resolve();
+            isPromiseResolved = true;
+          }
+        });
+      });
+    };
     const banchoOuath = config.osu.bancho.oauth;
     const banchoClient = new BanchoClient({
       ouathClientId: banchoOuath.id,
       oauthClientSecret: banchoOuath.secret,
       saveOuathToken: async token => {
+        await ensureTableIsInitialized(serializedObjects, 10e3);
         await serializedObjects.save(
           token,
           OsuOauthAccessToken.SerializationDescriptor
@@ -105,6 +130,7 @@ export class App {
         console.log('Bancho OAuth token saved');
       },
       loadLatestOuathToken: async () => {
+        await ensureTableIsInitialized(serializedObjects, 10e3);
         const token = await serializedObjects.validateAndGet(
           OsuOauthAccessToken.SerializationDescriptor
         );
