@@ -54,6 +54,7 @@ import {
   USERNAME,
 } from '../../../../src/main/presentation/common/arg_processing/CommandArguments';
 import {VkBeatmapCoversTable} from '../../../../src/main/presentation/data/repositories/VkBeatmapCoversRepository';
+import {VkChatLastBeatmapsTable} from '../../../../src/main/presentation/data/repositories/VkChatLastBeatmapsRepository';
 
 describe('UserBestPlays', function () {
   let tables: SqlDbTable[];
@@ -72,6 +73,7 @@ describe('UserBestPlays', function () {
       async () => '',
       false
     );
+    const vkChatLastBeatmaps = new VkChatLastBeatmapsTable(db);
     const requestsSummariesDao = new AppUserApiRequestsSummariesDaoImpl(
       appUserApiRequestsCounts,
       timeWindows
@@ -108,13 +110,15 @@ describe('UserBestPlays', function () {
       timeWindows,
       appUsers,
       vkBeatmapCovers,
+      vkChatLastBeatmaps,
     ];
     const mainTextProcessor = new MainTextProcessor(' ', "'", '\\');
     command = new UserBestPlays(
       mainTextProcessor,
       getUserBestPlaysUseCase,
       getAppUserInfoUseCase,
-      vkBeatmapCovers
+      vkBeatmapCovers,
+      vkChatLastBeatmaps
     );
   }
 
@@ -361,6 +365,7 @@ describe('UserBestPlays', function () {
       const mode = OsuRuleset.osu;
       const viewParams = await command.process({
         vkUserId: -1,
+        vkPeerId: -1,
         server: server,
         username: usernameInput,
         startPosition: 2,
@@ -381,6 +386,7 @@ describe('UserBestPlays', function () {
       const mode = OsuRuleset.osu;
       const viewParams = await command.process({
         vkUserId: -1,
+        vkPeerId: -1,
         server: server,
         username: undefined,
         startPosition: 2,
@@ -413,6 +419,7 @@ describe('UserBestPlays', function () {
         for (const username of usernameVariants) {
           const viewParams = await command.process({
             vkUserId: -1,
+            vkPeerId: -1,
             server: server,
             username: username,
             startPosition: 2,
@@ -443,6 +450,7 @@ describe('UserBestPlays', function () {
         for (const mode of modes) {
           const viewParams = await command.process({
             vkUserId: -1,
+            vkPeerId: -1,
             server: server,
             username: osuUser.username,
             startPosition: 2,
@@ -464,6 +472,7 @@ describe('UserBestPlays', function () {
       const appUser = existingAppAndOsuUser.appUser;
       const viewParams = await command.process({
         vkUserId: VkIdConverter.appUserIdToVkUserId(appUser.id),
+        vkPeerId: -1,
         server: appUser.server,
         username: undefined,
         startPosition: 2,
@@ -571,6 +580,7 @@ function scoreInfoToBestPlay(bestScoreInfo: OsuUserBestScoreInfo): BestPlay {
       coverUrl: '',
     },
     beatmap: {
+      id: s.beatmap.id,
       difficultyName: s.beatmap.version,
       totalLength: s.beatmap.totalLength,
       drainLength: s.beatmap.hitLength,

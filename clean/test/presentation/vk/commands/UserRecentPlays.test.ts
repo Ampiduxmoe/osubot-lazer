@@ -54,6 +54,7 @@ import {
   USERNAME,
 } from '../../../../src/main/presentation/common/arg_processing/CommandArguments';
 import {VkBeatmapCoversTable} from '../../../../src/main/presentation/data/repositories/VkBeatmapCoversRepository';
+import {VkChatLastBeatmapsTable} from '../../../../src/main/presentation/data/repositories/VkChatLastBeatmapsRepository';
 
 describe('UserRecentPlays', function () {
   let tables: SqlDbTable[];
@@ -73,6 +74,7 @@ describe('UserRecentPlays', function () {
       async () => '',
       false
     );
+    const vkChatLastBeatmaps = new VkChatLastBeatmapsTable(db);
     const requestsSummariesDao = new AppUserApiRequestsSummariesDaoImpl(
       appUserApiRequestsCounts,
       timeWindows
@@ -109,13 +111,15 @@ describe('UserRecentPlays', function () {
       timeWindows,
       appUsers,
       vkBeatmapCovers,
+      vkChatLastBeatmaps,
     ];
     const mainTextProcessor = new MainTextProcessor(' ', "'", '\\');
     command = new UserRecentPlays(
       mainTextProcessor,
       getRecentPlaysUseCase,
       getAppUserInfoUseCase,
-      vkBeatmapCovers
+      vkBeatmapCovers,
+      vkChatLastBeatmaps
     );
   }
 
@@ -363,6 +367,7 @@ describe('UserRecentPlays', function () {
       const passesOnly = false;
       const viewParams = await command.process({
         vkUserId: -1,
+        vkPeerId: -1,
         server: server,
         passesOnly: passesOnly,
         username: usernameInput,
@@ -386,6 +391,7 @@ describe('UserRecentPlays', function () {
       const passesOnly = false;
       const viewParams = await command.process({
         vkUserId: -1,
+        vkPeerId: -1,
         server: server,
         passesOnly: passesOnly,
         username: undefined,
@@ -421,6 +427,7 @@ describe('UserRecentPlays', function () {
         for (const username of usernameVariants) {
           const viewParams = await command.process({
             vkUserId: -1,
+            vkPeerId: -1,
             server: server,
             passesOnly: passesOnly,
             username: username,
@@ -454,6 +461,7 @@ describe('UserRecentPlays', function () {
         for (const mode of modes) {
           const viewParams = await command.process({
             vkUserId: -1,
+            vkPeerId: -1,
             server: server,
             passesOnly: passesOnly,
             username: osuUser.username,
@@ -481,6 +489,7 @@ describe('UserRecentPlays', function () {
       const passesOnly = false;
       const viewParams = await command.process({
         vkUserId: VkIdConverter.appUserIdToVkUserId(appUser.id),
+        vkPeerId: -1,
         server: appUser.server,
         passesOnly: passesOnly,
         username: undefined,
@@ -610,6 +619,7 @@ function scoreInfoToRecentPlay(
       coverUrl: '',
     },
     beatmap: {
+      id: s.beatmap.id,
       difficultyName: s.beatmap.version,
       totalLength: s.beatmap.totalLength,
       drainLength: s.beatmap.hitLength,

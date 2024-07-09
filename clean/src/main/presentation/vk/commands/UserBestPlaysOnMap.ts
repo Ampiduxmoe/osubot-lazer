@@ -29,6 +29,7 @@ import {
 } from '../../../application/usecases/get_beatmap_users_best_score/GetBeatmapUsersBestScoresResponse';
 import {TextProcessor} from '../../common/arg_processing/TextProcessor';
 import {VkBeatmapCoversRepository} from '../../data/repositories/VkBeatmapCoversRepository';
+import {VkChatLastBeatmapsRepository} from '../../data/repositories/VkChatLastBeatmapsRepository';
 
 export class UserBestPlaysOnMap extends VkCommand<
   UserBestPlaysOnMapExecutionArgs,
@@ -58,17 +59,20 @@ export class UserBestPlaysOnMap extends VkCommand<
   getBeatmapBestScores: GetBeatmapUsersBestScoresUseCase;
   getAppUserInfo: GetAppUserInfoUseCase;
   vkBeatmapCovers: VkBeatmapCoversRepository;
+  vkChatLastBeatmaps: VkChatLastBeatmapsRepository;
   constructor(
     textProcessor: TextProcessor,
     getBeatmapBestScores: GetBeatmapUsersBestScoresUseCase,
     getAppUserInfo: GetAppUserInfoUseCase,
-    vkBeatmapCovers: VkBeatmapCoversRepository
+    vkBeatmapCovers: VkBeatmapCoversRepository,
+    vkChatLastBeatmaps: VkChatLastBeatmapsRepository
   ) {
     super(UserBestPlaysOnMap.commandStructure);
     this.textProcessor = textProcessor;
     this.getBeatmapBestScores = getBeatmapBestScores;
     this.getAppUserInfo = getAppUserInfo;
     this.vkBeatmapCovers = vkBeatmapCovers;
+    this.vkChatLastBeatmaps = vkChatLastBeatmaps;
   }
 
   matchVkMessage(
@@ -101,15 +105,12 @@ export class UserBestPlaysOnMap extends VkCommand<
     if (argsProcessor.remainingTokens.length > 0) {
       return fail;
     }
-    if (
-      server === undefined ||
-      ownPrefix === undefined ||
-      beatmapId === undefined
-    ) {
+    if (server === undefined || ownPrefix === undefined) {
       return fail;
     }
     return CommandMatchResult.ok({
       vkUserId: ctx.senderId,
+      vkPeerId: ctx.peerId,
       server: server,
       beatmapId: beatmapId,
       username: username,
@@ -145,10 +146,31 @@ export class UserBestPlaysOnMap extends VkCommand<
         coverAttachment: undefined,
       };
     }
+    const beatmapId =
+      args.beatmapId ??
+      (
+        await this.vkChatLastBeatmaps.get({
+          peerId: args.vkPeerId,
+          server: args.server,
+        })
+      )?.beatmapId;
+    if (beatmapId === undefined) {
+      return {
+        server: args.server,
+        beatmapIdInput: undefined,
+        usernameInput: args.username,
+        username: username,
+        mode: undefined,
+        map: undefined,
+        plays: undefined,
+        startPosition: undefined,
+        coverAttachment: undefined,
+      };
+    }
     const leaderboardResponse = await this.getBeatmapBestScores.execute({
       appUserId: VkIdConverter.vkUserIdToAppUserId(args.vkUserId),
       server: args.server,
-      beatmapId: args.beatmapId,
+      beatmapId: beatmapId,
       usernames: [username],
       startPosition: Math.max(args.startPosition ?? 1, 1),
       quantityPerUser: clamp(args.quantity ?? 1, 1, 10),
@@ -190,6 +212,13 @@ export class UserBestPlaysOnMap extends VkCommand<
             0,
             (args.startPosition ?? 1) + (args.quantity ?? 1) - 1
           );
+    if (args.beatmapId !== undefined) {
+      await this.vkChatLastBeatmaps.save(
+        args.vkPeerId,
+        args.server,
+        args.beatmapId
+      );
+    }
     return {
       server: args.server,
       beatmapIdInput: args.beatmapId,
@@ -534,8 +563,9 @@ ${pos}. ${modsString}
 
 type UserBestPlaysOnMapExecutionArgs = {
   vkUserId: number;
+  vkPeerId: number;
   server: OsuServer;
-  beatmapId: number;
+  beatmapId: number | undefined;
   username: string | undefined;
   mods: ModArg[] | undefined;
   startPosition: number | undefined;

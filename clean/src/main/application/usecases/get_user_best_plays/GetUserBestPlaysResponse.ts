@@ -24,6 +24,7 @@ export type BestPlay = {
     coverUrl: string;
   };
   beatmap: {
+    id: number;
     difficultyName: string;
     totalLength: number;
     drainLength: number;

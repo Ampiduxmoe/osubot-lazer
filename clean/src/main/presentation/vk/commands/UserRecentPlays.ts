@@ -33,6 +33,7 @@ import {CommandPrefixes} from '../../common/CommandPrefixes';
 import {OsuRuleset} from '../../../../primitives/OsuRuleset';
 import {TextProcessor} from '../../common/arg_processing/TextProcessor';
 import {VkBeatmapCoversRepository} from '../../data/repositories/VkBeatmapCoversRepository';
+import {VkChatLastBeatmapsRepository} from '../../data/repositories/VkChatLastBeatmapsRepository';
 
 export class UserRecentPlays extends VkCommand<
   UserRecentPlaysExecutionArgs,
@@ -73,17 +74,20 @@ export class UserRecentPlays extends VkCommand<
   getRecentPlays: GetUserRecentPlaysUseCase;
   getAppUserInfo: GetAppUserInfoUseCase;
   vkBeatmapCovers: VkBeatmapCoversRepository;
+  vkChatLastBeatmaps: VkChatLastBeatmapsRepository;
   constructor(
     textProcessor: TextProcessor,
     getRecentPlays: GetUserRecentPlaysUseCase,
     getAppUserInfo: GetAppUserInfoUseCase,
-    vkBeatmapCovers: VkBeatmapCoversRepository
+    vkBeatmapCovers: VkBeatmapCoversRepository,
+    vkChatLastBeatmaps: VkChatLastBeatmapsRepository
   ) {
     super(UserRecentPlays.commandStructure);
     this.textProcessor = textProcessor;
     this.getRecentPlays = getRecentPlays;
     this.getAppUserInfo = getAppUserInfo;
     this.vkBeatmapCovers = vkBeatmapCovers;
+    this.vkChatLastBeatmaps = vkChatLastBeatmaps;
   }
 
   matchVkMessage(
@@ -121,6 +125,7 @@ export class UserRecentPlays extends VkCommand<
     }
     return CommandMatchResult.ok({
       vkUserId: ctx.senderId,
+      vkPeerId: ctx.peerId,
       server: server,
       passesOnly: UserRecentPlays.recentPassesPrefixes.includes(ownPrefix),
       username: username,
@@ -183,6 +188,13 @@ export class UserRecentPlays extends VkCommand<
       }
     }
     const recentPlays = recentPlaysResult.recentPlays!;
+    if (recentPlays.plays.length === 1) {
+      await this.vkChatLastBeatmaps.save(
+        args.vkPeerId,
+        args.server,
+        recentPlays.plays[0].beatmap.id
+      );
+    }
     return {
       server: args.server,
       mode: recentPlaysResult.ruleset!,
@@ -486,7 +498,8 @@ ${ppEstimationMark}${pp}pp　 ${mapUrlShort}
                   server: server,
                   username: username,
                   mode: mode,
-                  vkUserId: 0,
+                  vkUserId: -1,
+                  vkPeerId: -1,
                   startPosition: undefined,
                   quantity: undefined,
                   mods: undefined,
@@ -528,6 +541,7 @@ ${ppEstimationMark}${pp}pp　 ${mapUrlShort}
 
 type UserRecentPlaysExecutionArgs = {
   vkUserId: number;
+  vkPeerId: number;
   server: OsuServer;
   passesOnly: boolean;
   username: string | undefined;

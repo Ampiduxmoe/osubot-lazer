@@ -45,6 +45,7 @@ import {MainTextProcessor} from './presentation/common/arg_processing/MainTextPr
 import {VkBeatmapCoversTable} from './presentation/data/repositories/VkBeatmapCoversRepository';
 import axios from 'axios';
 import {SqlDbTable} from './data/persistence/db/SqlDbTable';
+import {VkChatLastBeatmapsTable} from './presentation/data/repositories/VkChatLastBeatmapsRepository';
 
 export const APP_CODE_NAME = 'osubot-lazer';
 
@@ -268,7 +269,7 @@ export class App {
       chatId: number
     ): Promise<number[]> => {
       const chatMembers = await vk.api.messages.getConversationMembers({
-        peer_id: chatId,
+        peer_id: 2e9 + chatId,
       });
       return chatMembers.profiles.map(x => x.id);
     };
@@ -295,6 +296,7 @@ export class App {
       uploadImageToVk,
       true
     );
+    const vkChatLastBeatmaps = new VkChatLastBeatmapsTable(vkDb);
 
     const publicCommands = [
       new SetUsername(mainTextProcessor, setUsernameUseCase),
@@ -306,25 +308,29 @@ export class App {
       new BeatmapInfo(
         mainTextProcessor,
         getBeatmapInfoUseCase,
-        vkBeatmapCovers
+        vkBeatmapCovers,
+        vkChatLastBeatmaps
       ),
       new UserRecentPlays(
         mainTextProcessor,
         getRecentPlaysUseCase,
         getAppUserInfoUseCase,
-        vkBeatmapCovers
+        vkBeatmapCovers,
+        vkChatLastBeatmaps
       ),
       new UserBestPlays(
         mainTextProcessor,
         getUserBestPlaysUseCase,
         getAppUserInfoUseCase,
-        vkBeatmapCovers
+        vkBeatmapCovers,
+        vkChatLastBeatmaps
       ),
       new UserBestPlaysOnMap(
         mainTextProcessor,
         getBeatmapUsersBestScoresUseCase,
         getAppUserInfoUseCase,
-        vkBeatmapCovers
+        vkBeatmapCovers,
+        vkChatLastBeatmaps
       ),
       new ChatLeaderboard(
         mainTextProcessor,
@@ -336,7 +342,8 @@ export class App {
         mainTextProcessor,
         getConversationMembers,
         getBeatmapUsersBestScoresUseCase,
-        getAppUserInfoUseCase
+        getAppUserInfoUseCase,
+        vkChatLastBeatmaps
       ),
     ];
     for (const command of publicCommands) {
@@ -355,6 +362,7 @@ export class App {
 
     const initActions: (() => Promise<void>)[] = [
       () => vkBeatmapCovers.createTable(),
+      () => vkChatLastBeatmaps.createTable(),
     ];
     vkClient.initActions.push(...initActions);
 

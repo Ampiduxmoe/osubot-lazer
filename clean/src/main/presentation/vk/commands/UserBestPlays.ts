@@ -29,6 +29,7 @@ import {
 } from '../../../application/usecases/get_user_best_plays/GetUserBestPlaysResponse';
 import {TextProcessor} from '../../common/arg_processing/TextProcessor';
 import {VkBeatmapCoversRepository} from '../../data/repositories/VkBeatmapCoversRepository';
+import {VkChatLastBeatmapsRepository} from '../../data/repositories/VkChatLastBeatmapsRepository';
 
 export class UserBestPlays extends VkCommand<
   UserBestPlaysExecutionArgs,
@@ -58,17 +59,20 @@ export class UserBestPlays extends VkCommand<
   getUserBestPlays: GetUserBestPlaysUseCase;
   getAppUserInfo: GetAppUserInfoUseCase;
   vkBeatmapCovers: VkBeatmapCoversRepository;
+  vkChatLastBeatmaps: VkChatLastBeatmapsRepository;
   constructor(
     textProcessor: TextProcessor,
     getUserBestPlays: GetUserBestPlaysUseCase,
     getAppUserInfo: GetAppUserInfoUseCase,
-    vkBeatmapCovers: VkBeatmapCoversRepository
+    vkBeatmapCovers: VkBeatmapCoversRepository,
+    vkChatLastBeatmaps: VkChatLastBeatmapsRepository
   ) {
     super(UserBestPlays.commandStructure);
     this.textProcessor = textProcessor;
     this.getUserBestPlays = getUserBestPlays;
     this.getAppUserInfo = getAppUserInfo;
     this.vkBeatmapCovers = vkBeatmapCovers;
+    this.vkChatLastBeatmaps = vkChatLastBeatmaps;
   }
 
   matchVkMessage(
@@ -106,6 +110,7 @@ export class UserBestPlays extends VkCommand<
     }
     return CommandMatchResult.ok({
       vkUserId: ctx.senderId,
+      vkPeerId: ctx.peerId,
       server: server,
       username: username,
       startPosition: startPosition,
@@ -169,6 +174,13 @@ export class UserBestPlays extends VkCommand<
       }
     }
     const bestPlays = bestPlaysResult.bestPlays!;
+    if (bestPlays.plays.length === 1) {
+      await this.vkChatLastBeatmaps.save(
+        args.vkPeerId,
+        args.server,
+        bestPlays.plays[0].beatmap.id
+      );
+    }
     return {
       server: args.server,
       mode: bestPlaysResult.ruleset!,
@@ -454,6 +466,7 @@ ${pp}pp　 ${mapUrlShort}
 
 type UserBestPlaysExecutionArgs = {
   vkUserId: number;
+  vkPeerId: number;
   server: OsuServer;
   username: string | undefined;
   startPosition: number | undefined;

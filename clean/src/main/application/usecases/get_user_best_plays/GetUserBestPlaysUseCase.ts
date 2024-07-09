@@ -104,6 +104,7 @@ async function getBestPlay(
       coverUrl: `https://assets.ppy.sh/beatmaps/${score.baseBeatmap.beatmapset.id}/covers/raw.jpg`,
     },
     beatmap: {
+      id: score.baseBeatmap.id,
       difficultyName: score.baseBeatmap.difficultyName,
       totalLength: score.moddedBeatmap.song.length,
       drainLength: score.moddedBeatmap.length,

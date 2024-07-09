@@ -29,6 +29,7 @@ import {integerShortForm, round} from '../../../../primitives/Numbers';
 import {ModAcronym} from '../../../../primitives/ModAcronym';
 import {TextProcessor} from '../../common/arg_processing/TextProcessor';
 import {VkBeatmapCoversRepository} from '../../data/repositories/VkBeatmapCoversRepository';
+import {VkChatLastBeatmapsRepository} from '../../data/repositories/VkChatLastBeatmapsRepository';
 
 export class BeatmapInfo extends VkCommand<
   BeatmapInfoExecutionArgs,
@@ -68,15 +69,18 @@ export class BeatmapInfo extends VkCommand<
   textProcessor: TextProcessor;
   getBeatmapInfo: GetBeatmapInfoUseCase;
   vkBeatmapCovers: VkBeatmapCoversRepository;
+  vkChatLastBeatmaps: VkChatLastBeatmapsRepository;
   constructor(
     textProcessor: TextProcessor,
     getBeatmapInfo: GetBeatmapInfoUseCase,
-    vkBeatmapCovers: VkBeatmapCoversRepository
+    vkBeatmapCovers: VkBeatmapCoversRepository,
+    vkChatLastBeatmaps: VkChatLastBeatmapsRepository
   ) {
     super(BeatmapInfo.commandStructure);
     this.textProcessor = textProcessor;
     this.getBeatmapInfo = getBeatmapInfo;
     this.vkBeatmapCovers = vkBeatmapCovers;
+    this.vkChatLastBeatmaps = vkChatLastBeatmaps;
   }
 
   matchVkMessage(
@@ -117,11 +121,7 @@ export class BeatmapInfo extends VkCommand<
     if (argsProcessor.remainingTokens.length > 0) {
       return fail;
     }
-    if (
-      server === undefined ||
-      ownPrefix === undefined ||
-      beatmapId === undefined
-    ) {
+    if (server === undefined || ownPrefix === undefined) {
       return fail;
     }
     const osuSettings: MapScoreSimulationOsu = {
@@ -135,6 +135,7 @@ export class BeatmapInfo extends VkCommand<
       ...daSettings,
     };
     return CommandMatchResult.ok({
+      vkPeerId: ctx.peerId,
       server: server,
       beatmapId: beatmapId,
       mapScoreSimulationOsu: osuSettings,
@@ -145,9 +146,25 @@ export class BeatmapInfo extends VkCommand<
   async process(
     args: BeatmapInfoExecutionArgs
   ): Promise<BeatmapInfoViewParams> {
+    const beatmapId =
+      args.beatmapId ??
+      (
+        await this.vkChatLastBeatmaps.get({
+          peerId: args.vkPeerId,
+          server: args.server,
+        })
+      )?.beatmapId;
+    if (beatmapId === undefined) {
+      return {
+        server: args.server,
+        beatmapIdInput: undefined,
+        beatmapInfo: undefined,
+        coverAttachment: undefined,
+      };
+    }
     const beatmapInfoResponse = await this.getBeatmapInfo.execute({
       appUserId: VkIdConverter.vkUserIdToAppUserId(args.vkUserId),
-      beatmapId: args.beatmapId,
+      beatmapId: beatmapId,
       server: args.server,
       mapScoreSimulationOsu: args.mapScoreSimulationOsu,
     });
@@ -159,6 +176,13 @@ export class BeatmapInfo extends VkCommand<
         beatmapInfo: undefined,
         coverAttachment: undefined,
       };
+    }
+    if (args.beatmapId !== undefined) {
+      await this.vkChatLastBeatmaps.save(
+        args.vkPeerId,
+        args.server,
+        beatmapInfo.id
+      );
     }
     return {
       server: args.server,
@@ -361,7 +385,7 @@ URL: ${mapUrlShort}${couldNotAttachCoverMessage}
     const serverString = OsuServer[server];
     const text = `
 [Server: ${serverString}]
-Не указан ID!
+Не указан ID карты / не найдено последней карты в истории чата.
     `.trim();
     return {
       text: text,
@@ -410,15 +434,16 @@ URL: ${mapUrlShort}${couldNotAttachCoverMessage}
 }
 
 type BeatmapInfoExecutionArgs = {
+  vkPeerId: number;
   server: OsuServer;
-  beatmapId: number;
+  beatmapId: number | undefined;
   mapScoreSimulationOsu: MapScoreSimulationOsu;
   vkUserId: number;
 };
 
 type BeatmapInfoViewParams = {
   server: OsuServer;
-  beatmapIdInput: number;
+  beatmapIdInput: number | undefined;
   beatmapInfo: MapInfo | undefined;
   coverAttachment: CoverAttachment;
 };
