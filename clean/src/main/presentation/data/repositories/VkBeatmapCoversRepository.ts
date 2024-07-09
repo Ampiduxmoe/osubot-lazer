@@ -111,7 +111,11 @@ WHERE
     } catch (e) {
       if (this.verboseDownloadAndSave) {
         console.log(`Could not download cover for beatmapset ${beatmapsetId}:`);
-        console.log(e);
+        if (e instanceof Error) {
+          console.log(e.message);
+        } else {
+          console.log(e);
+        }
       }
       return undefined;
     }
