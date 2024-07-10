@@ -46,6 +46,11 @@ import {VkBeatmapCoversTable} from './presentation/data/repositories/VkBeatmapCo
 import axios from 'axios';
 import {SqlDbTable} from './data/persistence/db/SqlDbTable';
 import {VkChatLastBeatmapsTable} from './presentation/data/repositories/VkChatLastBeatmapsRepository';
+import {Alias} from './presentation/vk/commands/Alias';
+import {
+  AppUserCommandAliasesRepository,
+  AppUserCommandAliasesTable,
+} from './presentation/data/repositories/AppUserCommandAliasesRepository';
 
 export const APP_CODE_NAME = 'osubot-lazer';
 
@@ -81,6 +86,7 @@ export class App {
     const serializedObjects = new SerializedObjectsTable(this.appDb);
     const osuUserSnapshots = new OsuUserSnapshotsTable(this.appDb);
     const timeWindows = new TimeWindowsTable(this.appDb);
+    const aliases = new AppUserCommandAliasesTable(this.appDb);
 
     const allDbTables = [
       appUsers,
@@ -88,6 +94,7 @@ export class App {
       serializedObjects,
       osuUserSnapshots,
       timeWindows,
+      aliases,
     ];
 
     const scoreSimulationApi = new OsutoolsSimulationApi(
@@ -214,6 +221,7 @@ export class App {
     this.vkClient = this.createVkClient({
       vkDb: this.vkDb,
       group: this.currentVkGroup,
+
       getOsuUserInfoUseCase: getOsuUserInfoUseCase,
       getAppUserInfoUseCase: getAppUserInfoUseCase,
       setUsernameUseCase: setUsernameUseCase,
@@ -222,6 +230,8 @@ export class App {
       getApiUsageSummaryUseCase: getApiUsageSummaryUseCase,
       getBeatmapInfoUseCase: getBeatmapInfoUseCase,
       getBeatmapUsersBestScoresUseCase: getBeatmapUsersBestScoresUseCase,
+
+      appUserCommandAliasesRepository: aliases,
     });
 
     this.startHandlers.push(async () => {
@@ -248,6 +258,7 @@ export class App {
   createVkClient(params: VkClientCreationParams): VkClient {
     const {vkDb} = params;
     const {group} = params;
+
     const {getOsuUserInfoUseCase} = params;
     const {getAppUserInfoUseCase} = params;
     const {setUsernameUseCase} = params;
@@ -256,6 +267,8 @@ export class App {
     const {getApiUsageSummaryUseCase} = params;
     const {getBeatmapInfoUseCase} = params;
     const {getBeatmapUsersBestScoresUseCase} = params;
+
+    const {appUserCommandAliasesRepository} = params;
 
     const vk = new VK({
       pollingGroupId: group.id,
@@ -345,6 +358,7 @@ export class App {
         getAppUserInfoUseCase,
         vkChatLastBeatmaps
       ),
+      new Alias(mainTextProcessor, appUserCommandAliasesRepository),
     ];
     for (const command of publicCommands) {
       command.link(publicCommands);
@@ -407,6 +421,7 @@ function isProduction(fallbackValue: boolean): boolean {
 type VkClientCreationParams = {
   vkDb: SqlDb;
   group: VkGroup;
+
   getOsuUserInfoUseCase: GetOsuUserInfoUseCase;
   getAppUserInfoUseCase: GetAppUserInfoUseCase;
   setUsernameUseCase: SetUsernameUseCase;
@@ -415,4 +430,6 @@ type VkClientCreationParams = {
   getApiUsageSummaryUseCase: GetApiUsageSummaryUseCase;
   getBeatmapInfoUseCase: GetBeatmapInfoUseCase;
   getBeatmapUsersBestScoresUseCase: GetBeatmapUsersBestScoresUseCase;
+
+  appUserCommandAliasesRepository: AppUserCommandAliasesRepository;
 };

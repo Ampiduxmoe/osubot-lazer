@@ -587,3 +587,41 @@ export const BEATMAP_ID: CommandArgument<number> = (() => {
     },
   };
 })();
+
+export const ALIAS_PATTERN: CommandArgument<string> = {
+  displayName: 'свой_паттерн',
+  description:
+    'шаблон который нужно будет заменить; ' +
+    'если в конце шаблона не стоит символ «*», ' +
+    'то замена будет происходить при полном совпадении шаблона с сообщением, ' +
+    'а если же «звездочку» поставить, то заменяться будет только начало сообщения',
+  get usageExample(): string {
+    return pickRandom(['моякоманда *', 'смотри', 'x*', '???']);
+  },
+  match: function (): boolean {
+    return true;
+  },
+  parse: function (token: string): string {
+    return token;
+  },
+  unparse: function (value: string): string {
+    return value;
+  },
+};
+
+export const ALIAS_TARGET: CommandArgument<string> = {
+  displayName: 'команда_бота',
+  description: 'строка, которая будет заменять ваш шаблон',
+  get usageExample(): string {
+    return pickRandom(['l r ', 'l personalbest', 'l u', 'osubot-help']);
+  },
+  match: function (): boolean {
+    return true;
+  },
+  parse: function (token: string): string {
+    return token;
+  },
+  unparse: function (value: string): string {
+    return value;
+  },
+};
