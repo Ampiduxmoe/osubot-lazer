@@ -47,10 +47,12 @@ import axios from 'axios';
 import {SqlDbTable} from './data/persistence/db/SqlDbTable';
 import {VkChatLastBeatmapsTable} from './presentation/data/repositories/VkChatLastBeatmapsRepository';
 import {Alias} from './presentation/vk/commands/Alias';
+import {MainAliasProcessor} from './presentation/common/alias_processing/MainAliasProcessor';
 import {
   AppUserCommandAliasesRepository,
   AppUserCommandAliasesTable,
 } from './presentation/data/repositories/AppUserCommandAliasesRepository';
+import {VkIdConverter} from './presentation/vk/VkIdConverter';
 
 export const APP_CODE_NAME = 'osubot-lazer';
 
@@ -310,6 +312,7 @@ export class App {
       true
     );
     const vkChatLastBeatmaps = new VkChatLastBeatmapsTable(vkDb);
+    const aliasProcessor = new MainAliasProcessor();
 
     const publicCommands = [
       new SetUsername(mainTextProcessor, setUsernameUseCase),
@@ -358,7 +361,11 @@ export class App {
         getAppUserInfoUseCase,
         vkChatLastBeatmaps
       ),
-      new Alias(mainTextProcessor, appUserCommandAliasesRepository),
+      new Alias(
+        mainTextProcessor,
+        appUserCommandAliasesRepository,
+        aliasProcessor
+      ),
     ];
     for (const command of publicCommands) {
       command.link(publicCommands);
@@ -379,6 +386,27 @@ export class App {
       () => vkChatLastBeatmaps.createTable(),
     ];
     vkClient.initActions.push(...initActions);
+
+    vkClient.preprocessors.push(async ctx => {
+      if (!ctx.hasText || ctx.text === undefined) {
+        return ctx;
+      }
+      const appUserId = VkIdConverter.vkUserIdToAppUserId(ctx.senderId);
+      const userAliases = await appUserCommandAliasesRepository.get({
+        appUserId: appUserId,
+      });
+      for (const alias of userAliases?.aliases ?? []) {
+        if (aliasProcessor.match(ctx.text, alias.pattern)) {
+          ctx.text = aliasProcessor.process(
+            ctx.text,
+            alias.pattern,
+            alias.replacement
+          );
+          break;
+        }
+      }
+      return ctx;
+    });
 
     return vkClient;
   }

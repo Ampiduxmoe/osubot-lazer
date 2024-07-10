@@ -12,6 +12,9 @@ export class VkClient {
   readonly commands: VkCommand<UnknownExecutionParams, UnknownViewParams>[] =
     [];
   readonly initActions: (() => Promise<void>)[] = [];
+  readonly preprocessors: ((
+    ctx: VkMessageContext
+  ) => Promise<VkMessageContext>)[] = [];
 
   constructor(vk: VK) {
     this.vk = vk;
@@ -50,6 +53,11 @@ export class VkClient {
   }
 
   private async process(ctx: VkMessageContext): Promise<void> {
+    if (ctx.hasText && ctx.text !== undefined) {
+      for (const textPreproces of this.preprocessors) {
+        ctx = await textPreproces(ctx);
+      }
+    }
     for (const command of this.commands) {
       const matchResult = command.matchVkMessage(ctx);
       if (!matchResult.isMatch) {

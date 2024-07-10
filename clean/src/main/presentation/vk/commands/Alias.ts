@@ -18,6 +18,7 @@ import {CommandPrefixes} from '../../common/CommandPrefixes';
 import {TextProcessor} from '../../common/arg_processing/TextProcessor';
 import {AppUserCommandAliases} from '../../data/models/AppUserCommandAliases';
 import {AppUserCommandAliasesRepository} from '../../data/repositories/AppUserCommandAliasesRepository';
+import {AliasProcessor} from '../../common/alias_processing/AliasProcessor';
 
 export class Alias extends VkCommand<AliasExecutionArgs, AliasViewParams> {
   internalName = Alias.name;
@@ -79,13 +80,16 @@ export class Alias extends VkCommand<AliasExecutionArgs, AliasViewParams> {
 
   textProcessor: TextProcessor;
   userAliases: AppUserCommandAliasesRepository;
+  aliasProcessor: AliasProcessor;
   constructor(
     textProcessor: TextProcessor,
-    userAliases: AppUserCommandAliasesRepository
+    userAliases: AppUserCommandAliasesRepository,
+    aliasProcessor: AliasProcessor
   ) {
     super(Alias.commandStructure);
     this.textProcessor = textProcessor;
     this.userAliases = userAliases;
+    this.aliasProcessor = aliasProcessor;
   }
 
   matchVkMessage(
@@ -214,8 +218,29 @@ export class Alias extends VkCommand<AliasExecutionArgs, AliasViewParams> {
       };
     }
     if (args.test !== undefined) {
+      let matchingAlias:
+        | {
+            pattern: string;
+            replacement: string;
+          }
+        | undefined = undefined;
+      for (const alias of userAliases?.aliases ?? []) {
+        if (this.aliasProcessor.match(args.test.testString, alias.pattern)) {
+          matchingAlias = alias;
+          break;
+        }
+      }
+      if (matchingAlias === undefined) {
+        return {
+          testResult: 'Не найдено подходящего шаблона!',
+        };
+      }
       return {
-        testResult: 'WIP',
+        testResult: this.aliasProcessor.process(
+          args.test.testString,
+          matchingAlias.pattern,
+          matchingAlias.replacement
+        ),
       };
     }
     throw Error('Unknown Alias command execution path');
