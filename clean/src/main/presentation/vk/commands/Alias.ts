@@ -112,7 +112,9 @@ export class Alias extends VkCommand<AliasExecutionArgs, AliasViewParams> {
       this.commandStructure.map(e => e.argument)
     );
     const ownPrefix = argsProcessor.use(this.COMMAND_PREFIX).at(0).extract();
-    const executionArgs: AliasExecutionArgs = {vkUserId: ctx.senderId};
+    const executionArgs: AliasExecutionArgs = {
+      vkUserId: ctx.replyMessage?.senderId ?? ctx.senderId,
+    };
 
     if (argsProcessor.use(this.WORD_SHOW).at(0).extract() !== undefined) {
       executionArgs.show = {};
@@ -283,7 +285,7 @@ export class Alias extends VkCommand<AliasExecutionArgs, AliasViewParams> {
 
   createNoAliasesMessage(): VkOutputMessage {
     const text = `
-У вас отсутствуют шаблоны!
+Шаблоны отсутствуют!
     `.trim();
     return {
       text: text,
