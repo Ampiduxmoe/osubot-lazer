@@ -420,7 +420,7 @@ export const DIFFICULTY_ADJUST_SETTING: CommandArgument<ArgDA> = {
 
 export const WORD: (word: string) => CommandArgument<string> = word => ({
   displayName: word,
-  description: `слово ${word}`,
+  description: `слово «${word}»`,
   get usageExample(): string {
     return pickRandom([word.toLowerCase(), word.toUpperCase()]);
   },
@@ -481,7 +481,7 @@ export const DAY_OFFSET: CommandArgument<number> = {
   get usageExample(): string {
     const randInt = Math.floor(Math.random() * 5);
     const sign = pickRandom(['+', '-']);
-    const pos = `${sign}${randInt}`;
+    const pos = `{${sign}${randInt}}`;
     const maybePos = pickRandom(['', pos, pos]);
     return `today${maybePos}`;
   },
@@ -494,6 +494,9 @@ export const DAY_OFFSET: CommandArgument<number> = {
     );
   },
   unparse: function (value: number): string {
+    if (value === 0) {
+      return 'today';
+    }
     return `today{${value > 0 ? '+' : ''}${value}}`;
   },
 };
@@ -523,7 +526,7 @@ export const DATE: CommandArgument<Date> = {
   },
 };
 
-export const NUMBER: (
+export const INTEGER: (
   displayName: string,
   description: string,
   min: number | undefined,

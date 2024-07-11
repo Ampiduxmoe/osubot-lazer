@@ -9,7 +9,7 @@ import {
   ALIAS_PATTERN,
   ALIAS_TARGET,
   ANY_STRING,
-  NUMBER,
+  INTEGER,
   OWN_COMMAND_PREFIX,
   WORD,
 } from '../../common/arg_processing/CommandArguments';
@@ -42,7 +42,7 @@ export class Alias extends VkCommand<AliasExecutionArgs, AliasViewParams> {
   private WORD_DELETE = Alias.WORD_DELETE;
   private static WORD_TEST = WORD('test');
   private WORD_TEST = Alias.WORD_TEST;
-  private static ALIAS_NUMBER = NUMBER(
+  private static ALIAS_NUMBER = INTEGER(
     'номер',
     'номер шаблона',
     1,
