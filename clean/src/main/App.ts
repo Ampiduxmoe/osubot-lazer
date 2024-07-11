@@ -395,15 +395,25 @@ export class App {
       const userAliases = await appUserCommandAliasesRepository.get({
         appUserId: appUserId,
       });
+      let aliasMatchFound = false;
+      let bestAliasMatch: undefined | {pattern: string; replacement: string} = {
+        pattern: '',
+        replacement: '',
+      };
       for (const alias of userAliases?.aliases ?? []) {
         if (aliasProcessor.match(ctx.text, alias.pattern)) {
-          ctx.text = aliasProcessor.process(
-            ctx.text,
-            alias.pattern,
-            alias.replacement
-          );
-          break;
+          if (alias.pattern.length > (bestAliasMatch.pattern.length ?? 0)) {
+            aliasMatchFound = true;
+            bestAliasMatch = alias;
+          }
         }
+      }
+      if (aliasMatchFound) {
+        ctx.text = aliasProcessor.process(
+          ctx.text,
+          bestAliasMatch.pattern,
+          bestAliasMatch.replacement
+        );
       }
       return ctx;
     });

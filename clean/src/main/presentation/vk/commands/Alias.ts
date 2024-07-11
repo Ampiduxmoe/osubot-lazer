@@ -11,6 +11,7 @@ import {
   ANY_STRING,
   INTEGER_OR_RANGE,
   OWN_COMMAND_PREFIX,
+  SERVER_PREFIX,
   WORD,
 } from '../../common/arg_processing/CommandArguments';
 import {MainArgsProcessor} from '../../common/arg_processing/MainArgsProcessor';
@@ -19,6 +20,15 @@ import {TextProcessor} from '../../common/arg_processing/TextProcessor';
 import {AppUserCommandAliases} from '../../data/models/AppUserCommandAliases';
 import {AppUserCommandAliasesRepository} from '../../data/repositories/AppUserCommandAliasesRepository';
 import {AliasProcessor} from '../../common/alias_processing/AliasProcessor';
+import {SetUsername} from './SetUsername';
+import {ALL_OSU_SERVERS, OsuServer} from '../../../../primitives/OsuServer';
+import {UserInfo} from './UserInfo';
+import {UserRecentPlays} from './UserRecentPlays';
+import {UserBestPlays} from './UserBestPlays';
+import {UserBestPlaysOnMap} from './UserBestPlaysOnMap';
+import {ChatLeaderboard} from './ChatLeaderboard';
+import {ChatLeaderboardOnMap} from './ChatLeaderboardOnMap';
+import {BeatmapInfo} from './BeatmapInfo';
 
 export class Alias extends VkCommand<AliasExecutionArgs, AliasViewParams> {
   internalName = Alias.name;
@@ -42,9 +52,11 @@ export class Alias extends VkCommand<AliasExecutionArgs, AliasViewParams> {
   private WORD_DELETE = Alias.WORD_DELETE;
   private static WORD_TEST = WORD('test');
   private WORD_TEST = Alias.WORD_TEST;
+  private static WORD_LEGACY = WORD('legacy');
+  private WORD_LEGACY = Alias.WORD_LEGACY;
   private static ALIAS_NUMBER = INTEGER_OR_RANGE(
     'номер',
-    'номер шаблона',
+    'номер шаблона или интервал в формате x-y',
     1,
     this.maximumAliases
   );
@@ -69,6 +81,8 @@ export class Alias extends VkCommand<AliasExecutionArgs, AliasViewParams> {
 
     {argument: this.WORD_TEST, isOptional: false}, // 7
     {argument: this.TEST_COMMAND, isOptional: false}, // 8
+
+    {argument: this.WORD_LEGACY, isOptional: false}, // 9
   ];
 
   argGroups = {
@@ -76,6 +90,7 @@ export class Alias extends VkCommand<AliasExecutionArgs, AliasViewParams> {
     add: [0, 2, 3, 4],
     delete: [0, 5, 6],
     test: [0, 7, 8],
+    legacy: [0, 9],
   };
 
   textProcessor: TextProcessor;
@@ -146,6 +161,10 @@ export class Alias extends VkCommand<AliasExecutionArgs, AliasViewParams> {
         return fail;
       }
       executionArgs.test = {testString: testString};
+    } else if (
+      argsProcessor.use(this.WORD_LEGACY).at(0).extract() !== undefined
+    ) {
+      executionArgs.legacy = {};
     }
 
     if (argsProcessor.remainingTokens.length > 0) {
@@ -158,7 +177,8 @@ export class Alias extends VkCommand<AliasExecutionArgs, AliasViewParams> {
       (executionArgs.show ||
         executionArgs.add ||
         executionArgs.delete ||
-        executionArgs.test) === undefined
+        executionArgs.test ||
+        executionArgs.legacy) === undefined
     ) {
       return fail;
     }
@@ -179,7 +199,7 @@ export class Alias extends VkCommand<AliasExecutionArgs, AliasViewParams> {
       if ((userAliases?.aliases.length ?? 0) >= Alias.maximumAliases) {
         return {
           action: 'add',
-          actionSuccess: false,
+          actionCount: 0,
         };
       }
       await this.userAliases.save({
@@ -191,7 +211,7 @@ export class Alias extends VkCommand<AliasExecutionArgs, AliasViewParams> {
       });
       return {
         action: 'add',
-        actionSuccess: true,
+        actionCount: 1,
       };
     }
     if (args.delete !== undefined) {
@@ -201,7 +221,7 @@ export class Alias extends VkCommand<AliasExecutionArgs, AliasViewParams> {
         };
       }
       const deleteArgs = args.delete;
-      let success = false;
+      let actionCount = 0;
       await this.userAliases.save({
         appUserId: appUserId,
         aliases: [
@@ -211,7 +231,7 @@ export class Alias extends VkCommand<AliasExecutionArgs, AliasViewParams> {
               aliasNumber >= deleteArgs.deleteStart &&
               aliasNumber <= deleteArgs.deleteEnd
             ) {
-              success = true;
+              actionCount += 1;
               return false;
             }
             return true;
@@ -220,7 +240,7 @@ export class Alias extends VkCommand<AliasExecutionArgs, AliasViewParams> {
       });
       return {
         action: 'delete',
-        actionSuccess: success,
+        actionCount: actionCount,
       };
     }
     if (args.test !== undefined) {
@@ -249,11 +269,73 @@ export class Alias extends VkCommand<AliasExecutionArgs, AliasViewParams> {
         ),
       };
     }
+    if (args.legacy !== undefined) {
+      const oldPrefixes = {
+        nickname: 'n',
+        user: 'u',
+        recent: 'r',
+        personalBest: 't',
+        mapPersonalBest: 'c',
+        leaderboard: 'chat',
+        mapLeaderboard: 'lb',
+      };
+      const newAliases: AppUserCommandAliases = {
+        appUserId: appUserId,
+        aliases: [],
+      };
+      const aliasIfNeeded = (
+        oldPrefix: string,
+        newPrefixes: CommandPrefixes
+      ): void => {
+        if (!newPrefixes.matchIgnoringCase(oldPrefix)) {
+          const oldPrefixArg = OWN_COMMAND_PREFIX(
+            new CommandPrefixes(oldPrefix)
+          ).unparse(oldPrefix);
+          const newPrefixArg = OWN_COMMAND_PREFIX(SetUsername.prefixes).unparse(
+            newPrefixes[0]
+          );
+          for (const server of ALL_OSU_SERVERS) {
+            const serverArg = SERVER_PREFIX.unparse(OsuServer[server]);
+            const pattern = `${serverArg} ${oldPrefixArg}*`;
+            const replacement = `${serverArg} ${newPrefixArg}`;
+            newAliases.aliases.push({
+              pattern: pattern,
+              replacement: replacement,
+            });
+          }
+        }
+      };
+      aliasIfNeeded(oldPrefixes.nickname, SetUsername.prefixes);
+      aliasIfNeeded(oldPrefixes.user, UserInfo.prefixes);
+      aliasIfNeeded(oldPrefixes.recent, UserRecentPlays.prefixes);
+      aliasIfNeeded(oldPrefixes.personalBest, UserBestPlays.prefixes);
+      aliasIfNeeded(oldPrefixes.mapPersonalBest, UserBestPlaysOnMap.prefixes);
+      aliasIfNeeded(oldPrefixes.leaderboard, ChatLeaderboard.prefixes);
+      aliasIfNeeded(oldPrefixes.mapLeaderboard, ChatLeaderboardOnMap.prefixes);
+      // special case for map because old version was not prefixed
+      (() => {
+        const serverArg = SERVER_PREFIX.unparse(OsuServer.Bancho);
+        const newPrefixArg = OWN_COMMAND_PREFIX(BeatmapInfo.prefixes).unparse(
+          BeatmapInfo.prefixes[0]
+        );
+        const pattern = 'map*';
+        const replacement = `${serverArg} ${newPrefixArg}`;
+        newAliases.aliases.push({
+          pattern: pattern,
+          replacement: replacement,
+        });
+      })();
+      await this.userAliases.save(newAliases);
+      return {
+        action: 'add',
+        actionCount: newAliases.aliases.length,
+      };
+    }
     throw Error('Unknown Alias command execution path');
   }
 
   createOutputMessage(params: AliasViewParams): VkOutputMessage {
-    const {aliases, action, actionSuccess, testResult} = params;
+    const {aliases, action, actionCount: actionSuccess, testResult} = params;
     if (aliases !== undefined) {
       if (aliases === null) {
         return this.createNoAliasesMessage();
@@ -298,10 +380,11 @@ export class Alias extends VkCommand<AliasExecutionArgs, AliasViewParams> {
     };
   }
 
-  createAliasAddResultMessage(success: boolean): VkOutputMessage {
-    const text = success
-      ? 'Шаблон успешно добавлен'
-      : 'Не удалось добавить шаблон\nДостигнуто максимальное количество шаблонов';
+  createAliasAddResultMessage(actionCount: number): VkOutputMessage {
+    const text =
+      actionCount > 0
+        ? 'Шаблонов добавлено: ' + actionCount
+        : 'Не удалось добавить шаблон\nДостигнуто максимальное количество шаблонов';
     return {
       text: text,
       attachment: undefined,
@@ -309,10 +392,11 @@ export class Alias extends VkCommand<AliasExecutionArgs, AliasViewParams> {
     };
   }
 
-  createAliasDeleteResultMessage(success: boolean) {
-    const text = success
-      ? 'Шаблон успешно удален'
-      : 'Не удалось удалить шаблон\nШаблон с заданным номером не найден';
+  createAliasDeleteResultMessage(actionCount: number) {
+    const text =
+      actionCount > 0
+        ? 'Шаблонов удалено: ' + actionCount
+        : 'Не удалось удалить шаблон\nШаблон с заданным номером не найден';
     return {
       text: text,
       attachment: undefined,
@@ -363,6 +447,7 @@ type AliasExecutionArgs = {
   add?: AddArgs;
   delete?: DeleteArgs;
   test?: TestArgs;
+  legacy?: LegacyArgs;
 };
 
 type ShowArgs = {};
@@ -377,10 +462,11 @@ type DeleteArgs = {
 type TestArgs = {
   testString: string;
 };
+type LegacyArgs = {};
 
 type AliasViewParams = {
   aliases?: AppUserCommandAliases | null;
   action?: 'add' | 'delete';
-  actionSuccess?: boolean;
+  actionCount?: number;
   testResult?: string;
 };
