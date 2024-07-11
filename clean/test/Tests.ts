@@ -8,8 +8,8 @@ describe('Data', function () {
   describe('Tables', function () {
     require('./data/persistence/db/tables/AppUserApiRequestsCounts.test');
     require('./data/persistence/db/tables/AppUsers.test');
-    require('./data/persistence/db/tables/JsonObjects.test');
     require('./data/persistence/db/tables/OsuUserSnapshots.test');
+    require('./data/persistence/db/tables/SerializedObjects.test');
     require('./data/persistence/db/tables/TimeWindows.test');
   });
   describe('DAOs', function () {
