@@ -542,10 +542,11 @@ export const INTEGER: (
     return `${randPos}`;
   },
   match: function (token: string): boolean {
-    const number = parseInt(token);
-    if (isNaN(number)) {
+    const intRegex = /^-?\d+?$/;
+    if (!intRegex.test(token)) {
       return false;
     }
+    const number = parseInt(token);
     if (min !== undefined && number < min) {
       return false;
     }
@@ -562,14 +563,119 @@ export const INTEGER: (
   },
 });
 
+export const INTEGER_RANGE: (
+  displayName: string,
+  description: string,
+  min: number | undefined,
+  max: number | undefined
+) => CommandArgument<[number, number]> = (
+  displayName,
+  description,
+  min,
+  max
+) => ({
+  displayName: displayName,
+  description: description,
+  get usageExample(): string {
+    const exampleMin = min ?? -999999;
+    const exampleMax = max ?? 999999;
+    const range = exampleMax - exampleMin;
+    const randPos1 = exampleMin + Math.floor(Math.random() * (range + 1));
+    const randPos2 = exampleMin + Math.floor(Math.random() * (range + 1));
+    return this.unparse([
+      Math.min(randPos1, randPos2),
+      Math.max(randPos1, randPos2),
+    ]);
+  },
+  match: function (token: string): boolean {
+    const rangeRegex =
+      /^(?<number1>\d+?|\(-\d+?\))-(?<number2>\d+?|\(-\d+?\))$/;
+    const groups = rangeRegex.exec(token)?.groups;
+    if (groups === null) {
+      return false;
+    }
+    const a = parseInt(groups!['number1']);
+    const b = parseInt(groups!['number2']);
+    if (isNaN(a) || isNaN(b)) {
+      return false;
+    }
+    if (a > b) {
+      return false;
+    }
+    const numbersMax = Math.max(a, b);
+    const numbersMin = Math.min(a, b);
+    if (min !== undefined && numbersMin < min) {
+      return false;
+    }
+    if (max !== undefined && numbersMax > max) {
+      return false;
+    }
+    return true;
+  },
+  parse: function (token: string): [number, number] {
+    const rangeRegex =
+      /^(?<number1>\d+?|\(-\d+?\))-(?<number2>\d+?|\(-\d+?\))$/;
+    const groups = rangeRegex.exec(token)!.groups!;
+    const a = parseInt(groups['number1']);
+    const b = parseInt(groups['number2']);
+    return [a, b];
+  },
+  unparse: function (value: [number, number]): string {
+    const left = value[0] < 0 ? `(${value[0]})` : value[0];
+    const right = value[1] < 0 ? `(${value[1]})` : value[1];
+    return left + '-' + right;
+  },
+});
+
+export const INTEGER_OR_RANGE: (
+  displayName: string,
+  description: string,
+  min: number | undefined,
+  max: number | undefined
+) => CommandArgument<[number, number]> = (
+  displayName,
+  description,
+  min,
+  max
+) => {
+  const integer = INTEGER('', '', min, max);
+  const range = INTEGER_RANGE('', '', min, max);
+  return {
+    displayName: displayName,
+    description: description,
+    get usageExample(): string {
+      return pickRandom([
+        () => integer.usageExample,
+        () => range.usageExample,
+      ])();
+    },
+    match: function (token: string): boolean {
+      return integer.match(token) || range.match(token);
+    },
+    parse: function (token: string): [number, number] {
+      if (integer.match(token)) {
+        const number = integer.parse(token);
+        return [number, number];
+      }
+      return range.parse(token);
+    },
+    unparse: function (value: [number, number]): string {
+      if (value[0] === value[1]) {
+        return integer.unparse(value[0]);
+      }
+      return range.unparse(value);
+    },
+  };
+};
+
 export const APP_USER_ID = ANY_STRING(
   'ид_польз_прил',
   'ID пользователя приложения'
 );
-export const VK_USER_ID = NUMBER('ид_вк', 'ID пользователя VK', 0, 99999999);
+export const VK_USER_ID = INTEGER('ид_вк', 'ID пользователя VK', 0, 99999999);
 
 export const BEATMAP_ID: CommandArgument<number> = (() => {
-  const number_arg = NUMBER('', '', 0, 1e9);
+  const number_arg = INTEGER('', '', 0, 1e9);
   return {
     displayName: '*ид_карты',
     description: 'ID карты',

@@ -9,7 +9,7 @@ import {
   ALIAS_PATTERN,
   ALIAS_TARGET,
   ANY_STRING,
-  INTEGER,
+  INTEGER_OR_RANGE,
   OWN_COMMAND_PREFIX,
   WORD,
 } from '../../common/arg_processing/CommandArguments';
@@ -42,7 +42,7 @@ export class Alias extends VkCommand<AliasExecutionArgs, AliasViewParams> {
   private WORD_DELETE = Alias.WORD_DELETE;
   private static WORD_TEST = WORD('test');
   private WORD_TEST = Alias.WORD_TEST;
-  private static ALIAS_NUMBER = INTEGER(
+  private static ALIAS_NUMBER = INTEGER_OR_RANGE(
     'номер',
     'номер шаблона',
     1,
@@ -133,11 +133,11 @@ export class Alias extends VkCommand<AliasExecutionArgs, AliasViewParams> {
     } else if (
       argsProcessor.use(this.WORD_DELETE).at(0).extract() !== undefined
     ) {
-      const aliasNumber = argsProcessor.use(this.ALIAS_NUMBER).at(0).extract();
-      if (aliasNumber === undefined) {
+      const range = argsProcessor.use(this.ALIAS_NUMBER).at(0).extract();
+      if (range === undefined) {
         return fail;
       }
-      executionArgs.delete = {aliasNumber: aliasNumber};
+      executionArgs.delete = {deleteStart: range[0], deleteEnd: range[1]};
     } else if (
       argsProcessor.use(this.WORD_TEST).at(0).extract() !== undefined
     ) {
@@ -206,7 +206,11 @@ export class Alias extends VkCommand<AliasExecutionArgs, AliasViewParams> {
         appUserId: appUserId,
         aliases: [
           ...(userAliases?.aliases.filter((_v, i) => {
-            if (i + 1 === deleteArgs.aliasNumber) {
+            const aliasNumber = i + 1;
+            if (
+              aliasNumber >= deleteArgs.deleteStart &&
+              aliasNumber <= deleteArgs.deleteEnd
+            ) {
               success = true;
               return false;
             }
@@ -338,7 +342,10 @@ export class Alias extends VkCommand<AliasExecutionArgs, AliasViewParams> {
     } else if (args.delete !== undefined) {
       tokens.push(
         this.WORD_DELETE.unparse(''),
-        this.ALIAS_NUMBER.unparse(args.delete.aliasNumber)
+        this.ALIAS_NUMBER.unparse([
+          args.delete.deleteStart,
+          args.delete.deleteEnd,
+        ])
       );
     } else if (args.test !== undefined) {
       tokens.push(
@@ -364,7 +371,8 @@ type AddArgs = {
   aliasTarget: string;
 };
 type DeleteArgs = {
-  aliasNumber: number;
+  deleteStart: number;
+  deleteEnd: number;
 };
 type TestArgs = {
   testString: string;
