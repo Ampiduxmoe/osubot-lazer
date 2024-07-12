@@ -53,6 +53,16 @@ import {
   AppUserCommandAliasesTable,
 } from './presentation/data/repositories/AppUserCommandAliasesRepository';
 import {VkIdConverter} from './presentation/vk/VkIdConverter';
+import {
+  AnouncementsRepository,
+  AnouncementsTable,
+} from './presentation/data/repositories/AnouncementsRepository';
+import {
+  PastAnouncementsRepository,
+  PastAnouncementsTable,
+} from './presentation/data/repositories/PastAnouncementsRepository';
+import {Anouncements} from './presentation/vk/commands/Anouncements';
+import {wait} from '../primitives/Promises';
 
 export const APP_CODE_NAME = 'osubot-lazer';
 
@@ -89,6 +99,8 @@ export class App {
     const osuUserSnapshots = new OsuUserSnapshotsTable(this.appDb);
     const timeWindows = new TimeWindowsTable(this.appDb);
     const aliases = new AppUserCommandAliasesTable(this.appDb);
+    const anouncements = new AnouncementsTable(this.appDb);
+    const pastAnouncements = new PastAnouncementsTable(this.appDb);
 
     const allDbTables = [
       appUsers,
@@ -97,6 +109,8 @@ export class App {
       osuUserSnapshots,
       timeWindows,
       aliases,
+      anouncements,
+      pastAnouncements,
     ];
 
     const scoreSimulationApi = new OsutoolsSimulationApi(
@@ -234,6 +248,8 @@ export class App {
       getBeatmapUsersBestScoresUseCase: getBeatmapUsersBestScoresUseCase,
 
       appUserCommandAliasesRepository: aliases,
+      anouncementsRepository: anouncements,
+      pastAnouncementsRepository: pastAnouncements,
     });
 
     this.startHandlers.push(async () => {
@@ -271,6 +287,8 @@ export class App {
     const {getBeatmapUsersBestScoresUseCase} = params;
 
     const {appUserCommandAliasesRepository} = params;
+    const {anouncementsRepository} = params;
+    const {pastAnouncementsRepository} = params;
 
     const vk = new VK({
       pollingGroupId: group.id,
@@ -287,6 +305,37 @@ export class App {
         peer_id: 2e9 + chatId,
       });
       return chatMembers.profiles.map(x => x.id);
+    };
+    const sendToAllPeers = async (text: string): Promise<number[]> => {
+      const peerIds: number[] = [];
+      for (let i = 1; i <= 20; i++) {
+        try {
+          await vk.api.messages.getConversationMembers({
+            peer_id: 2e9 + i,
+          });
+          peerIds.push(2e9 + i);
+        } catch (e) {
+          if (e instanceof Error) {
+            if (e.message.startsWith('Code №927')) {
+              break;
+            }
+          }
+        }
+        await wait(500);
+      }
+      const conversations = await vk.api.messages.getConversations({
+        offset: 0,
+        count: 200,
+        filter: 'all',
+        group_id: group.id,
+      });
+      peerIds.push(...conversations.items.map(x => x.conversation.peer.id));
+      await vk.api.messages.send({
+        message: text,
+        peer_ids: peerIds,
+        random_id: Math.ceil(Math.random() * 1e6),
+      });
+      return peerIds;
     };
 
     const fetchArrayBuffer = async (url: string): Promise<ArrayBuffer> => {
@@ -375,6 +424,13 @@ export class App {
         [group.owner],
         mainTextProcessor,
         getApiUsageSummaryUseCase
+      ),
+      new Anouncements(
+        [group.owner],
+        mainTextProcessor,
+        anouncementsRepository,
+        pastAnouncementsRepository,
+        sendToAllPeers
       ),
     ];
     const helpCommand = new Help(mainTextProcessor, publicCommands);
@@ -470,4 +526,6 @@ type VkClientCreationParams = {
   getBeatmapUsersBestScoresUseCase: GetBeatmapUsersBestScoresUseCase;
 
   appUserCommandAliasesRepository: AppUserCommandAliasesRepository;
+  anouncementsRepository: AnouncementsRepository;
+  pastAnouncementsRepository: PastAnouncementsRepository;
 };
