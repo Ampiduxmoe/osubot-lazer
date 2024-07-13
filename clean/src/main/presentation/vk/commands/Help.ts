@@ -204,12 +204,24 @@ ${commandBriefs.join('\n')}
         commandPrefix: targetCommandPrefix,
         usageVariant: pickRandom(argGroupKeys),
       });
+      const description = command.longDescription;
+      const synonymsString =
+        command.prefixes.length > 1
+          ? '\nСинонимы: ' +
+            command.prefixes
+              .map(x => x.toLowerCase())
+              .filter(x => x !== inputPrefixLowercase)
+              .join(', ')
+          : '';
       return {
         text: `
-Команда ${targetCommandPrefix} имеет следующие варианты использования: 
+Команда ${inputPrefixLowercase}
+${description}${synonymsString}
+
+Команда имеет следующие варианты использования: 
 ${argGroupKeysString}.
 
-Используйте «${toSeeDetailsString}» для получения подробностей по каждому варианту.
+Используйте «${toSeeDetailsString}» для получения подробностей по каждому варианту
         `.trim(),
         attachment: undefined,
         buttons: [[{text: exampleUsage, command: exampleUsage}]],
@@ -234,7 +246,7 @@ ${argGroupKeysString}.
           : `Доступные значения: ${argGroupKeys.map(x => `«${x}»`).join(',')}.`;
       return {
         text: `
-Заданного варианта использования команды ${targetCommandPrefix} не существует.
+Заданного варианта использования команды ${targetCommandPrefix} не существует
 ${usageVariantsString}
         `.trim(),
         attachment: undefined,

@@ -2,7 +2,7 @@
 import {VkMessageContext} from '../VkMessageContext';
 import {CommandMatchResult} from '../../common/CommandMatchResult';
 import {VkOutputMessage} from './base/VkOutputMessage';
-import {NOTICE_ABOUT_SPACES_IN_USERNAMES, VkCommand} from './base/VkCommand';
+import {VkCommand} from './base/VkCommand';
 import {APP_CODE_NAME} from '../../../App';
 import {VkIdConverter} from '../VkIdConverter';
 import {
@@ -35,7 +35,7 @@ export class Alias extends VkCommand<AliasExecutionArgs, AliasViewParams> {
   shortDescription = 'управление алиасами';
   longDescription =
     'Позволяет отобразить/добавить/удалить/протестировать ваши личные синонимы для команд бота';
-  notice = NOTICE_ABOUT_SPACES_IN_USERNAMES;
+  notice = undefined;
 
   static readonly maximumAliases: number = 20;
 
@@ -370,9 +370,7 @@ export class Alias extends VkCommand<AliasExecutionArgs, AliasViewParams> {
   }
 
   createNoAliasesMessage(): VkOutputMessage {
-    const text = `
-Шаблоны отсутствуют!
-    `.trim();
+    const text = 'Шаблоны отсутствуют!';
     return {
       text: text,
       attachment: undefined,

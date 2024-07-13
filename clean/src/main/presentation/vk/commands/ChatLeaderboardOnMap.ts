@@ -422,7 +422,7 @@ ${pos}. ${username}　${modsString}
     const text = `
 [Server: ${serverString}]
 Невозможно выполнить команду для пустого списка игроков!
-Привяжите ник к аккаунту или явно укажите список ников для отображения.
+Привяжите ник к аккаунту или укажите список ников для отображения
     `.trim();
     return {
       text: text,
@@ -435,7 +435,7 @@ ${pos}. ${username}　${modsString}
     const serverString = OsuServer[server];
     const text = `
 [Server: ${serverString}]
-Не указан ID карты / не найдено последней карты в истории чата.
+Не указан ID карты / не найдено последней карты в истории чата
     `.trim();
     return {
       text: text,

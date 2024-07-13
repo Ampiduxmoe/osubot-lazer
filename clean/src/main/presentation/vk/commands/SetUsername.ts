@@ -111,8 +111,6 @@ export class SetUsername extends VkCommand<
             username: undefined,
             mode: args.mode,
           };
-        default:
-          throw Error('Switch case is not exhaustive');
       }
     }
     return {

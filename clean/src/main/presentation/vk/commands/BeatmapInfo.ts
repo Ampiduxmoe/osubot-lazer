@@ -385,7 +385,7 @@ URL: ${mapUrlShort}${couldNotAttachCoverMessage}
     const serverString = OsuServer[server];
     const text = `
 [Server: ${serverString}]
-Не указан ID карты / не найдено последней карты в истории чата.
+Не указан ID карты / не найдено последней карты в истории чата
     `.trim();
     return {
       text: text,
