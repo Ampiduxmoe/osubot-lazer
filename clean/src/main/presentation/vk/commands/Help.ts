@@ -235,7 +235,9 @@ ${argGroupKeysString}.
       if (structureIndices === undefined) {
         return [];
       }
-      return structureIndices.map(i => command.commandStructure[i]);
+      return structureIndices.memberIndices.map(
+        i => command.commandStructure[i]
+      );
     })();
     if (targetCommandStructure.length === 0) {
       const targetCommandPrefix = commandPrefixInput.toLowerCase();
@@ -285,7 +287,12 @@ ${usageVariantsString}
       // eslint-disable-next-line no-irregular-whitespace
       argDescriptions.push(`　${argString} — ${argument.description}`);
     }
-    const description = command.longDescription;
+    const maybeArgGroup =
+      argGroup === undefined ? '' : ` (${argGroup.toLowerCase()})`;
+    const description =
+      argGroup === undefined
+        ? command.longDescription
+        : command.argGroups[argGroup].description;
     const synonymsString =
       command.prefixes.length > 1
         ? '\nСинонимы: ' +
@@ -307,7 +314,7 @@ ${usageVariantsString}
       ? '\n\nАргументы в [квадратных скобках] указывать не обязательно'
       : '';
     const text = `
-Команда ${inputPrefixLowercase}
+Команда ${inputPrefixLowercase}${maybeArgGroup}
 ${description}${synonymsString}
 
 Использование:

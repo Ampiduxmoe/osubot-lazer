@@ -76,10 +76,22 @@ export class Anouncements extends VkCommand<
   ];
 
   argGroups = {
-    show: [0, 1, 8],
-    create: [0, 2, 3, 4],
-    execute: [0, 5, 7],
-    echo: [0, 6, 7],
+    show: {
+      description: 'Показывает созданные объявления',
+      memberIndices: [0, 1, 8],
+    },
+    create: {
+      description: 'Создает объявление с заданными описанием и текстом',
+      memberIndices: [0, 2, 3, 4],
+    },
+    execute: {
+      description: 'Отправляет объявление во все чаты',
+      memberIndices: [0, 5, 7],
+    },
+    echo: {
+      description: 'Отправляет в ответ текст выбранного объявления',
+      memberIndices: [0, 6, 7],
+    },
   };
 
   adminVkIds: number[];

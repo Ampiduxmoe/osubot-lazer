@@ -60,10 +60,25 @@ export class BeatmapInfo extends VkCommand<
     {argument: DIFFICULTY_ADJUST_SETTING, isOptional: true}, // 10
   ];
   argGroups = {
-    osu: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-    taiko: [0, 1, 2],
-    ctb: [0, 1, 2],
-    mania: [0, 1, 2],
+    osu: {
+      description:
+        this.longDescription +
+        ' и показывает результаты симуляции гипотетического скора, ' +
+        'если были выбраны дополнительные параметры',
+      memberIndices: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    },
+    taiko: {
+      description: this.longDescription,
+      memberIndices: [0, 1, 2],
+    },
+    ctb: {
+      description: this.longDescription,
+      memberIndices: [0, 1, 2],
+    },
+    mania: {
+      description: this.longDescription,
+      memberIndices: [0, 1, 2],
+    },
   };
 
   textProcessor: TextProcessor;

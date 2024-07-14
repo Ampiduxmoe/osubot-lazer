@@ -86,11 +86,31 @@ export class Alias extends VkCommand<AliasExecutionArgs, AliasViewParams> {
   ];
 
   argGroups = {
-    show: [0, 1],
-    add: [0, 2, 3, 4],
-    delete: [0, 5, 6],
-    test: [0, 7, 8],
-    legacy: [0, 9],
+    show: {
+      description: 'Показывает ваши шаблоны',
+      memberIndices: [0, 1],
+    },
+    add: {
+      description: 'Добавляет шаблон',
+      memberIndices: [0, 2, 3, 4],
+    },
+    delete: {
+      description: 'Удаляет шаблон',
+      memberIndices: [0, 5, 6],
+    },
+    test: {
+      description:
+        'Позволяет протестировать свои шаблоны; ' +
+        'используйте эту команду, для того чтобы увидеть, ' +
+        'как сообщение изменяется с помощью ваших шаблонов',
+      memberIndices: [0, 7, 8],
+    },
+    legacy: {
+      description:
+        'Заменяет все ваши шаблоны на те, ' +
+        'что позволяют использовать старые сокращения команд',
+      memberIndices: [0, 9],
+    },
   };
 
   textProcessor: TextProcessor;
@@ -253,7 +273,7 @@ export class Alias extends VkCommand<AliasExecutionArgs, AliasViewParams> {
       for (const alias of userAliases?.aliases ?? []) {
         if (this.aliasProcessor.match(args.test.testString, alias.pattern)) {
           if (alias.pattern.length > (matchingAlias?.pattern.length ?? 0)) {
-          matchingAlias = alias;
+            matchingAlias = alias;
           }
         }
       }

@@ -13,7 +13,12 @@ export abstract class VkCommand<TExecutionArgs, TViewParams> {
   abstract readonly prefixes: CommandPrefixes;
   abstract readonly textProcessor: TextProcessor;
   readonly commandStructure: Readonly<CommandStructureElement>[];
-  readonly argGroups: Readonly<Record<string, readonly number[]>> = {};
+  readonly argGroups: Readonly<{
+    [name: string]: {
+      readonly description: string;
+      readonly memberIndices: readonly number[];
+    };
+  }> = {};
 
   constructor(commandStructure: Readonly<CommandStructureElement>[]) {
     this.commandStructure = commandStructure;
