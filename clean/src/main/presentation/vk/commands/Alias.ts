@@ -252,8 +252,9 @@ export class Alias extends VkCommand<AliasExecutionArgs, AliasViewParams> {
         | undefined = undefined;
       for (const alias of userAliases?.aliases ?? []) {
         if (this.aliasProcessor.match(args.test.testString, alias.pattern)) {
+          if (alias.pattern.length > (matchingAlias?.pattern.length ?? 0)) {
           matchingAlias = alias;
-          break;
+          }
         }
       }
       if (matchingAlias === undefined) {
