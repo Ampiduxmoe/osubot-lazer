@@ -15,6 +15,16 @@ export class VkClient {
   readonly preprocessors: ((
     ctx: VkMessageContext
   ) => Promise<VkMessageContext>)[] = [];
+  readonly kbLayouts: {[lang: string]: readonly string[]} = {
+    en: (
+      "`1234567890-=qwertyuiop[]\\asdfghjkl;'zxcvbnm,./" +
+      '~!@#$%^&*()_+QWERTYUIOP{}|ASDFGHJKL:"ZXCVBNM<>?'
+    ).split(''),
+    ru: (
+      'ё1234567890-=йцукенгшщзхъ\\фывапролджэячсмитьбю.' +
+      'Ё!"№;%:?*()_+ЙЦУКЕНГШЩЗХЪ/ФЫВАПРОЛДЖЭЯЧСМИТЬБЮ,'
+    ).split(''),
+  };
 
   constructor(vk: VK) {
     this.vk = vk;
@@ -53,38 +63,81 @@ export class VkClient {
   }
 
   private async process(ctx: VkMessageContext): Promise<void> {
-    if (ctx.hasText && ctx.text !== undefined) {
-      for (const textPreproces of this.preprocessors) {
-        ctx = await textPreproces(ctx);
+    const allLayouts = [this.kbLayouts.en, this.kbLayouts.ru];
+    for (const layout of allLayouts) {
+      const ctxCopy = Object.assign({}, ctx);
+      Object.setPrototypeOf(ctxCopy, Object.getPrototypeOf(ctx));
+      const commandExecuted = await this.processWithKbLayout(layout, ctxCopy);
+      if (commandExecuted) {
+        break;
       }
     }
+  }
+
+  private async processWithKbLayout(
+    layout: readonly string[],
+    ctx: VkMessageContext
+  ): Promise<boolean> {
+    const originalText = ctx.text;
+    if (originalText !== undefined && layout !== this.kbLayouts.en) {
+      ctx.text = originalText
+        .split('')
+        .map(c => {
+          const layoutCharIndex = layout.indexOf(c);
+          if (layoutCharIndex !== -1) {
+            return this.kbLayouts.en[layoutCharIndex];
+          }
+          const englishCharIndex = this.kbLayouts.en.indexOf(c);
+          if (englishCharIndex !== -1) {
+            return layout[englishCharIndex];
+          }
+          return c;
+        })
+        .join('');
+      if (ctx.text === originalText) {
+        return false;
+      }
+    }
+    for (const preproces of this.preprocessors) {
+      ctx = await preproces(ctx);
+    }
+    let commandExecuted = false;
     for (const command of this.commands) {
-      const matchResult = command.matchVkMessage(ctx);
-      if (!matchResult.isMatch) {
-        continue;
-      }
-      const executionArgs = matchResult.commandArgs!;
-      console.log(
-        `Trying to execute command ${
-          command.internalName
-        } (args=${JSON.stringify(executionArgs)})`
-      );
-      try {
-        const viewParams = await command.process(executionArgs);
-        const outputMessage = command.createOutputMessage(viewParams);
-        if (!outputMessage.text && !outputMessage.attachment) {
-          return;
-        }
-        const text = outputMessage.text || '';
-        const attachment = outputMessage.attachment;
-        const buttons = outputMessage.buttons;
-        const keyboard = buttons && this.createKeyboard(buttons);
-        await ctx.reply(text, {attachment, keyboard});
-      } catch (e) {
-        console.error(e);
-        await ctx.reply('Произошла ошибка при выполнении команды');
-      }
+      commandExecuted ||= await this.tryExecuteCommand(command, ctx);
     }
+    return commandExecuted;
+  }
+
+  private async tryExecuteCommand(
+    command: VkCommand<UnknownExecutionParams, UnknownViewParams>,
+    ctx: VkMessageContext
+  ): Promise<boolean> {
+    const matchResult = command.matchVkMessage(ctx);
+    if (!matchResult.isMatch) {
+      return false;
+    }
+    const executionArgs = matchResult.commandArgs!;
+    console.log(
+      `Trying to execute command ${
+        command.internalName
+      } (args=${JSON.stringify(executionArgs)})`
+    );
+    try {
+      const viewParams = await command.process(executionArgs);
+      const outputMessage = command.createOutputMessage(viewParams);
+      if (!outputMessage.text && !outputMessage.attachment) {
+        return true;
+      }
+      const text = outputMessage.text || '';
+      const attachment = outputMessage.attachment;
+      const buttons = outputMessage.buttons;
+      const keyboard = buttons && this.createKeyboard(buttons);
+      await ctx.reply(text, {attachment, keyboard});
+    } catch (e) {
+      console.error(e);
+      await ctx.reply('Произошла ошибка при выполнении команды');
+    }
+    return true;
   }
 
   private createKeyboard(
