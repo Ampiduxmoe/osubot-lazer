@@ -307,35 +307,93 @@ export class App {
       return chatMembers.profiles.map(x => x.id);
     };
     const sendToAllPeers = async (text: string): Promise<number[]> => {
-      const peerIds: number[] = [];
-      for (let i = 1; i <= 20; i++) {
-        try {
-          await vk.api.messages.getConversationMembers({
-            peer_id: 2e9 + i,
-          });
-          peerIds.push(2e9 + i);
-        } catch (e) {
-          if (e instanceof Error) {
-            if (e.message.startsWith('Code №927')) {
-              break;
-            }
+      const basePeerIds: number[] = [];
+      for (let offset = 0, fetchedAll = false; !fetchedAll; ) {
+        const conversations = await vk.api.messages.getConversations({
+          offset: offset,
+          count: 200,
+          filter: 'all',
+          group_id: group.id,
+        });
+        basePeerIds.push(
+          ...conversations.items.map(x => x.conversation.peer.id)
+        );
+        if (conversations.items.length < 200) {
+          fetchedAll = true;
+        } else {
+          offset += 200;
+          await wait(200);
+        }
+      }
+      const getNextPeerIdBatch = (() => {
+        let nextChatId = 2e9 + 1;
+        let nextOffset = 0;
+        const batchSize = 100;
+        return () => {
+          const startOffset = nextOffset;
+          const endOffset = startOffset + batchSize;
+          const ids = basePeerIds.slice(startOffset, endOffset);
+          if (ids.length < batchSize) {
+            ids.push(
+              ...Array.from({length: batchSize - ids.length}).map(
+                (_, i) => nextChatId + i
+              )
+            );
+            nextChatId += batchSize - ids.length;
+          }
+          nextOffset += batchSize;
+          return ids;
+        };
+      })();
+      let warningAlertJob: NodeJS.Timeout | undefined = undefined;
+      const sentIds: number[] = [];
+      for (let sentToAll = false; !sentToAll; ) {
+        const response = await vk.api.messages.send({
+          message: text,
+          peer_ids: getNextPeerIdBatch(),
+          random_id: Math.ceil(Math.random() * 1e6),
+        });
+        sentIds.push(
+          ...response
+            .map(x => {
+              if (x.error === undefined) {
+                return x.peer_id;
+              }
+              if (x.error.code === 917) {
+                sentToAll = true;
+              }
+              return undefined;
+            })
+            .filter(peerId => peerId !== undefined)
+        );
+        if (!sentToAll) {
+          await wait(500);
+          const lastSentId = sentIds[sentIds.length - 1];
+          const chatIdWarningThreshold = 5e3;
+          if (lastSentId > 2e9 + chatIdWarningThreshold) {
+            // Do we really have (or had) the bot in 5000+ group chats
+            // or are we just unable to exit this loop?
+            warningAlertJob ??= setInterval(() => {
+              const warningText =
+                `Chat ID exceeded ${chatIdWarningThreshold} ` +
+                'when sending to all VK peers ' +
+                `(last peer ID was ${lastSentId})`;
+              console.warn(warningText);
+              vk.api.messages.send({
+                message: warningText,
+                peer_id: group.owner,
+                random_id: Math.ceil(Math.random() * 1e6),
+              });
+            }, 60e3);
+          }
+        } else {
+          if (warningAlertJob !== undefined) {
+            clearInterval(warningAlertJob);
+            warningAlertJob = undefined;
           }
         }
-        await wait(500);
       }
-      const conversations = await vk.api.messages.getConversations({
-        offset: 0,
-        count: 200,
-        filter: 'all',
-        group_id: group.id,
-      });
-      peerIds.push(...conversations.items.map(x => x.conversation.peer.id));
-      await vk.api.messages.send({
-        message: text,
-        peer_ids: peerIds,
-        random_id: Math.ceil(Math.random() * 1e6),
-      });
-      return peerIds;
+      return sentIds;
     };
 
     const fetchArrayBuffer = async (url: string): Promise<ArrayBuffer> => {
