@@ -39,7 +39,6 @@ Though it is still early in development, [bot](https://vk.com/club224713087) alr
 ### What's not there yet
 Most notably:
 - non-official servers
-- quoting other people doesn't have an effect on command target (except for `alias show`): if you want to check score/profile of a user, you need to type their username
 - replays support
 - news notifications
 

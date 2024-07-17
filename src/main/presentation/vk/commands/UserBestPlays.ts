@@ -109,7 +109,7 @@ export class UserBestPlays extends VkCommand<
       return fail;
     }
     return CommandMatchResult.ok({
-      vkUserId: ctx.senderId,
+      vkUserId: ctx.replyMessage?.senderId ?? ctx.senderId,
       vkPeerId: ctx.peerId,
       server: server,
       username: username,

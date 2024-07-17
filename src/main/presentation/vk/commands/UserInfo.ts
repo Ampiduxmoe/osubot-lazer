@@ -90,7 +90,7 @@ export class UserInfo extends VkCommand<
       server: server,
       username: username,
       mode: mode,
-      vkUserId: ctx.senderId,
+      vkUserId: ctx.replyMessage?.senderId ?? ctx.senderId,
     });
   }
 
