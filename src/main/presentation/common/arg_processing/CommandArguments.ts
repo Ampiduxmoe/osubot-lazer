@@ -638,32 +638,32 @@ export const INTEGER_OR_RANGE: (
   min,
   max
 ) => {
-  const integer = INTEGER('', '', min, max);
-  const range = INTEGER_RANGE('', '', min, max);
+  const integerArg = INTEGER('', '', min, max);
+  const rangeArg = INTEGER_RANGE('', '', min, max);
   return {
     displayName: displayName,
     description: description,
     get usageExample(): string {
       return pickRandom([
-        () => integer.usageExample,
-        () => range.usageExample,
+        () => integerArg.usageExample,
+        () => rangeArg.usageExample,
       ])();
     },
     match: function (token: string): boolean {
-      return integer.match(token) || range.match(token);
+      return integerArg.match(token) || rangeArg.match(token);
     },
     parse: function (token: string): [number, number] {
-      if (integer.match(token)) {
-        const number = integer.parse(token);
+      if (integerArg.match(token)) {
+        const number = integerArg.parse(token);
         return [number, number];
       }
-      return range.parse(token);
+      return rangeArg.parse(token);
     },
     unparse: function (value: [number, number]): string {
       if (value[0] === value[1]) {
-        return integer.unparse(value[0]);
+        return integerArg.unparse(value[0]);
       }
-      return range.unparse(value);
+      return rangeArg.unparse(value);
     },
   };
 };
@@ -675,21 +675,48 @@ export const APP_USER_ID = ANY_STRING(
 export const VK_USER_ID = INTEGER('ид_вк', 'ID пользователя VK', 0, 99999999);
 
 export const BEATMAP_ID: CommandArgument<number> = (() => {
-  const number_arg = INTEGER('', '', 0, 1e9);
+  const integerArg = INTEGER('', '', 0, 1e9);
+  const beatmapLinkRegexes = [
+    /^(https?:\/\/)?osu\.ppy\.sh\/b\/(?<ID>\d+)\/?$/i,
+    /^(https?:\/\/)?osu\.ppy\.sh\/beatmaps\/(?<ID>\d+)\/?$/i,
+    /^(https?:\/\/)?osu\.ppy\.sh\/beatmapsets\/(\d+)#(osu|taiko|fruits|mania)+\/(?<ID>\d+)\/?$/i,
+  ];
   return {
-    displayName: '*ид_карты',
-    description: 'ID карты',
+    displayName: '*ид_карты|ссылка',
+    description: 'ID карты или ссылка на карту (не мапсет!)',
     get usageExample(): string {
-      return '*' + number_arg.usageExample;
+      const mapIdStr = integerArg.usageExample;
+      const randomBeatmapsetIdStr = () => integerArg.usageExample;
+      const randomMode = () => pickRandom(['osu', 'taiko', 'fruits', 'mania']);
+      return pickRandom([
+        '*' + mapIdStr,
+        'osu.ppy.sh/b/' + mapIdStr,
+        'http://osu.ppy.sh/beatmaps/' + mapIdStr,
+        `https://osu.ppy.sh/beatmapsets/${randomBeatmapsetIdStr()}#${randomMode()}/${mapIdStr}/`,
+      ]);
     },
     match: function (token: string): boolean {
-      if (!token.startsWith('*')) {
-        return false;
+      if (token.startsWith('*')) {
+        return integerArg.match(token.substring(1));
       }
-      return number_arg.match(token.substring(1));
+      for (const regex of beatmapLinkRegexes) {
+        if (regex.test(token)) {
+          return true;
+        }
+      }
+      return false;
     },
     parse: function (token: string): number {
-      return parseInt(token.substring(1));
+      if (token.startsWith('*')) {
+        return integerArg.parse(token.substring(1));
+      }
+      for (const regex of beatmapLinkRegexes) {
+        const match = regex.exec(token);
+        if (match?.groups?.ID !== undefined) {
+          return integerArg.parse(match.groups.ID);
+        }
+      }
+      throw Error('Parse should only be called for matching tokens');
     },
     unparse: function (value: number): string {
       return '*' + value;
