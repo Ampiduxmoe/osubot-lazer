@@ -218,6 +218,7 @@ export class GetBeatmapUsersBestScoresUseCase
           coverUrl: beatmap.beatmapset.coverUrl,
         },
         beatmap: {
+          id: beatmap.id,
           difficultyName: beatmap.version,
           totalLength: beatmap.totalLength,
           drainLength: beatmap.hitLength,

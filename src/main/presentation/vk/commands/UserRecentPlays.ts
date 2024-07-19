@@ -1,7 +1,7 @@
 /* eslint-disable no-irregular-whitespace */
 import {VkMessageContext} from '../VkMessageContext';
 import {CommandMatchResult} from '../../common/CommandMatchResult';
-import {VkOutputMessage} from './base/VkOutputMessage';
+import {VkOutputMessage, VkOutputMessageButton} from './base/VkOutputMessage';
 import {NOTICE_ABOUT_SPACES_IN_USERNAMES, VkCommand} from './base/VkCommand';
 import {GetUserRecentPlaysUseCase} from '../../../application/usecases/get_user_recent_plays/GetUserRecentPlaysUseCase';
 import {OsuServer} from '../../../primitives/OsuServer';
@@ -34,6 +34,8 @@ import {OsuRuleset} from '../../../primitives/OsuRuleset';
 import {TextProcessor} from '../../common/arg_processing/TextProcessor';
 import {VkBeatmapCoversRepository} from '../../data/repositories/VkBeatmapCoversRepository';
 import {VkChatLastBeatmapsRepository} from '../../data/repositories/VkChatLastBeatmapsRepository';
+import {UserBestPlaysOnMap} from './UserBestPlaysOnMap';
+import {ChatLeaderboardOnMap} from './ChatLeaderboardOnMap';
 
 export class UserRecentPlays extends VkCommand<
   UserRecentPlaysExecutionArgs,
@@ -280,7 +282,9 @@ ${couldNotGetSomeStatsMessage}${couldNotAttachCoverMessage}
     return {
       text: text,
       attachment: coverAttachment ?? undefined,
-      buttons: undefined,
+      buttons: oneScore
+        ? this.createBeatmapButtons(server, recentPlays.plays[0].beatmap.id)
+        : [],
     };
   }
 
@@ -509,6 +513,49 @@ ${ppEstimationMark}${pp}pp　 ${mapUrlShort}
           ]
         : undefined,
     };
+  }
+
+  createBeatmapButtons(
+    server: OsuServer,
+    beatmapId: number
+  ): VkOutputMessageButton[][] {
+    const buttons: VkOutputMessageButton[] = [];
+    const userBestPlaysOnMapCommand = this.otherCommands.find(
+      x => x instanceof UserBestPlaysOnMap
+    );
+    if (userBestPlaysOnMapCommand !== undefined) {
+      buttons.push({
+        text: 'Мой скор на карте',
+        command: userBestPlaysOnMapCommand.unparse({
+          server: server,
+          beatmapId: beatmapId,
+          username: undefined,
+          vkUserId: -1,
+          vkPeerId: -1,
+          startPosition: undefined,
+          quantity: undefined,
+          mods: undefined,
+        }),
+      });
+    }
+    const chatLeaderboardOnMapCommand = this.otherCommands.find(
+      x => x instanceof ChatLeaderboardOnMap
+    );
+    if (chatLeaderboardOnMapCommand !== undefined) {
+      buttons.push({
+        text: 'Топ чата на карте',
+        command: chatLeaderboardOnMapCommand.unparse({
+          server: server,
+          beatmapId: beatmapId,
+          vkUserId: -1,
+          vkChatId: -1,
+          vkPeerId: -1,
+          usernameList: undefined,
+          mods: undefined,
+        }),
+      });
+    }
+    return buttons.map(x => [x]);
   }
 
   unparse(args: UserRecentPlaysExecutionArgs): string {
