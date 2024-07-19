@@ -150,7 +150,10 @@ export class VkClient {
     for (const row of buttons) {
       for (const button of row) {
         keyboard.textButton({
-          label: button.text,
+          label:
+            button.text.length > 40
+              ? button.text.substring(0, 37) + '...'
+              : button.text,
           payload: {
             target: APP_CODE_NAME,
             command: button.command,

@@ -329,10 +329,7 @@ ${argDescriptions.join('\n')}${commmandNoticeString}${optionalsHint}
       buttons: [
         [
           {
-            text:
-              usageString.length <= 40
-                ? usageString
-                : usageString.substring(0, 37) + '...',
+            text: usageString,
             command: usageString,
           },
         ],
