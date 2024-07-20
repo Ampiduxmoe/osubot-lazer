@@ -21,7 +21,6 @@
     "@vk-io/authorization": "^1.4.1",
     "axios": "^1.6.7",
     "better-sqlite3": "^10.0.0",
-    "sqlite3": "^5.1.7",
     "vk-io": "^4.9.1"
   }
 }
