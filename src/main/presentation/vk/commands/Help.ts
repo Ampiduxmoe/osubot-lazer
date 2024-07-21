@@ -55,12 +55,12 @@ export class Help extends VkCommand<HelpExecutionArgs, HelpViewParams> {
 
   matchVkMessage(ctx: VkMessageContext): CommandMatchResult<HelpExecutionArgs> {
     const fail = CommandMatchResult.fail<HelpExecutionArgs>();
-    let command: string | undefined = undefined;
-    if (ctx.hasMessagePayload && ctx.messagePayload!.target === APP_CODE_NAME) {
-      command = ctx.messagePayload!.command;
-    } else if (ctx.hasText) {
-      command = ctx.text!;
-    }
+    const command: string | undefined = (() => {
+      if (ctx.messagePayload?.target === APP_CODE_NAME) {
+        return ctx.messagePayload.command;
+      }
+      return ctx.text;
+    })();
     if (command === undefined) {
       return fail;
     }
@@ -74,6 +74,9 @@ export class Help extends VkCommand<HelpExecutionArgs, HelpViewParams> {
       .use(this.COMMAND_PREFIX)
       .at(0)
       .extract();
+    if (ownCommandPrefix === undefined) {
+      return fail;
+    }
     const commandPrefix = argsProcessor
       .use(this.FOREIGN_COMMAND_PREFIX)
       .at(0)
@@ -84,9 +87,6 @@ export class Help extends VkCommand<HelpExecutionArgs, HelpViewParams> {
       .extract();
 
     if (argsProcessor.remainingTokens.length > 0) {
-      return fail;
-    }
-    if (ownCommandPrefix === undefined) {
       return fail;
     }
     return CommandMatchResult.ok({

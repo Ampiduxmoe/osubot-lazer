@@ -78,12 +78,12 @@ export class ChatLeaderboardOnMap extends VkCommand<
     ctx: VkMessageContext
   ): CommandMatchResult<ChatLeaderboardOnMapExecutionArgs> {
     const fail = CommandMatchResult.fail<ChatLeaderboardOnMapExecutionArgs>();
-    let command: string | undefined = undefined;
-    if (ctx.hasMessagePayload && ctx.messagePayload!.target === APP_CODE_NAME) {
-      command = ctx.messagePayload!.command;
-    } else if (ctx.hasText) {
-      command = ctx.text!;
-    }
+    const command: string | undefined = (() => {
+      if (ctx.messagePayload?.target === APP_CODE_NAME) {
+        return ctx.messagePayload.command;
+      }
+      return ctx.text;
+    })();
     if (command === undefined) {
       return fail;
     }
@@ -95,14 +95,14 @@ export class ChatLeaderboardOnMap extends VkCommand<
     );
     const server = argsProcessor.use(SERVER_PREFIX).at(0).extract();
     const ownPrefix = argsProcessor.use(this.COMMAND_PREFIX).at(0).extract();
+    if (server === undefined || ownPrefix === undefined) {
+      return fail;
+    }
     const beatmapId = argsProcessor.use(BEATMAP_ID).extract();
     const usernameList = argsProcessor.use(USERNAME_LIST).extract();
     const mods = argsProcessor.use(MODS).extract();
 
     if (argsProcessor.remainingTokens.length > 0) {
-      return fail;
-    }
-    if (server === undefined || ownPrefix === undefined) {
       return fail;
     }
     return CommandMatchResult.ok({

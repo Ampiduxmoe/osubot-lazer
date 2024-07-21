@@ -104,12 +104,12 @@ export class BeatmapInfo extends VkCommand<
     ctx: VkMessageContext
   ): CommandMatchResult<BeatmapInfoExecutionArgs> {
     const fail = CommandMatchResult.fail<BeatmapInfoExecutionArgs>();
-    let command: string | undefined = undefined;
-    if (ctx.hasMessagePayload && ctx.messagePayload!.target === APP_CODE_NAME) {
-      command = ctx.messagePayload!.command;
-    } else if (ctx.hasText) {
-      command = ctx.text!;
-    }
+    const command: string | undefined = (() => {
+      if (ctx.messagePayload?.target === APP_CODE_NAME) {
+        return ctx.messagePayload.command;
+      }
+      return ctx.text;
+    })();
     if (command === undefined) {
       return fail;
     }
@@ -121,6 +121,9 @@ export class BeatmapInfo extends VkCommand<
     );
     const server = argsProcessor.use(SERVER_PREFIX).at(0).extract();
     const ownPrefix = argsProcessor.use(this.COMMAND_PREFIX).at(0).extract();
+    if (server === undefined || ownPrefix === undefined) {
+      return fail;
+    }
     const beatmapId = argsProcessor.use(BEATMAP_ID).extract();
     const mods = argsProcessor.use(MODS).extract();
     const scoreCombo = argsProcessor.use(SCORE_COMBO).extract();
@@ -136,9 +139,6 @@ export class BeatmapInfo extends VkCommand<
       oneSetting = argsProcessor.use(DIFFICULTY_ADJUST_SETTING).extract();
     }
     if (argsProcessor.remainingTokens.length > 0) {
-      return fail;
-    }
-    if (server === undefined || ownPrefix === undefined) {
       return fail;
     }
     const osuSettings: MapScoreSimulationOsu = {

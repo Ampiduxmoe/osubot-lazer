@@ -121,12 +121,12 @@ export class Anouncements extends VkCommand<
     if (!this.adminVkIds.includes(ctx.senderId)) {
       return fail;
     }
-    let command: string | undefined = undefined;
-    if (ctx.hasMessagePayload && ctx.messagePayload!.target === APP_CODE_NAME) {
-      command = ctx.messagePayload!.command;
-    } else if (ctx.hasText) {
-      command = ctx.text!;
-    }
+    const command: string | undefined = (() => {
+      if (ctx.messagePayload?.target === APP_CODE_NAME) {
+        return ctx.messagePayload.command;
+      }
+      return ctx.text;
+    })();
     if (command === undefined) {
       return fail;
     }
@@ -137,6 +137,9 @@ export class Anouncements extends VkCommand<
       this.commandStructure.map(e => e.argument)
     );
     const ownPrefix = argsProcessor.use(this.COMMAND_PREFIX).at(0).extract();
+    if (ownPrefix === undefined) {
+      return fail;
+    }
     const executionArgs: AnouncementsExecutionArgs = {};
 
     if (argsProcessor.use(this.WORD_SHOW).at(0).extract() !== undefined) {
@@ -185,9 +188,6 @@ export class Anouncements extends VkCommand<
     }
 
     if (argsProcessor.remainingTokens.length > 0) {
-      return fail;
-    }
-    if (ownPrefix === undefined) {
       return fail;
     }
     if (

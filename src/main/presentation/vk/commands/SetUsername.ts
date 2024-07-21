@@ -50,12 +50,12 @@ export class SetUsername extends VkCommand<
     ctx: VkMessageContext
   ): CommandMatchResult<SetUsernameExecutionArgs> {
     const fail = CommandMatchResult.fail<SetUsernameExecutionArgs>();
-    let command: string | undefined = undefined;
-    if (ctx.hasMessagePayload && ctx.messagePayload!.target === APP_CODE_NAME) {
-      command = ctx.messagePayload!.command;
-    } else if (ctx.hasText) {
-      command = ctx.text!;
-    }
+    const command: string | undefined = (() => {
+      if (ctx.messagePayload?.target === APP_CODE_NAME) {
+        return ctx.messagePayload.command;
+      }
+      return ctx.text;
+    })();
     if (command === undefined) {
       return fail;
     }
@@ -67,13 +67,13 @@ export class SetUsername extends VkCommand<
     );
     const server = argsProcessor.use(SERVER_PREFIX).at(0).extract();
     const ownPrefix = argsProcessor.use(this.COMMAND_PREFIX).at(0).extract();
+    if (server === undefined || ownPrefix === undefined) {
+      return fail;
+    }
     const mode = argsProcessor.use(MODE).extract();
     const username = argsProcessor.use(USERNAME).extract();
 
     if (argsProcessor.remainingTokens.length > 0) {
-      return fail;
-    }
-    if (server === undefined || ownPrefix === undefined) {
       return fail;
     }
     return CommandMatchResult.ok({

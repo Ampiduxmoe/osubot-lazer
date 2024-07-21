@@ -131,12 +131,12 @@ export class Alias extends VkCommand<AliasExecutionArgs, AliasViewParams> {
     ctx: VkMessageContext
   ): CommandMatchResult<AliasExecutionArgs> {
     const fail = CommandMatchResult.fail<AliasExecutionArgs>();
-    let command: string | undefined = undefined;
-    if (ctx.hasMessagePayload && ctx.messagePayload!.target === APP_CODE_NAME) {
-      command = ctx.messagePayload!.command;
-    } else if (ctx.hasText) {
-      command = ctx.text!;
-    }
+    const command: string | undefined = (() => {
+      if (ctx.messagePayload?.target === APP_CODE_NAME) {
+        return ctx.messagePayload.command;
+      }
+      return ctx.text;
+    })();
     if (command === undefined) {
       return fail;
     }
@@ -147,6 +147,9 @@ export class Alias extends VkCommand<AliasExecutionArgs, AliasViewParams> {
       this.commandStructure.map(e => e.argument)
     );
     const ownPrefix = argsProcessor.use(this.COMMAND_PREFIX).at(0).extract();
+    if (ownPrefix === undefined) {
+      return fail;
+    }
     const executionArgs: AliasExecutionArgs = {
       vkUserId: ctx.replyMessage?.senderId ?? ctx.senderId,
     };
@@ -188,9 +191,6 @@ export class Alias extends VkCommand<AliasExecutionArgs, AliasViewParams> {
     }
 
     if (argsProcessor.remainingTokens.length > 0) {
-      return fail;
-    }
-    if (ownPrefix === undefined) {
       return fail;
     }
     if (

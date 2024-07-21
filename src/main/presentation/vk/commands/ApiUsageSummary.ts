@@ -60,12 +60,12 @@ export class ApiUsageSummary extends VkCommand<
     if (!this.adminVkIds.includes(ctx.senderId)) {
       return fail;
     }
-    let command: string | undefined = undefined;
-    if (ctx.hasMessagePayload && ctx.messagePayload!.target === APP_CODE_NAME) {
-      command = ctx.messagePayload!.command;
-    } else if (ctx.hasText) {
-      command = ctx.text!;
-    }
+    const command: string | undefined = (() => {
+      if (ctx.messagePayload?.target === APP_CODE_NAME) {
+        return ctx.messagePayload.command;
+      }
+      return ctx.text;
+    })();
     if (command === undefined) {
       return fail;
     }
@@ -82,11 +82,11 @@ export class ApiUsageSummary extends VkCommand<
       return fail;
     }
     const date = argsProcessor.use(DATE).extract();
-    const appUserId = argsProcessor.use(APP_USER_ID).extract();
-    if (argsProcessor.remainingTokens.length > 0) {
+    if (date === undefined) {
       return fail;
     }
-    if (date === undefined) {
+    const appUserId = argsProcessor.use(APP_USER_ID).extract();
+    if (argsProcessor.remainingTokens.length > 0) {
       return fail;
     }
     return CommandMatchResult.ok({
