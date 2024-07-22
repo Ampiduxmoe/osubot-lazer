@@ -1,29 +1,29 @@
-/* eslint-disable no-irregular-whitespace */
-import {VkMessageContext} from '../VkMessageContext';
-import {CommandMatchResult} from '../../common/CommandMatchResult';
-import {VkOutputMessage} from './base/VkOutputMessage';
-import {NOTICE_ABOUT_SPACES_IN_USERNAMES, VkCommand} from './base/VkCommand';
-import {OsuServer} from '../../../primitives/OsuServer';
-import {APP_CODE_NAME} from '../../../App';
-import {GetAppUserInfoUseCase} from '../../../application/usecases/get_app_user_info/GetAppUserInfoUseCase';
-import {VkIdConverter} from '../VkIdConverter';
+import {GetAppUserInfoUseCase} from '../../application/usecases/get_app_user_info/GetAppUserInfoUseCase';
+import {OsuUserInfo} from '../../application/usecases/get_osu_user_info/GetOsuUserInfoResponse';
+import {GetOsuUserInfoUseCase} from '../../application/usecases/get_osu_user_info/GetOsuUserInfoUseCase';
+import {maxBy} from '../../primitives/Arrays';
+import {ALL_OSU_RULESETS, OsuRuleset} from '../../primitives/OsuRuleset';
+import {OsuServer} from '../../primitives/OsuServer';
 import {
+  MODE,
   OWN_COMMAND_PREFIX,
   SERVER_PREFIX,
   USERNAME_LIST,
-  MODE,
-} from '../../common/arg_processing/CommandArguments';
-import {MainArgsProcessor} from '../../common/arg_processing/MainArgsProcessor';
-import {CommandPrefixes} from '../../common/CommandPrefixes';
-import {ALL_OSU_RULESETS, OsuRuleset} from '../../../primitives/OsuRuleset';
-import {GetOsuUserInfoUseCase} from '../../../application/usecases/get_osu_user_info/GetOsuUserInfoUseCase';
-import {OsuUserInfo} from '../../../application/usecases/get_osu_user_info/GetOsuUserInfoResponse';
-import {maxBy} from '../../../primitives/Arrays';
-import {TextProcessor} from '../../common/arg_processing/TextProcessor';
+} from '../common/arg_processing/CommandArguments';
+import {MainArgsProcessor} from '../common/arg_processing/MainArgsProcessor';
+import {TextProcessor} from '../common/arg_processing/TextProcessor';
+import {CommandMatchResult} from '../common/CommandMatchResult';
+import {CommandPrefixes} from '../common/CommandPrefixes';
+import {
+  NOTICE_ABOUT_SPACES_IN_USERNAMES,
+  TextCommand,
+} from './base/TextCommand';
 
-export class ChatLeaderboard extends VkCommand<
+export abstract class ChatLeaderboard<TContext, TOutput> extends TextCommand<
   ChatLeaderboardExecutionArgs,
-  ChatLeaderboardViewParams
+  ChatLeaderboardViewParams,
+  TContext,
+  TOutput
 > {
   internalName = ChatLeaderboard.name;
   shortDescription = 'топ чата';
@@ -43,37 +43,28 @@ export class ChatLeaderboard extends VkCommand<
   ];
 
   textProcessor: TextProcessor;
-  getChatMemberIds: (chatId: number) => Promise<number[]>;
+  getInitiatorAppUserId: (ctx: TContext) => string;
+  getLocalAppUserIds: (ctx: TContext) => Promise<string[]>;
   getOsuUserInfo: GetOsuUserInfoUseCase;
   getAppUserInfo: GetAppUserInfoUseCase;
   constructor(
     textProcessor: TextProcessor,
-    getChatMemberIds: (chatId: number) => Promise<number[]>,
+    getInitiatorAppUserId: (ctx: TContext) => string,
+    getLocalAppUserIds: (ctx: TContext) => Promise<string[]>,
     getOsuUserInfo: GetOsuUserInfoUseCase,
     getAppUserInfo: GetAppUserInfoUseCase
   ) {
     super(ChatLeaderboard.commandStructure);
     this.textProcessor = textProcessor;
-    this.getChatMemberIds = getChatMemberIds;
+    this.getInitiatorAppUserId = getInitiatorAppUserId;
+    this.getLocalAppUserIds = getLocalAppUserIds;
     this.getOsuUserInfo = getOsuUserInfo;
     this.getAppUserInfo = getAppUserInfo;
   }
 
-  matchVkMessage(
-    ctx: VkMessageContext
-  ): CommandMatchResult<ChatLeaderboardExecutionArgs> {
+  matchText(text: string): CommandMatchResult<ChatLeaderboardExecutionArgs> {
     const fail = CommandMatchResult.fail<ChatLeaderboardExecutionArgs>();
-    const command: string | undefined = (() => {
-      if (ctx.messagePayload?.target === APP_CODE_NAME) {
-        return ctx.messagePayload.command;
-      }
-      return ctx.text;
-    })();
-    if (command === undefined) {
-      return fail;
-    }
-
-    const tokens = this.textProcessor.tokenize(command);
+    const tokens = this.textProcessor.tokenize(text);
     const argsProcessor = new MainArgsProcessor(
       [...tokens],
       this.commandStructure.map(e => e.argument)
@@ -90,8 +81,6 @@ export class ChatLeaderboard extends VkCommand<
       return fail;
     }
     return CommandMatchResult.ok({
-      vkUserId: ctx.senderId,
-      vkChatId: ctx.chatId,
       server: server,
       usernameList: usernameList,
       mode: mode,
@@ -99,26 +88,25 @@ export class ChatLeaderboard extends VkCommand<
   }
 
   async process(
-    args: ChatLeaderboardExecutionArgs
+    args: ChatLeaderboardExecutionArgs,
+    ctx: TContext
   ): Promise<ChatLeaderboardViewParams> {
+    const initiatorAppUserId = this.getInitiatorAppUserId(ctx);
     let preferredModes: {
       username: string;
       mode: OsuRuleset | undefined;
     }[] = await (async () => {
       if (args.usernameList === undefined || args.usernameList.isAdditive) {
-        const conversationMembers =
-          args.vkChatId === undefined
-            ? [args.vkUserId]
-            : await this.getChatMemberIds(args.vkChatId);
+        const localMembers = await this.getLocalAppUserIds(ctx);
         const appUserInfoResponses = await Promise.all(
-          conversationMembers.map(id =>
+          localMembers.map(appUserid =>
             this.getAppUserInfo.execute({
-              id: VkIdConverter.vkUserIdToAppUserId(id),
+              id: appUserid,
               server: args.server,
             })
           )
         );
-        const chatEntries = appUserInfoResponses
+        const localEntries = appUserInfoResponses
           .filter(x => x.userInfo !== undefined)
           .map(x => ({
             username: x.userInfo!.username,
@@ -129,7 +117,7 @@ export class ChatLeaderboard extends VkCommand<
             username: x,
             mode: undefined,
           })) ?? [];
-        return [...chatEntries, ...selectedEntries];
+        return [...localEntries, ...selectedEntries];
       }
       return args.usernameList.usernames.map(x => ({
         username: x,
@@ -142,7 +130,7 @@ export class ChatLeaderboard extends VkCommand<
         .filter(x => x.mode === undefined)
         .map(async x => {
           const osuUserInfoResponse = await this.getOsuUserInfo.execute({
-            appUserId: VkIdConverter.vkUserIdToAppUserId(args.vkUserId),
+            appUserId: initiatorAppUserId,
             server: args.server,
             username: x.username,
             ruleset: args.mode,
@@ -186,7 +174,7 @@ export class ChatLeaderboard extends VkCommand<
         )
         .map(async x => {
           const osuUserInfoResponse = await this.getOsuUserInfo.execute({
-            appUserId: VkIdConverter.vkUserIdToAppUserId(args.vkUserId),
+            appUserId: initiatorAppUserId,
             server: args.server,
             username: x.username,
             ruleset: mode,
@@ -225,7 +213,7 @@ export class ChatLeaderboard extends VkCommand<
         mode: mode,
         users: undefined,
         missingUsernames: missingUsernames,
-        isChatLb: isChatLb,
+        isOnlyLocalMembersLb: isChatLb,
       };
     }
     return {
@@ -233,12 +221,13 @@ export class ChatLeaderboard extends VkCommand<
       mode: mode,
       users: allUsersSorted,
       missingUsernames: missingUsernames,
-      isChatLb: isChatLb,
+      isOnlyLocalMembersLb: isChatLb,
     };
   }
 
-  createOutputMessage(params: ChatLeaderboardViewParams): VkOutputMessage {
-    const {server, mode, users, missingUsernames, isChatLb} = params;
+  createOutputMessage(params: ChatLeaderboardViewParams): Promise<TOutput> {
+    const {server, mode, users, missingUsernames, isOnlyLocalMembersLb} =
+      params;
     if (users === undefined) {
       return this.createNoUsersMessage(server, missingUsernames ?? []);
     }
@@ -247,73 +236,22 @@ export class ChatLeaderboard extends VkCommand<
       users,
       mode!,
       missingUsernames!,
-      isChatLb
+      isOnlyLocalMembersLb
     );
   }
 
-  createLeaderboardMessage(
+  abstract createLeaderboardMessage(
     server: OsuServer,
     users: OsuUserInfo[],
     mode: OsuRuleset,
     missingUsernames: string[],
-    isChatLb: boolean
-  ): VkOutputMessage {
-    const serverString = OsuServer[server];
-    const modeString = OsuRuleset[mode];
-    const usersText = users
-      .map((u, i) => this.shortUserDescription(i + 1, u))
-      .join('\n');
-    const missingUsernamesMessage =
-      missingUsernames.length > 0
-        ? '\nНе удалось найти игроков с никами:\n' + missingUsernames.join(', ')
-        : '';
-    const text = `
-[Server: ${serverString}, Mode: ${modeString}]
-Топ ${isChatLb ? 'игроков чата' : 'выбранных игроков'}
+    isOnlyLocalMembersLb: boolean
+  ): Promise<TOutput>;
 
-${usersText}
-
-${missingUsernamesMessage}
-    `.trim();
-    return {
-      text: text,
-      attachment: undefined,
-      buttons: undefined,
-    };
-  }
-
-  shortUserDescription(pos: number, user: OsuUserInfo): string {
-    const rankGlobal = user.rankGlobal || '—';
-    const acc = user.accuracy.toFixed(2);
-    const pp = isNaN(user.pp) ? '—' : user.pp.toFixed(0);
-    return `
-${pos}. ${user.username}
-　 ${acc}%　${pp}pp　#${rankGlobal}
-    `.trim();
-  }
-
-  createNoUsersMessage(
+  abstract createNoUsersMessage(
     server: OsuServer,
     missingUsernames: string[]
-  ): VkOutputMessage {
-    const serverString = OsuServer[server];
-    const missingUsernamesMessage =
-      missingUsernames.length > 0
-        ? '\nНе удалось найти игроков с никами:\n' + missingUsernames.join(', ')
-        : '';
-    const text = `
-[Server: ${serverString}]
-Невозможно выполнить команду для пустого списка игроков!
-Привяжите ник к аккаунту или укажите список ников для отображения
-
-${missingUsernamesMessage}
-    `.trim();
-    return {
-      text: text,
-      attachment: undefined,
-      buttons: undefined,
-    };
-  }
+  ): Promise<TOutput>;
 
   unparse(args: ChatLeaderboardExecutionArgs): string {
     const tokens = [
@@ -330,18 +268,16 @@ ${missingUsernamesMessage}
   }
 }
 
-type ChatLeaderboardExecutionArgs = {
-  vkUserId: number;
-  vkChatId: number | undefined;
+export type ChatLeaderboardExecutionArgs = {
   server: OsuServer;
   mode: OsuRuleset | undefined;
   usernameList: {usernames: string[]; isAdditive: boolean} | undefined;
 };
 
-type ChatLeaderboardViewParams = {
+export type ChatLeaderboardViewParams = {
   server: OsuServer;
   mode: OsuRuleset | undefined;
   users: OsuUserInfo[] | undefined;
   missingUsernames: string[] | undefined;
-  isChatLb: boolean;
+  isOnlyLocalMembersLb: boolean;
 };

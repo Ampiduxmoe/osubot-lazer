@@ -1,6 +1,6 @@
 /* eslint-disable prefer-arrow-callback */
 import assert from 'assert';
-import {UserBestPlays} from '../../../../main/presentation/vk/commands/UserBestPlays';
+import {UserBestPlaysVk} from '../../../../main/presentation/vk/commands/UserBestPlaysVk';
 import {
   createWithOnlyText,
   createWithPayload,
@@ -56,10 +56,10 @@ import {
 import {VkBeatmapCoversTable} from '../../../../main/presentation/data/repositories/VkBeatmapCoversRepository';
 import {VkChatLastBeatmapsTable} from '../../../../main/presentation/data/repositories/VkChatLastBeatmapsRepository';
 
-describe('UserBestPlays', function () {
+describe('UserBestPlaysVk', function () {
   let tables: SqlDbTable[];
   let appUsers: AppUsersTable;
-  let command: UserBestPlays;
+  let command: UserBestPlaysVk;
   {
     const apis = [new FakeBanchoApi()];
     const db = new SqliteDb(':memory:');
@@ -113,12 +113,48 @@ describe('UserBestPlays', function () {
       vkChatLastBeatmaps,
     ];
     const mainTextProcessor = new MainTextProcessor(' ', "'", '\\');
-    command = new UserBestPlays(
+    const getInitiatorAppUserId = (ctx: VkMessageContext): string => {
+      return VkIdConverter.vkUserIdToAppUserId(ctx.senderId);
+    };
+    const getTargetAppUserId = (() => {
+      const getSelfOrQuotedAppUserId = (ctx: VkMessageContext): string => {
+        return VkIdConverter.vkUserIdToAppUserId(
+          ctx.replyMessage?.senderId ?? ctx.senderId
+        );
+      };
+      const adminId = 0;
+      const getSelfAppUserId = (ctx: VkMessageContext): string => {
+        if (ctx.senderId !== adminId) {
+          return VkIdConverter.vkUserIdToAppUserId(ctx.senderId);
+        }
+        return VkIdConverter.vkUserIdToAppUserId(
+          ctx.replyMessage?.senderId ?? ctx.senderId
+        );
+      };
+      return (settings: {
+        canTargetOtherUsersAsNonAdmin: boolean;
+      }): ((ctx: VkMessageContext) => string) => {
+        if (settings.canTargetOtherUsersAsNonAdmin) {
+          return getSelfOrQuotedAppUserId;
+        }
+        return getSelfAppUserId;
+      };
+    })();
+    const saveLastSeenBeatmapId = (
+      ctx: VkMessageContext,
+      server: OsuServer,
+      beatmapId: number
+    ): Promise<void> => {
+      return vkChatLastBeatmaps.save(ctx.peerId, server, beatmapId);
+    };
+    command = new UserBestPlaysVk(
       mainTextProcessor,
+      getInitiatorAppUserId,
+      getTargetAppUserId({canTargetOtherUsersAsNonAdmin: true}),
+      saveLastSeenBeatmapId,
       getUserBestPlaysUseCase,
       getAppUserInfoUseCase,
-      vkBeatmapCovers,
-      vkChatLastBeatmaps
+      vkBeatmapCovers
     );
   }
 
@@ -148,13 +184,13 @@ describe('UserBestPlays', function () {
     await appUsers.add(exampleAppUser);
   });
 
-  describe('#matchVkMessage()', function () {
+  describe('#matchMessage()', function () {
     it('should not match empty message', function () {
       const msg = createWithOnlyText({
         senderId: 1,
         text: '',
       }) as VkMessageContext;
-      const matchResult = command.matchVkMessage(msg);
+      const matchResult = command.matchMessage(msg);
       assert.strictEqual(matchResult.isMatch, false);
     });
     it('should not match unrelated message', function () {
@@ -164,7 +200,7 @@ describe('UserBestPlays', function () {
           senderId: 1,
           text: unrelatedWords.slice(0, i + 1).join(' '),
         }) as VkMessageContext;
-        const matchResult = command.matchVkMessage(msg);
+        const matchResult = command.matchMessage(msg);
         assert.strictEqual(matchResult.isMatch, false);
       }
     });
@@ -176,7 +212,7 @@ describe('UserBestPlays', function () {
           senderId: 1,
           text: text + ' ][ lorem ! ipsum',
         }) as VkMessageContext;
-        const matchResult = command.matchVkMessage(msg);
+        const matchResult = command.matchMessage(msg);
         assert.strictEqual(matchResult.isMatch, false);
       }
     });
@@ -189,7 +225,7 @@ describe('UserBestPlays', function () {
           text: text,
           payload: text,
         }) as VkMessageContext;
-        const matchResult = command.matchVkMessage(msg);
+        const matchResult = command.matchMessage(msg);
         assert.strictEqual(matchResult.isMatch, false);
       }
     });
@@ -205,7 +241,7 @@ describe('UserBestPlays', function () {
             command: text + ' ][ lorem ! ipsum',
           },
         }) as VkMessageContext;
-        const matchResult = command.matchVkMessage(msg);
+        const matchResult = command.matchMessage(msg);
         assert.strictEqual(matchResult.isMatch, false);
       }
     });
@@ -222,7 +258,7 @@ describe('UserBestPlays', function () {
             senderId: 1,
             text: goodText,
           }) as VkMessageContext;
-          const matchResult = command.matchVkMessage(msg);
+          const matchResult = command.matchMessage(msg);
           assert.strictEqual(matchResult.isMatch, true);
           assert.strictEqual(
             matchResult.commandArgs?.server,
@@ -259,7 +295,7 @@ describe('UserBestPlays', function () {
             senderId: 1,
             text: goodText,
           }) as VkMessageContext;
-          const matchResult = command.matchVkMessage(msg);
+          const matchResult = command.matchMessage(msg);
           assert.strictEqual(matchResult.isMatch, true);
           assert.strictEqual(
             matchResult.commandArgs?.server,
@@ -296,7 +332,7 @@ describe('UserBestPlays', function () {
               command: goodText,
             },
           }) as VkMessageContext;
-          const matchResult = command.matchVkMessage(msg);
+          const matchResult = command.matchMessage(msg);
           assert.strictEqual(matchResult.isMatch, true);
           assert.strictEqual(
             matchResult.commandArgs?.server,
@@ -337,7 +373,7 @@ describe('UserBestPlays', function () {
               command: goodText,
             },
           }) as VkMessageContext;
-          const matchResult = command.matchVkMessage(msg);
+          const matchResult = command.matchMessage(msg);
           assert.strictEqual(matchResult.isMatch, true);
           assert.strictEqual(
             matchResult.commandArgs?.server,
@@ -363,19 +399,23 @@ describe('UserBestPlays', function () {
       const usernameInput = 'alskdjfhg';
       const server = OsuServer.Bancho;
       const mode = OsuRuleset.osu;
-      const viewParams = await command.process({
-        vkUserId: -1,
-        vkPeerId: -1,
-        server: server,
-        username: usernameInput,
-        startPosition: 2,
-        quantity: 3,
-        mods: [
-          {acronym: new ModAcronym('HD'), isOptional: true},
-          {acronym: new ModAcronym('DT'), isOptional: false},
-        ],
-        mode: mode,
-      });
+      const viewParams = await command.process(
+        {
+          server: server,
+          username: usernameInput,
+          startPosition: 2,
+          quantity: 3,
+          mods: [
+            {acronym: new ModAcronym('HD'), isOptional: true},
+            {acronym: new ModAcronym('DT'), isOptional: false},
+          ],
+          mode: mode,
+        },
+        createWithOnlyText({
+          senderId: -1,
+          text: 'should not be relevant',
+        }) as VkMessageContext
+      );
       assert.strictEqual(viewParams.server, server);
       assert.strictEqual(viewParams.mode, mode);
       assert.strictEqual(viewParams.usernameInput, usernameInput);
@@ -384,19 +424,23 @@ describe('UserBestPlays', function () {
     it('should return OsuUserBestPlays as undefined when there is no AppUser associated with sender VK id', async function () {
       const server = OsuServer.Bancho;
       const mode = OsuRuleset.osu;
-      const viewParams = await command.process({
-        vkUserId: -1,
-        vkPeerId: -1,
-        server: server,
-        username: undefined,
-        startPosition: 2,
-        quantity: 3,
-        mods: [
-          {acronym: new ModAcronym('HD'), isOptional: true},
-          {acronym: new ModAcronym('DT'), isOptional: false},
-        ],
-        mode: mode,
-      });
+      const viewParams = await command.process(
+        {
+          server: server,
+          username: undefined,
+          startPosition: 2,
+          quantity: 3,
+          mods: [
+            {acronym: new ModAcronym('HD'), isOptional: true},
+            {acronym: new ModAcronym('DT'), isOptional: false},
+          ],
+          mode: mode,
+        },
+        createWithOnlyText({
+          senderId: -1,
+          text: 'should not be relevant',
+        }) as VkMessageContext
+      );
       assert.strictEqual(viewParams.server, server);
       assert.strictEqual(viewParams.mode, mode);
       assert.strictEqual(viewParams.usernameInput, undefined);
@@ -417,19 +461,23 @@ describe('UserBestPlays', function () {
           osuUser.username.toUpperCase(),
         ];
         for (const username of usernameVariants) {
-          const viewParams = await command.process({
-            vkUserId: -1,
-            vkPeerId: -1,
-            server: server,
-            username: username,
-            startPosition: 2,
-            quantity: 3,
-            mods: [
-              {acronym: new ModAcronym('HD'), isOptional: true},
-              {acronym: new ModAcronym('DT'), isOptional: false},
-            ],
-            mode: undefined,
-          });
+          const viewParams = await command.process(
+            {
+              server: server,
+              username: username,
+              startPosition: 2,
+              quantity: 3,
+              mods: [
+                {acronym: new ModAcronym('HD'), isOptional: true},
+                {acronym: new ModAcronym('DT'), isOptional: false},
+              ],
+              mode: undefined,
+            },
+            createWithOnlyText({
+              senderId: -1,
+              text: 'should not be relevant',
+            }) as VkMessageContext
+          );
           assert.strictEqual(viewParams.server, server);
           assert.strictEqual(viewParams.mode, osuUser.preferredMode);
           assert.strictEqual(viewParams.usernameInput, username);
@@ -448,19 +496,23 @@ describe('UserBestPlays', function () {
         }
         const modes = ALL_OSU_RULESETS;
         for (const mode of modes) {
-          const viewParams = await command.process({
-            vkUserId: -1,
-            vkPeerId: -1,
-            server: server,
-            username: osuUser.username,
-            startPosition: 2,
-            quantity: 3,
-            mods: [
-              {acronym: new ModAcronym('HD'), isOptional: true},
-              {acronym: new ModAcronym('DT'), isOptional: false},
-            ],
-            mode: OsuRuleset[mode],
-          });
+          const viewParams = await command.process(
+            {
+              server: server,
+              username: osuUser.username,
+              startPosition: 2,
+              quantity: 3,
+              mods: [
+                {acronym: new ModAcronym('HD'), isOptional: true},
+                {acronym: new ModAcronym('DT'), isOptional: false},
+              ],
+              mode: OsuRuleset[mode],
+            },
+            createWithOnlyText({
+              senderId: -1,
+              text: 'should not be relevant',
+            }) as VkMessageContext
+          );
           assert.strictEqual(viewParams.server, server);
           assert.strictEqual(viewParams.mode, OsuRuleset[mode]);
           assert.strictEqual(viewParams.usernameInput, osuUser.username);
@@ -470,19 +522,23 @@ describe('UserBestPlays', function () {
     });
     it('should return OsuUserBestPlays when there is AppUser associated with sender VK id', async function () {
       const appUser = existingAppAndOsuUser.appUser;
-      const viewParams = await command.process({
-        vkUserId: VkIdConverter.appUserIdToVkUserId(appUser.id),
-        vkPeerId: -1,
-        server: appUser.server,
-        username: undefined,
-        startPosition: 2,
-        quantity: 3,
-        mods: [
-          {acronym: new ModAcronym('HD'), isOptional: true},
-          {acronym: new ModAcronym('DT'), isOptional: false},
-        ],
-        mode: undefined,
-      });
+      const viewParams = await command.process(
+        {
+          server: appUser.server,
+          username: undefined,
+          startPosition: 2,
+          quantity: 3,
+          mods: [
+            {acronym: new ModAcronym('HD'), isOptional: true},
+            {acronym: new ModAcronym('DT'), isOptional: false},
+          ],
+          mode: undefined,
+        },
+        createWithOnlyText({
+          senderId: VkIdConverter.appUserIdToVkUserId(appUser.id),
+          text: 'should not be relevant',
+        }) as VkMessageContext
+      );
       assert.strictEqual(viewParams.server, appUser.server);
       assert.strictEqual(viewParams.mode, appUser.ruleset);
       assert.strictEqual(viewParams.usernameInput, undefined);
@@ -491,36 +547,34 @@ describe('UserBestPlays', function () {
     });
   });
   describe('#createOutputMessage()', function () {
-    it('should return "username not bound" message if username is not specified and there is no username bound to this VK account', function () {
+    it('should return "username not bound" message if username is not specified and there is no username bound to this VK account', async function () {
       const server = OsuServer.Bancho;
-      const outputMessage = command.createOutputMessage({
+      const outputMessage = await command.createOutputMessage({
         server: server,
         mode: undefined,
         usernameInput: undefined,
         bestPlays: undefined,
-        coverAttachment: undefined,
       });
       assert.strictEqual(
         outputMessage.text,
-        command.createUsernameNotBoundMessage(server).text
+        (await command.createUsernameNotBoundMessage(server)).text
       );
     });
-    it('should return "user not found" message if username is specified and there is no information about corresponding user', function () {
+    it('should return "user not found" message if username is specified and there is no information about corresponding user', async function () {
       const server = OsuServer.Bancho;
       const usernameInput = 'loremipsum';
-      const outputMessage = command.createOutputMessage({
+      const outputMessage = await command.createOutputMessage({
         server: server,
         mode: undefined,
         usernameInput: usernameInput,
         bestPlays: undefined,
-        coverAttachment: undefined,
       });
       assert.strictEqual(
         outputMessage.text,
-        command.createUserNotFoundMessage(server, usernameInput).text
+        (await command.createUserNotFoundMessage(server, usernameInput)).text
       );
     });
-    it('should return "user plays" message if username is not specified but there is bound account info', function () {
+    it('should return "user plays" message if username is not specified but there is bound account info', async function () {
       const server = OsuServer.Bancho;
       const mode = OsuRuleset.ctb;
       const usernameInput = undefined;
@@ -528,21 +582,18 @@ describe('UserBestPlays', function () {
         username: 'usrnm',
         plays: [scoreInfoToBestPlay(getFakeUserBestScoreInfos(123, mode)[0])],
       };
-      const coverAttachment = undefined;
-      const outputMessage = command.createOutputMessage({
+      const outputMessage = await command.createOutputMessage({
         server: server,
         mode: mode,
         usernameInput: usernameInput,
         bestPlays: bestPlays,
-        coverAttachment: coverAttachment,
       });
       assert.strictEqual(
         outputMessage.text,
-        command.createBestPlaysMessage(bestPlays, server, mode, coverAttachment)
-          .text
+        (await command.createBestPlaysMessage(bestPlays, server, mode)).text
       );
     });
-    it('should return "user plays" message if username is specified and there is corresponding account info', function () {
+    it('should return "user plays" message if username is specified and there is corresponding account info', async function () {
       const server = OsuServer.Bancho;
       const mode = OsuRuleset.ctb;
       const usernameInput = 'loremipsum';
@@ -550,18 +601,15 @@ describe('UserBestPlays', function () {
         username: 'usrnm',
         plays: [scoreInfoToBestPlay(getFakeUserBestScoreInfos(123, mode)[0])],
       };
-      const coverAttachment = undefined;
-      const outputMessage = command.createOutputMessage({
+      const outputMessage = await command.createOutputMessage({
         server: server,
         mode: mode,
         usernameInput: usernameInput,
         bestPlays: bestPlays,
-        coverAttachment: coverAttachment,
       });
       assert.strictEqual(
         outputMessage.text,
-        command.createBestPlaysMessage(bestPlays, server, mode, coverAttachment)
-          .text
+        (await command.createBestPlaysMessage(bestPlays, server, mode)).text
       );
     });
   });

@@ -3,6 +3,8 @@ import {VkMessageContext} from '../../../main/presentation/vk/VkMessageContext';
 export type FakeVkMessageContext = Pick<
   VkMessageContext,
   | 'senderId'
+  | 'peerId'
+  | 'chatId'
   | 'text'
   | 'hasText'
   | 'messagePayload'
@@ -16,6 +18,8 @@ export function createWithOnlyText(params: {
 }): FakeVkMessageContext {
   return {
     senderId: params.senderId,
+    peerId: params.senderId,
+    chatId: undefined,
     text: params.text,
     hasText: true,
     messagePayload: undefined,
@@ -33,6 +37,8 @@ export function createWithPayload(params: {
 }): FakeVkMessageContext {
   return {
     senderId: params.senderId,
+    peerId: params.senderId,
+    chatId: undefined,
     text: params.text,
     hasText: true,
     messagePayload: params.payload,

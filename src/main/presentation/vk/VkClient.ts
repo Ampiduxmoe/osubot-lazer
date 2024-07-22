@@ -1,16 +1,27 @@
 import {VK, Keyboard, KeyboardBuilder} from 'vk-io';
-import {VkCommand} from './commands/base/VkCommand';
 import {VkMessageContext} from './VkMessageContext';
-import {VkOutputMessageButton} from './commands/base/VkOutputMessage';
+import {VkOutputMessage, VkOutputMessageButton} from './VkOutputMessage';
 import {APP_CODE_NAME} from '../../App';
+import {TextCommand} from '../commands/base/TextCommand';
 
 type UnknownExecutionParams = unknown;
 type UnknownViewParams = unknown;
 
 export class VkClient {
   readonly vk: VK;
-  readonly commands: VkCommand<UnknownExecutionParams, UnknownViewParams>[] =
-    [];
+  readonly adminIds: readonly number[];
+  readonly publicCommands: TextCommand<
+    UnknownExecutionParams,
+    UnknownViewParams,
+    VkMessageContext,
+    VkOutputMessage
+  >[] = [];
+  readonly adminCommands: TextCommand<
+    UnknownExecutionParams,
+    UnknownViewParams,
+    VkMessageContext,
+    VkOutputMessage
+  >[] = [];
   readonly initActions: (() => Promise<void>)[] = [];
   readonly preprocessors: ((
     ctx: VkMessageContext
@@ -26,21 +37,10 @@ export class VkClient {
     ).split(''),
   };
 
-  constructor(vk: VK) {
+  constructor(vk: VK, adminIds: number[]) {
     this.vk = vk;
+    this.adminIds = adminIds;
     this.vk.updates.on('message', ctx => this.process(ctx));
-  }
-
-  addCommand(command: VkCommand<UnknownExecutionParams, UnknownViewParams>) {
-    this.commands.push(command);
-  }
-
-  addCommands(
-    commands: VkCommand<UnknownExecutionParams, UnknownViewParams>[]
-  ): void {
-    for (const command of commands) {
-      this.addCommand(command);
-    }
   }
 
   async start(): Promise<void> {
@@ -102,17 +102,27 @@ export class VkClient {
       ctx = await preproces(ctx);
     }
     let commandExecuted = false;
-    for (const command of this.commands) {
+    for (const command of this.publicCommands) {
       commandExecuted ||= await this.tryExecuteCommand(command, ctx);
+    }
+    if (this.adminIds.includes(ctx.senderId)) {
+      for (const command of this.adminCommands) {
+        commandExecuted ||= await this.tryExecuteCommand(command, ctx);
+      }
     }
     return commandExecuted;
   }
 
   private async tryExecuteCommand(
-    command: VkCommand<UnknownExecutionParams, UnknownViewParams>,
+    command: TextCommand<
+      UnknownExecutionParams,
+      UnknownViewParams,
+      VkMessageContext,
+      VkOutputMessage
+    >,
     ctx: VkMessageContext
   ): Promise<boolean> {
-    const matchResult = command.matchVkMessage(ctx);
+    const matchResult = command.matchMessage(ctx);
     if (!matchResult.isMatch) {
       return false;
     }
@@ -123,8 +133,8 @@ export class VkClient {
       } (args=${JSON.stringify(executionArgs)})`
     );
     try {
-      const viewParams = await command.process(executionArgs);
-      const outputMessage = command.createOutputMessage(viewParams);
+      const viewParams = await command.process(executionArgs, ctx);
+      const outputMessage = await command.createOutputMessage(viewParams);
       if (!outputMessage.text && !outputMessage.attachment) {
         return true;
       }

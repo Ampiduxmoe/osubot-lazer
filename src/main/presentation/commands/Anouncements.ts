@@ -1,25 +1,23 @@
-/* eslint-disable no-irregular-whitespace */
-import {VkMessageContext} from '../VkMessageContext';
-import {CommandMatchResult} from '../../common/CommandMatchResult';
-import {VkOutputMessage} from './base/VkOutputMessage';
-import {VkCommand} from './base/VkCommand';
-import {APP_CODE_NAME} from '../../../App';
+import {CommandMatchResult} from '../common/CommandMatchResult';
+import {CommandPrefixes} from '../common/CommandPrefixes';
 import {
   ANY_STRING,
   INTEGER_OR_RANGE,
   OWN_COMMAND_PREFIX,
   WORD,
-} from '../../common/arg_processing/CommandArguments';
-import {MainArgsProcessor} from '../../common/arg_processing/MainArgsProcessor';
-import {CommandPrefixes} from '../../common/CommandPrefixes';
-import {TextProcessor} from '../../common/arg_processing/TextProcessor';
-import {AnouncementsRepository} from '../../data/repositories/AnouncementsRepository';
-import {PastAnouncementsRepository} from '../../data/repositories/PastAnouncementsRepository';
-import {Anouncement} from '../../data/models/Anouncement';
+} from '../common/arg_processing/CommandArguments';
+import {MainArgsProcessor} from '../common/arg_processing/MainArgsProcessor';
+import {TextProcessor} from '../common/arg_processing/TextProcessor';
+import {Anouncement} from '../data/models/Anouncement';
+import {AnouncementsRepository} from '../data/repositories/AnouncementsRepository';
+import {PastAnouncementsRepository} from '../data/repositories/PastAnouncementsRepository';
+import {TextCommand} from './base/TextCommand';
 
-export class Anouncements extends VkCommand<
+export abstract class Anouncements<TContext, TOutput> extends TextCommand<
   AnouncementsExecutionArgs,
-  AnouncementsViewParams
+  AnouncementsViewParams,
+  TContext,
+  TOutput
 > {
   internalName = Anouncements.name;
   shortDescription = 'управление объявлениями';
@@ -94,50 +92,31 @@ export class Anouncements extends VkCommand<
     },
   };
 
-  adminVkIds: number[];
   textProcessor: TextProcessor;
   anouncements: AnouncementsRepository;
   anouncementsHistory: PastAnouncementsRepository;
-  sendToAllPeers: (text: string) => Promise<number[]>;
+  sendToAllPeers: (text: string) => Promise<string[]>;
   constructor(
-    adminVkIds: number[],
     textProcessor: TextProcessor,
     anouncements: AnouncementsRepository,
     anouncementsHistory: PastAnouncementsRepository,
-    sendToAllPeers: (text: string) => Promise<number[]>
+    sendToAllPeers: (text: string) => Promise<string[]>
   ) {
     super(Anouncements.commandStructure);
-    this.adminVkIds = adminVkIds;
     this.textProcessor = textProcessor;
     this.anouncements = anouncements;
     this.anouncementsHistory = anouncementsHistory;
     this.sendToAllPeers = sendToAllPeers;
   }
 
-  matchVkMessage(
-    ctx: VkMessageContext
-  ): CommandMatchResult<AnouncementsExecutionArgs> {
+  matchText(text: string): CommandMatchResult<AnouncementsExecutionArgs> {
     const fail = CommandMatchResult.fail<AnouncementsExecutionArgs>();
-    if (!this.adminVkIds.includes(ctx.senderId)) {
-      return fail;
-    }
-    const command: string | undefined = (() => {
-      if (ctx.messagePayload?.target === APP_CODE_NAME) {
-        return ctx.messagePayload.command;
-      }
-      return ctx.text;
-    })();
-    if (command === undefined) {
-      return fail;
-    }
-
-    const tokens = this.textProcessor.tokenize(command);
+    const tokens = this.textProcessor.tokenize(text);
     const argsProcessor = new MainArgsProcessor(
       [...tokens],
       this.commandStructure.map(e => e.argument)
     );
-    const ownPrefix = argsProcessor.use(this.COMMAND_PREFIX).at(0).extract();
-    if (ownPrefix === undefined) {
+    if (argsProcessor.use(this.COMMAND_PREFIX).at(0).extract() === undefined) {
       return fail;
     }
     const executionArgs: AnouncementsExecutionArgs = {};
@@ -247,7 +226,7 @@ export class Anouncements extends VkCommand<
       const targets = await this.sendToAllPeers(anouncement.text);
       await this.anouncementsHistory.addWithoutId({
         anouncementId: args.execute.id,
-        targets: 'vk: ' + targets.join(', '),
+        targets: `${this.messageMediumPrefix}: ` + targets.join(','),
         time: Date.now(),
         id: -1,
       });
@@ -273,7 +252,9 @@ export class Anouncements extends VkCommand<
     throw Error('Unknown Anouncements command execution path');
   }
 
-  createOutputMessage(params: AnouncementsViewParams): VkOutputMessage {
+  abstract messageMediumPrefix: string;
+
+  createOutputMessage(params: AnouncementsViewParams): Promise<TOutput> {
     const {
       anouncements,
       action,
@@ -308,60 +289,19 @@ export class Anouncements extends VkCommand<
     throw Error('Unknown Anouncements command output path');
   }
 
-  createAnouncementsMessage(anouncements: Anouncement[]): VkOutputMessage {
-    const text = anouncements.map(x => `${x.id}. ${x.description}`).join('\n');
-    return {
-      text: text,
-      attachment: undefined,
-      buttons: undefined,
-    };
-  }
-
-  createNoAnouncementsMessage(): VkOutputMessage {
-    const text = 'Объявления отсутствуют!';
-    return {
-      text: text,
-      attachment: undefined,
-      buttons: undefined,
-    };
-  }
-
-  createAnouncementCreateResultMessage(
+  abstract createAnouncementsMessage(
+    anouncements: Anouncement[]
+  ): Promise<TOutput>;
+  abstract createNoAnouncementsMessage(): Promise<TOutput>;
+  abstract createAnouncementCreateResultMessage(
     actionSuccess: boolean,
     id: number | undefined
-  ): VkOutputMessage {
-    const text = actionSuccess
-      ? `Объявление создано (id: ${id})`
-      : 'Не удалось создать объявление';
-    return {
-      text: text,
-      attachment: undefined,
-      buttons: undefined,
-    };
-  }
-
-  createAnouncementExecutionMessage(
+  ): Promise<TOutput>;
+  abstract createAnouncementExecutionMessage(
     actionSuccess: boolean,
     executeChatCount: number
-  ): VkOutputMessage {
-    const text = actionSuccess
-      ? `Объявление отправлено (чатов: ${executeChatCount})`
-      : 'Объявление не найдено';
-    return {
-      text: text,
-      attachment: undefined,
-      buttons: undefined,
-    };
-  }
-
-  createAnouncementEchoMessage(echo: string): VkOutputMessage {
-    const text = echo;
-    return {
-      text: text,
-      attachment: undefined,
-      buttons: undefined,
-    };
-  }
+  ): Promise<TOutput>;
+  abstract createAnouncementEchoMessage(echo: string): Promise<TOutput>;
 
   unparse(args: AnouncementsExecutionArgs): string {
     const tokens = [this.COMMAND_PREFIX.unparse(this.prefixes[0])];
@@ -393,7 +333,7 @@ export class Anouncements extends VkCommand<
   }
 }
 
-type AnouncementsExecutionArgs = {
+export type AnouncementsExecutionArgs = {
   show?: ShowArgs;
   create?: CreateArgs;
   execute?: ExecuteArgs;
@@ -415,7 +355,7 @@ type EchoArgs = {
   id: number;
 };
 
-type AnouncementsViewParams = {
+export type AnouncementsViewParams = {
   anouncements?: Anouncement[] | null;
   action?: 'create' | 'execute';
   actionSuccess?: boolean;

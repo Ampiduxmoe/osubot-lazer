@@ -1,6 +1,6 @@
 /* eslint-disable prefer-arrow-callback */
 import assert from 'assert';
-import {UserInfo} from '../../../../main/presentation/vk/commands/UserInfo';
+import {UserInfoVk} from '../../../../main/presentation/vk/commands/UserInfoVk';
 import {GetAppUserInfoUseCase} from '../../../../main/application/usecases/get_app_user_info/GetAppUserInfoUseCase';
 import {GetOsuUserInfoUseCase} from '../../../../main/application/usecases/get_osu_user_info/GetOsuUserInfoUseCase';
 import {
@@ -37,10 +37,10 @@ import {
   USERNAME,
 } from '../../../../main/presentation/common/arg_processing/CommandArguments';
 
-describe('UserInfo', function () {
+describe('UserInfoVk', function () {
   let tables: SqlDbTable[];
   let appUsers: AppUsersTable;
-  let command: UserInfo;
+  let command: UserInfoVk;
   {
     const apis = [new FakeBanchoApi()];
     const db = new SqliteDb(':memory:');
@@ -72,7 +72,40 @@ describe('UserInfo', function () {
       appUsers,
     ];
     const mainTextProcessor = new MainTextProcessor(' ', "'", '\\');
-    command = new UserInfo(mainTextProcessor, getOsuUserInfo, getAppUserInfo);
+    const getInitiatorAppUserId = (ctx: VkMessageContext): string => {
+      return VkIdConverter.vkUserIdToAppUserId(ctx.senderId);
+    };
+    const getTargetAppUserId = (() => {
+      const getSelfOrQuotedAppUserId = (ctx: VkMessageContext): string => {
+        return VkIdConverter.vkUserIdToAppUserId(
+          ctx.replyMessage?.senderId ?? ctx.senderId
+        );
+      };
+      const adminId = 0;
+      const getSelfAppUserId = (ctx: VkMessageContext): string => {
+        if (ctx.senderId !== adminId) {
+          return VkIdConverter.vkUserIdToAppUserId(ctx.senderId);
+        }
+        return VkIdConverter.vkUserIdToAppUserId(
+          ctx.replyMessage?.senderId ?? ctx.senderId
+        );
+      };
+      return (settings: {
+        canTargetOtherUsersAsNonAdmin: boolean;
+      }): ((ctx: VkMessageContext) => string) => {
+        if (settings.canTargetOtherUsersAsNonAdmin) {
+          return getSelfOrQuotedAppUserId;
+        }
+        return getSelfAppUserId;
+      };
+    })();
+    command = new UserInfoVk(
+      mainTextProcessor,
+      getInitiatorAppUserId,
+      getTargetAppUserId({canTargetOtherUsersAsNonAdmin: true}),
+      getOsuUserInfo,
+      getAppUserInfo
+    );
   }
 
   const exampleAppUser: AppUser = {
@@ -101,13 +134,13 @@ describe('UserInfo', function () {
     await appUsers.add(exampleAppUser);
   });
 
-  describe('#matchVkMessage()', function () {
+  describe('#matchMessage()', function () {
     it('should not match empty message', function () {
       const msg = createWithOnlyText({
         senderId: 1,
         text: '',
       }) as VkMessageContext;
-      const matchResult = command.matchVkMessage(msg);
+      const matchResult = command.matchMessage(msg);
       assert.strictEqual(matchResult.isMatch, false);
     });
     it('should not match unrelated message', function () {
@@ -117,7 +150,7 @@ describe('UserInfo', function () {
           senderId: 1,
           text: unrelatedWords.slice(0, i + 1).join(' '),
         }) as VkMessageContext;
-        const matchResult = command.matchVkMessage(msg);
+        const matchResult = command.matchMessage(msg);
         assert.strictEqual(matchResult.isMatch, false);
       }
     });
@@ -129,7 +162,7 @@ describe('UserInfo', function () {
           senderId: 1,
           text: text + ' ][ lorem ! ipsum',
         }) as VkMessageContext;
-        const matchResult = command.matchVkMessage(msg);
+        const matchResult = command.matchMessage(msg);
         assert.strictEqual(matchResult.isMatch, false);
       }
     });
@@ -142,7 +175,7 @@ describe('UserInfo', function () {
           text: text,
           payload: text,
         }) as VkMessageContext;
-        const matchResult = command.matchVkMessage(msg);
+        const matchResult = command.matchMessage(msg);
         assert.strictEqual(matchResult.isMatch, false);
       }
     });
@@ -158,7 +191,7 @@ describe('UserInfo', function () {
             command: text + ' ][ lorem ! ipsum',
           },
         }) as VkMessageContext;
-        const matchResult = command.matchVkMessage(msg);
+        const matchResult = command.matchMessage(msg);
         assert.strictEqual(matchResult.isMatch, false);
       }
     });
@@ -175,7 +208,7 @@ describe('UserInfo', function () {
             senderId: 1,
             text: goodText,
           }) as VkMessageContext;
-          const matchResult = command.matchVkMessage(msg);
+          const matchResult = command.matchMessage(msg);
           assert.strictEqual(matchResult.isMatch, true);
           assert.strictEqual(
             matchResult.commandArgs?.server,
@@ -203,7 +236,7 @@ describe('UserInfo', function () {
             senderId: 1,
             text: goodText,
           }) as VkMessageContext;
-          const matchResult = command.matchVkMessage(msg);
+          const matchResult = command.matchMessage(msg);
           assert.strictEqual(matchResult.isMatch, true);
           assert.strictEqual(
             matchResult.commandArgs?.server,
@@ -230,7 +263,7 @@ describe('UserInfo', function () {
               command: goodText,
             },
           }) as VkMessageContext;
-          const matchResult = command.matchVkMessage(msg);
+          const matchResult = command.matchMessage(msg);
           assert.strictEqual(matchResult.isMatch, true);
           assert.strictEqual(
             matchResult.commandArgs?.server,
@@ -262,7 +295,7 @@ describe('UserInfo', function () {
               command: goodText,
             },
           }) as VkMessageContext;
-          const matchResult = command.matchVkMessage(msg);
+          const matchResult = command.matchMessage(msg);
           assert.strictEqual(matchResult.isMatch, true);
           assert.strictEqual(
             matchResult.commandArgs?.server,
@@ -278,12 +311,17 @@ describe('UserInfo', function () {
       const usernameInput = 'alskdjfhg';
       const server = OsuServer.Bancho;
       const mode = OsuRuleset.osu;
-      const viewParams = await command.process({
-        server: server,
-        mode: mode,
-        username: usernameInput,
-        vkUserId: -1,
-      });
+      const viewParams = await command.process(
+        {
+          server: server,
+          mode: mode,
+          username: usernameInput,
+        },
+        createWithOnlyText({
+          senderId: -1,
+          text: 'should not be relevant',
+        }) as VkMessageContext
+      );
       assert.strictEqual(viewParams.server, server);
       assert.strictEqual(viewParams.mode, mode);
       assert.strictEqual(viewParams.usernameInput, usernameInput);
@@ -292,12 +330,17 @@ describe('UserInfo', function () {
     it('should return OsuUserInfo as undefined when there is no AppUser associated with sender VK id', async function () {
       const server = OsuServer.Bancho;
       const mode = OsuRuleset.osu;
-      const viewParams = await command.process({
-        server: server,
-        mode: mode,
-        username: undefined,
-        vkUserId: -1,
-      });
+      const viewParams = await command.process(
+        {
+          server: server,
+          mode: mode,
+          username: undefined,
+        },
+        createWithOnlyText({
+          senderId: -1,
+          text: 'should not be relevant',
+        }) as VkMessageContext
+      );
       assert.strictEqual(viewParams.server, server);
       assert.strictEqual(viewParams.mode, mode);
       assert.strictEqual(viewParams.usernameInput, undefined);
@@ -318,12 +361,17 @@ describe('UserInfo', function () {
           osuUser.username.toUpperCase(),
         ];
         for (const username of usernameVariants) {
-          const viewParams = await command.process({
-            server: server,
-            mode: undefined,
-            username: username,
-            vkUserId: -1,
-          });
+          const viewParams = await command.process(
+            {
+              server: server,
+              mode: undefined,
+              username: username,
+            },
+            createWithOnlyText({
+              senderId: -1,
+              text: 'should not be relevant',
+            }) as VkMessageContext
+          );
           assert.strictEqual(viewParams.server, server);
           assert.strictEqual(viewParams.mode, osuUser.preferredMode);
           assert.strictEqual(viewParams.usernameInput, username);
@@ -347,12 +395,17 @@ describe('UserInfo', function () {
           osuUser.username.toUpperCase(),
         ];
         for (const username of usernameVariants) {
-          const viewParams = await command.process({
-            server: server,
-            mode: ruleset,
-            username: username,
-            vkUserId: -1,
-          });
+          const viewParams = await command.process(
+            {
+              server: server,
+              mode: ruleset,
+              username: username,
+            },
+            createWithOnlyText({
+              senderId: -1,
+              text: 'should not be relevant',
+            }) as VkMessageContext
+          );
           assert.strictEqual(viewParams.server, server);
           assert.strictEqual(viewParams.mode, ruleset);
           assert.strictEqual(viewParams.usernameInput, username);
@@ -362,12 +415,17 @@ describe('UserInfo', function () {
     });
     it('should return OsuUserInfo when there is AppUser associated with sender VK id', async function () {
       const appUser = existingAppAndOsuUser.appUser;
-      const viewParams = await command.process({
-        server: appUser.server,
-        mode: undefined,
-        username: undefined,
-        vkUserId: VkIdConverter.appUserIdToVkUserId(appUser.id),
-      });
+      const viewParams = await command.process(
+        {
+          server: appUser.server,
+          mode: undefined,
+          username: undefined,
+        },
+        createWithOnlyText({
+          senderId: VkIdConverter.appUserIdToVkUserId(appUser.id),
+          text: 'should not be relevant',
+        }) as VkMessageContext
+      );
       assert.strictEqual(viewParams.server, appUser.server);
       assert.strictEqual(viewParams.mode, appUser.ruleset);
       assert.strictEqual(viewParams.usernameInput, undefined);
@@ -375,9 +433,9 @@ describe('UserInfo', function () {
     });
   });
   describe('#createOutputMessage()', function () {
-    it('should return "username not bound" message if username is not specified and there is no username bound to this VK account', function () {
+    it('should return "username not bound" message if username is not specified and there is no username bound to this VK account', async function () {
       const server = OsuServer.Bancho;
-      const outputMessage = command.createOutputMessage({
+      const outputMessage = await command.createOutputMessage({
         server: server,
         mode: undefined,
         usernameInput: undefined,
@@ -385,13 +443,13 @@ describe('UserInfo', function () {
       });
       assert.strictEqual(
         outputMessage.text,
-        command.createUsernameNotBoundMessage(server).text
+        (await command.createUsernameNotBoundMessage(server)).text
       );
     });
-    it('should return "user not found" message if username is specified and there is no information about corresponding user', function () {
+    it('should return "user not found" message if username is specified and there is no information about corresponding user', async function () {
       const server = OsuServer.Bancho;
       const usernameInput = 'loremipsum';
-      const outputMessage = command.createOutputMessage({
+      const outputMessage = await command.createOutputMessage({
         server: server,
         mode: undefined,
         usernameInput: usernameInput,
@@ -399,10 +457,10 @@ describe('UserInfo', function () {
       });
       assert.strictEqual(
         outputMessage.text,
-        command.createUserNotFoundMessage(server, usernameInput).text
+        (await command.createUserNotFoundMessage(server, usernameInput)).text
       );
     });
-    it('should return "user info" message if username is not specified but there is bound account info', function () {
+    it('should return "user info" message if username is not specified but there is bound account info', async function () {
       const server = OsuServer.Bancho;
       const mode = OsuRuleset.ctb;
       const usernameInput = undefined;
@@ -422,7 +480,7 @@ describe('UserInfo', function () {
         accuracy: 99.25,
         userId: 123,
       };
-      const outputMessage = command.createOutputMessage({
+      const outputMessage = await command.createOutputMessage({
         server: server,
         mode: mode,
         usernameInput: usernameInput,
@@ -430,10 +488,10 @@ describe('UserInfo', function () {
       });
       assert.strictEqual(
         outputMessage.text,
-        command.createUserInfoMessage(server, mode, userInfo).text
+        (await command.createUserInfoMessage(server, mode, userInfo)).text
       );
     });
-    it('should return "user info" message if username is specified and there is corresponding account info', function () {
+    it('should return "user info" message if username is specified and there is corresponding account info', async function () {
       const server = OsuServer.Bancho;
       const mode = OsuRuleset.ctb;
       const usernameInput = 'loremipsum';
@@ -453,7 +511,7 @@ describe('UserInfo', function () {
         accuracy: 99.25,
         userId: 123,
       };
-      const outputMessage = command.createOutputMessage({
+      const outputMessage = await command.createOutputMessage({
         server: server,
         mode: mode,
         usernameInput: usernameInput,
@@ -461,7 +519,7 @@ describe('UserInfo', function () {
       });
       assert.strictEqual(
         outputMessage.text,
-        command.createUserInfoMessage(server, mode, userInfo).text
+        (await command.createUserInfoMessage(server, mode, userInfo)).text
       );
     });
   });

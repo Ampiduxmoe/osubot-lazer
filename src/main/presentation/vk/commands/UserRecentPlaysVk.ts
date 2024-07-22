@@ -1,98 +1,63 @@
 /* eslint-disable no-irregular-whitespace */
-import {VkMessageContext} from '../VkMessageContext';
-import {CommandMatchResult} from '../../common/CommandMatchResult';
-import {VkOutputMessage, VkOutputMessageButton} from './base/VkOutputMessage';
-import {NOTICE_ABOUT_SPACES_IN_USERNAMES, VkCommand} from './base/VkCommand';
-import {GetUserRecentPlaysUseCase} from '../../../application/usecases/get_user_recent_plays/GetUserRecentPlaysUseCase';
-import {OsuServer} from '../../../primitives/OsuServer';
 import {APP_CODE_NAME} from '../../../App';
 import {GetAppUserInfoUseCase} from '../../../application/usecases/get_app_user_info/GetAppUserInfoUseCase';
-import {VkIdConverter} from '../VkIdConverter';
-import {clamp, round} from '../../../primitives/Numbers';
 import {
-  OsuUserRecentPlays,
   OsuUserRecentPlay,
+  OsuUserRecentPlays,
   SettingsDA,
   SettingsDT,
   SettingsDefaults,
   SettingsHT,
 } from '../../../application/usecases/get_user_recent_plays/GetUserRecentPlaysResponse';
-import {
-  OWN_COMMAND_PREFIX,
-  MODS,
-  QUANTITY,
-  SERVER_PREFIX,
-  START_POSITION,
-  USERNAME,
-  MODE,
-} from '../../common/arg_processing/CommandArguments';
-import {MainArgsProcessor} from '../../common/arg_processing/MainArgsProcessor';
-import {Timespan} from '../../../primitives/Timespan';
-import {ModArg} from '../../common/arg_processing/ModArg';
-import {CommandPrefixes} from '../../common/CommandPrefixes';
+import {GetUserRecentPlaysUseCase} from '../../../application/usecases/get_user_recent_plays/GetUserRecentPlaysUseCase';
+import {round} from '../../../primitives/Numbers';
 import {OsuRuleset} from '../../../primitives/OsuRuleset';
-import {TextProcessor} from '../../common/arg_processing/TextProcessor';
-import {VkBeatmapCoversRepository} from '../../data/repositories/VkBeatmapCoversRepository';
-import {VkChatLastBeatmapsRepository} from '../../data/repositories/VkChatLastBeatmapsRepository';
-import {UserBestPlaysOnMap} from './UserBestPlaysOnMap';
-import {ChatLeaderboardOnMap} from './ChatLeaderboardOnMap';
-
-export class UserRecentPlays extends VkCommand<
+import {OsuServer} from '../../../primitives/OsuServer';
+import {Timespan} from '../../../primitives/Timespan';
+import {
+  UserRecentPlays,
   UserRecentPlaysExecutionArgs,
-  UserRecentPlaysViewParams
+} from '../../commands/UserRecentPlays';
+import {TextProcessor} from '../../common/arg_processing/TextProcessor';
+import {CommandMatchResult} from '../../common/CommandMatchResult';
+import {VkBeatmapCoversRepository} from '../../data/repositories/VkBeatmapCoversRepository';
+import {VkMessageContext} from '../VkMessageContext';
+import {VkOutputMessage, VkOutputMessageButton} from '../VkOutputMessage';
+import {ChatLeaderboardOnMapVk} from './ChatLeaderboardOnMapVk';
+import {UserBestPlaysOnMapVk} from './UserBestPlaysOnMapVk';
+
+export class UserRecentPlaysVk extends UserRecentPlays<
+  VkMessageContext,
+  VkOutputMessage
 > {
-  internalName = UserRecentPlays.name;
-  shortDescription = 'последние скоры';
-  longDescription =
-    'Отображает последние скоры игрока\n' +
-    'Используйте ' +
-    UserRecentPlays.recentPlaysPrefixes.map(s => `«${s}»`).join(' или ') +
-    ' для всех скоров, и ' +
-    UserRecentPlays.recentPassesPrefixes.map(s => `«${s}»`).join(' или ') +
-    ' для пассов';
-  notice = NOTICE_ABOUT_SPACES_IN_USERNAMES;
-
-  static recentPlaysPrefixes = new CommandPrefixes('r', 'Recent');
-  static recentPassesPrefixes = new CommandPrefixes('rp', 'RecentPass');
-  static prefixes = new CommandPrefixes(
-    ...UserRecentPlays.recentPlaysPrefixes,
-    ...UserRecentPlays.recentPassesPrefixes
-  );
-  prefixes = UserRecentPlays.prefixes;
-
-  private static COMMAND_PREFIX = OWN_COMMAND_PREFIX(this.prefixes);
-  private COMMAND_PREFIX = UserRecentPlays.COMMAND_PREFIX;
-  private static commandStructure = [
-    {argument: SERVER_PREFIX, isOptional: false},
-    {argument: this.COMMAND_PREFIX, isOptional: false},
-    {argument: USERNAME, isOptional: true},
-    {argument: START_POSITION, isOptional: true},
-    {argument: QUANTITY, isOptional: true},
-    {argument: MODS, isOptional: true},
-    {argument: MODE, isOptional: true},
-  ];
-
-  textProcessor: TextProcessor;
-  getRecentPlays: GetUserRecentPlaysUseCase;
-  getAppUserInfo: GetAppUserInfoUseCase;
   vkBeatmapCovers: VkBeatmapCoversRepository;
-  vkChatLastBeatmaps: VkChatLastBeatmapsRepository;
   constructor(
     textProcessor: TextProcessor,
+    getInitiatorAppUserId: (ctx: VkMessageContext) => string,
+    getTargetAppUserId: (
+      ctx: VkMessageContext,
+      settings: {canTargetOthersAsNonAdmin: boolean}
+    ) => string,
+    saveLastSeenBeatmapId: (
+      ctx: VkMessageContext,
+      server: OsuServer,
+      beatmapId: number
+    ) => Promise<void>,
     getRecentPlays: GetUserRecentPlaysUseCase,
     getAppUserInfo: GetAppUserInfoUseCase,
-    vkBeatmapCovers: VkBeatmapCoversRepository,
-    vkChatLastBeatmaps: VkChatLastBeatmapsRepository
+    vkBeatmapCovers: VkBeatmapCoversRepository
   ) {
-    super(UserRecentPlays.commandStructure);
-    this.textProcessor = textProcessor;
-    this.getRecentPlays = getRecentPlays;
-    this.getAppUserInfo = getAppUserInfo;
+    super(
+      textProcessor,
+      getInitiatorAppUserId,
+      getTargetAppUserId,
+      saveLastSeenBeatmapId,
+      getRecentPlays,
+      getAppUserInfo
+    );
     this.vkBeatmapCovers = vkBeatmapCovers;
-    this.vkChatLastBeatmaps = vkChatLastBeatmaps;
   }
-
-  matchVkMessage(
+  matchMessage(
     ctx: VkMessageContext
   ): CommandMatchResult<UserRecentPlaysExecutionArgs> {
     const fail = CommandMatchResult.fail<UserRecentPlaysExecutionArgs>();
@@ -105,150 +70,15 @@ export class UserRecentPlays extends VkCommand<
     if (command === undefined) {
       return fail;
     }
-
-    const tokens = this.textProcessor.tokenize(command);
-    const argsProcessor = new MainArgsProcessor(
-      [...tokens],
-      this.commandStructure.map(e => e.argument)
-    );
-    const server = argsProcessor.use(SERVER_PREFIX).at(0).extract();
-    const ownPrefix = argsProcessor.use(this.COMMAND_PREFIX).at(0).extract();
-    if (server === undefined || ownPrefix === undefined) {
-      return fail;
-    }
-    const startPosition = argsProcessor.use(START_POSITION).extract();
-    const quantity = argsProcessor.use(QUANTITY).extract();
-    const mods = argsProcessor.use(MODS).extract();
-    const mode = argsProcessor.use(MODE).extract();
-    const username = argsProcessor.use(USERNAME).extract();
-
-    if (argsProcessor.remainingTokens.length > 0) {
-      return fail;
-    }
-    return CommandMatchResult.ok({
-      vkUserId: ctx.replyMessage?.senderId ?? ctx.senderId,
-      vkPeerId: ctx.peerId,
-      server: server,
-      passesOnly: UserRecentPlays.recentPassesPrefixes.includes(ownPrefix),
-      username: username,
-      startPosition: startPosition,
-      quantity: quantity,
-      mods: mods,
-      mode: mode,
-    });
+    return this.matchText(command);
   }
 
-  async process(
-    args: UserRecentPlaysExecutionArgs
-  ): Promise<UserRecentPlaysViewParams> {
-    let username = args.username;
-    let mode = args.mode;
-    if (username === undefined) {
-      const appUserInfoResponse = await this.getAppUserInfo.execute({
-        id: VkIdConverter.vkUserIdToAppUserId(args.vkUserId),
-        server: args.server,
-      });
-      const boundUser = appUserInfoResponse.userInfo;
-      if (boundUser === undefined) {
-        return {
-          server: args.server,
-          mode: args.mode,
-          passesOnly: args.passesOnly,
-          usernameInput: undefined,
-          recentPlays: undefined,
-          coverAttachment: undefined,
-        };
-      }
-      username = boundUser.username;
-      mode ??= boundUser.ruleset;
-    }
-    const mods = args.mods ?? [];
-    const startPosition = clamp(args.startPosition ?? 1, 1, 100);
-    const quantity = clamp(args.quantity ?? 1, 1, 10);
-    const recentPlaysResult = await this.getRecentPlays.execute({
-      appUserId: VkIdConverter.vkUserIdToAppUserId(args.vkUserId),
-      server: args.server,
-      username: username,
-      ruleset: mode,
-      includeFails: !args.passesOnly,
-      startPosition: startPosition,
-      quantity: quantity,
-      mods: mods,
-    });
-    if (recentPlaysResult.isFailure) {
-      const internalFailureReason = recentPlaysResult.failureReason!;
-      switch (internalFailureReason) {
-        case 'user not found':
-          return {
-            server: args.server,
-            mode: mode,
-            passesOnly: args.passesOnly,
-            usernameInput: args.username,
-            recentPlays: undefined,
-            coverAttachment: undefined,
-          };
-      }
-    }
-    const recentPlays = recentPlaysResult.recentPlays!;
-    if (recentPlays.plays.length === 1) {
-      await this.vkChatLastBeatmaps.save(
-        args.vkPeerId,
-        args.server,
-        recentPlays.plays[0].beatmap.id
-      );
-    }
-    return {
-      server: args.server,
-      mode: recentPlaysResult.ruleset!,
-      passesOnly: args.passesOnly,
-      usernameInput: args.username,
-      recentPlays: recentPlays,
-      coverAttachment:
-        recentPlays.plays.length === 1
-          ? await getOrDownloadCoverAttachment(
-              recentPlays.plays[0],
-              this.vkBeatmapCovers
-            )
-          : null,
-    };
-  }
-
-  createOutputMessage(params: UserRecentPlaysViewParams): VkOutputMessage {
-    const {server, mode, passesOnly, recentPlays, coverAttachment} = params;
-    if (recentPlays === undefined) {
-      if (params.usernameInput === undefined) {
-        return this.createUsernameNotBoundMessage(params.server);
-      }
-      return this.createUserNotFoundMessage(
-        params.server,
-        params.usernameInput
-      );
-    }
-    const {username} = recentPlays;
-    if (recentPlays.plays.length === 0) {
-      return this.createNoRecentPlaysMessage(
-        server,
-        mode!,
-        passesOnly,
-        username
-      );
-    }
-    return this.createRecentPlaysMessage(
-      recentPlays,
-      server,
-      mode!,
-      passesOnly,
-      coverAttachment
-    );
-  }
-
-  createRecentPlaysMessage(
+  async createRecentPlaysMessage(
     recentPlays: OsuUserRecentPlays,
     server: OsuServer,
     mode: OsuRuleset,
-    passesOnly: boolean,
-    coverAttachment: CoverAttachment
-  ): VkOutputMessage {
+    passesOnly: boolean
+  ): Promise<VkOutputMessage> {
     const serverString = OsuServer[server];
     const modeString = OsuRuleset[mode];
     const oneScore = recentPlays.plays.length === 1;
@@ -268,6 +98,12 @@ export class UserRecentPlays extends VkCommand<
       ) !== undefined
         ? '\n(Не удалось получить часть статистики)'
         : '';
+    const coverAttachment = oneScore
+      ? await getOrDownloadCoverAttachment(
+          recentPlays.plays[0],
+          this.vkBeatmapCovers
+        )
+      : null;
     const couldNotAttachCoverMessage =
       coverAttachment === undefined
         ? '\n\nБГ карты прикрепить не удалось 😭'
@@ -448,10 +284,10 @@ ${ppEstimationMark}${pp}pp　 ${mapUrlShort}
     `.trim();
   }
 
-  createUserNotFoundMessage(
+  async createUserNotFoundMessage(
     server: OsuServer,
     usernameInput: string
-  ): VkOutputMessage {
+  ): Promise<VkOutputMessage> {
     const serverString = OsuServer[server];
     const text = `
 [Server: ${serverString}]
@@ -464,7 +300,9 @@ ${ppEstimationMark}${pp}pp　 ${mapUrlShort}
     };
   }
 
-  createUsernameNotBoundMessage(server: OsuServer): VkOutputMessage {
+  async createUsernameNotBoundMessage(
+    server: OsuServer
+  ): Promise<VkOutputMessage> {
     const serverString = OsuServer[server];
     const text = `
 [Server: ${serverString}]
@@ -477,12 +315,12 @@ ${ppEstimationMark}${pp}pp　 ${mapUrlShort}
     };
   }
 
-  createNoRecentPlaysMessage(
+  async createNoRecentPlaysMessage(
     server: OsuServer,
     mode: OsuRuleset,
     passesOnly: boolean,
     username: string
-  ): VkOutputMessage {
+  ): Promise<VkOutputMessage> {
     const serverString = OsuServer[server];
     const modeString = OsuRuleset[mode];
     const text = `
@@ -502,8 +340,6 @@ ${ppEstimationMark}${pp}pp　 ${mapUrlShort}
                   server: server,
                   username: username,
                   mode: mode,
-                  vkUserId: -1,
-                  vkPeerId: -1,
                   startPosition: undefined,
                   quantity: undefined,
                   mods: undefined,
@@ -521,7 +357,7 @@ ${ppEstimationMark}${pp}pp　 ${mapUrlShort}
   ): VkOutputMessageButton[][] {
     const buttons: VkOutputMessageButton[] = [];
     const userBestPlaysOnMapCommand = this.otherCommands.find(
-      x => x instanceof UserBestPlaysOnMap
+      x => x instanceof UserBestPlaysOnMapVk
     );
     if (userBestPlaysOnMapCommand !== undefined) {
       buttons.push({
@@ -530,8 +366,6 @@ ${ppEstimationMark}${pp}pp　 ${mapUrlShort}
           server: server,
           beatmapId: beatmapId,
           username: undefined,
-          vkUserId: -1,
-          vkPeerId: -1,
           startPosition: undefined,
           quantity: undefined,
           mods: undefined,
@@ -539,7 +373,7 @@ ${ppEstimationMark}${pp}pp　 ${mapUrlShort}
       });
     }
     const chatLeaderboardOnMapCommand = this.otherCommands.find(
-      x => x instanceof ChatLeaderboardOnMap
+      x => x instanceof ChatLeaderboardOnMapVk
     );
     if (chatLeaderboardOnMapCommand !== undefined) {
       buttons.push({
@@ -547,9 +381,6 @@ ${ppEstimationMark}${pp}pp　 ${mapUrlShort}
         command: chatLeaderboardOnMapCommand.unparse({
           server: server,
           beatmapId: beatmapId,
-          vkUserId: -1,
-          vkChatId: -1,
-          vkPeerId: -1,
           usernameList: undefined,
           mods: undefined,
         }),
@@ -557,55 +388,7 @@ ${ppEstimationMark}${pp}pp　 ${mapUrlShort}
     }
     return buttons.map(x => [x]);
   }
-
-  unparse(args: UserRecentPlaysExecutionArgs): string {
-    const tokens = [
-      SERVER_PREFIX.unparse(args.server),
-      this.COMMAND_PREFIX.unparse(
-        args.passesOnly
-          ? UserRecentPlays.recentPassesPrefixes[0]
-          : UserRecentPlays.recentPlaysPrefixes[0]
-      ),
-    ];
-    if (args.username !== undefined) {
-      tokens.push(USERNAME.unparse(args.username));
-    }
-    if (args.startPosition !== undefined) {
-      tokens.push(START_POSITION.unparse(args.startPosition));
-    }
-    if (args.quantity !== undefined) {
-      tokens.push(QUANTITY.unparse(args.quantity));
-    }
-    if (args.mods !== undefined) {
-      tokens.push(MODS.unparse(args.mods));
-    }
-    if (args.mode !== undefined) {
-      tokens.push(MODE.unparse(args.mode));
-    }
-    return this.textProcessor.detokenize(tokens);
-  }
 }
-
-type UserRecentPlaysExecutionArgs = {
-  vkUserId: number;
-  vkPeerId: number;
-  server: OsuServer;
-  passesOnly: boolean;
-  username: string | undefined;
-  startPosition: number | undefined;
-  quantity: number | undefined;
-  mods: ModArg[] | undefined;
-  mode: OsuRuleset | undefined;
-};
-
-type UserRecentPlaysViewParams = {
-  server: OsuServer;
-  mode: OsuRuleset | undefined;
-  passesOnly: boolean;
-  usernameInput: string | undefined;
-  recentPlays: OsuUserRecentPlays | undefined;
-  coverAttachment: CoverAttachment;
-};
 
 type CoverAttachment = string | null | undefined;
 

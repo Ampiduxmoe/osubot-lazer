@@ -52,12 +52,16 @@ export class FakeBanchoApi implements OsuApi {
       startPosition - 1 + quantity
     );
   }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   getBeatmap(beatmapId: number): Promise<OsuBeatmapInfo | undefined> {
     throw new Error('Method not implemented.');
   }
   getBeatmapUserScores(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     beatmapId: number,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     osuUserId: number,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     ruleset: OsuRuleset | undefined
   ): Promise<OsuBeatmapUserScoreInfo[] | undefined> {
     throw new Error('Method not implemented.');

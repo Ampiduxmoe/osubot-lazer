@@ -1,68 +1,70 @@
+import axios from 'axios';
 import {VK} from 'vk-io';
 import {AppConfig, VkGroup} from './AppConfig';
-import {VkClient} from './presentation/vk/VkClient';
-import {GetUserRecentPlaysUseCase} from './application/usecases/get_user_recent_plays/GetUserRecentPlaysUseCase';
-import {BanchoApi} from './data/http/bancho/BanchoApi';
-import {OsuUsersDaoImpl} from './data/dao/OsuUsersDaoImpl';
-import {GetOsuUserInfoUseCase} from './application/usecases/get_osu_user_info/GetOsuUserInfoUseCase';
-import {UserRecentPlays} from './presentation/vk/commands/UserRecentPlays';
-import {UserInfo} from './presentation/vk/commands/UserInfo';
-import {SetUsername} from './presentation/vk/commands/SetUsername';
-import {SetUsernameUseCase} from './application/usecases/set_username/SetUsernameUseCase';
-import {AppUsersTable} from './data/persistence/db/tables/AppUsersTable';
-import {SqliteDb} from './data/persistence/db/SqliteDb';
-import {SqlDb} from './data/persistence/db/SqlDb';
-import {GetAppUserInfoUseCase} from './application/usecases/get_app_user_info/GetAppUserInfoUseCase';
-import {OsuUserSnapshotsTable} from './data/persistence/db/tables/OsuUserSnapshotsTable';
-import {AppUserApiRequestsCountsTable} from './data/persistence/db/tables/AppUserApiRequestsCountsTable';
-import {AppUsersDaoImpl} from './data/dao/AppUsersDaoImpl';
-import {OsuUserRecentScoresDaoImpl} from './data/dao/OsuUserRecentScoresDaoImpl';
-import {CachedOsuUsersDaoImpl} from './data/dao/CachedOsuUsersDaoImpl';
-import {Help} from './presentation/vk/commands/Help';
-import {ScoreSimulationsDaoImpl} from './data/dao/ScoreSimulationsDaoImpl';
-import {OsutoolsSimulationApi} from './data/http/score_simulation/OsutoolsSImulationApi';
-import {AppUserRecentApiRequestsDaoImpl} from './data/dao/AppUserRecentApiRequestsDaoImpl';
-import {AppUserApiRequestsSummariesDaoImpl} from './data/dao/AppUserApiRequestsSummariesDaoImpl';
-import {TimeWindowsTable} from './data/persistence/db/tables/TimeWindowsTable';
-import {Timespan} from './primitives/Timespan';
-import {ApiUsageSummary} from './presentation/vk/commands/ApiUsageSummary';
 import {GetApiUsageSummaryUseCase} from './application/usecases/get_api_usage_summary/GetApiUsageSummaryUseCase';
-import {UserBestPlays} from './presentation/vk/commands/UserBestPlays';
-import {GetUserBestPlaysUseCase} from './application/usecases/get_user_best_plays/GetUserBestPlaysUseCase';
-import {OsuUserBestScoresDaoImpl} from './data/dao/OsuUserBestScoresDaoImpl';
-import {BanchoClient} from './data/http/bancho/client/BanchoClient';
-import {SerializedObjectsTable} from './data/persistence/db/tables/SerializedObjectsTable';
-import {OsuOauthAccessToken} from './data/http/bancho/OsuOauthAccessToken';
-import {BeatmapInfo} from './presentation/vk/commands/BeatmapInfo';
+import {GetAppUserInfoUseCase} from './application/usecases/get_app_user_info/GetAppUserInfoUseCase';
 import {GetBeatmapInfoUseCase} from './application/usecases/get_beatmap_info/GetBeatmapInfoUseCase';
-import {OsuBeatmapsDaoImpl} from './data/dao/OsuBeatmapsDaoImpl';
 import {GetBeatmapUsersBestScoresUseCase} from './application/usecases/get_beatmap_users_best_score/GetBeatmapUsersBestScoresUseCase';
+import {GetOsuUserInfoUseCase} from './application/usecases/get_osu_user_info/GetOsuUserInfoUseCase';
+import {GetUserBestPlaysUseCase} from './application/usecases/get_user_best_plays/GetUserBestPlaysUseCase';
+import {GetUserRecentPlaysUseCase} from './application/usecases/get_user_recent_plays/GetUserRecentPlaysUseCase';
+import {SetUsernameUseCase} from './application/usecases/set_username/SetUsernameUseCase';
+import {AppUserApiRequestsSummariesDaoImpl} from './data/dao/AppUserApiRequestsSummariesDaoImpl';
+import {AppUserRecentApiRequestsDaoImpl} from './data/dao/AppUserRecentApiRequestsDaoImpl';
+import {AppUsersDaoImpl} from './data/dao/AppUsersDaoImpl';
+import {CachedOsuUsersDaoImpl} from './data/dao/CachedOsuUsersDaoImpl';
+import {OsuBeatmapsDaoImpl} from './data/dao/OsuBeatmapsDaoImpl';
 import {OsuBeatmapUserScoresDaoImpl} from './data/dao/OsuBeatmapUserScoresDaoImpl';
-import {ChatLeaderboardOnMap} from './presentation/vk/commands/ChatLeaderboardOnMap';
-import {UserBestPlaysOnMap} from './presentation/vk/commands/UserBestPlaysOnMap';
-import {ChatLeaderboard} from './presentation/vk/commands/ChatLeaderboard';
-import {MainTextProcessor} from './presentation/common/arg_processing/MainTextProcessor';
-import {VkBeatmapCoversTable} from './presentation/data/repositories/VkBeatmapCoversRepository';
-import axios from 'axios';
+import {OsuUserBestScoresDaoImpl} from './data/dao/OsuUserBestScoresDaoImpl';
+import {OsuUserRecentScoresDaoImpl} from './data/dao/OsuUserRecentScoresDaoImpl';
+import {OsuUsersDaoImpl} from './data/dao/OsuUsersDaoImpl';
+import {ScoreSimulationsDaoImpl} from './data/dao/ScoreSimulationsDaoImpl';
+import {BanchoApi} from './data/http/bancho/BanchoApi';
+import {BanchoClient} from './data/http/bancho/client/BanchoClient';
+import {OsuOauthAccessToken} from './data/http/bancho/OsuOauthAccessToken';
+import {OsutoolsSimulationApi} from './data/http/score_simulation/OsutoolsSImulationApi';
+import {SqlDb} from './data/persistence/db/SqlDb';
 import {SqlDbTable} from './data/persistence/db/SqlDbTable';
-import {VkChatLastBeatmapsTable} from './presentation/data/repositories/VkChatLastBeatmapsRepository';
-import {Alias} from './presentation/vk/commands/Alias';
+import {SqliteDb} from './data/persistence/db/SqliteDb';
+import {AppUserApiRequestsCountsTable} from './data/persistence/db/tables/AppUserApiRequestsCountsTable';
+import {AppUsersTable} from './data/persistence/db/tables/AppUsersTable';
+import {OsuUserSnapshotsTable} from './data/persistence/db/tables/OsuUserSnapshotsTable';
+import {SerializedObjectsTable} from './data/persistence/db/tables/SerializedObjectsTable';
+import {TimeWindowsTable} from './data/persistence/db/tables/TimeWindowsTable';
 import {MainAliasProcessor} from './presentation/common/alias_processing/MainAliasProcessor';
-import {
-  AppUserCommandAliasesRepository,
-  AppUserCommandAliasesTable,
-} from './presentation/data/repositories/AppUserCommandAliasesRepository';
-import {VkIdConverter} from './presentation/vk/VkIdConverter';
+import {MainTextProcessor} from './presentation/common/arg_processing/MainTextProcessor';
 import {
   AnouncementsRepository,
   AnouncementsTable,
 } from './presentation/data/repositories/AnouncementsRepository';
 import {
+  AppUserCommandAliasesRepository,
+  AppUserCommandAliasesTable,
+} from './presentation/data/repositories/AppUserCommandAliasesRepository';
+import {
   PastAnouncementsRepository,
   PastAnouncementsTable,
 } from './presentation/data/repositories/PastAnouncementsRepository';
-import {Anouncements} from './presentation/vk/commands/Anouncements';
+import {VkBeatmapCoversTable} from './presentation/data/repositories/VkBeatmapCoversRepository';
+import {VkChatLastBeatmapsTable} from './presentation/data/repositories/VkChatLastBeatmapsRepository';
+import {AliasVk} from './presentation/vk/commands/AliasVk';
+import {AnouncementsVk} from './presentation/vk/commands/AnouncementsVk';
+import {ApiUsageSummaryVk} from './presentation/vk/commands/ApiUsageSummaryVk';
+import {BeatmapInfoVk} from './presentation/vk/commands/BeatmapInfoVk';
+import {ChatLeaderboardOnMapVk} from './presentation/vk/commands/ChatLeaderboardOnMapVk';
+import {ChatLeaderboardVk} from './presentation/vk/commands/ChatLeaderboardVk';
+import {HelpVk} from './presentation/vk/commands/HelpVk';
+import {SetUsernameVk} from './presentation/vk/commands/SetUsernameVk';
+import {UserBestPlaysOnMapVk} from './presentation/vk/commands/UserBestPlaysOnMapVk';
+import {UserBestPlaysVk} from './presentation/vk/commands/UserBestPlaysVk';
+import {UserInfoVk} from './presentation/vk/commands/UserInfoVk';
+import {UserRecentPlaysVk} from './presentation/vk/commands/UserRecentPlaysVk';
+import {VkClient} from './presentation/vk/VkClient';
+import {VkIdConverter} from './presentation/vk/VkIdConverter';
+import {VkMessageContext} from './presentation/vk/VkMessageContext';
+import {OsuServer} from './primitives/OsuServer';
 import {wait} from './primitives/Promises';
+import {Timespan} from './primitives/Timespan';
 
 export const APP_CODE_NAME = 'osubot-lazer';
 
@@ -294,19 +296,37 @@ export class App {
       pollingGroupId: group.id,
       token: group.token,
     });
-    const vkClient = new VkClient(vk);
+    const vkClient = new VkClient(vk, [group.owner]);
 
     const mainTextProcessor = new MainTextProcessor(' ', "'", '\\');
 
-    const getConversationMembers = async (
-      chatId: number
-    ): Promise<number[]> => {
-      const chatMembers = await vk.api.messages.getConversationMembers({
-        peer_id: 2e9 + chatId,
-      });
-      return chatMembers.profiles.map(x => x.id);
+    const getInitiatorAppUserId = (ctx: VkMessageContext): string => {
+      return VkIdConverter.vkUserIdToAppUserId(ctx.senderId);
     };
-    const sendToAllPeers = async (text: string): Promise<number[]> => {
+    const getTargetAppUserId = (
+      ctx: VkMessageContext,
+      settings: {canTargetOthersAsNonAdmin: boolean}
+    ): string => {
+      return VkIdConverter.vkUserIdToAppUserId(
+        settings.canTargetOthersAsNonAdmin || ctx.senderId === group.owner
+          ? ctx.replyMessage?.senderId ?? ctx.senderId
+          : ctx.senderId
+      );
+    };
+    const getLocalAppUserIds = async (
+      ctx: VkMessageContext
+    ): Promise<string[]> => {
+      if (ctx.chatId === undefined) {
+        return [VkIdConverter.vkUserIdToAppUserId(ctx.senderId)];
+      }
+      const chatMembers = await vk.api.messages.getConversationMembers({
+        peer_id: 2e9 + ctx.chatId,
+      });
+      return chatMembers.profiles.map(x =>
+        VkIdConverter.vkUserIdToAppUserId(x.id)
+      );
+    };
+    const sendToAllPeers = async (text: string): Promise<string[]> => {
       const basePeerIds: number[] = [];
       for (let offset = 0, fetchedAll = false; !fetchedAll; ) {
         const conversations = await vk.api.messages.getConversations({
@@ -393,7 +413,7 @@ export class App {
           }
         }
       }
-      return sentIds;
+      return sentIds.map(id => (id > 2e9 ? `c:${id - 2e9}` : `p:${id}`));
     };
 
     const fetchArrayBuffer = async (url: string): Promise<ArrayBuffer> => {
@@ -419,57 +439,92 @@ export class App {
       true
     );
     const vkChatLastBeatmaps = new VkChatLastBeatmapsTable(vkDb);
+    const getLastSeenBeatmapId = async (
+      ctx: VkMessageContext,
+      server: OsuServer
+    ): Promise<number | undefined> => {
+      return (
+        await vkChatLastBeatmaps.get({peerId: ctx.peerId, server: server})
+      )?.beatmapId;
+    };
+    const saveLastSeenBeatmapId = (
+      ctx: VkMessageContext,
+      server: OsuServer,
+      beatmapId: number
+    ): Promise<void> => {
+      return vkChatLastBeatmaps.save(ctx.peerId, server, beatmapId);
+    };
     const aliasProcessor = new MainAliasProcessor();
 
     const publicCommands = [
-      new SetUsername(mainTextProcessor, setUsernameUseCase),
-      new UserInfo(
+      new SetUsernameVk(
         mainTextProcessor,
+        getTargetAppUserId,
+        setUsernameUseCase
+      ),
+      new UserInfoVk(
+        mainTextProcessor,
+        getInitiatorAppUserId,
+        getTargetAppUserId,
         getOsuUserInfoUseCase,
         getAppUserInfoUseCase
       ),
-      new BeatmapInfo(
+      new BeatmapInfoVk(
         mainTextProcessor,
+        getInitiatorAppUserId,
+        getLastSeenBeatmapId,
+        saveLastSeenBeatmapId,
         getBeatmapInfoUseCase,
-        vkBeatmapCovers,
-        vkChatLastBeatmaps
+        vkBeatmapCovers
       ),
-      new UserRecentPlays(
+      new UserRecentPlaysVk(
         mainTextProcessor,
+        getInitiatorAppUserId,
+        getTargetAppUserId,
+        saveLastSeenBeatmapId,
         getRecentPlaysUseCase,
         getAppUserInfoUseCase,
-        vkBeatmapCovers,
-        vkChatLastBeatmaps
+        vkBeatmapCovers
       ),
-      new UserBestPlays(
+      new UserBestPlaysVk(
         mainTextProcessor,
+        getInitiatorAppUserId,
+        getTargetAppUserId,
+        saveLastSeenBeatmapId,
         getUserBestPlaysUseCase,
         getAppUserInfoUseCase,
-        vkBeatmapCovers,
-        vkChatLastBeatmaps
+        vkBeatmapCovers
       ),
-      new UserBestPlaysOnMap(
+      new UserBestPlaysOnMapVk(
         mainTextProcessor,
+        getInitiatorAppUserId,
+        getTargetAppUserId,
+        getLastSeenBeatmapId,
+        saveLastSeenBeatmapId,
         getBeatmapUsersBestScoresUseCase,
         getAppUserInfoUseCase,
-        vkBeatmapCovers,
-        vkChatLastBeatmaps
+        vkBeatmapCovers
       ),
-      new ChatLeaderboard(
+      new ChatLeaderboardVk(
         mainTextProcessor,
-        getConversationMembers,
+        getInitiatorAppUserId,
+        getLocalAppUserIds,
         getOsuUserInfoUseCase,
         getAppUserInfoUseCase
       ),
-      new ChatLeaderboardOnMap(
+      new ChatLeaderboardOnMapVk(
         mainTextProcessor,
-        getConversationMembers,
+        getInitiatorAppUserId,
+        getLocalAppUserIds,
+        getLastSeenBeatmapId,
+        saveLastSeenBeatmapId,
         getBeatmapUsersBestScoresUseCase,
         getAppUserInfoUseCase,
         vkChatLastBeatmaps
       ),
-      new Alias(
+      new AliasVk(
         mainTextProcessor,
+        getTargetAppUserId,
         appUserCommandAliasesRepository,
         aliasProcessor
       ),
@@ -478,22 +533,17 @@ export class App {
       command.link(publicCommands);
     }
     const adminCommands = [
-      new ApiUsageSummary(
-        [group.owner],
-        mainTextProcessor,
-        getApiUsageSummaryUseCase
-      ),
-      new Anouncements(
-        [group.owner],
+      new ApiUsageSummaryVk(mainTextProcessor, getApiUsageSummaryUseCase),
+      new AnouncementsVk(
         mainTextProcessor,
         anouncementsRepository,
         pastAnouncementsRepository,
         sendToAllPeers
       ),
     ];
-    const helpCommand = new Help(mainTextProcessor, publicCommands);
-    vkClient.addCommands([helpCommand, ...publicCommands]);
-    vkClient.addCommands(adminCommands);
+    const helpCommand = new HelpVk(mainTextProcessor, publicCommands);
+    vkClient.publicCommands.push(helpCommand, ...publicCommands);
+    vkClient.adminCommands.push(...adminCommands);
 
     const initActions: (() => Promise<void>)[] = [
       () => vkBeatmapCovers.createTable(),

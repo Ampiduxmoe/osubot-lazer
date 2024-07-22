@@ -1,11 +1,14 @@
-import {CommandArgument} from '../../../common/arg_processing/CommandArgument';
-import {VkMessageContext} from '../../VkMessageContext';
-import {CommandMatchResult} from '../../../common/CommandMatchResult';
-import {VkOutputMessage} from './VkOutputMessage';
-import {CommandPrefixes} from '../../../common/CommandPrefixes';
-import {TextProcessor} from '../../../common/arg_processing/TextProcessor';
+import {CommandArgument} from '../../common/arg_processing/CommandArgument';
+import {TextProcessor} from '../../common/arg_processing/TextProcessor';
+import {CommandMatchResult} from '../../common/CommandMatchResult';
+import {CommandPrefixes} from '../../common/CommandPrefixes';
 
-export abstract class VkCommand<TExecutionArgs, TViewParams> {
+export abstract class TextCommand<
+  TExecutionArgs,
+  TViewParams,
+  TContext,
+  TOutput,
+> {
   abstract readonly internalName: string;
   abstract readonly shortDescription: string;
   abstract readonly longDescription: string;
@@ -24,16 +27,16 @@ export abstract class VkCommand<TExecutionArgs, TViewParams> {
     this.commandStructure = commandStructure;
   }
 
-  protected otherCommands: VkCommand<unknown, unknown>[] = [];
-  link(otherCommands: VkCommand<unknown, unknown>[]) {
+  protected otherCommands: TextCommand<unknown, unknown, TContext, TOutput>[] =
+    [];
+  link(otherCommands: TextCommand<unknown, unknown, TContext, TOutput>[]) {
     this.otherCommands = otherCommands;
   }
 
-  abstract matchVkMessage(
-    ctx: VkMessageContext
-  ): CommandMatchResult<TExecutionArgs>;
-  abstract process(args: TExecutionArgs): Promise<TViewParams>;
-  abstract createOutputMessage(params: TViewParams): VkOutputMessage;
+  abstract matchText(text: string): CommandMatchResult<TExecutionArgs>;
+  abstract matchMessage(ctx: TContext): CommandMatchResult<TExecutionArgs>;
+  abstract process(args: TExecutionArgs, ctx: TContext): Promise<TViewParams>;
+  abstract createOutputMessage(params: TViewParams): Promise<TOutput>;
   abstract unparse(args: TExecutionArgs): string;
 }
 

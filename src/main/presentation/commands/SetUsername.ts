@@ -1,25 +1,26 @@
-import {VkMessageContext} from '../VkMessageContext';
-import {CommandMatchResult} from '../../common/CommandMatchResult';
-import {VkOutputMessage} from './base/VkOutputMessage';
-import {NOTICE_ABOUT_SPACES_IN_USERNAMES, VkCommand} from './base/VkCommand';
-import {OsuServer} from '../../../primitives/OsuServer';
-import {APP_CODE_NAME} from '../../../App';
-import {SetUsernameUseCase} from '../../../application/usecases/set_username/SetUsernameUseCase';
-import {VkIdConverter} from '../VkIdConverter';
+import {SetUsernameUseCase} from '../../application/usecases/set_username/SetUsernameUseCase';
+import {OsuRuleset} from '../../primitives/OsuRuleset';
+import {OsuServer} from '../../primitives/OsuServer';
 import {
   MODE,
   OWN_COMMAND_PREFIX,
   SERVER_PREFIX,
   USERNAME,
-} from '../../common/arg_processing/CommandArguments';
-import {MainArgsProcessor} from '../../common/arg_processing/MainArgsProcessor';
-import {CommandPrefixes} from '../../common/CommandPrefixes';
-import {OsuRuleset} from '../../../primitives/OsuRuleset';
-import {TextProcessor} from '../../common/arg_processing/TextProcessor';
+} from '../common/arg_processing/CommandArguments';
+import {MainArgsProcessor} from '../common/arg_processing/MainArgsProcessor';
+import {TextProcessor} from '../common/arg_processing/TextProcessor';
+import {CommandMatchResult} from '../common/CommandMatchResult';
+import {CommandPrefixes} from '../common/CommandPrefixes';
+import {
+  NOTICE_ABOUT_SPACES_IN_USERNAMES,
+  TextCommand,
+} from './base/TextCommand';
 
-export class SetUsername extends VkCommand<
+export abstract class SetUsername<TContext, TOutput> extends TextCommand<
   SetUsernameExecutionArgs,
-  SetUsernameViewParams
+  SetUsernameViewParams,
+  TContext,
+  TOutput
 > {
   internalName = SetUsername.name;
   shortDescription = 'установить ник';
@@ -39,28 +40,28 @@ export class SetUsername extends VkCommand<
   ];
 
   textProcessor: TextProcessor;
+  getTargetAppUserId: (
+    ctx: TContext,
+    options: {canTargetOthersAsNonAdmin: boolean}
+  ) => string;
   setUsername: SetUsernameUseCase;
-  constructor(textProcessor: TextProcessor, setUsername: SetUsernameUseCase) {
+  constructor(
+    textProcessor: TextProcessor,
+    getTargetAppUserId: (
+      ctx: TContext,
+      options: {canTargetOthersAsNonAdmin: boolean}
+    ) => string,
+    setUsername: SetUsernameUseCase
+  ) {
     super(SetUsername.commandStructure);
     this.textProcessor = textProcessor;
+    this.getTargetAppUserId = getTargetAppUserId;
     this.setUsername = setUsername;
   }
 
-  matchVkMessage(
-    ctx: VkMessageContext
-  ): CommandMatchResult<SetUsernameExecutionArgs> {
+  matchText(text: string): CommandMatchResult<SetUsernameExecutionArgs> {
     const fail = CommandMatchResult.fail<SetUsernameExecutionArgs>();
-    const command: string | undefined = (() => {
-      if (ctx.messagePayload?.target === APP_CODE_NAME) {
-        return ctx.messagePayload.command;
-      }
-      return ctx.text;
-    })();
-    if (command === undefined) {
-      return fail;
-    }
-
-    const tokens = this.textProcessor.tokenize(command);
+    const tokens = this.textProcessor.tokenize(text);
     const argsProcessor = new MainArgsProcessor(
       [...tokens],
       this.commandStructure.map(e => e.argument)
@@ -77,7 +78,6 @@ export class SetUsername extends VkCommand<
       return fail;
     }
     return CommandMatchResult.ok({
-      vkUserId: ctx.senderId,
       server: server,
       username: username,
       mode: mode,
@@ -85,7 +85,8 @@ export class SetUsername extends VkCommand<
   }
 
   async process(
-    args: SetUsernameExecutionArgs
+    args: SetUsernameExecutionArgs,
+    ctx: TContext
   ): Promise<SetUsernameViewParams> {
     if (args.username === undefined) {
       return {
@@ -96,7 +97,9 @@ export class SetUsername extends VkCommand<
       };
     }
     const result = await this.setUsername.execute({
-      appUserId: VkIdConverter.vkUserIdToAppUserId(args.vkUserId),
+      appUserId: this.getTargetAppUserId(ctx, {
+        canTargetOthersAsNonAdmin: false,
+      }),
       server: args.server,
       username: args.username,
       mode: args.mode,
@@ -121,7 +124,7 @@ export class SetUsername extends VkCommand<
     };
   }
 
-  createOutputMessage(params: SetUsernameViewParams): VkOutputMessage {
+  createOutputMessage(params: SetUsernameViewParams): Promise<TOutput> {
     const {server, usernameInput, username, mode} = params;
     if (username === undefined) {
       if (usernameInput === undefined) {
@@ -132,52 +135,18 @@ export class SetUsername extends VkCommand<
     return this.createUsernameSetMessage(server, username, mode!);
   }
 
-  createUsernameNotSpecifiedMessage(server: OsuServer): VkOutputMessage {
-    const serverString = OsuServer[server];
-    const text = `
-[Server: ${serverString}]
-Не указан ник!
-    `.trim();
-    return {
-      text: text,
-      attachment: undefined,
-      buttons: undefined,
-    };
-  }
-
-  createUserNotFoundMessage(
+  abstract createUsernameNotSpecifiedMessage(
+    server: OsuServer
+  ): Promise<TOutput>;
+  abstract createUserNotFoundMessage(
     server: OsuServer,
     usernameInput: string
-  ): VkOutputMessage {
-    const serverString = OsuServer[server];
-    const text = `
-[Server: ${serverString}]
-Пользователь с ником ${usernameInput} не найден
-    `.trim();
-    return {
-      text: text,
-      attachment: undefined,
-      buttons: undefined,
-    };
-  }
-
-  createUsernameSetMessage(
+  ): Promise<TOutput>;
+  abstract createUsernameSetMessage(
     server: OsuServer,
     username: string,
     mode: OsuRuleset
-  ) {
-    const serverString = OsuServer[server];
-    const modeString = OsuRuleset[mode];
-    const text = `
-[Server: ${serverString}]
-Установлен ник ${username} (режим: ${modeString})
-    `.trim();
-    return {
-      text: text,
-      attachment: undefined,
-      buttons: undefined,
-    };
-  }
+  ): Promise<TOutput>;
 
   unparse(args: SetUsernameExecutionArgs): string {
     const tokens = [
@@ -194,14 +163,13 @@ export class SetUsername extends VkCommand<
   }
 }
 
-type SetUsernameExecutionArgs = {
-  vkUserId: number;
+export type SetUsernameExecutionArgs = {
   server: OsuServer;
   username: string | undefined;
   mode: OsuRuleset | undefined;
 };
 
-type SetUsernameViewParams = {
+export type SetUsernameViewParams = {
   server: OsuServer;
   usernameInput: string | undefined;
   username: string | undefined;

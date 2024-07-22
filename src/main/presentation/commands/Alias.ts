@@ -1,10 +1,7 @@
-/* eslint-disable no-irregular-whitespace */
-import {VkMessageContext} from '../VkMessageContext';
-import {CommandMatchResult} from '../../common/CommandMatchResult';
-import {VkOutputMessage} from './base/VkOutputMessage';
-import {VkCommand} from './base/VkCommand';
-import {APP_CODE_NAME} from '../../../App';
-import {VkIdConverter} from '../VkIdConverter';
+import {ALL_OSU_SERVERS, OsuServer} from '../../primitives/OsuServer';
+import {CommandMatchResult} from '../common/CommandMatchResult';
+import {CommandPrefixes} from '../common/CommandPrefixes';
+import {AliasProcessor} from '../common/alias_processing/AliasProcessor';
 import {
   ALIAS_PATTERN,
   ALIAS_TARGET,
@@ -13,24 +10,27 @@ import {
   OWN_COMMAND_PREFIX,
   SERVER_PREFIX,
   WORD,
-} from '../../common/arg_processing/CommandArguments';
-import {MainArgsProcessor} from '../../common/arg_processing/MainArgsProcessor';
-import {CommandPrefixes} from '../../common/CommandPrefixes';
-import {TextProcessor} from '../../common/arg_processing/TextProcessor';
-import {AppUserCommandAliases} from '../../data/models/AppUserCommandAliases';
-import {AppUserCommandAliasesRepository} from '../../data/repositories/AppUserCommandAliasesRepository';
-import {AliasProcessor} from '../../common/alias_processing/AliasProcessor';
-import {SetUsername} from './SetUsername';
-import {ALL_OSU_SERVERS, OsuServer} from '../../../primitives/OsuServer';
-import {UserInfo} from './UserInfo';
-import {UserRecentPlays} from './UserRecentPlays';
-import {UserBestPlays} from './UserBestPlays';
-import {UserBestPlaysOnMap} from './UserBestPlaysOnMap';
+} from '../common/arg_processing/CommandArguments';
+import {MainArgsProcessor} from '../common/arg_processing/MainArgsProcessor';
+import {TextProcessor} from '../common/arg_processing/TextProcessor';
+import {AppUserCommandAliases} from '../data/models/AppUserCommandAliases';
+import {AppUserCommandAliasesRepository} from '../data/repositories/AppUserCommandAliasesRepository';
+import {BeatmapInfo} from './BeatmapInfo';
 import {ChatLeaderboard} from './ChatLeaderboard';
 import {ChatLeaderboardOnMap} from './ChatLeaderboardOnMap';
-import {BeatmapInfo} from './BeatmapInfo';
+import {SetUsername} from './SetUsername';
+import {UserBestPlays} from './UserBestPlays';
+import {UserBestPlaysOnMap} from './UserBestPlaysOnMap';
+import {UserInfo} from './UserInfo';
+import {UserRecentPlays} from './UserRecentPlays';
+import {TextCommand} from './base/TextCommand';
 
-export class Alias extends VkCommand<AliasExecutionArgs, AliasViewParams> {
+export abstract class Alias<TContext, TOutput> extends TextCommand<
+  AliasExecutionArgs,
+  AliasViewParams,
+  TContext,
+  TOutput
+> {
   internalName = Alias.name;
   shortDescription = 'управление алиасами';
   longDescription =
@@ -114,45 +114,39 @@ export class Alias extends VkCommand<AliasExecutionArgs, AliasViewParams> {
   };
 
   textProcessor: TextProcessor;
-  userAliases: AppUserCommandAliasesRepository;
+  getTargetAppUserId: (
+    ctx: TContext,
+    options: {canTargetOthersAsNonAdmin: boolean}
+  ) => string;
+  aliases: AppUserCommandAliasesRepository;
   aliasProcessor: AliasProcessor;
   constructor(
     textProcessor: TextProcessor,
-    userAliases: AppUserCommandAliasesRepository,
+    getTargetAppUserId: (
+      ctx: TContext,
+      options: {canTargetOthersAsNonAdmin: boolean}
+    ) => string,
+    aliases: AppUserCommandAliasesRepository,
     aliasProcessor: AliasProcessor
   ) {
     super(Alias.commandStructure);
     this.textProcessor = textProcessor;
-    this.userAliases = userAliases;
+    this.getTargetAppUserId = getTargetAppUserId;
+    this.aliases = aliases;
     this.aliasProcessor = aliasProcessor;
   }
 
-  matchVkMessage(
-    ctx: VkMessageContext
-  ): CommandMatchResult<AliasExecutionArgs> {
+  matchText(text: string): CommandMatchResult<AliasExecutionArgs> {
     const fail = CommandMatchResult.fail<AliasExecutionArgs>();
-    const command: string | undefined = (() => {
-      if (ctx.messagePayload?.target === APP_CODE_NAME) {
-        return ctx.messagePayload.command;
-      }
-      return ctx.text;
-    })();
-    if (command === undefined) {
-      return fail;
-    }
-
-    const tokens = this.textProcessor.tokenize(command);
+    const tokens = this.textProcessor.tokenize(text);
     const argsProcessor = new MainArgsProcessor(
       [...tokens],
       this.commandStructure.map(e => e.argument)
     );
-    const ownPrefix = argsProcessor.use(this.COMMAND_PREFIX).at(0).extract();
-    if (ownPrefix === undefined) {
+    if (argsProcessor.use(this.COMMAND_PREFIX).at(0).extract() === undefined) {
       return fail;
     }
-    const executionArgs: AliasExecutionArgs = {
-      vkUserId: ctx.replyMessage?.senderId ?? ctx.senderId,
-    };
+    const executionArgs: AliasExecutionArgs = {};
 
     if (argsProcessor.use(this.WORD_SHOW).at(0).extract() !== undefined) {
       executionArgs.show = {};
@@ -205,16 +199,26 @@ export class Alias extends VkCommand<AliasExecutionArgs, AliasViewParams> {
     return CommandMatchResult.ok(executionArgs);
   }
 
-  async process(args: AliasExecutionArgs): Promise<AliasViewParams> {
-    const appUserId = VkIdConverter.vkUserIdToAppUserId(args.vkUserId);
-    const userAliases = await this.userAliases.get({
-      appUserId: appUserId,
-    });
+  async process(
+    args: AliasExecutionArgs,
+    ctx: TContext
+  ): Promise<AliasViewParams> {
     if (args.show !== undefined) {
+      const userAliases = await this.aliases.get({
+        appUserId: this.getTargetAppUserId(ctx, {
+          canTargetOthersAsNonAdmin: true,
+        }),
+      });
       return {
         aliases: (userAliases?.aliases.length ?? 0) === 0 ? null : userAliases!,
       };
     }
+    const appUserId = this.getTargetAppUserId(ctx, {
+      canTargetOthersAsNonAdmin: false,
+    });
+    const userAliases = await this.aliases.get({
+      appUserId: appUserId,
+    });
     if (args.add !== undefined) {
       if ((userAliases?.aliases.length ?? 0) >= Alias.maximumAliases) {
         return {
@@ -222,7 +226,7 @@ export class Alias extends VkCommand<AliasExecutionArgs, AliasViewParams> {
           actionCount: 0,
         };
       }
-      await this.userAliases.save({
+      await this.aliases.save({
         appUserId: appUserId,
         aliases: [
           ...(userAliases?.aliases ?? []),
@@ -242,7 +246,7 @@ export class Alias extends VkCommand<AliasExecutionArgs, AliasViewParams> {
       }
       const deleteArgs = args.delete;
       let actionCount = 0;
-      await this.userAliases.save({
+      await this.aliases.save({
         appUserId: appUserId,
         aliases: [
           ...(userAliases?.aliases.filter((_v, i) => {
@@ -346,7 +350,7 @@ export class Alias extends VkCommand<AliasExecutionArgs, AliasViewParams> {
           replacement: replacement,
         });
       })();
-      await this.userAliases.save(newAliases);
+      await this.aliases.save(newAliases);
       return {
         action: 'add',
         actionCount: newAliases.aliases.length,
@@ -355,7 +359,7 @@ export class Alias extends VkCommand<AliasExecutionArgs, AliasViewParams> {
     throw Error('Unknown Alias command execution path');
   }
 
-  createOutputMessage(params: AliasViewParams): VkOutputMessage {
+  createOutputMessage(params: AliasViewParams): Promise<TOutput> {
     const {aliases, action, actionCount: actionSuccess, testResult} = params;
     if (aliases !== undefined) {
       if (aliases === null) {
@@ -377,60 +381,15 @@ export class Alias extends VkCommand<AliasExecutionArgs, AliasViewParams> {
     throw Error('Unknown Alias command output path');
   }
 
-  createAliasesMessage(userAliases: AppUserCommandAliases): VkOutputMessage {
-    const text = userAliases.aliases
-      .map(
-        (v, i) => `${i + 1}. Шаблон: ${v.pattern}\n　 Замена: ${v.replacement}`
-      )
-      .join('\n');
-    return {
-      text: text,
-      attachment: undefined,
-      buttons: undefined,
-    };
-  }
-
-  createNoAliasesMessage(): VkOutputMessage {
-    const text = 'Шаблоны отсутствуют!';
-    return {
-      text: text,
-      attachment: undefined,
-      buttons: undefined,
-    };
-  }
-
-  createAliasAddResultMessage(actionCount: number): VkOutputMessage {
-    const text =
-      actionCount > 0
-        ? 'Шаблонов добавлено: ' + actionCount
-        : 'Не удалось добавить шаблон\nДостигнуто максимальное количество шаблонов';
-    return {
-      text: text,
-      attachment: undefined,
-      buttons: undefined,
-    };
-  }
-
-  createAliasDeleteResultMessage(actionCount: number) {
-    const text =
-      actionCount > 0
-        ? 'Шаблонов удалено: ' + actionCount
-        : 'Не удалось удалить шаблон\nШаблон с заданным номером не найден';
-    return {
-      text: text,
-      attachment: undefined,
-      buttons: undefined,
-    };
-  }
-
-  createTestResultMessage(result: string) {
-    const text = result;
-    return {
-      text: text,
-      attachment: undefined,
-      buttons: undefined,
-    };
-  }
+  abstract createAliasesMessage(
+    userAliases: AppUserCommandAliases
+  ): Promise<TOutput>;
+  abstract createNoAliasesMessage(): Promise<TOutput>;
+  abstract createAliasAddResultMessage(actionCount: number): Promise<TOutput>;
+  abstract createAliasDeleteResultMessage(
+    actionCount: number
+  ): Promise<TOutput>;
+  abstract createTestResultMessage(result: string): Promise<TOutput>;
 
   unparse(args: AliasExecutionArgs): string {
     const tokens = [this.COMMAND_PREFIX.unparse(this.prefixes[0])];
@@ -460,8 +419,7 @@ export class Alias extends VkCommand<AliasExecutionArgs, AliasViewParams> {
   }
 }
 
-type AliasExecutionArgs = {
-  vkUserId: number;
+export type AliasExecutionArgs = {
   show?: ShowArgs;
   add?: AddArgs;
   delete?: DeleteArgs;
@@ -483,7 +441,7 @@ type TestArgs = {
 };
 type LegacyArgs = {};
 
-type AliasViewParams = {
+export type AliasViewParams = {
   aliases?: AppUserCommandAliases | null;
   action?: 'add' | 'delete';
   actionCount?: number;

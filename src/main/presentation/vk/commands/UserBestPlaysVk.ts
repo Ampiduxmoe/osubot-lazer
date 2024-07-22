@@ -1,83 +1,29 @@
 /* eslint-disable no-irregular-whitespace */
-import {VkMessageContext} from '../VkMessageContext';
-import {CommandMatchResult} from '../../common/CommandMatchResult';
-import {VkOutputMessage, VkOutputMessageButton} from './base/VkOutputMessage';
-import {NOTICE_ABOUT_SPACES_IN_USERNAMES, VkCommand} from './base/VkCommand';
-import {OsuServer} from '../../../primitives/OsuServer';
 import {APP_CODE_NAME} from '../../../App';
-import {GetAppUserInfoUseCase} from '../../../application/usecases/get_app_user_info/GetAppUserInfoUseCase';
-import {VkIdConverter} from '../VkIdConverter';
-import {clamp, round} from '../../../primitives/Numbers';
-import {
-  OWN_COMMAND_PREFIX,
-  MODS,
-  QUANTITY,
-  SERVER_PREFIX,
-  START_POSITION,
-  USERNAME,
-  MODE,
-} from '../../common/arg_processing/CommandArguments';
-import {MainArgsProcessor} from '../../common/arg_processing/MainArgsProcessor';
-import {Timespan} from '../../../primitives/Timespan';
-import {ModArg} from '../../common/arg_processing/ModArg';
-import {CommandPrefixes} from '../../common/CommandPrefixes';
-import {OsuRuleset} from '../../../primitives/OsuRuleset';
-import {GetUserBestPlaysUseCase} from '../../../application/usecases/get_user_best_plays/GetUserBestPlaysUseCase';
 import {
   BestPlay,
   OsuUserBestPlays,
 } from '../../../application/usecases/get_user_best_plays/GetUserBestPlaysResponse';
-import {TextProcessor} from '../../common/arg_processing/TextProcessor';
-import {VkBeatmapCoversRepository} from '../../data/repositories/VkBeatmapCoversRepository';
-import {VkChatLastBeatmapsRepository} from '../../data/repositories/VkChatLastBeatmapsRepository';
-import {ChatLeaderboardOnMap} from './ChatLeaderboardOnMap';
-import {UserBestPlaysOnMap} from './UserBestPlaysOnMap';
-
-export class UserBestPlays extends VkCommand<
+import {round} from '../../../primitives/Numbers';
+import {OsuRuleset} from '../../../primitives/OsuRuleset';
+import {OsuServer} from '../../../primitives/OsuServer';
+import {Timespan} from '../../../primitives/Timespan';
+import {
+  UserBestPlays,
   UserBestPlaysExecutionArgs,
-  UserBestPlaysViewParams
+} from '../../commands/UserBestPlays';
+import {CommandMatchResult} from '../../common/CommandMatchResult';
+import {VkBeatmapCoversRepository} from '../../data/repositories/VkBeatmapCoversRepository';
+import {VkMessageContext} from '../VkMessageContext';
+import {VkOutputMessage, VkOutputMessageButton} from '../VkOutputMessage';
+import {ChatLeaderboardOnMapVk} from './ChatLeaderboardOnMapVk';
+import {UserBestPlaysOnMapVk} from './UserBestPlaysOnMapVk';
+
+export class UserBestPlaysVk extends UserBestPlays<
+  VkMessageContext,
+  VkOutputMessage
 > {
-  internalName = UserBestPlays.name;
-  shortDescription = 'топ скоры игрока';
-  longDescription = 'Отображает лучшие скоры игрока';
-  notice = NOTICE_ABOUT_SPACES_IN_USERNAMES;
-
-  static prefixes = new CommandPrefixes('p', 'pb', 'PersonalBest');
-  prefixes = UserBestPlays.prefixes;
-
-  private static COMMAND_PREFIX = OWN_COMMAND_PREFIX(this.prefixes);
-  private COMMAND_PREFIX = UserBestPlays.COMMAND_PREFIX;
-  private static commandStructure = [
-    {argument: SERVER_PREFIX, isOptional: false},
-    {argument: this.COMMAND_PREFIX, isOptional: false},
-    {argument: USERNAME, isOptional: true},
-    {argument: START_POSITION, isOptional: true},
-    {argument: QUANTITY, isOptional: true},
-    {argument: MODS, isOptional: true},
-    {argument: MODE, isOptional: true},
-  ];
-
-  textProcessor: TextProcessor;
-  getUserBestPlays: GetUserBestPlaysUseCase;
-  getAppUserInfo: GetAppUserInfoUseCase;
-  vkBeatmapCovers: VkBeatmapCoversRepository;
-  vkChatLastBeatmaps: VkChatLastBeatmapsRepository;
-  constructor(
-    textProcessor: TextProcessor,
-    getUserBestPlays: GetUserBestPlaysUseCase,
-    getAppUserInfo: GetAppUserInfoUseCase,
-    vkBeatmapCovers: VkBeatmapCoversRepository,
-    vkChatLastBeatmaps: VkChatLastBeatmapsRepository
-  ) {
-    super(UserBestPlays.commandStructure);
-    this.textProcessor = textProcessor;
-    this.getUserBestPlays = getUserBestPlays;
-    this.getAppUserInfo = getAppUserInfo;
-    this.vkBeatmapCovers = vkBeatmapCovers;
-    this.vkChatLastBeatmaps = vkChatLastBeatmaps;
-  }
-
-  matchVkMessage(
+  matchMessage(
     ctx: VkMessageContext
   ): CommandMatchResult<UserBestPlaysExecutionArgs> {
     const fail = CommandMatchResult.fail<UserBestPlaysExecutionArgs>();
@@ -90,142 +36,14 @@ export class UserBestPlays extends VkCommand<
     if (command === undefined) {
       return fail;
     }
-
-    const tokens = this.textProcessor.tokenize(command);
-    const argsProcessor = new MainArgsProcessor(
-      [...tokens],
-      this.commandStructure.map(e => e.argument)
-    );
-    const server = argsProcessor.use(SERVER_PREFIX).at(0).extract();
-    const ownPrefix = argsProcessor.use(this.COMMAND_PREFIX).at(0).extract();
-    if (server === undefined || ownPrefix === undefined) {
-      return fail;
-    }
-    const startPosition = argsProcessor.use(START_POSITION).extract();
-    const quantity = argsProcessor.use(QUANTITY).extract();
-    const mods = argsProcessor.use(MODS).extract();
-    const mode = argsProcessor.use(MODE).extract();
-    const username = argsProcessor.use(USERNAME).extract();
-
-    if (argsProcessor.remainingTokens.length > 0) {
-      return fail;
-    }
-    return CommandMatchResult.ok({
-      vkUserId: ctx.replyMessage?.senderId ?? ctx.senderId,
-      vkPeerId: ctx.peerId,
-      server: server,
-      username: username,
-      startPosition: startPosition,
-      quantity: quantity,
-      mods: mods,
-      mode: mode,
-    });
+    return this.matchText(command);
   }
 
-  async process(
-    args: UserBestPlaysExecutionArgs
-  ): Promise<UserBestPlaysViewParams> {
-    let username = args.username;
-    let mode = args.mode;
-    if (username === undefined) {
-      const appUserInfoResponse = await this.getAppUserInfo.execute({
-        id: VkIdConverter.vkUserIdToAppUserId(args.vkUserId),
-        server: args.server,
-      });
-      const boundUser = appUserInfoResponse.userInfo;
-      if (boundUser === undefined) {
-        return {
-          server: args.server,
-          mode: args.mode,
-          usernameInput: undefined,
-          bestPlays: undefined,
-          coverAttachment: undefined,
-        };
-      }
-      username = boundUser.username;
-      mode ??= boundUser.ruleset;
-    }
-    const mods = args.mods ?? [];
-    const startPosition = clamp(args.startPosition ?? 1, 1, 100);
-    let quantity: number;
-    if (args.startPosition === undefined) {
-      quantity = clamp(args.quantity ?? 3, 1, 10);
-    } else {
-      quantity = clamp(args.quantity ?? 1, 1, 10);
-    }
-    const bestPlaysResult = await this.getUserBestPlays.execute({
-      appUserId: VkIdConverter.vkUserIdToAppUserId(args.vkUserId),
-      server: args.server,
-      username: username,
-      ruleset: mode,
-      startPosition: startPosition,
-      quantity: quantity,
-      mods: mods,
-    });
-    if (bestPlaysResult.isFailure) {
-      const internalFailureReason = bestPlaysResult.failureReason!;
-      switch (internalFailureReason) {
-        case 'user not found':
-          return {
-            server: args.server,
-            mode: mode,
-            usernameInput: args.username,
-            bestPlays: undefined,
-            coverAttachment: undefined,
-          };
-      }
-    }
-    const bestPlays = bestPlaysResult.bestPlays!;
-    if (bestPlays.plays.length === 1) {
-      await this.vkChatLastBeatmaps.save(
-        args.vkPeerId,
-        args.server,
-        bestPlays.plays[0].beatmap.id
-      );
-    }
-    return {
-      server: args.server,
-      mode: bestPlaysResult.ruleset!,
-      usernameInput: args.username,
-      bestPlays: bestPlays,
-      coverAttachment:
-        bestPlays.plays.length === 1
-          ? await getOrDownloadCoverAttachment(
-              bestPlays.plays[0],
-              this.vkBeatmapCovers
-            )
-          : null,
-    };
-  }
-
-  createOutputMessage(params: UserBestPlaysViewParams): VkOutputMessage {
-    const {server, mode, bestPlays, coverAttachment} = params;
-    if (bestPlays === undefined) {
-      if (params.usernameInput === undefined) {
-        return this.createUsernameNotBoundMessage(params.server);
-      }
-      return this.createUserNotFoundMessage(
-        params.server,
-        params.usernameInput
-      );
-    }
-    if (bestPlays.plays.length === 0) {
-      return this.createNoBestPlaysMessage(server, mode!);
-    }
-    return this.createBestPlaysMessage(
-      bestPlays,
-      server,
-      mode!,
-      coverAttachment
-    );
-  }
-
-  createBestPlaysMessage(
+  async createBestPlaysMessage(
     bestPlays: OsuUserBestPlays,
     server: OsuServer,
-    mode: OsuRuleset,
-    coverAttachment: CoverAttachment
-  ): VkOutputMessage {
+    mode: OsuRuleset
+  ): Promise<VkOutputMessage> {
     const serverString = OsuServer[server];
     const modeString = OsuRuleset[mode];
     const oneScore = bestPlays.plays.length === 1;
@@ -248,6 +66,12 @@ export class UserBestPlays extends VkCommand<
       ) !== undefined
         ? '\n(Не удалось получить часть статистики)'
         : '';
+    const coverAttachment = oneScore
+      ? await getOrDownloadCoverAttachment(
+          bestPlays.plays[0],
+          this.vkBeatmapCovers
+        )
+      : null;
     const couldNotAttachCoverMessage =
       coverAttachment === undefined
         ? '\n\nБГ карты прикрепить не удалось 😭'
@@ -398,10 +222,10 @@ ${pp}pp　 ${mapUrlShort}
     `.trim();
   }
 
-  createUserNotFoundMessage(
+  async createUserNotFoundMessage(
     server: OsuServer,
     usernameInput: string
-  ): VkOutputMessage {
+  ): Promise<VkOutputMessage> {
     const serverString = OsuServer[server];
     const text = `
 [Server: ${serverString}]
@@ -414,7 +238,9 @@ ${pp}pp　 ${mapUrlShort}
     };
   }
 
-  createUsernameNotBoundMessage(server: OsuServer): VkOutputMessage {
+  async createUsernameNotBoundMessage(
+    server: OsuServer
+  ): Promise<VkOutputMessage> {
     const serverString = OsuServer[server];
     const text = `
 [Server: ${serverString}]
@@ -427,10 +253,10 @@ ${pp}pp　 ${mapUrlShort}
     };
   }
 
-  createNoBestPlaysMessage(
+  async createNoBestPlaysMessage(
     server: OsuServer,
     mode: OsuRuleset
-  ): VkOutputMessage {
+  ): Promise<VkOutputMessage> {
     const serverString = OsuServer[server];
     const modeString = OsuRuleset[mode];
     const text = `
@@ -450,7 +276,7 @@ ${pp}pp　 ${mapUrlShort}
   ): VkOutputMessageButton[][] {
     const buttons: VkOutputMessageButton[] = [];
     const userBestPlaysOnMapCommand = this.otherCommands.find(
-      x => x instanceof UserBestPlaysOnMap
+      x => x instanceof UserBestPlaysOnMapVk
     );
     if (userBestPlaysOnMapCommand !== undefined) {
       buttons.push({
@@ -459,8 +285,6 @@ ${pp}pp　 ${mapUrlShort}
           server: server,
           beatmapId: beatmapId,
           username: undefined,
-          vkUserId: -1,
-          vkPeerId: -1,
           startPosition: undefined,
           quantity: undefined,
           mods: undefined,
@@ -468,7 +292,7 @@ ${pp}pp　 ${mapUrlShort}
       });
     }
     const chatLeaderboardOnMapCommand = this.otherCommands.find(
-      x => x instanceof ChatLeaderboardOnMap
+      x => x instanceof ChatLeaderboardOnMapVk
     );
     if (chatLeaderboardOnMapCommand !== undefined) {
       buttons.push({
@@ -476,9 +300,6 @@ ${pp}pp　 ${mapUrlShort}
         command: chatLeaderboardOnMapCommand.unparse({
           server: server,
           beatmapId: beatmapId,
-          vkUserId: -1,
-          vkChatId: -1,
-          vkPeerId: -1,
           usernameList: undefined,
           mods: undefined,
         }),
@@ -486,49 +307,7 @@ ${pp}pp　 ${mapUrlShort}
     }
     return buttons.map(x => [x]);
   }
-
-  unparse(args: UserBestPlaysExecutionArgs): string {
-    const tokens = [
-      SERVER_PREFIX.unparse(args.server),
-      this.COMMAND_PREFIX.unparse(this.prefixes[0]),
-    ];
-    if (args.username !== undefined) {
-      tokens.push(USERNAME.unparse(args.username));
-    }
-    if (args.startPosition !== undefined) {
-      tokens.push(START_POSITION.unparse(args.startPosition));
-    }
-    if (args.quantity !== undefined) {
-      tokens.push(QUANTITY.unparse(args.quantity));
-    }
-    if (args.mods !== undefined) {
-      tokens.push(MODS.unparse(args.mods));
-    }
-    if (args.mode !== undefined) {
-      tokens.push(MODE.unparse(args.mode));
-    }
-    return this.textProcessor.detokenize(tokens);
-  }
 }
-
-type UserBestPlaysExecutionArgs = {
-  vkUserId: number;
-  vkPeerId: number;
-  server: OsuServer;
-  username: string | undefined;
-  startPosition: number | undefined;
-  quantity: number | undefined;
-  mods: ModArg[] | undefined;
-  mode: OsuRuleset | undefined;
-};
-
-type UserBestPlaysViewParams = {
-  server: OsuServer;
-  mode: OsuRuleset | undefined;
-  usernameInput: string | undefined;
-  bestPlays: OsuUserBestPlays | undefined;
-  coverAttachment: CoverAttachment;
-};
 
 type CoverAttachment = string | null | undefined;
 

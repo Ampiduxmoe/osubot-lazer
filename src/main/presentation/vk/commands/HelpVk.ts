@@ -1,59 +1,14 @@
-import {VkMessageContext} from '../VkMessageContext';
-import {CommandMatchResult} from '../../common/CommandMatchResult';
-import {VkOutputMessage} from './base/VkOutputMessage';
-import {VkCommand} from './base/VkCommand';
 import {APP_CODE_NAME} from '../../../App';
-import {
-  VK_FOREIGN_COMMAND_PREFIX,
-  OWN_COMMAND_PREFIX,
-  ANY_STRING,
-} from '../../common/arg_processing/CommandArguments';
 import {pickRandom} from '../../../primitives/Arrays';
-import {MainArgsProcessor} from '../../common/arg_processing/MainArgsProcessor';
-import {CommandPrefixes} from '../../common/CommandPrefixes';
-import {CommandArgument} from '../../common/arg_processing/CommandArgument';
-import {TextProcessor} from '../../common/arg_processing/TextProcessor';
+import {Help, HelpExecutionArgs} from '../../commands/Help';
+import {TextCommand} from '../../commands/base/TextCommand';
+import {CommandMatchResult} from '../../common/CommandMatchResult';
+import {OWN_COMMAND_PREFIX} from '../../common/arg_processing/CommandArguments';
+import {VkMessageContext} from '../VkMessageContext';
+import {VkOutputMessage} from '../VkOutputMessage';
 
-export class Help extends VkCommand<HelpExecutionArgs, HelpViewParams> {
-  internalName = Help.name;
-  shortDescription = 'информация о командах';
-  longDescription = 'Отображает информацию о доступных командах';
-  notice = undefined;
-
-  static prefixes = new CommandPrefixes('osubot', 'osubot-help');
-  prefixes = Help.prefixes;
-
-  private COMMAND_PREFIX: CommandArgument<string>;
-  private FOREIGN_COMMAND_PREFIX: CommandArgument<string>;
-  private USAGE_VARIANT: CommandArgument<string>;
-
-  textProcessor: TextProcessor;
-  commands: VkCommand<unknown, unknown>[];
-  constructor(
-    textProcessor: TextProcessor,
-    commands: VkCommand<unknown, unknown>[]
-  ) {
-    const COMMAND_PREFIX = OWN_COMMAND_PREFIX(Help.prefixes);
-    const FOREIGN_COMMAND_PREFIX = VK_FOREIGN_COMMAND_PREFIX(
-      new CommandPrefixes(
-        ...Help.prefixes,
-        ...commands.map(c => c.prefixes).flat(1)
-      )
-    );
-    const USAGE_VARIANT = ANY_STRING('variant', 'вариант команды');
-    super([
-      {argument: COMMAND_PREFIX, isOptional: false},
-      {argument: FOREIGN_COMMAND_PREFIX, isOptional: true},
-      {argument: USAGE_VARIANT, isOptional: true},
-    ]);
-    this.COMMAND_PREFIX = COMMAND_PREFIX;
-    this.FOREIGN_COMMAND_PREFIX = FOREIGN_COMMAND_PREFIX;
-    this.USAGE_VARIANT = USAGE_VARIANT;
-    this.textProcessor = textProcessor;
-    this.commands = commands;
-  }
-
-  matchVkMessage(ctx: VkMessageContext): CommandMatchResult<HelpExecutionArgs> {
+export class HelpVk extends Help<VkMessageContext, VkOutputMessage> {
+  matchMessage(ctx: VkMessageContext): CommandMatchResult<HelpExecutionArgs> {
     const fail = CommandMatchResult.fail<HelpExecutionArgs>();
     const command: string | undefined = (() => {
       if (ctx.messagePayload?.target === APP_CODE_NAME) {
@@ -64,80 +19,12 @@ export class Help extends VkCommand<HelpExecutionArgs, HelpViewParams> {
     if (command === undefined) {
       return fail;
     }
-
-    const tokens = this.textProcessor.tokenize(command);
-    const argsProcessor = new MainArgsProcessor(
-      [...tokens],
-      this.commandStructure.map(e => e.argument)
-    );
-    const ownCommandPrefix = argsProcessor
-      .use(this.COMMAND_PREFIX)
-      .at(0)
-      .extract();
-    if (ownCommandPrefix === undefined) {
-      return fail;
-    }
-    const commandPrefix = argsProcessor
-      .use(this.FOREIGN_COMMAND_PREFIX)
-      .at(0)
-      .extract();
-    const commandUsageVariant = argsProcessor
-      .use(this.USAGE_VARIANT)
-      .at(0)
-      .extract();
-
-    if (argsProcessor.remainingTokens.length > 0) {
-      return fail;
-    }
-    return CommandMatchResult.ok({
-      commandPrefix: commandPrefix,
-      usageVariant: commandUsageVariant,
-    });
+    return this.matchText(command);
   }
 
-  async process(args: HelpExecutionArgs): Promise<HelpViewParams> {
-    const prefixToDescribe = args.commandPrefix;
-    if (prefixToDescribe === undefined) {
-      return {
-        commandList: [this, ...this.commands],
-      };
-    }
-    if (this.prefixes.matchIgnoringCase(prefixToDescribe)) {
-      return {
-        commandPrefixInput: prefixToDescribe,
-        command: this,
-      };
-    }
-    for (const command of this.commands) {
-      if (command.prefixes.matchIgnoringCase(prefixToDescribe)) {
-        return {
-          commandPrefixInput: prefixToDescribe,
-          command: command,
-          usageVariant: args.usageVariant,
-        };
-      }
-    }
-    return {
-      commandPrefixInput: prefixToDescribe,
-    };
-  }
-
-  createOutputMessage(params: HelpViewParams): VkOutputMessage {
-    const {commandList, commandPrefixInput, command, usageVariant} = params;
-    if (commandList !== undefined) {
-      return this.createCommandListMessage(commandList);
-    }
-    if (command !== undefined) {
-      return this.createCommandDescriptionMessage(
-        commandPrefixInput!,
-        command,
-        usageVariant
-      );
-    }
-    return this.createCommandNotFoundMessage(commandPrefixInput!);
-  }
-
-  createCommandNotFoundMessage(commandPrefixInput: string): VkOutputMessage {
+  async createCommandNotFoundMessage(
+    commandPrefixInput: string
+  ): Promise<VkOutputMessage> {
     return {
       text: `Команда ${commandPrefixInput} не найдена`,
       attachment: undefined,
@@ -155,7 +42,9 @@ export class Help extends VkCommand<HelpExecutionArgs, HelpViewParams> {
     };
   }
 
-  createCommandListMessage(commandList: VkCommand<unknown, unknown>[]) {
+  async createCommandListMessage(
+    commandList: TextCommand<unknown, unknown, unknown, unknown>[]
+  ): Promise<VkOutputMessage> {
     const commandBriefs = commandList.map(command => {
       const allPrefixes = command.prefixes.join(' | ');
       const description = command.shortDescription;
@@ -176,11 +65,11 @@ ${commandBriefs.join('\n')}
     };
   }
 
-  createCommandDescriptionMessage(
+  async createCommandDescriptionMessage(
     commandPrefixInput: string,
-    command: VkCommand<unknown, unknown>,
+    command: TextCommand<unknown, unknown, unknown, unknown>,
     argGroup: string | undefined
-  ): VkOutputMessage {
+  ): Promise<VkOutputMessage> {
     const inputPrefixLowercase = commandPrefixInput.toLowerCase();
     const inputPrefixUppercase = commandPrefixInput.toUpperCase();
     const structureElements: string[] = [];
@@ -336,27 +225,4 @@ ${argDescriptions.join('\n')}${commmandNoticeString}${optionalsHint}
       ],
     };
   }
-
-  unparse(args: HelpExecutionArgs): string {
-    const tokens = [this.COMMAND_PREFIX.unparse(this.prefixes[0])];
-    if (args.commandPrefix !== undefined) {
-      tokens.push(this.FOREIGN_COMMAND_PREFIX.unparse(args.commandPrefix));
-    }
-    if (args.usageVariant !== undefined) {
-      tokens.push(this.USAGE_VARIANT.unparse(args.usageVariant));
-    }
-    return this.textProcessor.detokenize(tokens);
-  }
 }
-
-type HelpExecutionArgs = {
-  commandPrefix: string | undefined;
-  usageVariant: string | undefined;
-};
-
-type HelpViewParams = {
-  commandList?: VkCommand<unknown, unknown>[];
-  commandPrefixInput?: string;
-  command?: VkCommand<unknown, unknown>;
-  usageVariant?: string;
-};

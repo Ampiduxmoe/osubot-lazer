@@ -1,29 +1,28 @@
-import {VkMessageContext} from '../VkMessageContext';
-import {CommandMatchResult} from '../../common/CommandMatchResult';
-import {VkOutputMessage, VkOutputMessageButton} from './base/VkOutputMessage';
-import {NOTICE_ABOUT_SPACES_IN_USERNAMES, VkCommand} from './base/VkCommand';
-import {OsuServer} from '../../../primitives/OsuServer';
-import {GetOsuUserInfoUseCase} from '../../../application/usecases/get_osu_user_info/GetOsuUserInfoUseCase';
-import {Timespan} from '../../../primitives/Timespan';
-import {APP_CODE_NAME} from '../../../App';
-import {UserRecentPlays} from './UserRecentPlays';
-import {GetAppUserInfoUseCase} from '../../../application/usecases/get_app_user_info/GetAppUserInfoUseCase';
-import {VkIdConverter} from '../VkIdConverter';
+import {GetAppUserInfoUseCase} from '../../application/usecases/get_app_user_info/GetAppUserInfoUseCase';
+import {GetOsuUserInfoUseCase} from '../../application/usecases/get_osu_user_info/GetOsuUserInfoUseCase';
+import {OsuRuleset} from '../../primitives/OsuRuleset';
+import {OsuServer} from '../../primitives/OsuServer';
+import {Timespan} from '../../primitives/Timespan';
 import {
   MODE,
   OWN_COMMAND_PREFIX,
   SERVER_PREFIX,
   USERNAME,
-} from '../../common/arg_processing/CommandArguments';
-import {MainArgsProcessor} from '../../common/arg_processing/MainArgsProcessor';
-import {CommandPrefixes} from '../../common/CommandPrefixes';
-import {OsuRuleset} from '../../../primitives/OsuRuleset';
-import {TextProcessor} from '../../common/arg_processing/TextProcessor';
-import {UserBestPlays} from './UserBestPlays';
+} from '../common/arg_processing/CommandArguments';
+import {MainArgsProcessor} from '../common/arg_processing/MainArgsProcessor';
+import {TextProcessor} from '../common/arg_processing/TextProcessor';
+import {CommandMatchResult} from '../common/CommandMatchResult';
+import {CommandPrefixes} from '../common/CommandPrefixes';
+import {
+  NOTICE_ABOUT_SPACES_IN_USERNAMES,
+  TextCommand,
+} from './base/TextCommand';
 
-export class UserInfo extends VkCommand<
+export abstract class UserInfo<TContext, TOutput> extends TextCommand<
   UserInfoExecutionArgs,
-  UserInfoViewParams
+  UserInfoViewParams,
+  TContext,
+  TOutput
 > {
   internalName = UserInfo.name;
   shortDescription = 'статы игрока';
@@ -43,63 +42,65 @@ export class UserInfo extends VkCommand<
   ];
 
   textProcessor: TextProcessor;
+  getInitiatorAppUserId: (ctx: TContext) => string;
+  getTargetAppUserId: (
+    ctx: TContext,
+    options: {canTargetOthersAsNonAdmin: boolean}
+  ) => string;
   getOsuUserInfo: GetOsuUserInfoUseCase;
   getAppUserInfo: GetAppUserInfoUseCase;
   constructor(
     textProcessor: TextProcessor,
+    getInitiatorAppUserId: (ctx: TContext) => string,
+    getTargetAppUserId: (
+      ctx: TContext,
+      options: {canTargetOthersAsNonAdmin: boolean}
+    ) => string,
     getRecentPlays: GetOsuUserInfoUseCase,
     getAppUserInfo: GetAppUserInfoUseCase
   ) {
     super(UserInfo.commandStructure);
     this.textProcessor = textProcessor;
+    this.getInitiatorAppUserId = getInitiatorAppUserId;
+    this.getTargetAppUserId = getTargetAppUserId;
     this.getOsuUserInfo = getRecentPlays;
     this.getAppUserInfo = getAppUserInfo;
   }
 
-  matchVkMessage(
-    ctx: VkMessageContext
-  ): CommandMatchResult<UserInfoExecutionArgs> {
+  matchText(text: string): CommandMatchResult<UserInfoExecutionArgs> {
     const fail = CommandMatchResult.fail<UserInfoExecutionArgs>();
-    const command: string | undefined = (() => {
-      if (ctx.messagePayload?.target === APP_CODE_NAME) {
-        return ctx.messagePayload.command;
-      }
-      return ctx.text;
-    })();
-    if (command === undefined) {
-      return fail;
-    }
-
-    const tokens = this.textProcessor.tokenize(command);
+    const tokens = this.textProcessor.tokenize(text);
     const argsProcessor = new MainArgsProcessor(
       [...tokens],
       this.commandStructure.map(e => e.argument)
     );
     const server = argsProcessor.use(SERVER_PREFIX).at(0).extract();
     const ownPrefix = argsProcessor.use(this.COMMAND_PREFIX).at(0).extract();
-    if (server === undefined || ownPrefix === undefined) {
-      return fail;
-    }
     const mode = argsProcessor.use(MODE).extract();
     const username = argsProcessor.use(USERNAME).extract();
 
     if (argsProcessor.remainingTokens.length > 0) {
       return fail;
     }
+    if (server === undefined || ownPrefix === undefined) {
+      return fail;
+    }
     return CommandMatchResult.ok({
       server: server,
       username: username,
       mode: mode,
-      vkUserId: ctx.replyMessage?.senderId ?? ctx.senderId,
     });
   }
 
-  async process(args: UserInfoExecutionArgs): Promise<UserInfoViewParams> {
+  async process(
+    args: UserInfoExecutionArgs,
+    ctx: TContext
+  ): Promise<UserInfoViewParams> {
     let username = args.username;
     let mode = args.mode;
     if (username === undefined) {
       const appUserInfoResponse = await this.getAppUserInfo.execute({
-        id: VkIdConverter.vkUserIdToAppUserId(args.vkUserId),
+        id: this.getTargetAppUserId(ctx, {canTargetOthersAsNonAdmin: true}),
         server: args.server,
       });
       const boundUser = appUserInfoResponse.userInfo;
@@ -115,7 +116,7 @@ export class UserInfo extends VkCommand<
       mode ??= boundUser.ruleset;
     }
     const userInfoResponse = await this.getOsuUserInfo.execute({
-      appUserId: VkIdConverter.vkUserIdToAppUserId(args.vkUserId),
+      appUserId: this.getInitiatorAppUserId(ctx),
       server: args.server,
       username: username,
       ruleset: mode,
@@ -173,7 +174,7 @@ export class UserInfo extends VkCommand<
     };
   }
 
-  createOutputMessage(params: UserInfoViewParams): VkOutputMessage {
+  createOutputMessage(params: UserInfoViewParams): Promise<TOutput> {
     const {server, mode, usernameInput, userInfo} = params;
     if (userInfo === undefined) {
       if (usernameInput === undefined) {
@@ -184,130 +185,16 @@ export class UserInfo extends VkCommand<
     return this.createUserInfoMessage(server, mode!, userInfo);
   }
 
-  createUserInfoMessage(
+  abstract createUserInfoMessage(
     server: OsuServer,
     mode: OsuRuleset,
     userInfo: OsuUserInfo
-  ) {
-    const serverString = OsuServer[server];
-    const modeString = OsuRuleset[mode];
-    const {username} = userInfo;
-    const rankGlobal = userInfo.rankGlobal || '—';
-    const countryCode = userInfo.countryCode;
-    const rankCountry = userInfo.rankCountry || '—';
-    const {rankGlobalHighest, rankGlobalHighestDate} = userInfo;
-    const {playcount, lvl} = userInfo;
-    const {playtimeDays, playtimeHours, playtimeMinutes} = userInfo;
-    const pp = userInfo.pp.toFixed(2);
-    const accuracy = userInfo.accuracy.toFixed(2);
-    const {userId} = userInfo;
-
-    const maybePeakRankString =
-      rankGlobalHighest === undefined
-        ? ''
-        : `\nPeak rank: #${rankGlobalHighest} (${rankGlobalHighestDate})`;
-
-    const text = `
-[Server: ${serverString}, Mode: ${modeString}]
-Player: ${username} (STD)
-Rank: #${rankGlobal} (${countryCode} #${rankCountry})${maybePeakRankString}
-Playcount: ${playcount} (Lv${lvl})
-Playtime: ${playtimeDays}d ${playtimeHours}h ${playtimeMinutes}m
-PP: ${pp}
-Accuracy: ${accuracy}%
-
-https://osu.ppy.sh/u/${userId}
-    `.trim();
-
-    const buttons: VkOutputMessageButton[] = [];
-    const userBestPlaysCommand = this.otherCommands.find(
-      x => x instanceof UserBestPlays
-    );
-    if (userBestPlaysCommand !== undefined) {
-      buttons.push({
-        text: `Топ скоры ${username}`,
-        command: userBestPlaysCommand.unparse({
-          server: server,
-          username: username,
-          mode: mode,
-          vkUserId: -1,
-          vkPeerId: -1,
-          startPosition: undefined,
-          quantity: undefined,
-          mods: undefined,
-        }),
-      });
-    }
-    const userRecentPlaysCommand = this.otherCommands.find(
-      x => x instanceof UserRecentPlays
-    );
-    if (userRecentPlaysCommand !== undefined) {
-      buttons.push(
-        {
-          text: `Последний скор ${username}`,
-          command: userRecentPlaysCommand.unparse({
-            passesOnly: false,
-            server: server,
-            username: username,
-            mode: mode,
-            vkUserId: -1,
-            vkPeerId: -1,
-            startPosition: undefined,
-            quantity: undefined,
-            mods: undefined,
-          }),
-        },
-        {
-          text: `Последний пасс ${username}`,
-          command: userRecentPlaysCommand.unparse({
-            passesOnly: true,
-            server: server,
-            username: username,
-            mode: mode,
-            vkUserId: -1,
-            vkPeerId: -1,
-            startPosition: undefined,
-            quantity: undefined,
-            mods: undefined,
-          }),
-        }
-      );
-    }
-    return {
-      text: text,
-      attachment: undefined,
-      buttons: buttons.map(b => [b]),
-    };
-  }
-
-  createUserNotFoundMessage(
+  ): Promise<TOutput>;
+  abstract createUserNotFoundMessage(
     server: OsuServer,
     usernameInput: string
-  ): VkOutputMessage {
-    const serverString = OsuServer[server];
-    const text = `
-[Server: ${serverString}]
-Пользователь с ником ${usernameInput} не найден
-    `.trim();
-    return {
-      text: text,
-      attachment: undefined,
-      buttons: undefined,
-    };
-  }
-
-  createUsernameNotBoundMessage(server: OsuServer): VkOutputMessage {
-    const serverString = OsuServer[server];
-    const text = `
-[Server: ${serverString}]
-Не установлен ник!
-    `.trim();
-    return {
-      text: text,
-      attachment: undefined,
-      buttons: undefined,
-    };
-  }
+  ): Promise<TOutput>;
+  abstract createUsernameNotBoundMessage(server: OsuServer): Promise<TOutput>;
 
   unparse(args: UserInfoExecutionArgs): string {
     const tokens = [
@@ -324,21 +211,20 @@ https://osu.ppy.sh/u/${userId}
   }
 }
 
-type UserInfoExecutionArgs = {
+export type UserInfoExecutionArgs = {
   server: OsuServer;
   username: string | undefined;
   mode: OsuRuleset | undefined;
-  vkUserId: number;
 };
 
-type UserInfoViewParams = {
+export type UserInfoViewParams = {
   server: OsuServer;
   mode: OsuRuleset | undefined;
   usernameInput: string | undefined;
   userInfo: OsuUserInfo | undefined;
 };
 
-type OsuUserInfo = {
+export type OsuUserInfo = {
   username: string;
   rankGlobal: number | null;
   rankGlobalHighest: number | undefined;

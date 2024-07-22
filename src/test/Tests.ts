@@ -43,9 +43,9 @@ describe('Presentation', function () {
   });
   describe('VK', function () {
     describe('Commands', function () {
-      require('./presentation/vk/commands/UserBestPlays.test');
-      require('./presentation/vk/commands/UserInfo.test');
-      require('./presentation/vk/commands/UserRecentPlays.test');
+      require('./presentation/vk/commands/UserBestPlaysVk.test');
+      require('./presentation/vk/commands/UserInfoVk.test');
+      require('./presentation/vk/commands/UserRecentPlaysVk.test');
     });
   });
 });
