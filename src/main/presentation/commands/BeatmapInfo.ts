@@ -20,6 +20,11 @@ import {TextProcessor} from '../common/arg_processing/TextProcessor';
 import {CommandMatchResult} from '../common/CommandMatchResult';
 import {CommandPrefixes} from '../common/CommandPrefixes';
 import {TextCommand} from './base/TextCommand';
+import {
+  GetInitiatorAppUserId,
+  GetLastSeenBeatmapId,
+  SaveLastSeenBeatmapId,
+} from './common/Signatures';
 
 export abstract class BeatmapInfo<TContext, TOutput> extends TextCommand<
   BeatmapInfoExecutionArgs,
@@ -74,29 +79,15 @@ export abstract class BeatmapInfo<TContext, TOutput> extends TextCommand<
   };
 
   textProcessor: TextProcessor;
-  getInitiatorAppUserId: (ctx: TContext) => string;
-  getLastSeenBeatmapId: (
-    ctx: TContext,
-    server: OsuServer
-  ) => Promise<number | undefined>;
-  saveLastSeenBeatmapId: (
-    ctx: TContext,
-    server: OsuServer,
-    beatmapId: number
-  ) => Promise<void>;
+  getInitiatorAppUserId: GetInitiatorAppUserId<TContext>;
+  getLastSeenBeatmapId: GetLastSeenBeatmapId<TContext>;
+  saveLastSeenBeatmapId: SaveLastSeenBeatmapId<TContext>;
   getBeatmapInfo: GetBeatmapInfoUseCase;
   constructor(
     textProcessor: TextProcessor,
-    getInitiatorAppUserId: (ctx: TContext) => string,
-    getLastSeenBeatmapId: (
-      ctx: TContext,
-      server: OsuServer
-    ) => Promise<number | undefined>,
-    saveLastSeenBeatmapId: (
-      ctx: TContext,
-      server: OsuServer,
-      beatmapId: number
-    ) => Promise<void>,
+    getInitiatorAppUserId: GetInitiatorAppUserId<TContext>,
+    getLastSeenBeatmapId: GetLastSeenBeatmapId<TContext>,
+    saveLastSeenBeatmapId: SaveLastSeenBeatmapId<TContext>,
     getBeatmapInfo: GetBeatmapInfoUseCase
   ) {
     super(BeatmapInfo.commandStructure);

@@ -26,6 +26,12 @@ import {
   NOTICE_ABOUT_SPACES_IN_USERNAMES,
   TextCommand,
 } from './base/TextCommand';
+import {
+  GetInitiatorAppUserId,
+  GetLastSeenBeatmapId,
+  GetTargetAppUserId,
+  SaveLastSeenBeatmapId,
+} from './common/Signatures';
 
 export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
   UserBestPlaysOnMapExecutionArgs,
@@ -54,39 +60,19 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
   ];
 
   textProcessor: TextProcessor;
-  getInitiatorAppUserId: (ctx: TContext) => string;
-  getTargetAppUserId: (
-    ctx: TContext,
-    options: {canTargetOthersAsNonAdmin: boolean}
-  ) => string;
-  getLastSeenBeatmapId: (
-    ctx: TContext,
-    server: OsuServer
-  ) => Promise<number | undefined>;
-  saveLastSeenBeatmapId: (
-    ctx: TContext,
-    server: OsuServer,
-    beatmapId: number
-  ) => Promise<void>;
+  getInitiatorAppUserId: GetInitiatorAppUserId<TContext>;
+  getTargetAppUserId: GetTargetAppUserId<TContext>;
+  getLastSeenBeatmapId: GetLastSeenBeatmapId<TContext>;
+  saveLastSeenBeatmapId: SaveLastSeenBeatmapId<TContext>;
   getBeatmapBestScores: GetBeatmapUsersBestScoresUseCase;
   getAppUserInfo: GetAppUserInfoUseCase;
   vkBeatmapCovers: VkBeatmapCoversRepository;
   constructor(
     textProcessor: TextProcessor,
-    getInitiatorAppUserId: (ctx: TContext) => string,
-    getTargetAppUserId: (
-      ctx: TContext,
-      options: {canTargetOthersAsNonAdmin: boolean}
-    ) => string,
-    getLastSeenBeatmapId: (
-      ctx: TContext,
-      server: OsuServer
-    ) => Promise<number | undefined>,
-    saveLastSeenBeatmapId: (
-      ctx: TContext,
-      server: OsuServer,
-      beatmapId: number
-    ) => Promise<void>,
+    getInitiatorAppUserId: GetInitiatorAppUserId<TContext>,
+    getTargetAppUserId: GetTargetAppUserId<TContext>,
+    getLastSeenBeatmapId: GetLastSeenBeatmapId<TContext>,
+    saveLastSeenBeatmapId: SaveLastSeenBeatmapId<TContext>,
     getBeatmapBestScores: GetBeatmapUsersBestScoresUseCase,
     getAppUserInfo: GetAppUserInfoUseCase,
     vkBeatmapCovers: VkBeatmapCoversRepository

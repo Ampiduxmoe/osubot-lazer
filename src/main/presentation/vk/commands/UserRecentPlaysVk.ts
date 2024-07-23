@@ -15,6 +15,11 @@ import {OsuRuleset} from '../../../primitives/OsuRuleset';
 import {OsuServer} from '../../../primitives/OsuServer';
 import {Timespan} from '../../../primitives/Timespan';
 import {
+  GetInitiatorAppUserId,
+  GetTargetAppUserId,
+  SaveLastSeenBeatmapId,
+} from '../../commands/common/Signatures';
+import {
   UserRecentPlays,
   UserRecentPlaysExecutionArgs,
 } from '../../commands/UserRecentPlays';
@@ -33,16 +38,9 @@ export class UserRecentPlaysVk extends UserRecentPlays<
   vkBeatmapCovers: VkBeatmapCoversRepository;
   constructor(
     textProcessor: TextProcessor,
-    getInitiatorAppUserId: (ctx: VkMessageContext) => string,
-    getTargetAppUserId: (
-      ctx: VkMessageContext,
-      settings: {canTargetOthersAsNonAdmin: boolean}
-    ) => string,
-    saveLastSeenBeatmapId: (
-      ctx: VkMessageContext,
-      server: OsuServer,
-      beatmapId: number
-    ) => Promise<void>,
+    getInitiatorAppUserId: GetInitiatorAppUserId<VkMessageContext>,
+    getTargetAppUserId: GetTargetAppUserId<VkMessageContext>,
+    saveLastSeenBeatmapId: SaveLastSeenBeatmapId<VkMessageContext>,
     getRecentPlays: GetUserRecentPlaysUseCase,
     getAppUserInfo: GetAppUserInfoUseCase,
     vkBeatmapCovers: VkBeatmapCoversRepository

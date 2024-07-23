@@ -15,6 +15,7 @@ import {
   NOTICE_ABOUT_SPACES_IN_USERNAMES,
   TextCommand,
 } from './base/TextCommand';
+import {GetTargetAppUserId} from './common/Signatures';
 
 export abstract class SetUsername<TContext, TOutput> extends TextCommand<
   SetUsernameExecutionArgs,
@@ -40,17 +41,11 @@ export abstract class SetUsername<TContext, TOutput> extends TextCommand<
   ];
 
   textProcessor: TextProcessor;
-  getTargetAppUserId: (
-    ctx: TContext,
-    options: {canTargetOthersAsNonAdmin: boolean}
-  ) => string;
+  getTargetAppUserId: GetTargetAppUserId<TContext>;
   setUsername: SetUsernameUseCase;
   constructor(
     textProcessor: TextProcessor,
-    getTargetAppUserId: (
-      ctx: TContext,
-      options: {canTargetOthersAsNonAdmin: boolean}
-    ) => string,
+    getTargetAppUserId: GetTargetAppUserId<TContext>,
     setUsername: SetUsernameUseCase
   ) {
     super(SetUsername.commandStructure);

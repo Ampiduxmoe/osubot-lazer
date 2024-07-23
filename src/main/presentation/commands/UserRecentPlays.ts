@@ -22,6 +22,11 @@ import {
   NOTICE_ABOUT_SPACES_IN_USERNAMES,
   TextCommand,
 } from './base/TextCommand';
+import {
+  GetInitiatorAppUserId,
+  GetTargetAppUserId,
+  SaveLastSeenBeatmapId,
+} from './common/Signatures';
 
 export abstract class UserRecentPlays<TContext, TOutput> extends TextCommand<
   UserRecentPlaysExecutionArgs,
@@ -61,30 +66,16 @@ export abstract class UserRecentPlays<TContext, TOutput> extends TextCommand<
   ];
 
   textProcessor: TextProcessor;
-  getInitiatorAppUserId: (ctx: TContext) => string;
-  getTargetAppUserId: (
-    ctx: TContext,
-    options: {canTargetOthersAsNonAdmin: boolean}
-  ) => string;
-  saveLastSeenBeatmapId: (
-    ctx: TContext,
-    server: OsuServer,
-    beatmapId: number
-  ) => Promise<void>;
+  getInitiatorAppUserId: GetInitiatorAppUserId<TContext>;
+  getTargetAppUserId: GetTargetAppUserId<TContext>;
+  saveLastSeenBeatmapId: SaveLastSeenBeatmapId<TContext>;
   getRecentPlays: GetUserRecentPlaysUseCase;
   getAppUserInfo: GetAppUserInfoUseCase;
   constructor(
     textProcessor: TextProcessor,
-    getInitiatorAppUserId: (ctx: TContext) => string,
-    getTargetAppUserId: (
-      ctx: TContext,
-      options: {canTargetOthersAsNonAdmin: boolean}
-    ) => string,
-    saveLastSeenBeatmapId: (
-      ctx: TContext,
-      server: OsuServer,
-      beatmapId: number
-    ) => Promise<void>,
+    getInitiatorAppUserId: GetInitiatorAppUserId<TContext>,
+    getTargetAppUserId: GetTargetAppUserId<TContext>,
+    saveLastSeenBeatmapId: SaveLastSeenBeatmapId<TContext>,
     getRecentPlays: GetUserRecentPlaysUseCase,
     getAppUserInfo: GetAppUserInfoUseCase
   ) {

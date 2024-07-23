@@ -22,6 +22,12 @@ import {
   NOTICE_ABOUT_SPACES_IN_USERNAMES,
   TextCommand,
 } from './base/TextCommand';
+import {
+  GetInitiatorAppUserId,
+  GetLastSeenBeatmapId,
+  GetLocalAppUserIds,
+  SaveLastSeenBeatmapId,
+} from './common/Signatures';
 
 export abstract class ChatLeaderboardOnMap<
   TContext,
@@ -54,32 +60,18 @@ export abstract class ChatLeaderboardOnMap<
   ];
 
   textProcessor: TextProcessor;
-  getInitiatorAppUserId: (ctx: TContext) => string;
-  getLocalAppUserIds: (ctx: TContext) => Promise<string[]>;
-  getLastSeenBeatmapId: (
-    ctx: TContext,
-    server: OsuServer
-  ) => Promise<number | undefined>;
-  saveLastSeenBeatmapId: (
-    ctx: TContext,
-    server: OsuServer,
-    beatmapId: number
-  ) => Promise<void>;
+  getInitiatorAppUserId: GetInitiatorAppUserId<TContext>;
+  getLocalAppUserIds: GetLocalAppUserIds<TContext>;
+  getLastSeenBeatmapId: GetLastSeenBeatmapId<TContext>;
+  saveLastSeenBeatmapId: SaveLastSeenBeatmapId<TContext>;
   getBeatmapBestScores: GetBeatmapUsersBestScoresUseCase;
   getAppUserInfo: GetAppUserInfoUseCase;
   constructor(
     textProcessor: TextProcessor,
-    getInitiatorAppUserId: (ctx: TContext) => string,
-    getLocalAppUserIds: (ctx: TContext) => Promise<string[]>,
-    getLastSeenBeatmapId: (
-      ctx: TContext,
-      server: OsuServer
-    ) => Promise<number | undefined>,
-    saveLastSeenBeatmapId: (
-      ctx: TContext,
-      server: OsuServer,
-      beatmapId: number
-    ) => Promise<void>,
+    getInitiatorAppUserId: GetInitiatorAppUserId<TContext>,
+    getLocalAppUserIds: GetLocalAppUserIds<TContext>,
+    getLastSeenBeatmapId: GetLastSeenBeatmapId<TContext>,
+    saveLastSeenBeatmapId: SaveLastSeenBeatmapId<TContext>,
     getBeatmapBestScores: GetBeatmapUsersBestScoresUseCase,
     getAppUserInfo: GetAppUserInfoUseCase
   ) {

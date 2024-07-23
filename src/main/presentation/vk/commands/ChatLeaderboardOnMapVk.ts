@@ -15,6 +15,12 @@ import {
   ChatLeaderboardOnMap,
   ChatLeaderboardOnMapExecutionArgs,
 } from '../../commands/ChatLeaderboardOnMap';
+import {
+  GetInitiatorAppUserId,
+  GetLastSeenBeatmapId,
+  GetLocalAppUserIds,
+  SaveLastSeenBeatmapId,
+} from '../../commands/common/Signatures';
 import {TextProcessor} from '../../common/arg_processing/TextProcessor';
 import {CommandMatchResult} from '../../common/CommandMatchResult';
 import {VkChatLastBeatmapsRepository} from '../../data/repositories/VkChatLastBeatmapsRepository';
@@ -28,17 +34,10 @@ export class ChatLeaderboardOnMapVk extends ChatLeaderboardOnMap<
   vkChatLastBeatmaps: VkChatLastBeatmapsRepository;
   constructor(
     textProcessor: TextProcessor,
-    getInitiatorAppUserId: (ctx: VkMessageContext) => string,
-    getLocalAppUserIds: (ctx: VkMessageContext) => Promise<string[]>,
-    getLastSeenBeatmapId: (
-      ctx: VkMessageContext,
-      server: OsuServer
-    ) => Promise<number | undefined>,
-    saveLastSeenBeatmapId: (
-      ctx: VkMessageContext,
-      server: OsuServer,
-      beatmapId: number
-    ) => Promise<void>,
+    getInitiatorAppUserId: GetInitiatorAppUserId<VkMessageContext>,
+    getLocalAppUserIds: GetLocalAppUserIds<VkMessageContext>,
+    getLastSeenBeatmapId: GetLastSeenBeatmapId<VkMessageContext>,
+    saveLastSeenBeatmapId: SaveLastSeenBeatmapId<VkMessageContext>,
     getBeatmapBestScores: GetBeatmapUsersBestScoresUseCase,
     getAppUserInfo: GetAppUserInfoUseCase,
     vkChatLastBeatmaps: VkChatLastBeatmapsRepository

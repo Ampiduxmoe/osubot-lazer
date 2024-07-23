@@ -17,6 +17,7 @@ import {
   NOTICE_ABOUT_SPACES_IN_USERNAMES,
   TextCommand,
 } from './base/TextCommand';
+import {GetInitiatorAppUserId, GetTargetAppUserId} from './common/Signatures';
 
 export abstract class UserInfo<TContext, TOutput> extends TextCommand<
   UserInfoExecutionArgs,
@@ -42,20 +43,14 @@ export abstract class UserInfo<TContext, TOutput> extends TextCommand<
   ];
 
   textProcessor: TextProcessor;
-  getInitiatorAppUserId: (ctx: TContext) => string;
-  getTargetAppUserId: (
-    ctx: TContext,
-    options: {canTargetOthersAsNonAdmin: boolean}
-  ) => string;
+  getInitiatorAppUserId: GetInitiatorAppUserId<TContext>;
+  getTargetAppUserId: GetTargetAppUserId<TContext>;
   getOsuUserInfo: GetOsuUserInfoUseCase;
   getAppUserInfo: GetAppUserInfoUseCase;
   constructor(
     textProcessor: TextProcessor,
-    getInitiatorAppUserId: (ctx: TContext) => string,
-    getTargetAppUserId: (
-      ctx: TContext,
-      options: {canTargetOthersAsNonAdmin: boolean}
-    ) => string,
+    getInitiatorAppUserId: GetInitiatorAppUserId<TContext>,
+    getTargetAppUserId: GetTargetAppUserId<TContext>,
     getRecentPlays: GetOsuUserInfoUseCase,
     getAppUserInfo: GetAppUserInfoUseCase
   ) {

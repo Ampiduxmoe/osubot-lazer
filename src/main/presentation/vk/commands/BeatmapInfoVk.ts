@@ -10,6 +10,11 @@ import {
   BeatmapInfo,
   BeatmapInfoExecutionArgs,
 } from '../../commands/BeatmapInfo';
+import {
+  GetInitiatorAppUserId,
+  GetLastSeenBeatmapId,
+  SaveLastSeenBeatmapId,
+} from '../../commands/common/Signatures';
 import {TextProcessor} from '../../common/arg_processing/TextProcessor';
 import {CommandMatchResult} from '../../common/CommandMatchResult';
 import {VkBeatmapCoversRepository} from '../../data/repositories/VkBeatmapCoversRepository';
@@ -25,16 +30,9 @@ export class BeatmapInfoVk extends BeatmapInfo<
   vkBeatmapCovers: VkBeatmapCoversRepository;
   constructor(
     textProcessor: TextProcessor,
-    getInitiatorAppUserId: (ctx: VkMessageContext) => string,
-    getLastSeenBeatmapId: (
-      ctx: VkMessageContext,
-      server: OsuServer
-    ) => Promise<number | undefined>,
-    saveLastSeenBeatmapId: (
-      ctx: VkMessageContext,
-      server: OsuServer,
-      beatmapId: number
-    ) => Promise<void>,
+    getInitiatorAppUserId: GetInitiatorAppUserId<VkMessageContext>,
+    getLastSeenBeatmapId: GetLastSeenBeatmapId<VkMessageContext>,
+    saveLastSeenBeatmapId: SaveLastSeenBeatmapId<VkMessageContext>,
     getBeatmapInfo: GetBeatmapInfoUseCase,
     vkBeatmapCovers: VkBeatmapCoversRepository
   ) {

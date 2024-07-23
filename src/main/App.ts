@@ -31,6 +31,13 @@ import {AppUsersTable} from './data/persistence/db/tables/AppUsersTable';
 import {OsuUserSnapshotsTable} from './data/persistence/db/tables/OsuUserSnapshotsTable';
 import {SerializedObjectsTable} from './data/persistence/db/tables/SerializedObjectsTable';
 import {TimeWindowsTable} from './data/persistence/db/tables/TimeWindowsTable';
+import {
+  GetInitiatorAppUserId,
+  GetLastSeenBeatmapId,
+  GetLocalAppUserIds,
+  GetTargetAppUserId,
+  SaveLastSeenBeatmapId,
+} from './presentation/commands/common/Signatures';
 import {MainAliasProcessor} from './presentation/common/alias_processing/MainAliasProcessor';
 import {MainTextProcessor} from './presentation/common/arg_processing/MainTextProcessor';
 import {
@@ -62,7 +69,6 @@ import {UserRecentPlaysVk} from './presentation/vk/commands/UserRecentPlaysVk';
 import {VkClient} from './presentation/vk/VkClient';
 import {VkIdConverter} from './presentation/vk/VkIdConverter';
 import {VkMessageContext} from './presentation/vk/VkMessageContext';
-import {OsuServer} from './primitives/OsuServer';
 import {wait} from './primitives/Promises';
 import {Timespan} from './primitives/Timespan';
 
@@ -300,22 +306,24 @@ export class App {
 
     const mainTextProcessor = new MainTextProcessor(' ', "'", '\\');
 
-    const getInitiatorAppUserId = (ctx: VkMessageContext): string => {
+    const getInitiatorAppUserId: GetInitiatorAppUserId<
+      VkMessageContext
+    > = ctx => {
       return VkIdConverter.vkUserIdToAppUserId(ctx.senderId);
     };
-    const getTargetAppUserId = (
-      ctx: VkMessageContext,
-      settings: {canTargetOthersAsNonAdmin: boolean}
-    ): string => {
+    const getTargetAppUserId: GetTargetAppUserId<VkMessageContext> = (
+      ctx,
+      options
+    ) => {
       return VkIdConverter.vkUserIdToAppUserId(
-        settings.canTargetOthersAsNonAdmin || ctx.senderId === group.owner
+        options.canTargetOthersAsNonAdmin || ctx.senderId === group.owner
           ? ctx.replyMessage?.senderId ?? ctx.senderId
           : ctx.senderId
       );
     };
-    const getLocalAppUserIds = async (
-      ctx: VkMessageContext
-    ): Promise<string[]> => {
+    const getLocalAppUserIds: GetLocalAppUserIds<
+      VkMessageContext
+    > = async ctx => {
       if (ctx.chatId === undefined) {
         return [VkIdConverter.vkUserIdToAppUserId(ctx.senderId)];
       }
@@ -439,19 +447,19 @@ export class App {
       true
     );
     const vkChatLastBeatmaps = new VkChatLastBeatmapsTable(vkDb);
-    const getLastSeenBeatmapId = async (
-      ctx: VkMessageContext,
-      server: OsuServer
-    ): Promise<number | undefined> => {
+    const getLastSeenBeatmapId: GetLastSeenBeatmapId<VkMessageContext> = async (
+      ctx,
+      server
+    ) => {
       return (
         await vkChatLastBeatmaps.get({peerId: ctx.peerId, server: server})
       )?.beatmapId;
     };
-    const saveLastSeenBeatmapId = (
-      ctx: VkMessageContext,
-      server: OsuServer,
-      beatmapId: number
-    ): Promise<void> => {
+    const saveLastSeenBeatmapId: SaveLastSeenBeatmapId<VkMessageContext> = (
+      ctx,
+      server,
+      beatmapId
+    ) => {
       return vkChatLastBeatmaps.save(ctx.peerId, server, beatmapId);
     };
     const aliasProcessor = new MainAliasProcessor();

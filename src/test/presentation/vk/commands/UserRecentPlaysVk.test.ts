@@ -1,49 +1,32 @@
 /* eslint-disable prefer-arrow-callback */
 import assert from 'assert';
-import {UserRecentPlaysVk} from '../../../../main/presentation/vk/commands/UserRecentPlaysVk';
-import {
-  createWithOnlyText,
-  createWithPayload,
-} from '../../../mocks/presentation/VkMessageContext';
-import {VkMessageContext} from '../../../../main/presentation/vk/VkMessageContext';
-import {SERVERS} from '../../../../main/presentation/common/OsuServers';
 import {APP_CODE_NAME} from '../../../../main/App';
-import {OsuServer} from '../../../../main/primitives/OsuServer';
+import {GetAppUserInfoUseCase} from '../../../../main/application/usecases/get_app_user_info/GetAppUserInfoUseCase';
 import {
-  ALL_OSU_RULESETS,
-  OsuRuleset,
-} from '../../../../main/primitives/OsuRuleset';
-import {FakeBanchoApi} from '../../../mocks/data/http/BanchoApi';
-import {SqliteDb} from '../../../../main/data/persistence/db/SqliteDb';
-import {OsuUserSnapshotsTable} from '../../../../main/data/persistence/db/tables/OsuUserSnapshotsTable';
-import {AppUserApiRequestsCountsTable} from '../../../../main/data/persistence/db/tables/AppUserApiRequestsCountsTable';
-import {TimeWindowsTable} from '../../../../main/data/persistence/db/tables/TimeWindowsTable';
+  OsuUserRecentPlay,
+  OsuUserRecentPlays,
+} from '../../../../main/application/usecases/get_user_recent_plays/GetUserRecentPlaysResponse';
+import {GetUserRecentPlaysUseCase} from '../../../../main/application/usecases/get_user_recent_plays/GetUserRecentPlaysUseCase';
 import {AppUserApiRequestsSummariesDaoImpl} from '../../../../main/data/dao/AppUserApiRequestsSummariesDaoImpl';
 import {AppUserRecentApiRequestsDaoImpl} from '../../../../main/data/dao/AppUserRecentApiRequestsDaoImpl';
-import {OsuUsersDaoImpl} from '../../../../main/data/dao/OsuUsersDaoImpl';
-import {AppUsersTable} from '../../../../main/data/persistence/db/tables/AppUsersTable';
 import {AppUsersDaoImpl} from '../../../../main/data/dao/AppUsersDaoImpl';
-import {SqlDbTable} from '../../../../main/data/persistence/db/SqlDbTable';
-import {
-  getFakeOsuUserInfo,
-  getFakeOsuUserUsername,
-  getFakeRecentScoreInfos,
-} from '../../../mocks/Generators';
-import {AppUser} from '../../../../main/data/repository/models/AppUser';
-import {VkIdConverter} from '../../../../main/presentation/vk/VkIdConverter';
-import {GetAppUserInfoUseCase} from '../../../../main/application/usecases/get_app_user_info/GetAppUserInfoUseCase';
-import {OsuUserRecentScoresDaoImpl} from '../../../../main/data/dao/OsuUserRecentScoresDaoImpl';
-import {FakeScoreSimulationApi} from '../../../mocks/data/http/ScoreSimulationApi';
-import {ScoreSimulationsDaoImpl} from '../../../../main/data/dao/ScoreSimulationsDaoImpl';
-import {GetUserRecentPlaysUseCase} from '../../../../main/application/usecases/get_user_recent_plays/GetUserRecentPlaysUseCase';
 import {CachedOsuUsersDaoImpl} from '../../../../main/data/dao/CachedOsuUsersDaoImpl';
-import {
-  OsuUserRecentPlays,
-  OsuUserRecentPlay,
-} from '../../../../main/application/usecases/get_user_recent_plays/GetUserRecentPlaysResponse';
+import {OsuUserRecentScoresDaoImpl} from '../../../../main/data/dao/OsuUserRecentScoresDaoImpl';
+import {OsuUsersDaoImpl} from '../../../../main/data/dao/OsuUsersDaoImpl';
+import {ScoreSimulationsDaoImpl} from '../../../../main/data/dao/ScoreSimulationsDaoImpl';
 import {OsuUserRecentScoreInfo} from '../../../../main/data/http/boundary/OsuUserRecentScoreInfo';
-import {ModAcronym} from '../../../../main/primitives/ModAcronym';
-import {MainTextProcessor} from '../../../../main/presentation/common/arg_processing/MainTextProcessor';
+import {SqlDbTable} from '../../../../main/data/persistence/db/SqlDbTable';
+import {SqliteDb} from '../../../../main/data/persistence/db/SqliteDb';
+import {AppUserApiRequestsCountsTable} from '../../../../main/data/persistence/db/tables/AppUserApiRequestsCountsTable';
+import {AppUsersTable} from '../../../../main/data/persistence/db/tables/AppUsersTable';
+import {OsuUserSnapshotsTable} from '../../../../main/data/persistence/db/tables/OsuUserSnapshotsTable';
+import {TimeWindowsTable} from '../../../../main/data/persistence/db/tables/TimeWindowsTable';
+import {AppUser} from '../../../../main/data/repository/models/AppUser';
+import {
+  GetInitiatorAppUserId,
+  GetTargetAppUserId,
+  SaveLastSeenBeatmapId,
+} from '../../../../main/presentation/commands/common/Signatures';
 import {
   MODE,
   MODS,
@@ -53,8 +36,30 @@ import {
   START_POSITION,
   USERNAME,
 } from '../../../../main/presentation/common/arg_processing/CommandArguments';
+import {MainTextProcessor} from '../../../../main/presentation/common/arg_processing/MainTextProcessor';
+import {SERVERS} from '../../../../main/presentation/common/OsuServers';
 import {VkBeatmapCoversTable} from '../../../../main/presentation/data/repositories/VkBeatmapCoversRepository';
 import {VkChatLastBeatmapsTable} from '../../../../main/presentation/data/repositories/VkChatLastBeatmapsRepository';
+import {UserRecentPlaysVk} from '../../../../main/presentation/vk/commands/UserRecentPlaysVk';
+import {VkIdConverter} from '../../../../main/presentation/vk/VkIdConverter';
+import {VkMessageContext} from '../../../../main/presentation/vk/VkMessageContext';
+import {ModAcronym} from '../../../../main/primitives/ModAcronym';
+import {
+  ALL_OSU_RULESETS,
+  OsuRuleset,
+} from '../../../../main/primitives/OsuRuleset';
+import {OsuServer} from '../../../../main/primitives/OsuServer';
+import {FakeBanchoApi} from '../../../mocks/data/http/BanchoApi';
+import {FakeScoreSimulationApi} from '../../../mocks/data/http/ScoreSimulationApi';
+import {
+  getFakeOsuUserInfo,
+  getFakeOsuUserUsername,
+  getFakeRecentScoreInfos,
+} from '../../../mocks/Generators';
+import {
+  createWithOnlyText,
+  createWithPayload,
+} from '../../../mocks/presentation/VkMessageContext';
 
 describe('UserRecentPlaysVk', function () {
   let tables: SqlDbTable[];
@@ -114,44 +119,33 @@ describe('UserRecentPlaysVk', function () {
       vkChatLastBeatmaps,
     ];
     const mainTextProcessor = new MainTextProcessor(' ', "'", '\\');
-    const getInitiatorAppUserId = (ctx: VkMessageContext): string => {
+    const getInitiatorAppUserId: GetInitiatorAppUserId<
+      VkMessageContext
+    > = ctx => {
       return VkIdConverter.vkUserIdToAppUserId(ctx.senderId);
     };
-    const getTargetAppUserId = (() => {
-      const getSelfOrQuotedAppUserId = (ctx: VkMessageContext): string => {
-        return VkIdConverter.vkUserIdToAppUserId(
-          ctx.replyMessage?.senderId ?? ctx.senderId
-        );
-      };
+    const getTargetAppUserId: GetTargetAppUserId<VkMessageContext> = (
+      ctx,
+      options
+    ) => {
       const adminId = 0;
-      const getSelfAppUserId = (ctx: VkMessageContext): string => {
-        if (ctx.senderId !== adminId) {
-          return VkIdConverter.vkUserIdToAppUserId(ctx.senderId);
-        }
-        return VkIdConverter.vkUserIdToAppUserId(
-          ctx.replyMessage?.senderId ?? ctx.senderId
-        );
-      };
-      return (settings: {
-        canTargetOtherUsersAsNonAdmin: boolean;
-      }): ((ctx: VkMessageContext) => string) => {
-        if (settings.canTargetOtherUsersAsNonAdmin) {
-          return getSelfOrQuotedAppUserId;
-        }
-        return getSelfAppUserId;
-      };
-    })();
-    const saveLastSeenBeatmapId = (
-      ctx: VkMessageContext,
-      server: OsuServer,
-      beatmapId: number
-    ): Promise<void> => {
+      return VkIdConverter.vkUserIdToAppUserId(
+        options.canTargetOthersAsNonAdmin || ctx.senderId === adminId
+          ? ctx.replyMessage?.senderId ?? ctx.senderId
+          : ctx.senderId
+      );
+    };
+    const saveLastSeenBeatmapId: SaveLastSeenBeatmapId<VkMessageContext> = (
+      ctx,
+      server,
+      beatmapId
+    ) => {
       return vkChatLastBeatmaps.save(ctx.peerId, server, beatmapId);
     };
     command = new UserRecentPlaysVk(
       mainTextProcessor,
       getInitiatorAppUserId,
-      getTargetAppUserId({canTargetOtherUsersAsNonAdmin: true}),
+      getTargetAppUserId,
       saveLastSeenBeatmapId,
       getRecentPlaysUseCase,
       getAppUserInfoUseCase,

@@ -18,6 +18,7 @@ import {
   NOTICE_ABOUT_SPACES_IN_USERNAMES,
   TextCommand,
 } from './base/TextCommand';
+import {GetInitiatorAppUserId, GetLocalAppUserIds} from './common/Signatures';
 
 export abstract class ChatLeaderboard<TContext, TOutput> extends TextCommand<
   ChatLeaderboardExecutionArgs,
@@ -43,14 +44,14 @@ export abstract class ChatLeaderboard<TContext, TOutput> extends TextCommand<
   ];
 
   textProcessor: TextProcessor;
-  getInitiatorAppUserId: (ctx: TContext) => string;
-  getLocalAppUserIds: (ctx: TContext) => Promise<string[]>;
+  getInitiatorAppUserId: GetInitiatorAppUserId<TContext>;
+  getLocalAppUserIds: GetLocalAppUserIds<TContext>;
   getOsuUserInfo: GetOsuUserInfoUseCase;
   getAppUserInfo: GetAppUserInfoUseCase;
   constructor(
     textProcessor: TextProcessor,
-    getInitiatorAppUserId: (ctx: TContext) => string,
-    getLocalAppUserIds: (ctx: TContext) => Promise<string[]>,
+    getInitiatorAppUserId: GetInitiatorAppUserId<TContext>,
+    getLocalAppUserIds: GetLocalAppUserIds<TContext>,
     getOsuUserInfo: GetOsuUserInfoUseCase,
     getAppUserInfo: GetAppUserInfoUseCase
   ) {

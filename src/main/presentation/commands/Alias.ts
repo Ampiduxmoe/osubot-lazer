@@ -24,6 +24,7 @@ import {UserBestPlaysOnMap} from './UserBestPlaysOnMap';
 import {UserInfo} from './UserInfo';
 import {UserRecentPlays} from './UserRecentPlays';
 import {TextCommand} from './base/TextCommand';
+import {GetTargetAppUserId} from './common/Signatures';
 
 export abstract class Alias<TContext, TOutput> extends TextCommand<
   AliasExecutionArgs,
@@ -114,18 +115,12 @@ export abstract class Alias<TContext, TOutput> extends TextCommand<
   };
 
   textProcessor: TextProcessor;
-  getTargetAppUserId: (
-    ctx: TContext,
-    options: {canTargetOthersAsNonAdmin: boolean}
-  ) => string;
+  getTargetAppUserId: GetTargetAppUserId<TContext>;
   aliases: AppUserCommandAliasesRepository;
   aliasProcessor: AliasProcessor;
   constructor(
     textProcessor: TextProcessor,
-    getTargetAppUserId: (
-      ctx: TContext,
-      options: {canTargetOthersAsNonAdmin: boolean}
-    ) => string,
+    getTargetAppUserId: GetTargetAppUserId<TContext>,
     aliases: AppUserCommandAliasesRepository,
     aliasProcessor: AliasProcessor
   ) {
