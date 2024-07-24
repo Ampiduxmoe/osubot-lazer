@@ -1,12 +1,10 @@
 /* eslint-disable no-irregular-whitespace */
 import {APP_CODE_NAME} from '../../../App';
-import {GetAppUserInfoUseCase} from '../../../application/usecases/get_app_user_info/GetAppUserInfoUseCase';
 import {
   OsuMap,
   OsuMapUserBestPlays,
   OsuMapUserPlay,
 } from '../../../application/usecases/get_beatmap_users_best_score/GetBeatmapUsersBestScoresResponse';
-import {GetBeatmapUsersBestScoresUseCase} from '../../../application/usecases/get_beatmap_users_best_score/GetBeatmapUsersBestScoresUseCase';
 import {round} from '../../../primitives/Numbers';
 import {OsuRuleset} from '../../../primitives/OsuRuleset';
 import {OsuServer} from '../../../primitives/OsuServer';
@@ -15,15 +13,7 @@ import {
   ChatLeaderboardOnMap,
   ChatLeaderboardOnMapExecutionArgs,
 } from '../../commands/ChatLeaderboardOnMap';
-import {
-  GetInitiatorAppUserId,
-  GetLastSeenBeatmapId,
-  GetLocalAppUserIds,
-  SaveLastSeenBeatmapId,
-} from '../../commands/common/Signatures';
-import {TextProcessor} from '../../common/arg_processing/TextProcessor';
 import {CommandMatchResult} from '../../common/CommandMatchResult';
-import {VkChatLastBeatmapsRepository} from '../../data/repositories/VkChatLastBeatmapsRepository';
 import {VkMessageContext} from '../VkMessageContext';
 import {VkOutputMessage} from '../VkOutputMessage';
 
@@ -31,29 +21,6 @@ export class ChatLeaderboardOnMapVk extends ChatLeaderboardOnMap<
   VkMessageContext,
   VkOutputMessage
 > {
-  vkChatLastBeatmaps: VkChatLastBeatmapsRepository;
-  constructor(
-    textProcessor: TextProcessor,
-    getInitiatorAppUserId: GetInitiatorAppUserId<VkMessageContext>,
-    getLocalAppUserIds: GetLocalAppUserIds<VkMessageContext>,
-    getLastSeenBeatmapId: GetLastSeenBeatmapId<VkMessageContext>,
-    saveLastSeenBeatmapId: SaveLastSeenBeatmapId<VkMessageContext>,
-    getBeatmapBestScores: GetBeatmapUsersBestScoresUseCase,
-    getAppUserInfo: GetAppUserInfoUseCase,
-    vkChatLastBeatmaps: VkChatLastBeatmapsRepository
-  ) {
-    super(
-      textProcessor,
-      getInitiatorAppUserId,
-      getLocalAppUserIds,
-      getLastSeenBeatmapId,
-      saveLastSeenBeatmapId,
-      getBeatmapBestScores,
-      getAppUserInfo
-    );
-    this.vkChatLastBeatmaps = vkChatLastBeatmaps;
-  }
-
   matchMessage(
     ctx: VkMessageContext
   ): CommandMatchResult<ChatLeaderboardOnMapExecutionArgs> {

@@ -23,6 +23,7 @@ import {
   TextCommand,
 } from './base/TextCommand';
 import {
+  GetContextualBeatmapIds,
   GetInitiatorAppUserId,
   GetLastSeenBeatmapId,
   GetLocalAppUserIds,
@@ -62,6 +63,7 @@ export abstract class ChatLeaderboardOnMap<
   textProcessor: TextProcessor;
   getInitiatorAppUserId: GetInitiatorAppUserId<TContext>;
   getLocalAppUserIds: GetLocalAppUserIds<TContext>;
+  getContextualBeatmapIds: GetContextualBeatmapIds<TContext>;
   getLastSeenBeatmapId: GetLastSeenBeatmapId<TContext>;
   saveLastSeenBeatmapId: SaveLastSeenBeatmapId<TContext>;
   getBeatmapBestScores: GetBeatmapUsersBestScoresUseCase;
@@ -70,6 +72,7 @@ export abstract class ChatLeaderboardOnMap<
     textProcessor: TextProcessor,
     getInitiatorAppUserId: GetInitiatorAppUserId<TContext>,
     getLocalAppUserIds: GetLocalAppUserIds<TContext>,
+    getContextualBeatmapIds: GetContextualBeatmapIds<TContext>,
     getLastSeenBeatmapId: GetLastSeenBeatmapId<TContext>,
     saveLastSeenBeatmapId: SaveLastSeenBeatmapId<TContext>,
     getBeatmapBestScores: GetBeatmapUsersBestScoresUseCase,
@@ -79,6 +82,7 @@ export abstract class ChatLeaderboardOnMap<
     this.textProcessor = textProcessor;
     this.getInitiatorAppUserId = getInitiatorAppUserId;
     this.getLocalAppUserIds = getLocalAppUserIds;
+    this.getContextualBeatmapIds = getContextualBeatmapIds;
     this.getLastSeenBeatmapId = getLastSeenBeatmapId;
     this.saveLastSeenBeatmapId = saveLastSeenBeatmapId;
     this.getBeatmapBestScores = getBeatmapBestScores;
@@ -150,8 +154,16 @@ export abstract class ChatLeaderboardOnMap<
         isOnlyLocalMembersLb: isOnlyLocalMembersLb,
       };
     }
-    const beatmapId =
-      args.beatmapId ?? (await this.getLastSeenBeatmapId(ctx, args.server));
+    const beatmapId: number | undefined = await (async () => {
+      if (args.beatmapId !== undefined) {
+        return args.beatmapId;
+      }
+      const closestIds = this.getContextualBeatmapIds(ctx);
+      if (closestIds.length === 1) {
+        return closestIds[0].id;
+      }
+      return await this.getLastSeenBeatmapId(ctx, args.server);
+    })();
     if (beatmapId === undefined) {
       return {
         server: args.server,
@@ -188,8 +200,8 @@ export abstract class ChatLeaderboardOnMap<
           };
       }
     }
-    if (args.beatmapId !== undefined) {
-      await this.saveLastSeenBeatmapId(ctx, args.server, args.beatmapId);
+    if (beatmapId !== undefined) {
+      await this.saveLastSeenBeatmapId(ctx, args.server, beatmapId);
     }
     return {
       server: args.server,

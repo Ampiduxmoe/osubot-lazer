@@ -11,6 +11,7 @@ import {
   BeatmapInfoExecutionArgs,
 } from '../../commands/BeatmapInfo';
 import {
+  GetContextualBeatmapIds,
   GetInitiatorAppUserId,
   GetLastSeenBeatmapId,
   SaveLastSeenBeatmapId,
@@ -31,6 +32,7 @@ export class BeatmapInfoVk extends BeatmapInfo<
   constructor(
     textProcessor: TextProcessor,
     getInitiatorAppUserId: GetInitiatorAppUserId<VkMessageContext>,
+    getContextualBeatmapIds: GetContextualBeatmapIds<VkMessageContext>,
     getLastSeenBeatmapId: GetLastSeenBeatmapId<VkMessageContext>,
     saveLastSeenBeatmapId: SaveLastSeenBeatmapId<VkMessageContext>,
     getBeatmapInfo: GetBeatmapInfoUseCase,
@@ -39,6 +41,7 @@ export class BeatmapInfoVk extends BeatmapInfo<
     super(
       textProcessor,
       getInitiatorAppUserId,
+      getContextualBeatmapIds,
       getLastSeenBeatmapId,
       saveLastSeenBeatmapId,
       getBeatmapInfo

@@ -21,12 +21,12 @@ import {ModArg} from '../common/arg_processing/ModArg';
 import {TextProcessor} from '../common/arg_processing/TextProcessor';
 import {CommandMatchResult} from '../common/CommandMatchResult';
 import {CommandPrefixes} from '../common/CommandPrefixes';
-import {VkBeatmapCoversRepository} from '../data/repositories/VkBeatmapCoversRepository';
 import {
   NOTICE_ABOUT_SPACES_IN_USERNAMES,
   TextCommand,
 } from './base/TextCommand';
 import {
+  GetContextualBeatmapIds,
   GetInitiatorAppUserId,
   GetLastSeenBeatmapId,
   GetTargetAppUserId,
@@ -62,30 +62,30 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
   textProcessor: TextProcessor;
   getInitiatorAppUserId: GetInitiatorAppUserId<TContext>;
   getTargetAppUserId: GetTargetAppUserId<TContext>;
+  getContextualBeatmapIds: GetContextualBeatmapIds<TContext>;
   getLastSeenBeatmapId: GetLastSeenBeatmapId<TContext>;
   saveLastSeenBeatmapId: SaveLastSeenBeatmapId<TContext>;
   getBeatmapBestScores: GetBeatmapUsersBestScoresUseCase;
   getAppUserInfo: GetAppUserInfoUseCase;
-  vkBeatmapCovers: VkBeatmapCoversRepository;
   constructor(
     textProcessor: TextProcessor,
     getInitiatorAppUserId: GetInitiatorAppUserId<TContext>,
     getTargetAppUserId: GetTargetAppUserId<TContext>,
+    getContextualBeatmapIds: GetContextualBeatmapIds<TContext>,
     getLastSeenBeatmapId: GetLastSeenBeatmapId<TContext>,
     saveLastSeenBeatmapId: SaveLastSeenBeatmapId<TContext>,
     getBeatmapBestScores: GetBeatmapUsersBestScoresUseCase,
-    getAppUserInfo: GetAppUserInfoUseCase,
-    vkBeatmapCovers: VkBeatmapCoversRepository
+    getAppUserInfo: GetAppUserInfoUseCase
   ) {
     super(UserBestPlaysOnMap.commandStructure);
     this.textProcessor = textProcessor;
     this.getInitiatorAppUserId = getInitiatorAppUserId;
     this.getTargetAppUserId = getTargetAppUserId;
+    this.getContextualBeatmapIds = getContextualBeatmapIds;
     this.getLastSeenBeatmapId = getLastSeenBeatmapId;
     this.saveLastSeenBeatmapId = saveLastSeenBeatmapId;
     this.getBeatmapBestScores = getBeatmapBestScores;
     this.getAppUserInfo = getAppUserInfo;
-    this.vkBeatmapCovers = vkBeatmapCovers;
   }
 
   matchText(text: string): CommandMatchResult<UserBestPlaysOnMapExecutionArgs> {
@@ -145,8 +145,16 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
         startPosition: undefined,
       };
     }
-    const beatmapId =
-      args.beatmapId ?? (await this.getLastSeenBeatmapId(ctx, args.server));
+    const beatmapId: number | undefined = await (async () => {
+      if (args.beatmapId !== undefined) {
+        return args.beatmapId;
+      }
+      const closestIds = this.getContextualBeatmapIds(ctx);
+      if (closestIds.length === 1) {
+        return closestIds[0].id;
+      }
+      return await this.getLastSeenBeatmapId(ctx, args.server);
+    })();
     if (beatmapId === undefined) {
       return {
         server: args.server,
@@ -202,8 +210,8 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
             0,
             (args.startPosition ?? 1) + (args.quantity ?? 1) - 1
           );
-    if (args.beatmapId !== undefined) {
-      await this.saveLastSeenBeatmapId(ctx, args.server, args.beatmapId);
+    if (beatmapId !== undefined) {
+      await this.saveLastSeenBeatmapId(ctx, args.server, beatmapId);
     }
     return {
       server: args.server,

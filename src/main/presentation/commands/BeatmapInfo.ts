@@ -21,6 +21,7 @@ import {CommandMatchResult} from '../common/CommandMatchResult';
 import {CommandPrefixes} from '../common/CommandPrefixes';
 import {TextCommand} from './base/TextCommand';
 import {
+  GetContextualBeatmapIds,
   GetInitiatorAppUserId,
   GetLastSeenBeatmapId,
   SaveLastSeenBeatmapId,
@@ -80,12 +81,14 @@ export abstract class BeatmapInfo<TContext, TOutput> extends TextCommand<
 
   textProcessor: TextProcessor;
   getInitiatorAppUserId: GetInitiatorAppUserId<TContext>;
+  getContextualBeatmapIds: GetContextualBeatmapIds<TContext>;
   getLastSeenBeatmapId: GetLastSeenBeatmapId<TContext>;
   saveLastSeenBeatmapId: SaveLastSeenBeatmapId<TContext>;
   getBeatmapInfo: GetBeatmapInfoUseCase;
   constructor(
     textProcessor: TextProcessor,
     getInitiatorAppUserId: GetInitiatorAppUserId<TContext>,
+    getContextualBeatmapIds: GetContextualBeatmapIds<TContext>,
     getLastSeenBeatmapId: GetLastSeenBeatmapId<TContext>,
     saveLastSeenBeatmapId: SaveLastSeenBeatmapId<TContext>,
     getBeatmapInfo: GetBeatmapInfoUseCase
@@ -93,6 +96,7 @@ export abstract class BeatmapInfo<TContext, TOutput> extends TextCommand<
     super(BeatmapInfo.commandStructure);
     this.textProcessor = textProcessor;
     this.getInitiatorAppUserId = getInitiatorAppUserId;
+    this.getContextualBeatmapIds = getContextualBeatmapIds;
     this.getLastSeenBeatmapId = getLastSeenBeatmapId;
     this.saveLastSeenBeatmapId = saveLastSeenBeatmapId;
     this.getBeatmapInfo = getBeatmapInfo;
@@ -148,8 +152,16 @@ export abstract class BeatmapInfo<TContext, TOutput> extends TextCommand<
     args: BeatmapInfoExecutionArgs,
     ctx: TContext
   ): Promise<BeatmapInfoViewParams> {
-    const beatmapId =
-      args.beatmapId ?? (await this.getLastSeenBeatmapId(ctx, args.server));
+    const beatmapId: number | undefined = await (async () => {
+      if (args.beatmapId !== undefined) {
+        return args.beatmapId;
+      }
+      const closestIds = this.getContextualBeatmapIds(ctx);
+      if (closestIds.length === 1) {
+        return closestIds[0].id;
+      }
+      return await this.getLastSeenBeatmapId(ctx, args.server);
+    })();
     if (beatmapId === undefined) {
       return {
         server: args.server,
@@ -171,8 +183,8 @@ export abstract class BeatmapInfo<TContext, TOutput> extends TextCommand<
         beatmapInfo: undefined,
       };
     }
-    if (args.beatmapId !== undefined) {
-      await this.saveLastSeenBeatmapId(ctx, args.server, args.beatmapId);
+    if (beatmapId !== undefined) {
+      await this.saveLastSeenBeatmapId(ctx, args.server, beatmapId);
     }
     return {
       server: args.server,

@@ -1,5 +1,5 @@
 import axios from 'axios';
-import {VK} from 'vk-io';
+import {AttachmentType, VK} from 'vk-io';
 import {AppConfig, VkGroup} from './AppConfig';
 import {GetApiUsageSummaryUseCase} from './application/usecases/get_api_usage_summary/GetApiUsageSummaryUseCase';
 import {GetAppUserInfoUseCase} from './application/usecases/get_app_user_info/GetAppUserInfoUseCase';
@@ -32,6 +32,7 @@ import {OsuUserSnapshotsTable} from './data/persistence/db/tables/OsuUserSnapsho
 import {SerializedObjectsTable} from './data/persistence/db/tables/SerializedObjectsTable';
 import {TimeWindowsTable} from './data/persistence/db/tables/TimeWindowsTable';
 import {
+  GetContextualBeatmapIds,
   GetInitiatorAppUserId,
   GetLastSeenBeatmapId,
   GetLocalAppUserIds,
@@ -69,6 +70,7 @@ import {UserRecentPlaysVk} from './presentation/vk/commands/UserRecentPlaysVk';
 import {VkClient} from './presentation/vk/VkClient';
 import {VkIdConverter} from './presentation/vk/VkIdConverter';
 import {VkMessageContext} from './presentation/vk/VkMessageContext';
+import {OsuServer} from './primitives/OsuServer';
 import {wait} from './primitives/Promises';
 import {Timespan} from './primitives/Timespan';
 
@@ -462,6 +464,59 @@ export class App {
     ) => {
       return vkChatLastBeatmaps.save(ctx.peerId, server, beatmapId);
     };
+    const getContextualBeatmapIds: GetContextualBeatmapIds<VkMessageContext> =
+      (() => {
+        const beatmapLinkRegexes: Record<keyof typeof OsuServer, RegExp[]> = {
+          Bancho: [
+            /(https?:\/\/)?osu\.ppy\.sh\/b\/(?<ID>\d+)\/?/i,
+            /(https?:\/\/)?osu\.ppy\.sh\/beatmaps\/(?<ID>\d+)\/?/i,
+            /(https?:\/\/)?osu\.ppy\.sh\/beatmapsets\/(\d+)#(osu|taiko|fruits|mania)\/(?<ID>\d+)\/?/i,
+          ],
+        };
+        return ctx => {
+          const allMatches: {offset: number; server: OsuServer; id: number}[] =
+            [];
+          const texts: string[] = [];
+          for (const attachment of ctx.getAttachments(AttachmentType.LINK)) {
+            texts.push(attachment.url);
+          }
+          if (ctx.replyMessage !== undefined) {
+            if (ctx.replyMessage.text !== undefined) {
+              texts.push(ctx.replyMessage.text);
+            }
+            for (const attachment of ctx.replyMessage.getAttachments(
+              AttachmentType.LINK
+            )) {
+              texts.push(attachment.url);
+            }
+          }
+
+          for (const text of texts) {
+            const textMatches: {
+              offset: number;
+              server: OsuServer;
+              id: number;
+            }[] = [];
+            for (const server in beatmapLinkRegexes) {
+              const serverAsKey = server as keyof typeof OsuServer;
+              const serverRegexes = beatmapLinkRegexes[serverAsKey];
+              for (const regex of serverRegexes) {
+                const matches = regex.exec(text);
+                const idString = matches?.groups?.ID;
+                if (idString !== undefined) {
+                  textMatches.push({
+                    offset: matches!.index,
+                    server: OsuServer[serverAsKey],
+                    id: parseInt(idString),
+                  });
+                }
+              }
+            }
+            allMatches.push(...textMatches.sort((a, b) => a.offset - b.offset));
+          }
+          return allMatches;
+        };
+      })();
     const aliasProcessor = new MainAliasProcessor();
 
     const publicCommands = [
@@ -480,6 +535,7 @@ export class App {
       new BeatmapInfoVk(
         mainTextProcessor,
         getInitiatorAppUserId,
+        getContextualBeatmapIds,
         getLastSeenBeatmapId,
         saveLastSeenBeatmapId,
         getBeatmapInfoUseCase,
@@ -507,6 +563,7 @@ export class App {
         mainTextProcessor,
         getInitiatorAppUserId,
         getTargetAppUserId,
+        getContextualBeatmapIds,
         getLastSeenBeatmapId,
         saveLastSeenBeatmapId,
         getBeatmapUsersBestScoresUseCase,
@@ -524,11 +581,11 @@ export class App {
         mainTextProcessor,
         getInitiatorAppUserId,
         getLocalAppUserIds,
+        getContextualBeatmapIds,
         getLastSeenBeatmapId,
         saveLastSeenBeatmapId,
         getBeatmapUsersBestScoresUseCase,
-        getAppUserInfoUseCase,
-        vkChatLastBeatmaps
+        getAppUserInfoUseCase
       ),
       new AliasVk(
         mainTextProcessor,

@@ -19,3 +19,7 @@ export type SaveLastSeenBeatmapId<TContext> = (
 ) => Promise<void>;
 
 export type GetLocalAppUserIds<TContext> = (ctx: TContext) => Promise<string[]>;
+
+export type GetContextualBeatmapIds<TContext> = (
+  ctx: TContext
+) => {server: OsuServer; id: number}[];
