@@ -674,49 +674,89 @@ export const APP_USER_ID = ANY_STRING(
 );
 export const VK_USER_ID = INTEGER('ид_вк', 'ID пользователя VK', 0, 99999999);
 
+type BeatmapLinkArg = {server: OsuServer; id: number};
+
+export const BEATMAP_LINK: CommandArgument<BeatmapLinkArg> = (() => {
+  const integerArg = INTEGER('', '', 0, 1e9);
+  const beatmapLinkRegexes: Record<keyof typeof OsuServer, RegExp[]> = {
+    Bancho: [
+      /^(https?:\/\/)?osu\.ppy\.sh\/b\/(?<ID>\d+)\/?$/i,
+      /^(https?:\/\/)?osu\.ppy\.sh\/beatmaps\/(?<ID>\d+)\/?$/i,
+      /^(https?:\/\/)?osu\.ppy\.sh\/beatmapsets\/(\d+)#(osu|taiko|fruits|mania)+\/(?<ID>\d+)\/?$/i,
+    ],
+  };
+  return {
+    displayName: 'ссылка_на_карту',
+    description: 'ссылка на карту (не мапсет!)',
+    get usageExample(): string {
+      const mapIdStr = integerArg.usageExample;
+      const randomBeatmapsetIdStr = integerArg.usageExample;
+      const randomMode = pickRandom(['osu', 'taiko', 'fruits', 'mania']);
+      return pickRandom([
+        'osu.ppy.sh/b/' + mapIdStr,
+        'http://osu.ppy.sh/beatmaps/' + mapIdStr,
+        `https://osu.ppy.sh/beatmapsets/${randomBeatmapsetIdStr}#${randomMode}/${mapIdStr}/`,
+      ]);
+    },
+    match: function (token: string): boolean {
+      for (const server in beatmapLinkRegexes) {
+        const serverAsKey = server as keyof typeof OsuServer;
+        const serverRegexes = beatmapLinkRegexes[serverAsKey];
+        for (const regex of serverRegexes) {
+          if (regex.test(token)) {
+            return true;
+          }
+        }
+      }
+      return false;
+    },
+    parse: function (token: string): BeatmapLinkArg {
+      for (const server in beatmapLinkRegexes) {
+        const serverAsKey = server as keyof typeof OsuServer;
+        const serverRegexes = beatmapLinkRegexes[serverAsKey];
+        for (const regex of serverRegexes) {
+          const matches = regex.exec(token);
+          const idString = matches?.groups?.ID;
+          if (idString !== undefined) {
+            return {
+              server: OsuServer[serverAsKey],
+              id: parseInt(idString),
+            };
+          }
+        }
+      }
+      throw Error('Parse should only be called for matching tokens');
+    },
+    unparse: function (value: BeatmapLinkArg): string {
+      switch (value.server) {
+        case OsuServer.Bancho:
+          return 'https://osu.ppy.sh/b/' + value.id;
+      }
+    },
+  };
+})();
+
 export const BEATMAP_ID: CommandArgument<number> = (() => {
   const integerArg = INTEGER('', '', 0, 1e9);
-  const beatmapLinkRegexes = [
-    /^(https?:\/\/)?osu\.ppy\.sh\/b\/(?<ID>\d+)\/?$/i,
-    /^(https?:\/\/)?osu\.ppy\.sh\/beatmaps\/(?<ID>\d+)\/?$/i,
-    /^(https?:\/\/)?osu\.ppy\.sh\/beatmapsets\/(\d+)#(osu|taiko|fruits|mania)+\/(?<ID>\d+)\/?$/i,
-  ];
+  const beatmapLinkArg = BEATMAP_LINK;
   return {
     displayName: '*ид_карты|ссылка',
     description: 'ID карты или ссылка на карту (не мапсет!)',
     get usageExample(): string {
       const mapIdStr = integerArg.usageExample;
-      const randomBeatmapsetIdStr = () => integerArg.usageExample;
-      const randomMode = () => pickRandom(['osu', 'taiko', 'fruits', 'mania']);
-      return pickRandom([
-        '*' + mapIdStr,
-        'osu.ppy.sh/b/' + mapIdStr,
-        'http://osu.ppy.sh/beatmaps/' + mapIdStr,
-        `https://osu.ppy.sh/beatmapsets/${randomBeatmapsetIdStr()}#${randomMode()}/${mapIdStr}/`,
-      ]);
+      return pickRandom(['*' + mapIdStr, beatmapLinkArg.usageExample]);
     },
     match: function (token: string): boolean {
       if (token.startsWith('*')) {
         return integerArg.match(token.substring(1));
       }
-      for (const regex of beatmapLinkRegexes) {
-        if (regex.test(token)) {
-          return true;
-        }
-      }
-      return false;
+      return beatmapLinkArg.match(token);
     },
     parse: function (token: string): number {
       if (token.startsWith('*')) {
         return integerArg.parse(token.substring(1));
       }
-      for (const regex of beatmapLinkRegexes) {
-        const match = regex.exec(token);
-        if (match?.groups?.ID !== undefined) {
-          return integerArg.parse(match.groups.ID);
-        }
-      }
-      throw Error('Parse should only be called for matching tokens');
+      return beatmapLinkArg.parse(token).id;
     },
     unparse: function (value: number): string {
       return '*' + value;

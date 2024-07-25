@@ -59,6 +59,7 @@ import {AliasVk} from './presentation/vk/commands/AliasVk';
 import {AnouncementsVk} from './presentation/vk/commands/AnouncementsVk';
 import {ApiUsageSummaryVk} from './presentation/vk/commands/ApiUsageSummaryVk';
 import {BeatmapInfoVk} from './presentation/vk/commands/BeatmapInfoVk';
+import {BeatmapMenuVk} from './presentation/vk/commands/BeatmapMenuVk';
 import {ChatLeaderboardOnMapVk} from './presentation/vk/commands/ChatLeaderboardOnMapVk';
 import {ChatLeaderboardVk} from './presentation/vk/commands/ChatLeaderboardVk';
 import {HelpVk} from './presentation/vk/commands/HelpVk';
@@ -594,7 +595,8 @@ export class App {
         aliasProcessor
       ),
     ];
-    for (const command of publicCommands) {
+    const beatmapMenuCommand = new BeatmapMenuVk(mainTextProcessor);
+    for (const command of [...publicCommands, beatmapMenuCommand]) {
       command.link(publicCommands);
     }
     const adminCommands = [
@@ -607,7 +609,11 @@ export class App {
       ),
     ];
     const helpCommand = new HelpVk(mainTextProcessor, publicCommands);
-    vkClient.publicCommands.push(helpCommand, ...publicCommands);
+    vkClient.publicCommands.push(
+      helpCommand,
+      ...publicCommands,
+      beatmapMenuCommand
+    );
     vkClient.adminCommands.push(...adminCommands);
 
     const initActions: (() => Promise<void>)[] = [
