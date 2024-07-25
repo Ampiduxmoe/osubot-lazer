@@ -226,6 +226,9 @@ export abstract class BeatmapInfo<TContext, TOutput> extends TextCommand<
       SERVER_PREFIX.unparse(args.server),
       this.COMMAND_PREFIX.unparse(this.prefixes[0]),
     ];
+    if (args.beatmapId !== undefined) {
+      tokens.push(BEATMAP_ID.unparse(args.beatmapId));
+    }
     const simulationOsu = args.mapScoreSimulationOsu;
     if (simulationOsu.mods !== undefined) {
       tokens.push(
