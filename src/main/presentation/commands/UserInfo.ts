@@ -111,7 +111,7 @@ export abstract class UserInfo<TContext, TOutput> extends TextCommand<
       mode ??= boundUser.ruleset;
     }
     const userInfoResponse = await this.getOsuUserInfo.execute({
-      appUserId: this.getInitiatorAppUserId(ctx),
+      initiatorAppUserId: this.getInitiatorAppUserId(ctx),
       server: args.server,
       username: username,
       ruleset: mode,

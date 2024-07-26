@@ -170,7 +170,7 @@ export abstract class BeatmapInfo<TContext, TOutput> extends TextCommand<
       };
     }
     const beatmapInfoResponse = await this.getBeatmapInfo.execute({
-      appUserId: this.getInitiatorAppUserId(ctx),
+      initiatorAppUserId: this.getInitiatorAppUserId(ctx),
       beatmapId: beatmapId,
       server: args.server,
       mapScoreSimulationOsu: args.mapScoreSimulationOsu,

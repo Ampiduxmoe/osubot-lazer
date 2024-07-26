@@ -131,7 +131,7 @@ export abstract class ChatLeaderboard<TContext, TOutput> extends TextCommand<
         .filter(x => x.mode === undefined)
         .map(async x => {
           const osuUserInfoResponse = await this.getOsuUserInfo.execute({
-            appUserId: initiatorAppUserId,
+            initiatorAppUserId: initiatorAppUserId,
             server: args.server,
             username: x.username,
             ruleset: args.mode,
@@ -175,7 +175,7 @@ export abstract class ChatLeaderboard<TContext, TOutput> extends TextCommand<
         )
         .map(async x => {
           const osuUserInfoResponse = await this.getOsuUserInfo.execute({
-            appUserId: initiatorAppUserId,
+            initiatorAppUserId: initiatorAppUserId,
             server: args.server,
             username: x.username,
             ruleset: mode,

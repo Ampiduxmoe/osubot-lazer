@@ -77,19 +77,17 @@ export abstract class ApiUsageSummary<TContext, TOutput> extends TextCommand<
   async process(
     args: ApiUsageSummaryExecutionArgs
   ): Promise<ApiUsageSummaryViewParams> {
-    const {date, appUserId} = args;
-
-    const timeStart = date.setUTCHours(0, 0, 0, 0);
-    const timeEnd = date.setUTCHours(23, 59, 59, 999);
+    const timeStart = args.date.setUTCHours(0, 0, 0, 0);
+    const timeEnd = args.date.setUTCHours(23, 59, 59, 999);
 
     const apiUsageSummaryResponse = await this.getApiUsageSummary.execute({
       timeStart: timeStart,
       timeEnd: timeEnd,
-      appUserId: appUserId,
+      appUserId: args.appUserId,
     });
 
     return {
-      appUserIdInput: appUserId,
+      appUserIdInput: args.appUserId,
       apiUsageSummary: apiUsageSummaryResponse.usageSummary,
     };
   }

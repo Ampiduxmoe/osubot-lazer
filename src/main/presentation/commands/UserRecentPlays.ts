@@ -144,18 +144,17 @@ export abstract class UserRecentPlays<TContext, TOutput> extends TextCommand<
       username = boundUser.username;
       mode ??= boundUser.ruleset;
     }
-    const mods = args.mods ?? [];
     const startPosition = clamp(args.startPosition ?? 1, 1, 100);
     const quantity = clamp(args.quantity ?? 1, 1, 10);
     const recentPlaysResult = await this.getRecentPlays.execute({
-      appUserId: this.getInitiatorAppUserId(ctx),
+      initiatorAppUserId: this.getInitiatorAppUserId(ctx),
       server: args.server,
       username: username,
       ruleset: mode,
       includeFails: !args.passesOnly,
       startPosition: startPosition,
       quantity: quantity,
-      mods: mods,
+      mods: args.mods ?? [],
     });
     if (recentPlaysResult.isFailure) {
       const internalFailureReason = recentPlaysResult.failureReason!;

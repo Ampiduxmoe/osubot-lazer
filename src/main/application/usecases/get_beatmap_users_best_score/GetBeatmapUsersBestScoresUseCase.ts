@@ -58,7 +58,7 @@ export class GetBeatmapUsersBestScoresUseCase
     params: GetBeatmapUsersBestScoresRequest
   ): Promise<GetBeatmapUsersBestScoresResponse> {
     const {
-      appUserId,
+      initiatorAppUserId,
       server,
       beatmapId,
       usernames,
@@ -66,7 +66,11 @@ export class GetBeatmapUsersBestScoresUseCase
       quantityPerUser,
       mods,
     } = params;
-    const beatmap = await this.beatmaps.get(appUserId, beatmapId, server);
+    const beatmap = await this.beatmaps.get(
+      initiatorAppUserId,
+      beatmapId,
+      server
+    );
     if (beatmap === undefined) {
       return {
         isFailure: true,
@@ -86,7 +90,7 @@ export class GetBeatmapUsersBestScoresUseCase
         continue;
       }
       const osuUser = await this.osuUsers.getByUsername(
-        appUserId,
+        initiatorAppUserId,
         username,
         server,
         undefined
@@ -104,7 +108,7 @@ export class GetBeatmapUsersBestScoresUseCase
     const usernameScoresPromises = targets.map(async t => ({
       username: t.caseCorrectUsername,
       rawScores: await this.mapUserScores.get(
-        appUserId,
+        initiatorAppUserId,
         beatmapId,
         t.osuId,
         server,

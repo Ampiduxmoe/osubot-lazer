@@ -2,7 +2,7 @@ import {ModAcronym} from '../../../primitives/ModAcronym';
 import {OsuServer} from '../../../primitives/OsuServer';
 
 export type GetBeatmapInfoRequest = {
-  appUserId: string;
+  initiatorAppUserId: string;
   server: OsuServer;
   beatmapId: number;
   mapScoreSimulationOsu: {

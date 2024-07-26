@@ -87,29 +87,28 @@ export abstract class Help<TContext, TOutput> extends TextCommand<
   }
 
   async process(args: HelpExecutionArgs): Promise<HelpViewParams> {
-    const prefixToDescribe = args.commandPrefix;
-    if (prefixToDescribe === undefined) {
+    if (args.commandPrefix === undefined) {
       return {
         commandList: [this, ...this.commands],
       };
     }
-    if (this.prefixes.matchIgnoringCase(prefixToDescribe)) {
+    if (this.prefixes.matchIgnoringCase(args.commandPrefix)) {
       return {
-        commandPrefixInput: prefixToDescribe,
+        commandPrefixInput: args.commandPrefix,
         command: this,
       };
     }
     for (const command of this.commands) {
-      if (command.prefixes.matchIgnoringCase(prefixToDescribe)) {
+      if (command.prefixes.matchIgnoringCase(args.commandPrefix)) {
         return {
-          commandPrefixInput: prefixToDescribe,
+          commandPrefixInput: args.commandPrefix,
           command: command,
           usageVariant: args.usageVariant,
         };
       }
     }
     return {
-      commandPrefixInput: prefixToDescribe,
+      commandPrefixInput: args.commandPrefix,
     };
   }
 

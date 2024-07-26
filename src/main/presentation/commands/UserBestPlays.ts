@@ -135,7 +135,6 @@ export abstract class UserBestPlays<TContext, TOutput> extends TextCommand<
       username = boundUser.username;
       mode ??= boundUser.ruleset;
     }
-    const mods = args.mods ?? [];
     const startPosition = clamp(args.startPosition ?? 1, 1, 100);
     let quantity: number;
     if (args.startPosition === undefined) {
@@ -144,13 +143,13 @@ export abstract class UserBestPlays<TContext, TOutput> extends TextCommand<
       quantity = clamp(args.quantity ?? 1, 1, 10);
     }
     const bestPlaysResult = await this.getUserBestPlays.execute({
-      appUserId: this.getInitiatorAppUserId(ctx),
+      initiatorAppUserId: this.getInitiatorAppUserId(ctx),
       server: args.server,
       username: username,
       ruleset: mode,
       startPosition: startPosition,
       quantity: quantity,
-      mods: mods,
+      mods: args.mods ?? [],
     });
     if (bestPlaysResult.isFailure) {
       const internalFailureReason = bestPlaysResult.failureReason!;

@@ -168,7 +168,7 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
       };
     }
     const leaderboardResponse = await this.getBeatmapBestScores.execute({
-      appUserId: this.getInitiatorAppUserId(ctx),
+      initiatorAppUserId: this.getInitiatorAppUserId(ctx),
       server: args.server,
       beatmapId: beatmapId,
       usernames: [username],

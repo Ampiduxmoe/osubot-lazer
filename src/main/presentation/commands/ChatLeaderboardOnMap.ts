@@ -177,7 +177,7 @@ export abstract class ChatLeaderboardOnMap<
       };
     }
     const leaderboardResponse = await this.getBeatmapBestScores.execute({
-      appUserId: this.getInitiatorAppUserId(ctx),
+      initiatorAppUserId: this.getInitiatorAppUserId(ctx),
       server: args.server,
       beatmapId: beatmapId,
       usernames: usernames,

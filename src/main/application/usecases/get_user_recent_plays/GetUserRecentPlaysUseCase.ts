@@ -45,7 +45,7 @@ export class GetUserRecentPlaysUseCase
   async execute(
     params: GetUserRecentPlaysRequest
   ): Promise<GetUserRecentPlaysResponse> {
-    const {appUserId, username, server, ruleset} = params;
+    const {initiatorAppUserId, username, server, ruleset} = params;
     const userSnapshot = await this.cachedOsuUsers.get(username, server);
     let targetOsuId = userSnapshot?.id;
     let targetCaseCorrectUsername = userSnapshot?.username;
@@ -56,7 +56,7 @@ export class GetUserRecentPlaysUseCase
       targetRuleset === undefined
     ) {
       const osuUser = await this.osuUsers.getByUsername(
-        appUserId,
+        initiatorAppUserId,
         username,
         server,
         undefined
@@ -73,7 +73,7 @@ export class GetUserRecentPlaysUseCase
     }
 
     const rawRecentScores = await this.recentScores.get(
-      appUserId,
+      initiatorAppUserId,
       targetOsuId,
       server,
       params.includeFails,

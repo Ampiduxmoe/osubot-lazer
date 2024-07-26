@@ -34,7 +34,7 @@ export class GetBeatmapInfoUseCase
     params: GetBeatmapInfoRequest
   ): Promise<GetBeatmapInfoResponse> {
     const rawMap = await this.beatmaps.get(
-      params.appUserId,
+      params.initiatorAppUserId,
       params.beatmapId,
       params.server
     );

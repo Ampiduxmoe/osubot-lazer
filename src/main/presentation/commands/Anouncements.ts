@@ -249,7 +249,7 @@ export abstract class Anouncements<TContext, TOutput> extends TextCommand<
         echo: anouncement.text,
       };
     }
-    throw Error('Unknown Anouncements command execution path');
+    throw Error(`Unknown ${this.internalName} command execution path`);
   }
 
   abstract messageMediumPrefix: string;
@@ -286,7 +286,7 @@ export abstract class Anouncements<TContext, TOutput> extends TextCommand<
     if (echo !== undefined) {
       return this.createAnouncementEchoMessage(echo);
     }
-    throw Error('Unknown Anouncements command output path');
+    throw Error(`Unknown ${this.internalName} command output path`);
   }
 
   abstract createAnouncementsMessage(

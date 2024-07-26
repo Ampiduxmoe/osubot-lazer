@@ -74,7 +74,7 @@ describe('GetUserRecentPlaysUseCase', function () {
       for (const server of servers) {
         for (const ruleset of rulesets) {
           const request: GetUserRecentPlaysRequest = {
-            appUserId: 'should be irrelevant',
+            initiatorAppUserId: 'should be irrelevant',
             server: OsuServer[server],
             username: username,
             ruleset: OsuRuleset[ruleset],
@@ -109,7 +109,7 @@ describe('GetUserRecentPlaysUseCase', function () {
       });
       for (const user of usersThatShouldExist) {
         const request: GetUserRecentPlaysRequest = {
-          appUserId: 'should be irrelevant',
+          initiatorAppUserId: 'should be irrelevant',
           server: user.server,
           username: user.username,
           ruleset: undefined,
@@ -144,7 +144,7 @@ describe('GetUserRecentPlaysUseCase', function () {
       });
       for (const user of usersThatShouldExist) {
         const request: GetUserRecentPlaysRequest = {
-          appUserId: 'should be irrelevant',
+          initiatorAppUserId: 'should be irrelevant',
           server: user.server,
           username: user.username,
           ruleset: user.ruleset,

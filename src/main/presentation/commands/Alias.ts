@@ -351,7 +351,7 @@ export abstract class Alias<TContext, TOutput> extends TextCommand<
         actionCount: newAliases.aliases.length,
       };
     }
-    throw Error('Unknown Alias command execution path');
+    throw Error(`Unknown ${this.internalName} command execution path`);
   }
 
   createOutputMessage(params: AliasViewParams): Promise<TOutput> {
@@ -373,7 +373,7 @@ export abstract class Alias<TContext, TOutput> extends TextCommand<
     if (testResult !== undefined) {
       return this.createTestResultMessage(testResult);
     }
-    throw Error('Unknown Alias command output path');
+    throw Error(`Unknown ${this.internalName} command output path`);
   }
 
   abstract createAliasesMessage(

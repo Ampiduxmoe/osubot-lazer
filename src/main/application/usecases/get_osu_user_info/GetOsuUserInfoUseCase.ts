@@ -15,7 +15,7 @@ export class GetOsuUserInfoUseCase
     params: GetOsuUserInfoRequest
   ): Promise<GetOsuUserInfoResponse> {
     const user = await this.osuUsers.getByUsername(
-      params.appUserId,
+      params.initiatorAppUserId,
       params.username,
       params.server,
       params.ruleset

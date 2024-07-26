@@ -3,7 +3,7 @@ import {OsuRuleset} from '../../../primitives/OsuRuleset';
 import {OsuServer} from '../../../primitives/OsuServer';
 
 export type GetUserRecentPlaysRequest = {
-  appUserId: string;
+  initiatorAppUserId: string;
   server: OsuServer;
   username: string;
   ruleset: OsuRuleset | undefined;

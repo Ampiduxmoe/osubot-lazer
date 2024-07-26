@@ -2,7 +2,7 @@ import {ModAcronym} from '../../../primitives/ModAcronym';
 import {OsuServer} from '../../../primitives/OsuServer';
 
 export type GetBeatmapUsersBestScoresRequest = {
-  appUserId: string;
+  initiatorAppUserId: string;
   server: OsuServer;
   beatmapId: number;
   usernames: string[];

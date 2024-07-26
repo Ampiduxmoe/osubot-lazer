@@ -91,7 +91,7 @@ export class App {
 
   constructor(config: AppConfig) {
     this.config = config;
-    const isProd = isProduction(/* fallbackValue = */ true);
+    const isProd = isProduction({fallbackValue: true});
     if (isProd) {
       console.log('Configuring as production configuration');
       this.currentVkGroup = config.vk.group;
@@ -675,12 +675,7 @@ export class App {
   }
 }
 
-/**
- * Whether process is running in production,
- * determined by NODE_ENV environment variable.
- * If NODE_ENV is not specified, returns {@link fallbackValue}
- */
-function isProduction(fallbackValue: boolean): boolean {
+function isProduction({fallbackValue}: {fallbackValue: boolean}): boolean {
   switch (process.env.NODE_ENV) {
     case 'development':
       return false;
