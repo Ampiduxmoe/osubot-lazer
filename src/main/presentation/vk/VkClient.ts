@@ -126,6 +126,7 @@ export class VkClient {
     if (!matchResult.isMatch) {
       return false;
     }
+    const replyPromise = ctx.reply('Команда выполняется...');
     const executionArgs = matchResult.commandArgs!;
     console.log(
       `Trying to execute command ${
@@ -142,10 +143,14 @@ export class VkClient {
       const attachment = outputMessage.attachment;
       const buttons = outputMessage.buttons;
       const keyboard = buttons && this.createKeyboard(buttons);
-      await ctx.reply(text, {attachment, keyboard});
+      const botMessage = await replyPromise;
+      await botMessage.editMessage({message: text, attachment, keyboard});
     } catch (e) {
       console.error(e);
-      await ctx.reply('Произошла ошибка при выполнении команды');
+      const botMessage = await replyPromise;
+      await botMessage.editMessage({
+        message: 'Произошла ошибка при выполнении команды',
+      });
     }
     return true;
   }
