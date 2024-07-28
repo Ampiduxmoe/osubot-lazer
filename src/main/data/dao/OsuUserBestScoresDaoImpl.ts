@@ -10,6 +10,7 @@ import {COMMON_REQUEST_SUBTARGETS} from './AppUserApiRequestsSummariesDaoImpl';
 import {OsuUserSnapshotsRepository} from '../repository/repositories/OsuUserSnapshotsRepository';
 import {ModAcronym} from '../../primitives/ModAcronym';
 import {OsuUserBestScoreInfo} from '../http/boundary/OsuUserBestScoreInfo';
+import {ModCombinationMatcher} from './common/ModCombinationMatcher';
 
 export class OsuUserBestScoresDaoImpl implements OsuUserBestScoresDao {
   private apis: OsuApi[];
@@ -40,23 +41,16 @@ export class OsuUserBestScoresDaoImpl implements OsuUserBestScoresDao {
     if (api === undefined) {
       throw Error(`Could not find API for server ${OsuServer[server]}`);
     }
-    const requiredMods = mods
-      .filter(m => m.isOptional === false)
-      .map(m => m.acronym);
-    const optionalMods = mods
-      .filter(m => m.isOptional === true)
-      .map(m => m.acronym)
-      .filter(m => !m.is('nm'));
-    const allFilterMods = [...requiredMods, ...optionalMods];
+    const modMatcher = new ModCombinationMatcher(mods);
     if (
-      ModAcronym.listContains('nm', requiredMods) &&
-      requiredMods.length > 1
+      ModAcronym.listContains('nm', modMatcher.requiredMods) &&
+      modMatcher.requiredMods.length > 1
     ) {
       return [];
     }
     let adjustedQuantity = quantity;
     let adjustedStartPosition = startPosition;
-    if (allFilterMods.length > 0) {
+    if (modMatcher.allFilterMods.length > 0) {
       adjustedQuantity = 100;
       adjustedStartPosition = 1;
     }
@@ -129,30 +123,10 @@ export class OsuUserBestScoresDaoImpl implements OsuUserBestScoresDao {
       };
       return bestScore;
     });
-    let filteredScores = bestScores.filter(s => {
-      if (allFilterMods.length === 0) {
-        return true;
-      }
-      const scoreMods = s.mods.map(m => m.acronym);
-      if (
-        ModAcronym.listContains('nm', requiredMods) &&
-        scoreMods.length === 0
-      ) {
-        return true;
-      }
-      for (const scoreMod of scoreMods) {
-        if (!scoreMod.isAnyOf(...allFilterMods)) {
-          return false;
-        }
-      }
-      for (const requiredMod of requiredMods) {
-        if (!requiredMod.isAnyOf(...scoreMods)) {
-          return false;
-        }
-      }
-      return true;
-    });
-    if (allFilterMods.length > 0) {
+    let filteredScores = bestScores.filter(s =>
+      modMatcher.match(s.mods.map(m => m.acronym))
+    );
+    if (modMatcher.allFilterMods.length > 0) {
       filteredScores = filteredScores.splice(startPosition - 1);
       filteredScores.splice(quantity);
     }

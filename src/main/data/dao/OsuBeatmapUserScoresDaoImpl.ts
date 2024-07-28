@@ -8,6 +8,7 @@ import {OsuApi} from '../http/OsuApi';
 import {AppUserRecentApiRequestsDao} from '../../application/requirements/dao/AppUserRecentApiRequestsDao';
 import {COMMON_REQUEST_SUBTARGETS} from './AppUserApiRequestsSummariesDaoImpl';
 import {ModAcronym} from '../../primitives/ModAcronym';
+import {ModCombinationMatcher} from './common/ModCombinationMatcher';
 
 export class OsuBeatmapUserScoresDaoImpl implements OsuBeatmapUserScoresDao {
   private apis: OsuApi[];
@@ -31,17 +32,10 @@ export class OsuBeatmapUserScoresDaoImpl implements OsuBeatmapUserScoresDao {
     if (api === undefined) {
       throw Error(`Could not find API for server ${OsuServer[server]}`);
     }
-    const requiredMods = mods
-      .filter(m => m.isOptional === false)
-      .map(m => m.acronym);
-    const optionalMods = mods
-      .filter(m => m.isOptional === true)
-      .map(m => m.acronym)
-      .filter(m => !m.is('nm'));
-    const allFilterMods = [...requiredMods, ...optionalMods];
+    const modMatcher = new ModCombinationMatcher(mods);
     if (
-      ModAcronym.listContains('nm', requiredMods) &&
-      requiredMods.length > 1
+      ModAcronym.listContains('nm', modMatcher.requiredMods) &&
+      modMatcher.requiredMods.length > 1
     ) {
       return [];
     }
@@ -77,29 +71,9 @@ export class OsuBeatmapUserScoresDaoImpl implements OsuBeatmapUserScoresDao {
       };
       return mapUserScore;
     });
-    const filteredScores = mapUserScores.filter(s => {
-      if (allFilterMods.length === 0) {
-        return true;
-      }
-      const scoreMods = s.mods.map(m => m.acronym);
-      if (
-        ModAcronym.listContains('nm', requiredMods) &&
-        scoreMods.length === 0
-      ) {
-        return true;
-      }
-      for (const scoreMod of scoreMods) {
-        if (!scoreMod.isAnyOf(...allFilterMods)) {
-          return false;
-        }
-      }
-      for (const requiredMod of requiredMods) {
-        if (!requiredMod.isAnyOf(...scoreMods)) {
-          return false;
-        }
-      }
-      return true;
-    });
+    const filteredScores = mapUserScores.filter(s =>
+      modMatcher.match(s.mods.map(m => m.acronym))
+    );
     return filteredScores;
   }
 }
