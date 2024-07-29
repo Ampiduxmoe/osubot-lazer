@@ -270,7 +270,7 @@ URL: ${mapUrlShort}${couldNotAttachCoverMessage}
           username: undefined,
           startPosition: undefined,
           quantity: undefined,
-          mods: undefined,
+          modPatterns: undefined,
         }),
       });
     }
@@ -284,7 +284,7 @@ URL: ${mapUrlShort}${couldNotAttachCoverMessage}
           server: server,
           beatmapId: beatmapId,
           usernameList: undefined,
-          mods: undefined,
+          modPatterns: undefined,
         }),
       });
     }

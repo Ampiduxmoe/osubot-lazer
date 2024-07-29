@@ -7,8 +7,8 @@ import {
 import {OsuApi} from '../http/OsuApi';
 import {AppUserRecentApiRequestsDao} from '../../application/requirements/dao/AppUserRecentApiRequestsDao';
 import {COMMON_REQUEST_SUBTARGETS} from './AppUserApiRequestsSummariesDaoImpl';
-import {ModAcronym} from '../../primitives/ModAcronym';
 import {ModCombinationMatcher} from './common/ModCombinationMatcher';
+import {ModCombinationPattern} from '../../primitives/ModCombinationPattern';
 
 export class OsuBeatmapUserScoresDaoImpl implements OsuBeatmapUserScoresDao {
   private apis: OsuApi[];
@@ -22,21 +22,20 @@ export class OsuBeatmapUserScoresDaoImpl implements OsuBeatmapUserScoresDao {
     beatmapId: number,
     osuUserId: number,
     server: OsuServer,
-    mods: {
-      acronym: ModAcronym;
-      isOptional: boolean;
-    }[],
+    modPatterns: ModCombinationPattern[],
     ruleset: OsuRuleset | undefined
   ): Promise<OsuBeatmapUserScore[] | undefined> {
     const api = this.apis.find(api => api.server === server);
     if (api === undefined) {
       throw Error(`Could not find API for server ${OsuServer[server]}`);
     }
-    const modMatcher = new ModCombinationMatcher(mods);
+    const modMatchers = modPatterns.map(p => new ModCombinationMatcher(p));
     if (
-      ModAcronym.listContains('nm', modMatcher.requiredMods) &&
-      modMatcher.requiredMods.length > 1
+      modMatchers.length > 0 &&
+      modMatchers.filter(m => m.earlyReturnValue === false).length ===
+        modMatchers.length
     ) {
+      // all matchers have impossible patterns
       return [];
     }
     await this.recentApiRequests.add({
@@ -72,7 +71,11 @@ export class OsuBeatmapUserScoresDaoImpl implements OsuBeatmapUserScoresDao {
       return mapUserScore;
     });
     const filteredScores = mapUserScores.filter(s =>
-      modMatcher.match(s.mods.map(m => m.acronym))
+      modMatchers.length === 0
+        ? true
+        : modMatchers.find(matcher =>
+            matcher.match(s.mods.map(m => m.acronym))
+          ) !== undefined
     );
     return filteredScores;
   }

@@ -1,6 +1,6 @@
-import {OsuServer} from '../../../primitives/OsuServer';
+import {ModCombinationPattern} from '../../../primitives/ModCombinationPattern';
 import {OsuRuleset} from '../../../primitives/OsuRuleset';
-import {ModAcronym} from '../../../primitives/ModAcronym';
+import {OsuServer} from '../../../primitives/OsuServer';
 import {OsuUserRecentScore} from './OsuUserRecentScoresDao';
 
 export interface OsuUserBestScoresDao {
@@ -8,10 +8,7 @@ export interface OsuUserBestScoresDao {
     appUserId: string,
     osuUserId: number,
     server: OsuServer,
-    mods: {
-      acronym: ModAcronym;
-      isOptional: boolean;
-    }[],
+    mods: ModCombinationPattern[],
     quantity: number,
     startPosition: number,
     ruleset: OsuRuleset | undefined

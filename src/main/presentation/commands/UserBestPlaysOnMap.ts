@@ -4,12 +4,13 @@ import {
   OsuMapUserPlay,
 } from '../../application/usecases/get_beatmap_users_best_score/GetBeatmapUsersBestScoresResponse';
 import {GetBeatmapUsersBestScoresUseCase} from '../../application/usecases/get_beatmap_users_best_score/GetBeatmapUsersBestScoresUseCase';
+import {ModCombinationPattern} from '../../primitives/ModCombinationPattern';
 import {clamp} from '../../primitives/Numbers';
 import {OsuRuleset} from '../../primitives/OsuRuleset';
 import {OsuServer} from '../../primitives/OsuServer';
 import {
   BEATMAP_ID,
-  MODS,
+  MOD_PATTERNS,
   OWN_COMMAND_PREFIX,
   QUANTITY,
   SERVER_PREFIX,
@@ -17,7 +18,6 @@ import {
   USERNAME,
 } from '../common/arg_processing/CommandArguments';
 import {MainArgsProcessor} from '../common/arg_processing/MainArgsProcessor';
-import {ModArg} from '../common/arg_processing/ModArg';
 import {TextProcessor} from '../common/arg_processing/TextProcessor';
 import {CommandMatchResult} from '../common/CommandMatchResult';
 import {CommandPrefixes} from '../common/CommandPrefixes';
@@ -56,7 +56,7 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
     {argument: USERNAME, isOptional: true},
     {argument: START_POSITION, isOptional: true},
     {argument: QUANTITY, isOptional: true},
-    {argument: MODS, isOptional: true},
+    {argument: MOD_PATTERNS, isOptional: true},
   ];
 
   textProcessor: TextProcessor;
@@ -102,7 +102,7 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
     }
     const beatmapId = argsProcessor.use(BEATMAP_ID).extract();
     const username = argsProcessor.use(USERNAME).extract();
-    const mods = argsProcessor.use(MODS).extract();
+    const modPatterns = argsProcessor.use(MOD_PATTERNS).extract();
     const startPosition = argsProcessor.use(START_POSITION).extract();
     const quantity = argsProcessor.use(QUANTITY).extract();
 
@@ -113,7 +113,7 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
       server: server,
       beatmapId: beatmapId,
       username: username,
-      mods: mods,
+      modPatterns: modPatterns,
       startPosition: startPosition,
       quantity: quantity,
     });
@@ -174,7 +174,7 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
       usernames: [username],
       startPosition: Math.max(args.startPosition ?? 1, 1),
       quantityPerUser: clamp(args.quantity ?? 1, 1, 10),
-      mods: args.mods ?? [],
+      modPatterns: args.modPatterns ?? [],
     });
     if (leaderboardResponse.failureReason !== undefined) {
       switch (leaderboardResponse.failureReason) {
@@ -281,8 +281,8 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
     if (args.username !== undefined) {
       tokens.push(USERNAME.unparse(args.username));
     }
-    if (args.mods !== undefined) {
-      tokens.push(MODS.unparse(args.mods));
+    if (args.modPatterns !== undefined) {
+      tokens.push(MOD_PATTERNS.unparse(args.modPatterns));
     }
     if (args.startPosition !== undefined) {
       tokens.push(START_POSITION.unparse(args.startPosition));
@@ -298,7 +298,7 @@ export type UserBestPlaysOnMapExecutionArgs = {
   server: OsuServer;
   beatmapId: number | undefined;
   username: string | undefined;
-  mods: ModArg[] | undefined;
+  modPatterns: ModCombinationPattern[] | undefined;
   startPosition: number | undefined;
   quantity: number | undefined;
 };

@@ -1,4 +1,4 @@
-import {ModAcronym} from '../../../primitives/ModAcronym';
+import {ModCombinationPattern} from '../../../primitives/ModCombinationPattern';
 import {OsuServer} from '../../../primitives/OsuServer';
 
 export type GetBeatmapUsersBestScoresRequest = {
@@ -8,8 +8,5 @@ export type GetBeatmapUsersBestScoresRequest = {
   usernames: string[];
   startPosition: number;
   quantityPerUser: number;
-  mods: {
-    acronym: ModAcronym;
-    isOptional: boolean;
-  }[];
+  modPatterns: ModCombinationPattern[];
 };

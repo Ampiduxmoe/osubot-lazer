@@ -62,7 +62,7 @@ export class GetUserBestPlaysUseCase
       initiatorAppUserId,
       targetOsuId,
       server,
-      params.mods,
+      params.modPatterns,
       params.quantity,
       params.startPosition,
       targetRuleset

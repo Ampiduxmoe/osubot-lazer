@@ -6,6 +6,7 @@ import {ModArg} from './ModArg';
 import {CommandPrefixes} from '../CommandPrefixes';
 import {ALL_OSU_RULESETS, OsuRuleset} from '../../../primitives/OsuRuleset';
 import {ModAcronym} from '../../../primitives/ModAcronym';
+import {ModCombinationPattern} from '../../../primitives/ModCombinationPattern';
 
 export const SERVER_PREFIX: CommandArgument<OsuServer> = {
   displayName: 'сервер',
@@ -253,6 +254,134 @@ export const MODS: CommandArgument<ModArg[]> = {
     return (
       '+' +
       value.map(x => (x.isOptional ? `(${x.acronym})` : x.acronym)).join('')
+    );
+  },
+};
+
+export const MOD_PATTERNS: CommandArgument<ModCombinationPattern[]> = {
+  displayName: '+моды',
+  description:
+    'список модов, слитно; допускается указание нескольких списков через запятую',
+  get usageExample(): string {
+    const maybeHd = pickRandom(['hd', 'HD', '(hd)', '(HD)', '']);
+    const dtOrHr = pickRandom(['dt', 'DT', 'hr', 'HR']);
+    const maybeCl = pickRandom(['cl', 'CL', '(cl)', '(CL)', '']);
+    return pickRandom([
+      `+${maybeHd}${dtOrHr}${maybeCl}`,
+      `+${maybeCl}${maybeHd}${dtOrHr}`,
+    ]);
+  },
+  match: function (token: string): boolean {
+    const patternRegex =
+      /^(([a-zA-Z]{2})+|\(([a-zA-Z]{2})+?\)|\[([a-zA-Z]{2})+?\]|\{([a-zA-Z]{2})+?\})+$/;
+    if (!token.startsWith('+')) {
+      return false;
+    }
+    const potentialPatterns = token.substring(1).split(',');
+    for (const potentialPattern of potentialPatterns) {
+      if (!patternRegex.test(potentialPattern)) {
+        return false;
+      }
+    }
+    return true;
+  },
+  parse: function (token: string): ModCombinationPattern[] {
+    const patternsString = token.substring(1);
+    const patternStrings = patternsString.split(',');
+    return patternStrings.map(patternString => {
+      const optionalModGroups =
+        patternString
+          .match(/\((.{2})+?\)/g)
+          ?.flat()
+          ?.map(group =>
+            group
+              .substring(1, group.length - 1)
+              .match(/.{2}/g)!
+              .flat()
+          ) ?? [];
+      let remainingGroupsString = (() => {
+        let tmpStr = patternString;
+        for (const optionalModGroup of optionalModGroups) {
+          tmpStr = tmpStr.replace(`(${optionalModGroup.join('')})`, '');
+        }
+        return tmpStr;
+      })();
+      const exclusiveModGroups =
+        remainingGroupsString
+          .match(/\[(.{2})+?\]/g)
+          ?.flat()
+          ?.map(group =>
+            group
+              .substring(1, group.length - 1)
+              .match(/.{2}/g)!
+              .flat()
+          ) ?? [];
+      for (const exclusiveModGroup of exclusiveModGroups) {
+        remainingGroupsString = remainingGroupsString.replace(
+          `[${exclusiveModGroup.join('')}]`,
+          ''
+        );
+      }
+      const prohibitedModGroups =
+        remainingGroupsString
+          .match(/\{(.{2})+?\}/g)
+          ?.flat()
+          ?.map(group =>
+            group
+              .substring(1, group.length - 1)
+              .match(/.{2}/g)!
+              .flat()
+          ) ?? [];
+      for (const prohibitedModGroup of prohibitedModGroups) {
+        remainingGroupsString = remainingGroupsString.replace(
+          `{${prohibitedModGroup.join('')}}`,
+          ''
+        );
+      }
+      const requiredModGroup =
+        remainingGroupsString.match(/.{2}/g)?.flat() ?? [];
+      return new ModCombinationPattern(
+        {
+          mods: requiredModGroup.map(m => new ModAcronym(m)),
+          type: 'required',
+        },
+        ...optionalModGroups.map(group => ({
+          mods: group.map(m => new ModAcronym(m)),
+          type: 'optional' as const,
+        })),
+        ...exclusiveModGroups.map(group => ({
+          mods: group.map(m => new ModAcronym(m)),
+          type: 'exclusive' as const,
+        })),
+        ...prohibitedModGroups.map(group => ({
+          mods: group.map(m => new ModAcronym(m)),
+          type: 'prohibited' as const,
+        }))
+      );
+    });
+  },
+  unparse: function (value: ModCombinationPattern[]): string {
+    return (
+      '+' +
+      value
+        .map(pattern =>
+          pattern
+            .map(group => {
+              const modsString = group.mods.join('');
+              switch (group.type) {
+                case 'required':
+                  return modsString;
+                case 'optional':
+                  return `(${modsString})`;
+                case 'exclusive':
+                  return `[${modsString}]`;
+                case 'prohibited':
+                  return `{${modsString}}`;
+              }
+            })
+            .join('')
+        )
+        .join(',')
     );
   },
 };

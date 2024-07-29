@@ -1,5 +1,21 @@
-export function uniquesFilter<T>(value: T, index: number, array: readonly T[]) {
+export function uniquesFilter<T>(
+  value: T,
+  index: number,
+  array: readonly T[]
+): boolean {
   return array.indexOf(value) === index;
+}
+
+export function createUniquesFilter<T>(
+  equalFn: (a: T, b: T) => boolean
+): (value: T, index: number, array: readonly T[]) => boolean {
+  return (value, index, array) => {
+    const sameValue = array.find(x => equalFn(x, value));
+    if (sameValue === undefined) {
+      return true;
+    }
+    return array.indexOf(sameValue) === index;
+  };
 }
 
 export function pickRandom<T>(array: readonly T[]): T {

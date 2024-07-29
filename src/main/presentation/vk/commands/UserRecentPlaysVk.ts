@@ -340,7 +340,7 @@ ${ppEstimationMark}${pp}pp　 ${mapUrlShort}
                   mode: mode,
                   startPosition: undefined,
                   quantity: undefined,
-                  mods: undefined,
+                  modPatterns: undefined,
                 }),
               },
             ],
@@ -366,7 +366,7 @@ ${ppEstimationMark}${pp}pp　 ${mapUrlShort}
           username: undefined,
           startPosition: undefined,
           quantity: undefined,
-          mods: undefined,
+          modPatterns: undefined,
         }),
       });
     }
@@ -380,7 +380,7 @@ ${ppEstimationMark}${pp}pp　 ${mapUrlShort}
           server: server,
           beatmapId: beatmapId,
           usernameList: undefined,
-          mods: undefined,
+          modPatterns: undefined,
         }),
       });
     }

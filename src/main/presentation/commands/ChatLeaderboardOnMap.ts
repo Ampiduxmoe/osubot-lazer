@@ -4,17 +4,17 @@ import {
   OsuMapUserBestPlays,
 } from '../../application/usecases/get_beatmap_users_best_score/GetBeatmapUsersBestScoresResponse';
 import {GetBeatmapUsersBestScoresUseCase} from '../../application/usecases/get_beatmap_users_best_score/GetBeatmapUsersBestScoresUseCase';
+import {ModCombinationPattern} from '../../primitives/ModCombinationPattern';
 import {OsuRuleset} from '../../primitives/OsuRuleset';
 import {OsuServer} from '../../primitives/OsuServer';
 import {
   BEATMAP_ID,
-  MODS,
+  MOD_PATTERNS,
   OWN_COMMAND_PREFIX,
   SERVER_PREFIX,
   USERNAME_LIST,
 } from '../common/arg_processing/CommandArguments';
 import {MainArgsProcessor} from '../common/arg_processing/MainArgsProcessor';
-import {ModArg} from '../common/arg_processing/ModArg';
 import {TextProcessor} from '../common/arg_processing/TextProcessor';
 import {CommandMatchResult} from '../common/CommandMatchResult';
 import {CommandPrefixes} from '../common/CommandPrefixes';
@@ -57,7 +57,7 @@ export abstract class ChatLeaderboardOnMap<
     {argument: this.COMMAND_PREFIX, isOptional: false},
     {argument: BEATMAP_ID, isOptional: true},
     {argument: USERNAME_LIST, isOptional: true},
-    {argument: MODS, isOptional: true},
+    {argument: MOD_PATTERNS, isOptional: true},
   ];
 
   textProcessor: TextProcessor;
@@ -105,7 +105,7 @@ export abstract class ChatLeaderboardOnMap<
     }
     const beatmapId = argsProcessor.use(BEATMAP_ID).extract();
     const usernameList = argsProcessor.use(USERNAME_LIST).extract();
-    const mods = argsProcessor.use(MODS).extract();
+    const modPatterns = argsProcessor.use(MOD_PATTERNS).extract();
 
     if (argsProcessor.remainingTokens.length > 0) {
       return fail;
@@ -114,7 +114,7 @@ export abstract class ChatLeaderboardOnMap<
       server: server,
       beatmapId: beatmapId,
       usernameList: usernameList,
-      mods: mods,
+      modPatterns: modPatterns,
     });
   }
 
@@ -183,7 +183,7 @@ export abstract class ChatLeaderboardOnMap<
       usernames: usernames,
       startPosition: 1,
       quantityPerUser: 1,
-      mods: args.mods ?? [],
+      modPatterns: args.modPatterns ?? [],
     });
     if (leaderboardResponse.failureReason !== undefined) {
       switch (leaderboardResponse.failureReason) {
@@ -283,8 +283,8 @@ export abstract class ChatLeaderboardOnMap<
     if (args.usernameList !== undefined) {
       tokens.push(USERNAME_LIST.unparse(args.usernameList));
     }
-    if (args.mods !== undefined) {
-      tokens.push(MODS.unparse(args.mods));
+    if (args.modPatterns !== undefined) {
+      tokens.push(MOD_PATTERNS.unparse(args.modPatterns));
     }
     return this.textProcessor.detokenize(tokens);
   }
@@ -294,7 +294,7 @@ export type ChatLeaderboardOnMapExecutionArgs = {
   server: OsuServer;
   beatmapId: number | undefined;
   usernameList: {usernames: string[]; isAdditive: boolean} | undefined;
-  mods: ModArg[] | undefined;
+  modPatterns: ModCombinationPattern[] | undefined;
 };
 
 export type ChatLeaderboardOnMapViewParams = {

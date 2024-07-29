@@ -81,7 +81,7 @@ export class BeatmapMenuVk extends BeatmapMenu<
           username: undefined,
           startPosition: undefined,
           quantity: undefined,
-          mods: undefined,
+          modPatterns: undefined,
         }),
       });
     }
@@ -95,7 +95,7 @@ export class BeatmapMenuVk extends BeatmapMenu<
           server: server,
           beatmapId: beatmapId,
           usernameList: undefined,
-          mods: undefined,
+          modPatterns: undefined,
         }),
       });
     }

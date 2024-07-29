@@ -77,7 +77,7 @@ https://osu.ppy.sh/u/${userId}
           mode: mode,
           startPosition: undefined,
           quantity: undefined,
-          mods: undefined,
+          modPatterns: undefined,
         }),
       });
     }
@@ -95,7 +95,7 @@ https://osu.ppy.sh/u/${userId}
             mode: mode,
             startPosition: undefined,
             quantity: undefined,
-            mods: undefined,
+            modPatterns: undefined,
           }),
         },
         {
@@ -107,7 +107,7 @@ https://osu.ppy.sh/u/${userId}
             mode: mode,
             startPosition: undefined,
             quantity: undefined,
-            mods: undefined,
+            modPatterns: undefined,
           }),
         }
       );

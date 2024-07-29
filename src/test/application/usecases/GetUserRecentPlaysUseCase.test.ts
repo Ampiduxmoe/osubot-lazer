@@ -1,27 +1,28 @@
 /* eslint-disable prefer-arrow-callback */
 import assert from 'assert';
-import {ALL_OSU_SERVERS, OsuServer} from '../../../main/primitives/OsuServer';
+import {GetUserRecentPlaysRequest} from '../../../main/application/usecases/get_user_recent_plays/GetUserRecentPlaysRequest';
+import {GetUserRecentPlaysUseCase} from '../../../main/application/usecases/get_user_recent_plays/GetUserRecentPlaysUseCase';
+import {AppUserApiRequestsSummariesDaoImpl} from '../../../main/data/dao/AppUserApiRequestsSummariesDaoImpl';
+import {AppUserRecentApiRequestsDaoImpl} from '../../../main/data/dao/AppUserRecentApiRequestsDaoImpl';
+import {CachedOsuUsersDaoImpl} from '../../../main/data/dao/CachedOsuUsersDaoImpl';
+import {OsuUserRecentScoresDaoImpl} from '../../../main/data/dao/OsuUserRecentScoresDaoImpl';
+import {OsuUsersDaoImpl} from '../../../main/data/dao/OsuUsersDaoImpl';
+import {ScoreSimulationsDaoImpl} from '../../../main/data/dao/ScoreSimulationsDaoImpl';
+import {SqlDbTable} from '../../../main/data/persistence/db/SqlDbTable';
+import {SqliteDb} from '../../../main/data/persistence/db/SqliteDb';
+import {AppUserApiRequestsCountsTable} from '../../../main/data/persistence/db/tables/AppUserApiRequestsCountsTable';
+import {OsuUserSnapshotsTable} from '../../../main/data/persistence/db/tables/OsuUserSnapshotsTable';
+import {TimeWindowsTable} from '../../../main/data/persistence/db/tables/TimeWindowsTable';
+import {ModAcronym} from '../../../main/primitives/ModAcronym';
+import {ModCombinationPattern} from '../../../main/primitives/ModCombinationPattern';
 import {
   ALL_OSU_RULESETS,
   OsuRuleset,
 } from '../../../main/primitives/OsuRuleset';
-import {OsuUsersDaoImpl} from '../../../main/data/dao/OsuUsersDaoImpl';
+import {ALL_OSU_SERVERS, OsuServer} from '../../../main/primitives/OsuServer';
 import {FakeBanchoApi} from '../../mocks/data/http/BanchoApi';
-import {SqliteDb} from '../../../main/data/persistence/db/SqliteDb';
-import {OsuUserSnapshotsTable} from '../../../main/data/persistence/db/tables/OsuUserSnapshotsTable';
-import {AppUserRecentApiRequestsDaoImpl} from '../../../main/data/dao/AppUserRecentApiRequestsDaoImpl';
-import {AppUserApiRequestsSummariesDaoImpl} from '../../../main/data/dao/AppUserApiRequestsSummariesDaoImpl';
-import {AppUserApiRequestsCountsTable} from '../../../main/data/persistence/db/tables/AppUserApiRequestsCountsTable';
-import {TimeWindowsTable} from '../../../main/data/persistence/db/tables/TimeWindowsTable';
-import {SqlDbTable} from '../../../main/data/persistence/db/SqlDbTable';
-import {GetUserRecentPlaysUseCase} from '../../../main/application/usecases/get_user_recent_plays/GetUserRecentPlaysUseCase';
-import {OsuUserRecentScoresDaoImpl} from '../../../main/data/dao/OsuUserRecentScoresDaoImpl';
 import {FakeScoreSimulationApi} from '../../mocks/data/http/ScoreSimulationApi';
-import {ScoreSimulationsDaoImpl} from '../../../main/data/dao/ScoreSimulationsDaoImpl';
-import {CachedOsuUsersDaoImpl} from '../../../main/data/dao/CachedOsuUsersDaoImpl';
-import {GetUserRecentPlaysRequest} from '../../../main/application/usecases/get_user_recent_plays/GetUserRecentPlaysRequest';
 import {getFakeOsuUserInfo} from '../../mocks/Generators';
-import {ModAcronym} from '../../../main/primitives/ModAcronym';
 
 describe('GetUserRecentPlaysUseCase', function () {
   let tables: SqlDbTable[];
@@ -81,11 +82,11 @@ describe('GetUserRecentPlaysUseCase', function () {
             includeFails: true,
             startPosition: 1,
             quantity: 1,
-            mods: [
-              {
-                acronym: new ModAcronym('HD'),
-                isOptional: true,
-              },
+            modPatterns: [
+              new ModCombinationPattern({
+                mods: [new ModAcronym('HD')],
+                type: 'optional',
+              }),
             ],
           };
           const result = await usecase.execute(request);
@@ -116,11 +117,11 @@ describe('GetUserRecentPlaysUseCase', function () {
           includeFails: true,
           startPosition: 1,
           quantity: 10,
-          mods: [
-            {
-              acronym: new ModAcronym('HD'),
-              isOptional: true,
-            },
+          modPatterns: [
+            new ModCombinationPattern({
+              mods: [new ModAcronym('HD')],
+              type: 'optional',
+            }),
           ],
         };
         const result = await usecase.execute(request);
@@ -151,11 +152,11 @@ describe('GetUserRecentPlaysUseCase', function () {
           includeFails: true,
           startPosition: 1,
           quantity: 10,
-          mods: [
-            {
-              acronym: new ModAcronym('HD'),
-              isOptional: true,
-            },
+          modPatterns: [
+            new ModCombinationPattern({
+              mods: [new ModAcronym('HD')],
+              type: 'optional',
+            }),
           ],
         };
         const result = await usecase.execute(request);

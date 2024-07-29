@@ -1,20 +1,21 @@
 /* eslint-disable prefer-arrow-callback */
 import assert from 'assert';
-import {OsuUserRecentScoresDaoImpl} from '../../../main/data/dao/OsuUserRecentScoresDaoImpl';
-import {FakeBanchoApi} from '../../mocks/data/http/BanchoApi';
-import {SqliteDb} from '../../../main/data/persistence/db/SqliteDb';
-import {OsuServer} from '../../../main/primitives/OsuServer';
-import {OsuRuleset} from '../../../main/primitives/OsuRuleset';
-import {OsuUserSnapshotsTable} from '../../../main/data/persistence/db/tables/OsuUserSnapshotsTable';
-import {AppUserApiRequestsCountsTable} from '../../../main/data/persistence/db/tables/AppUserApiRequestsCountsTable';
-import {TimeWindowsTable} from '../../../main/data/persistence/db/tables/TimeWindowsTable';
+import {OsuUserRecentScoresDao} from '../../../main/application/requirements/dao/OsuUserRecentScoresDao';
 import {AppUserApiRequestsSummariesDaoImpl} from '../../../main/data/dao/AppUserApiRequestsSummariesDaoImpl';
 import {AppUserRecentApiRequestsDaoImpl} from '../../../main/data/dao/AppUserRecentApiRequestsDaoImpl';
-import {SqlDbTable} from '../../../main/data/persistence/db/SqlDbTable';
-import {OsuUserRecentScoresDao} from '../../../main/application/requirements/dao/OsuUserRecentScoresDao';
-import {getFakeRecentScoreInfos} from '../../mocks/Generators';
+import {OsuUserRecentScoresDaoImpl} from '../../../main/data/dao/OsuUserRecentScoresDaoImpl';
 import {OsuUserRecentScoreInfo} from '../../../main/data/http/boundary/OsuUserRecentScoreInfo';
+import {SqlDbTable} from '../../../main/data/persistence/db/SqlDbTable';
+import {SqliteDb} from '../../../main/data/persistence/db/SqliteDb';
+import {AppUserApiRequestsCountsTable} from '../../../main/data/persistence/db/tables/AppUserApiRequestsCountsTable';
+import {OsuUserSnapshotsTable} from '../../../main/data/persistence/db/tables/OsuUserSnapshotsTable';
+import {TimeWindowsTable} from '../../../main/data/persistence/db/tables/TimeWindowsTable';
 import {ModAcronym} from '../../../main/primitives/ModAcronym';
+import {ModCombinationPattern} from '../../../main/primitives/ModCombinationPattern';
+import {OsuRuleset} from '../../../main/primitives/OsuRuleset';
+import {OsuServer} from '../../../main/primitives/OsuServer';
+import {FakeBanchoApi} from '../../mocks/data/http/BanchoApi';
+import {getFakeRecentScoreInfos} from '../../mocks/Generators';
 
 describe('OsuUserRecentScoresDao', function () {
   let tables: SqlDbTable[];
@@ -52,7 +53,12 @@ describe('OsuUserRecentScoresDao', function () {
         NaN,
         OsuServer.Bancho,
         true,
-        [{acronym: new ModAcronym('HD'), isOptional: false}],
+        [
+          new ModCombinationPattern({
+            mods: [new ModAcronym('HD')],
+            type: 'required',
+          }),
+        ],
         3,
         1,
         OsuRuleset.osu
@@ -66,7 +72,12 @@ describe('OsuUserRecentScoresDao', function () {
         1,
         OsuServer.Bancho,
         true,
-        [{acronym: new ModAcronym('HD'), isOptional: false}],
+        [
+          new ModCombinationPattern({
+            mods: [new ModAcronym('HD')],
+            type: 'required',
+          }),
+        ],
         3,
         1,
         OsuRuleset.osu
@@ -100,8 +111,10 @@ describe('OsuUserRecentScoresDao', function () {
         OsuServer.Bancho,
         true,
         [
-          {acronym: new ModAcronym('HD'), isOptional: true},
-          {acronym: new ModAcronym('DT'), isOptional: false},
+          new ModCombinationPattern(
+            {mods: [new ModAcronym('HD')], type: 'optional'},
+            {mods: [new ModAcronym('DT')], type: 'required'}
+          ),
         ],
         10,
         1,

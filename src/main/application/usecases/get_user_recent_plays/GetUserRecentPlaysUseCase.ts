@@ -77,7 +77,7 @@ export class GetUserRecentPlaysUseCase
       targetOsuId,
       server,
       params.includeFails,
-      params.mods,
+      params.modPatterns,
       params.quantity,
       params.startPosition,
       targetRuleset

@@ -287,7 +287,7 @@ ${pp}pp　 ${mapUrlShort}
           username: undefined,
           startPosition: undefined,
           quantity: undefined,
-          mods: undefined,
+          modPatterns: undefined,
         }),
       });
     }
@@ -301,7 +301,7 @@ ${pp}pp　 ${mapUrlShort}
           server: server,
           beatmapId: beatmapId,
           usernameList: undefined,
-          mods: undefined,
+          modPatterns: undefined,
         }),
       });
     }

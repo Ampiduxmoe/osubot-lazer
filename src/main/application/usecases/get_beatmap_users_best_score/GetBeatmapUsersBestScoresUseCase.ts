@@ -64,7 +64,7 @@ export class GetBeatmapUsersBestScoresUseCase
       usernames,
       startPosition,
       quantityPerUser,
-      mods,
+      modPatterns,
     } = params;
     const beatmap = await this.beatmaps.get(
       initiatorAppUserId,
@@ -112,7 +112,7 @@ export class GetBeatmapUsersBestScoresUseCase
         beatmapId,
         t.osuId,
         server,
-        mods,
+        modPatterns,
         undefined
       ),
     }));

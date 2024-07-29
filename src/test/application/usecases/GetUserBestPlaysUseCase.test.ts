@@ -1,27 +1,28 @@
 /* eslint-disable prefer-arrow-callback */
 import assert from 'assert';
-import {ALL_OSU_SERVERS, OsuServer} from '../../../main/primitives/OsuServer';
+import {GetUserBestPlaysRequest} from '../../../main/application/usecases/get_user_best_plays/GetUserBestPlaysRequest';
+import {GetUserBestPlaysUseCase} from '../../../main/application/usecases/get_user_best_plays/GetUserBestPlaysUseCase';
+import {AppUserApiRequestsSummariesDaoImpl} from '../../../main/data/dao/AppUserApiRequestsSummariesDaoImpl';
+import {AppUserRecentApiRequestsDaoImpl} from '../../../main/data/dao/AppUserRecentApiRequestsDaoImpl';
+import {CachedOsuUsersDaoImpl} from '../../../main/data/dao/CachedOsuUsersDaoImpl';
+import {OsuUserBestScoresDaoImpl} from '../../../main/data/dao/OsuUserBestScoresDaoImpl';
+import {OsuUsersDaoImpl} from '../../../main/data/dao/OsuUsersDaoImpl';
+import {ScoreSimulationsDaoImpl} from '../../../main/data/dao/ScoreSimulationsDaoImpl';
+import {SqlDbTable} from '../../../main/data/persistence/db/SqlDbTable';
+import {SqliteDb} from '../../../main/data/persistence/db/SqliteDb';
+import {AppUserApiRequestsCountsTable} from '../../../main/data/persistence/db/tables/AppUserApiRequestsCountsTable';
+import {OsuUserSnapshotsTable} from '../../../main/data/persistence/db/tables/OsuUserSnapshotsTable';
+import {TimeWindowsTable} from '../../../main/data/persistence/db/tables/TimeWindowsTable';
+import {ModAcronym} from '../../../main/primitives/ModAcronym';
+import {ModCombinationPattern} from '../../../main/primitives/ModCombinationPattern';
 import {
   ALL_OSU_RULESETS,
   OsuRuleset,
 } from '../../../main/primitives/OsuRuleset';
-import {OsuUsersDaoImpl} from '../../../main/data/dao/OsuUsersDaoImpl';
+import {ALL_OSU_SERVERS, OsuServer} from '../../../main/primitives/OsuServer';
 import {FakeBanchoApi} from '../../mocks/data/http/BanchoApi';
-import {SqliteDb} from '../../../main/data/persistence/db/SqliteDb';
-import {OsuUserSnapshotsTable} from '../../../main/data/persistence/db/tables/OsuUserSnapshotsTable';
-import {AppUserRecentApiRequestsDaoImpl} from '../../../main/data/dao/AppUserRecentApiRequestsDaoImpl';
-import {AppUserApiRequestsSummariesDaoImpl} from '../../../main/data/dao/AppUserApiRequestsSummariesDaoImpl';
-import {AppUserApiRequestsCountsTable} from '../../../main/data/persistence/db/tables/AppUserApiRequestsCountsTable';
-import {TimeWindowsTable} from '../../../main/data/persistence/db/tables/TimeWindowsTable';
-import {SqlDbTable} from '../../../main/data/persistence/db/SqlDbTable';
 import {FakeScoreSimulationApi} from '../../mocks/data/http/ScoreSimulationApi';
-import {ScoreSimulationsDaoImpl} from '../../../main/data/dao/ScoreSimulationsDaoImpl';
-import {CachedOsuUsersDaoImpl} from '../../../main/data/dao/CachedOsuUsersDaoImpl';
 import {getFakeOsuUserInfo} from '../../mocks/Generators';
-import {GetUserBestPlaysUseCase} from '../../../main/application/usecases/get_user_best_plays/GetUserBestPlaysUseCase';
-import {OsuUserBestScoresDaoImpl} from '../../../main/data/dao/OsuUserBestScoresDaoImpl';
-import {GetUserBestPlaysRequest} from '../../../main/application/usecases/get_user_best_plays/GetUserBestPlaysRequest';
-import {ModAcronym} from '../../../main/primitives/ModAcronym';
 
 describe('GetUserBestPlaysUseCase', function () {
   let tables: SqlDbTable[];
@@ -80,11 +81,11 @@ describe('GetUserBestPlaysUseCase', function () {
             ruleset: OsuRuleset[ruleset],
             startPosition: 1,
             quantity: 1,
-            mods: [
-              {
-                acronym: new ModAcronym('HD'),
-                isOptional: true,
-              },
+            modPatterns: [
+              new ModCombinationPattern({
+                mods: [new ModAcronym('HD')],
+                type: 'optional',
+              }),
             ],
           };
           const result = await usecase.execute(request);
@@ -114,11 +115,11 @@ describe('GetUserBestPlaysUseCase', function () {
           ruleset: undefined,
           startPosition: 1,
           quantity: 10,
-          mods: [
-            {
-              acronym: new ModAcronym('HD'),
-              isOptional: true,
-            },
+          modPatterns: [
+            new ModCombinationPattern({
+              mods: [new ModAcronym('HD')],
+              type: 'optional',
+            }),
           ],
         };
         const result = await usecase.execute(request);
@@ -148,11 +149,11 @@ describe('GetUserBestPlaysUseCase', function () {
           ruleset: user.ruleset,
           startPosition: 1,
           quantity: 10,
-          mods: [
-            {
-              acronym: new ModAcronym('HD'),
-              isOptional: true,
-            },
+          modPatterns: [
+            new ModCombinationPattern({
+              mods: [new ModAcronym('HD')],
+              type: 'optional',
+            }),
           ],
         };
         const result = await usecase.execute(request);

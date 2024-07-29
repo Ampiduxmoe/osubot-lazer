@@ -362,7 +362,7 @@ ${pos}. ${modsString}
           username: undefined,
           startPosition: undefined,
           quantity: undefined,
-          mods: undefined,
+          modPatterns: undefined,
         }),
       });
     }
@@ -376,7 +376,7 @@ ${pos}. ${modsString}
           server: server,
           beatmapId: beatmapId,
           usernameList: undefined,
-          mods: undefined,
+          modPatterns: undefined,
         }),
       });
     }

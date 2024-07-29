@@ -1,12 +1,13 @@
 import {GetAppUserInfoUseCase} from '../../application/usecases/get_app_user_info/GetAppUserInfoUseCase';
 import {OsuUserBestPlays} from '../../application/usecases/get_user_best_plays/GetUserBestPlaysResponse';
 import {GetUserBestPlaysUseCase} from '../../application/usecases/get_user_best_plays/GetUserBestPlaysUseCase';
+import {ModCombinationPattern} from '../../primitives/ModCombinationPattern';
 import {clamp} from '../../primitives/Numbers';
 import {OsuRuleset} from '../../primitives/OsuRuleset';
 import {OsuServer} from '../../primitives/OsuServer';
 import {
+  MOD_PATTERNS,
   MODE,
-  MODS,
   OWN_COMMAND_PREFIX,
   QUANTITY,
   SERVER_PREFIX,
@@ -14,7 +15,6 @@ import {
   USERNAME,
 } from '../common/arg_processing/CommandArguments';
 import {MainArgsProcessor} from '../common/arg_processing/MainArgsProcessor';
-import {ModArg} from '../common/arg_processing/ModArg';
 import {TextProcessor} from '../common/arg_processing/TextProcessor';
 import {CommandMatchResult} from '../common/CommandMatchResult';
 import {CommandPrefixes} from '../common/CommandPrefixes';
@@ -51,7 +51,7 @@ export abstract class UserBestPlays<TContext, TOutput> extends TextCommand<
     {argument: USERNAME, isOptional: true},
     {argument: START_POSITION, isOptional: true},
     {argument: QUANTITY, isOptional: true},
-    {argument: MODS, isOptional: true},
+    {argument: MOD_PATTERNS, isOptional: true},
     {argument: MODE, isOptional: true},
   ];
 
@@ -95,7 +95,7 @@ export abstract class UserBestPlays<TContext, TOutput> extends TextCommand<
     }
     const startPosition = argsProcessor.use(START_POSITION).extract();
     const quantity = argsProcessor.use(QUANTITY).extract();
-    const mods = argsProcessor.use(MODS).extract();
+    const modPatterns = argsProcessor.use(MOD_PATTERNS).extract();
     const mode = argsProcessor.use(MODE).extract();
     const username = argsProcessor.use(USERNAME).extract();
 
@@ -107,7 +107,7 @@ export abstract class UserBestPlays<TContext, TOutput> extends TextCommand<
       username: username,
       startPosition: startPosition,
       quantity: quantity,
-      mods: mods,
+      modPatterns: modPatterns,
       mode: mode,
     });
   }
@@ -149,7 +149,7 @@ export abstract class UserBestPlays<TContext, TOutput> extends TextCommand<
       ruleset: mode,
       startPosition: startPosition,
       quantity: quantity,
-      mods: args.mods ?? [],
+      modPatterns: args.modPatterns ?? [],
     });
     if (bestPlaysResult.isFailure) {
       const internalFailureReason = bestPlaysResult.failureReason!;
@@ -225,8 +225,8 @@ export abstract class UserBestPlays<TContext, TOutput> extends TextCommand<
     if (args.quantity !== undefined) {
       tokens.push(QUANTITY.unparse(args.quantity));
     }
-    if (args.mods !== undefined) {
-      tokens.push(MODS.unparse(args.mods));
+    if (args.modPatterns !== undefined) {
+      tokens.push(MOD_PATTERNS.unparse(args.modPatterns));
     }
     if (args.mode !== undefined) {
       tokens.push(MODE.unparse(args.mode));
@@ -240,7 +240,7 @@ export type UserBestPlaysExecutionArgs = {
   username: string | undefined;
   startPosition: number | undefined;
   quantity: number | undefined;
-  mods: ModArg[] | undefined;
+  modPatterns: ModCombinationPattern[] | undefined;
   mode: OsuRuleset | undefined;
 };
 

@@ -28,8 +28,8 @@ import {
   SaveLastSeenBeatmapId,
 } from '../../../../main/presentation/commands/common/Signatures';
 import {
+  MOD_PATTERNS,
   MODE,
-  MODS,
   OWN_COMMAND_PREFIX,
   QUANTITY,
   SERVER_PREFIX,
@@ -44,6 +44,7 @@ import {UserBestPlaysVk} from '../../../../main/presentation/vk/commands/UserBes
 import {VkIdConverter} from '../../../../main/presentation/vk/VkIdConverter';
 import {VkMessageContext} from '../../../../main/presentation/vk/VkMessageContext';
 import {ModAcronym} from '../../../../main/primitives/ModAcronym';
+import {ModCombinationPattern} from '../../../../main/primitives/ModCombinationPattern';
 import {
   ALL_OSU_RULESETS,
   OsuRuleset,
@@ -266,9 +267,11 @@ describe('UserBestPlaysVk', function () {
       const username = 'username';
       const startPosition = 2;
       const quantity = 5;
-      const mods = [
-        {acronym: new ModAcronym('hd'), isOptional: true},
-        {acronym: new ModAcronym('dt'), isOptional: false},
+      const modPatterns = [
+        new ModCombinationPattern(
+          {mods: [new ModAcronym('HD')], type: 'optional'},
+          {mods: [new ModAcronym('DT')], type: 'required'}
+        ),
       ];
       const mode = OsuRuleset.osu;
 
@@ -276,7 +279,7 @@ describe('UserBestPlaysVk', function () {
       const startPositionArg = START_POSITION.unparse(startPosition);
       const quantityArg = QUANTITY.unparse(quantity);
       const modeArg = MODE.unparse(mode);
-      const modsArg = MODS.unparse(mods);
+      const modPatternsArg = MOD_PATTERNS.unparse(modPatterns);
       for (const serverAndPrefix of SERVERS) {
         const server = serverAndPrefix.server;
         const serverArg = SERVER_PREFIX.unparse(server);
@@ -284,7 +287,7 @@ describe('UserBestPlaysVk', function () {
           const prefixArg = OWN_COMMAND_PREFIX(command.prefixes).unparse(
             prefix
           );
-          const goodText = `${serverArg} ${prefixArg} ${usernameArg} ${startPositionArg} ${quantityArg} ${modsArg} ${modeArg}`;
+          const goodText = `${serverArg} ${prefixArg} ${usernameArg} ${startPositionArg} ${quantityArg} ${modPatternsArg} ${modeArg}`;
           const msg = createWithOnlyText({
             senderId: 1,
             text: goodText,
@@ -302,8 +305,8 @@ describe('UserBestPlaysVk', function () {
           );
           assert.strictEqual(matchResult.commandArgs?.quantity, quantity);
           assert.strictEqual(
-            matchResult.commandArgs?.mods?.length,
-            mods.length
+            matchResult.commandArgs?.modPatterns?.length,
+            modPatterns.length
           );
           assert.strictEqual(matchResult.commandArgs?.mode, mode);
         }
@@ -340,9 +343,11 @@ describe('UserBestPlaysVk', function () {
       const username = 'username';
       const startPosition = 3;
       const quantity = 6;
-      const mods = [
-        {acronym: new ModAcronym('hd'), isOptional: true},
-        {acronym: new ModAcronym('hr'), isOptional: false},
+      const modPatterns = [
+        new ModCombinationPattern(
+          {mods: [new ModAcronym('HD')], type: 'optional'},
+          {mods: [new ModAcronym('HR')], type: 'required'}
+        ),
       ];
       const mode = OsuRuleset.osu;
 
@@ -350,7 +355,7 @@ describe('UserBestPlaysVk', function () {
       const startPositionArg = START_POSITION.unparse(startPosition);
       const quantityArg = QUANTITY.unparse(quantity);
       const modeArg = MODE.unparse(mode);
-      const modsArg = MODS.unparse(mods);
+      const modPatternsArg = MOD_PATTERNS.unparse(modPatterns);
       for (const serverAndPrefix of SERVERS) {
         const server = serverAndPrefix.server;
         const serverArg = SERVER_PREFIX.unparse(server);
@@ -358,7 +363,7 @@ describe('UserBestPlaysVk', function () {
           const prefixArg = OWN_COMMAND_PREFIX(command.prefixes).unparse(
             prefix
           );
-          const goodText = `${serverArg} ${prefixArg} ${usernameArg} ${startPositionArg} ${quantityArg} ${modsArg} ${modeArg}`;
+          const goodText = `${serverArg} ${prefixArg} ${usernameArg} ${startPositionArg} ${quantityArg} ${modPatternsArg} ${modeArg}`;
           const msg = createWithPayload({
             senderId: 1,
             text: 'lorem ipsum',
@@ -380,8 +385,8 @@ describe('UserBestPlaysVk', function () {
           );
           assert.strictEqual(matchResult.commandArgs?.quantity, quantity);
           assert.strictEqual(
-            matchResult.commandArgs?.mods?.length,
-            mods.length
+            matchResult.commandArgs?.modPatterns?.length,
+            modPatterns.length
           );
           assert.strictEqual(matchResult.commandArgs?.mode, mode);
         }
@@ -399,9 +404,11 @@ describe('UserBestPlaysVk', function () {
           username: usernameInput,
           startPosition: 2,
           quantity: 3,
-          mods: [
-            {acronym: new ModAcronym('HD'), isOptional: true},
-            {acronym: new ModAcronym('DT'), isOptional: false},
+          modPatterns: [
+            new ModCombinationPattern(
+              {mods: [new ModAcronym('HD')], type: 'optional'},
+              {mods: [new ModAcronym('DT')], type: 'required'}
+            ),
           ],
           mode: mode,
         },
@@ -424,9 +431,11 @@ describe('UserBestPlaysVk', function () {
           username: undefined,
           startPosition: 2,
           quantity: 3,
-          mods: [
-            {acronym: new ModAcronym('HD'), isOptional: true},
-            {acronym: new ModAcronym('DT'), isOptional: false},
+          modPatterns: [
+            new ModCombinationPattern(
+              {mods: [new ModAcronym('HD')], type: 'optional'},
+              {mods: [new ModAcronym('DT')], type: 'required'}
+            ),
           ],
           mode: mode,
         },
@@ -461,9 +470,11 @@ describe('UserBestPlaysVk', function () {
               username: username,
               startPosition: 2,
               quantity: 3,
-              mods: [
-                {acronym: new ModAcronym('HD'), isOptional: true},
-                {acronym: new ModAcronym('DT'), isOptional: false},
+              modPatterns: [
+                new ModCombinationPattern(
+                  {mods: [new ModAcronym('HD')], type: 'optional'},
+                  {mods: [new ModAcronym('DT')], type: 'required'}
+                ),
               ],
               mode: undefined,
             },
@@ -496,9 +507,11 @@ describe('UserBestPlaysVk', function () {
               username: osuUser.username,
               startPosition: 2,
               quantity: 3,
-              mods: [
-                {acronym: new ModAcronym('HD'), isOptional: true},
-                {acronym: new ModAcronym('DT'), isOptional: false},
+              modPatterns: [
+                new ModCombinationPattern(
+                  {mods: [new ModAcronym('HD')], type: 'optional'},
+                  {mods: [new ModAcronym('DT')], type: 'required'}
+                ),
               ],
               mode: OsuRuleset[mode],
             },
@@ -522,9 +535,11 @@ describe('UserBestPlaysVk', function () {
           username: undefined,
           startPosition: 2,
           quantity: 3,
-          mods: [
-            {acronym: new ModAcronym('HD'), isOptional: true},
-            {acronym: new ModAcronym('DT'), isOptional: false},
+          modPatterns: [
+            new ModCombinationPattern(
+              {mods: [new ModAcronym('HD')], type: 'optional'},
+              {mods: [new ModAcronym('DT')], type: 'required'}
+            ),
           ],
           mode: undefined,
         },
