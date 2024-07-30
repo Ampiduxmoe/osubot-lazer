@@ -12,6 +12,7 @@ import {OsuUserSnapshotsTable} from '../../../main/data/persistence/db/tables/Os
 import {TimeWindowsTable} from '../../../main/data/persistence/db/tables/TimeWindowsTable';
 import {ModAcronym} from '../../../main/primitives/ModAcronym';
 import {ModCombinationPattern} from '../../../main/primitives/ModCombinationPattern';
+import {ModPatternCollection} from '../../../main/primitives/ModPatternCollection';
 import {OsuRuleset} from '../../../main/primitives/OsuRuleset';
 import {OsuServer} from '../../../main/primitives/OsuServer';
 import {FakeBanchoApi} from '../../mocks/data/http/BanchoApi';
@@ -52,12 +53,12 @@ describe('OsuUserBestScoresDao', function () {
         appUserId,
         NaN,
         OsuServer.Bancho,
-        [
+        new ModPatternCollection(
           new ModCombinationPattern({
             mods: [new ModAcronym('HD')],
             type: 'required',
-          }),
-        ],
+          })
+        ),
         3,
         1,
         OsuRuleset.osu
@@ -70,12 +71,12 @@ describe('OsuUserBestScoresDao', function () {
         appUserId,
         1,
         OsuServer.Bancho,
-        [
+        new ModPatternCollection(
           new ModCombinationPattern({
             mods: [new ModAcronym('HD')],
             type: 'required',
-          }),
-        ],
+          })
+        ),
         3,
         1,
         OsuRuleset.osu
@@ -107,12 +108,12 @@ describe('OsuUserBestScoresDao', function () {
         appUserId,
         osuId,
         OsuServer.Bancho,
-        [
+        new ModPatternCollection(
           new ModCombinationPattern(
             {mods: [new ModAcronym('HD')], type: 'optional'},
             {mods: [new ModAcronym('DT')], type: 'required'}
-          ),
-        ],
+          )
+        ),
         10,
         1,
         ruleset

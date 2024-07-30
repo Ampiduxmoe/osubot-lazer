@@ -6,11 +6,11 @@ import {
 } from '../../../primitives/ModCombinationPattern';
 
 export class ModCombinationMatcher {
-  modPattern: ModCombinationPattern;
+  originalPattern: ModCombinationPattern;
   normalizedPattern: ModCombinationPattern;
   earlyReturnValue: boolean | undefined;
   constructor(modPattern: ModCombinationPattern) {
-    this.modPattern = modPattern;
+    this.originalPattern = modPattern;
     const uniqueModsFilter = createUniquesFilter<ModAcronym>((a, b) => a.is(b));
     const prohibitedGroup: ModGroup = {
       // merge all prohibited groups into one and delete duplicates
@@ -90,11 +90,24 @@ export class ModCombinationMatcher {
       // if mod is present in both required and prohibited group it is impossible condition
       this.earlyReturnValue = false;
     }
+    if (
+      this.earlyReturnValue !== undefined &&
+      this.originalPattern.isInverted
+    ) {
+      this.earlyReturnValue = !this.earlyReturnValue;
+    }
   }
   match(mods: ModAcronym[]): boolean {
     if (this.earlyReturnValue !== undefined) {
       return this.earlyReturnValue;
     }
+    const directResult = this.directMatch(mods);
+    if (this.originalPattern.isInverted) {
+      return !directResult;
+    }
+    return directResult;
+  }
+  directMatch(mods: ModAcronym[]): boolean {
     const shouldCheckForPossibleMods =
       this.normalizedPattern.filter(g =>
         ['required', 'exclusive'].includes(g.type)

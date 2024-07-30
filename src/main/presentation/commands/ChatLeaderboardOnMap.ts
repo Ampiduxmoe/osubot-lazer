@@ -4,7 +4,7 @@ import {
   OsuMapUserBestPlays,
 } from '../../application/usecases/get_beatmap_users_best_score/GetBeatmapUsersBestScoresResponse';
 import {GetBeatmapUsersBestScoresUseCase} from '../../application/usecases/get_beatmap_users_best_score/GetBeatmapUsersBestScoresUseCase';
-import {ModCombinationPattern} from '../../primitives/ModCombinationPattern';
+import {ModPatternCollection} from '../../primitives/ModPatternCollection';
 import {OsuRuleset} from '../../primitives/OsuRuleset';
 import {OsuServer} from '../../primitives/OsuServer';
 import {
@@ -183,7 +183,7 @@ export abstract class ChatLeaderboardOnMap<
       usernames: usernames,
       startPosition: 1,
       quantityPerUser: 1,
-      modPatterns: args.modPatterns ?? [],
+      modPatterns: args.modPatterns ?? new ModPatternCollection(),
     });
     if (leaderboardResponse.failureReason !== undefined) {
       switch (leaderboardResponse.failureReason) {
@@ -294,7 +294,7 @@ export type ChatLeaderboardOnMapExecutionArgs = {
   server: OsuServer;
   beatmapId: number | undefined;
   usernameList: {usernames: string[]; isAdditive: boolean} | undefined;
-  modPatterns: ModCombinationPattern[] | undefined;
+  modPatterns: ModPatternCollection | undefined;
 };
 
 export type ChatLeaderboardOnMapViewParams = {

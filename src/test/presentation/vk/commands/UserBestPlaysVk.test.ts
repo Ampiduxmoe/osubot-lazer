@@ -45,6 +45,7 @@ import {VkIdConverter} from '../../../../main/presentation/vk/VkIdConverter';
 import {VkMessageContext} from '../../../../main/presentation/vk/VkMessageContext';
 import {ModAcronym} from '../../../../main/primitives/ModAcronym';
 import {ModCombinationPattern} from '../../../../main/primitives/ModCombinationPattern';
+import {ModPatternCollection} from '../../../../main/primitives/ModPatternCollection';
 import {
   ALL_OSU_RULESETS,
   OsuRuleset,
@@ -267,12 +268,12 @@ describe('UserBestPlaysVk', function () {
       const username = 'username';
       const startPosition = 2;
       const quantity = 5;
-      const modPatterns = [
+      const modPatterns = new ModPatternCollection(
         new ModCombinationPattern(
           {mods: [new ModAcronym('HD')], type: 'optional'},
           {mods: [new ModAcronym('DT')], type: 'required'}
-        ),
-      ];
+        )
+      );
       const mode = OsuRuleset.osu;
 
       const usernameArg = USERNAME.unparse(username);
@@ -343,12 +344,12 @@ describe('UserBestPlaysVk', function () {
       const username = 'username';
       const startPosition = 3;
       const quantity = 6;
-      const modPatterns = [
+      const modPatterns = new ModPatternCollection(
         new ModCombinationPattern(
           {mods: [new ModAcronym('HD')], type: 'optional'},
           {mods: [new ModAcronym('HR')], type: 'required'}
-        ),
-      ];
+        )
+      );
       const mode = OsuRuleset.osu;
 
       const usernameArg = USERNAME.unparse(username);
@@ -404,12 +405,12 @@ describe('UserBestPlaysVk', function () {
           username: usernameInput,
           startPosition: 2,
           quantity: 3,
-          modPatterns: [
+          modPatterns: new ModPatternCollection(
             new ModCombinationPattern(
               {mods: [new ModAcronym('HD')], type: 'optional'},
               {mods: [new ModAcronym('DT')], type: 'required'}
-            ),
-          ],
+            )
+          ),
           mode: mode,
         },
         createWithOnlyText({
@@ -431,12 +432,12 @@ describe('UserBestPlaysVk', function () {
           username: undefined,
           startPosition: 2,
           quantity: 3,
-          modPatterns: [
+          modPatterns: new ModPatternCollection(
             new ModCombinationPattern(
               {mods: [new ModAcronym('HD')], type: 'optional'},
               {mods: [new ModAcronym('DT')], type: 'required'}
-            ),
-          ],
+            )
+          ),
           mode: mode,
         },
         createWithOnlyText({
@@ -470,12 +471,12 @@ describe('UserBestPlaysVk', function () {
               username: username,
               startPosition: 2,
               quantity: 3,
-              modPatterns: [
+              modPatterns: new ModPatternCollection(
                 new ModCombinationPattern(
                   {mods: [new ModAcronym('HD')], type: 'optional'},
                   {mods: [new ModAcronym('DT')], type: 'required'}
-                ),
-              ],
+                )
+              ),
               mode: undefined,
             },
             createWithOnlyText({
@@ -507,12 +508,12 @@ describe('UserBestPlaysVk', function () {
               username: osuUser.username,
               startPosition: 2,
               quantity: 3,
-              modPatterns: [
+              modPatterns: new ModPatternCollection(
                 new ModCombinationPattern(
                   {mods: [new ModAcronym('HD')], type: 'optional'},
                   {mods: [new ModAcronym('DT')], type: 'required'}
-                ),
-              ],
+                )
+              ),
               mode: OsuRuleset[mode],
             },
             createWithOnlyText({
@@ -535,12 +536,12 @@ describe('UserBestPlaysVk', function () {
           username: undefined,
           startPosition: 2,
           quantity: 3,
-          modPatterns: [
+          modPatterns: new ModPatternCollection(
             new ModCombinationPattern(
               {mods: [new ModAcronym('HD')], type: 'optional'},
               {mods: [new ModAcronym('DT')], type: 'required'}
-            ),
-          ],
+            )
+          ),
           mode: undefined,
         },
         createWithOnlyText({

@@ -1,4 +1,4 @@
-import {ModCombinationPattern} from '../../../primitives/ModCombinationPattern';
+import {ModPatternCollection} from '../../../primitives/ModPatternCollection';
 import {OsuRuleset} from '../../../primitives/OsuRuleset';
 import {OsuServer} from '../../../primitives/OsuServer';
 import {OsuUserRecentScore} from './OsuUserRecentScoresDao';
@@ -9,7 +9,7 @@ export interface OsuBeatmapUserScoresDao {
     beatmapId: number,
     osuUserId: number,
     server: OsuServer,
-    modPatterns: ModCombinationPattern[],
+    modPatterns: ModPatternCollection,
     ruleset: OsuRuleset | undefined
   ): Promise<OsuBeatmapUserScore[] | undefined>;
 }

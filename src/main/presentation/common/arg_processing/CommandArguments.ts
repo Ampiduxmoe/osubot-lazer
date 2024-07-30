@@ -1,12 +1,13 @@
-import {OsuServer} from '../../../primitives/OsuServer';
-import {SERVERS} from '../OsuServers';
 import {pickRandom, uniquesFilter} from '../../../primitives/Arrays';
-import {CommandArgument} from './CommandArgument';
-import {ModArg} from './ModArg';
-import {CommandPrefixes} from '../CommandPrefixes';
-import {ALL_OSU_RULESETS, OsuRuleset} from '../../../primitives/OsuRuleset';
 import {ModAcronym} from '../../../primitives/ModAcronym';
 import {ModCombinationPattern} from '../../../primitives/ModCombinationPattern';
+import {ModPatternCollection} from '../../../primitives/ModPatternCollection';
+import {ALL_OSU_RULESETS, OsuRuleset} from '../../../primitives/OsuRuleset';
+import {OsuServer} from '../../../primitives/OsuServer';
+import {CommandPrefixes} from '../CommandPrefixes';
+import {SERVERS} from '../OsuServers';
+import {CommandArgument} from './CommandArgument';
+import {ModArg} from './ModArg';
 
 export const SERVER_PREFIX: CommandArgument<OsuServer> = {
   displayName: 'сервер',
@@ -258,7 +259,7 @@ export const MODS: CommandArgument<ModArg[]> = {
   },
 };
 
-export const MOD_PATTERNS: CommandArgument<ModCombinationPattern[]> = {
+export const MOD_PATTERNS: CommandArgument<ModPatternCollection> = {
   displayName: '+моды',
   description:
     'список модов, слитно; допускается указание нескольких списков через запятую',
@@ -273,8 +274,8 @@ export const MOD_PATTERNS: CommandArgument<ModCombinationPattern[]> = {
   },
   match: function (token: string): boolean {
     const patternRegex =
-      /^(([a-zA-Z]{2})+|\(([a-zA-Z]{2})+?\)|\[([a-zA-Z]{2})+?\]|\{([a-zA-Z]{2})+?\})+$/;
-    if (!token.startsWith('+')) {
+      /^\^?(([a-zA-Z]{2})+|\(([a-zA-Z]{2})+?\)|\[([a-zA-Z]{2})+?\]|\{([a-zA-Z]{2})+?\})+$/;
+    if (!token.startsWith('+') && !token.startsWith('-')) {
       return false;
     }
     const potentialPatterns = token.substring(1).split(',');
@@ -285,10 +286,16 @@ export const MOD_PATTERNS: CommandArgument<ModCombinationPattern[]> = {
     }
     return true;
   },
-  parse: function (token: string): ModCombinationPattern[] {
+  parse: function (token: string): ModPatternCollection {
     const patternsString = token.substring(1);
     const patternStrings = patternsString.split(',');
-    return patternStrings.map(patternString => {
+    const modPatterns = patternStrings.map(rawPatternString => {
+      const [patternString, isInverted] = (() => {
+        if (rawPatternString.startsWith('^')) {
+          return [rawPatternString.substring(1), true];
+        }
+        return [rawPatternString, false];
+      })();
       const optionalModGroups =
         patternString
           .match(/\((.{2})+?\)/g)
@@ -340,7 +347,7 @@ export const MOD_PATTERNS: CommandArgument<ModCombinationPattern[]> = {
       }
       const requiredModGroup =
         remainingGroupsString.match(/.{2}/g)?.flat() ?? [];
-      return new ModCombinationPattern(
+      const modPattern = new ModCombinationPattern(
         {
           mods: requiredModGroup.map(m => new ModAcronym(m)),
           type: 'required',
@@ -358,28 +365,37 @@ export const MOD_PATTERNS: CommandArgument<ModCombinationPattern[]> = {
           type: 'prohibited' as const,
         }))
       );
+      modPattern.isInverted = isInverted;
+      return modPattern;
     });
+    const modPatternCollection = new ModPatternCollection(...modPatterns);
+    if (token.startsWith('-')) {
+      modPatternCollection.isInverted = true;
+    }
+    return modPatternCollection;
   },
-  unparse: function (value: ModCombinationPattern[]): string {
+  unparse: function (value: ModPatternCollection): string {
     return (
-      '+' +
+      (value.isInverted ? '-' : '+') +
       value
-        .map(pattern =>
-          pattern
-            .map(group => {
-              const modsString = group.mods.join('');
-              switch (group.type) {
-                case 'required':
-                  return modsString;
-                case 'optional':
-                  return `(${modsString})`;
-                case 'exclusive':
-                  return `[${modsString}]`;
-                case 'prohibited':
-                  return `{${modsString}}`;
-              }
-            })
-            .join('')
+        .map(
+          pattern =>
+            (pattern.isInverted ? '^' : '') +
+            pattern
+              .map(group => {
+                const modsString = group.mods.join('');
+                switch (group.type) {
+                  case 'required':
+                    return modsString;
+                  case 'optional':
+                    return `(${modsString})`;
+                  case 'exclusive':
+                    return `[${modsString}]`;
+                  case 'prohibited':
+                    return `{${modsString}}`;
+                }
+              })
+              .join('')
         )
         .join(',')
     );

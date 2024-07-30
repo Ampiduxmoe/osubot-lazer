@@ -1,14 +1,14 @@
-import {OsuServer} from '../../primitives/OsuServer';
-import {OsuRuleset} from '../../primitives/OsuRuleset';
+import {AppUserRecentApiRequestsDao} from '../../application/requirements/dao/AppUserRecentApiRequestsDao';
 import {
   OsuBeatmapUserScore,
   OsuBeatmapUserScoresDao,
 } from '../../application/requirements/dao/OsuBeatmapUserScoresDao';
+import {ModPatternCollection} from '../../primitives/ModPatternCollection';
+import {OsuRuleset} from '../../primitives/OsuRuleset';
+import {OsuServer} from '../../primitives/OsuServer';
 import {OsuApi} from '../http/OsuApi';
-import {AppUserRecentApiRequestsDao} from '../../application/requirements/dao/AppUserRecentApiRequestsDao';
 import {COMMON_REQUEST_SUBTARGETS} from './AppUserApiRequestsSummariesDaoImpl';
-import {ModCombinationMatcher} from './common/ModCombinationMatcher';
-import {ModCombinationPattern} from '../../primitives/ModCombinationPattern';
+import {ModPatternCollectionMatcher} from './common/ModPatternCollectionMatcher';
 
 export class OsuBeatmapUserScoresDaoImpl implements OsuBeatmapUserScoresDao {
   private apis: OsuApi[];
@@ -22,20 +22,15 @@ export class OsuBeatmapUserScoresDaoImpl implements OsuBeatmapUserScoresDao {
     beatmapId: number,
     osuUserId: number,
     server: OsuServer,
-    modPatterns: ModCombinationPattern[],
+    modPatterns: ModPatternCollection,
     ruleset: OsuRuleset | undefined
   ): Promise<OsuBeatmapUserScore[] | undefined> {
     const api = this.apis.find(api => api.server === server);
     if (api === undefined) {
       throw Error(`Could not find API for server ${OsuServer[server]}`);
     }
-    const modMatchers = modPatterns.map(p => new ModCombinationMatcher(p));
-    if (
-      modMatchers.length > 0 &&
-      modMatchers.filter(m => m.earlyReturnValue === false).length ===
-        modMatchers.length
-    ) {
-      // all matchers have impossible patterns
+    const modMatcher = new ModPatternCollectionMatcher(modPatterns);
+    if (modMatcher.earlyReturnValue === false) {
       return [];
     }
     await this.recentApiRequests.add({
@@ -71,11 +66,7 @@ export class OsuBeatmapUserScoresDaoImpl implements OsuBeatmapUserScoresDao {
       return mapUserScore;
     });
     const filteredScores = mapUserScores.filter(s =>
-      modMatchers.length === 0
-        ? true
-        : modMatchers.find(matcher =>
-            matcher.match(s.mods.map(m => m.acronym))
-          ) !== undefined
+      modMatcher.match(s.mods.map(m => m.acronym))
     );
     return filteredScores;
   }

@@ -4,7 +4,7 @@ import {
   OsuMapUserPlay,
 } from '../../application/usecases/get_beatmap_users_best_score/GetBeatmapUsersBestScoresResponse';
 import {GetBeatmapUsersBestScoresUseCase} from '../../application/usecases/get_beatmap_users_best_score/GetBeatmapUsersBestScoresUseCase';
-import {ModCombinationPattern} from '../../primitives/ModCombinationPattern';
+import {ModPatternCollection} from '../../primitives/ModPatternCollection';
 import {clamp} from '../../primitives/Numbers';
 import {OsuRuleset} from '../../primitives/OsuRuleset';
 import {OsuServer} from '../../primitives/OsuServer';
@@ -174,7 +174,7 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
       usernames: [username],
       startPosition: Math.max(args.startPosition ?? 1, 1),
       quantityPerUser: clamp(args.quantity ?? 1, 1, 10),
-      modPatterns: args.modPatterns ?? [],
+      modPatterns: args.modPatterns ?? new ModPatternCollection(),
     });
     if (leaderboardResponse.failureReason !== undefined) {
       switch (leaderboardResponse.failureReason) {
@@ -298,7 +298,7 @@ export type UserBestPlaysOnMapExecutionArgs = {
   server: OsuServer;
   beatmapId: number | undefined;
   username: string | undefined;
-  modPatterns: ModCombinationPattern[] | undefined;
+  modPatterns: ModPatternCollection | undefined;
   startPosition: number | undefined;
   quantity: number | undefined;
 };

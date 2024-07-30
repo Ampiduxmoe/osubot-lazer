@@ -3,14 +3,14 @@ import {
   OsuUserRecentScore,
   OsuUserRecentScoresDao,
 } from '../../application/requirements/dao/OsuUserRecentScoresDao';
-import {ModCombinationPattern} from '../../primitives/ModCombinationPattern';
+import {ModPatternCollection} from '../../primitives/ModPatternCollection';
 import {OsuRuleset} from '../../primitives/OsuRuleset';
 import {OsuServer} from '../../primitives/OsuServer';
 import {OsuUserRecentScoreInfo} from '../http/boundary/OsuUserRecentScoreInfo';
 import {OsuApi} from '../http/OsuApi';
 import {OsuUserSnapshotsRepository} from '../repository/repositories/OsuUserSnapshotsRepository';
 import {COMMON_REQUEST_SUBTARGETS} from './AppUserApiRequestsSummariesDaoImpl';
-import {ModCombinationMatcher} from './common/ModCombinationMatcher';
+import {ModPatternCollectionMatcher} from './common/ModPatternCollectionMatcher';
 
 export class OsuUserRecentScoresDaoImpl implements OsuUserRecentScoresDao {
   private apis: OsuApi[];
@@ -30,7 +30,7 @@ export class OsuUserRecentScoresDaoImpl implements OsuUserRecentScoresDao {
     osuUserId: number,
     server: OsuServer,
     includeFails: boolean,
-    modPatterns: ModCombinationPattern[],
+    modPatterns: ModPatternCollection,
     quantity: number,
     startPosition: number,
     ruleset: OsuRuleset | undefined
@@ -39,22 +39,13 @@ export class OsuUserRecentScoresDaoImpl implements OsuUserRecentScoresDao {
     if (api === undefined) {
       throw Error(`Could not find API for server ${OsuServer[server]}`);
     }
-    const modMatchers = modPatterns.map(p => new ModCombinationMatcher(p));
-    if (
-      modMatchers.length > 0 &&
-      modMatchers.filter(m => m.earlyReturnValue === false).length ===
-        modMatchers.length
-    ) {
-      // all matchers have impossible patterns
+    const modMatcher = new ModPatternCollectionMatcher(modPatterns);
+    if (modMatcher.earlyReturnValue === false) {
       return [];
     }
     let adjustedQuantity = quantity;
     let adjustedStartPosition = startPosition;
-    const hasModFilters =
-      modMatchers.find(
-        matcher =>
-          matcher.normalizedPattern.map(group => group.mods).flat().length > 0
-      ) !== undefined;
+    const hasModFilters = modMatcher.earlyReturnValue !== true;
     if (hasModFilters) {
       adjustedQuantity = 100;
       adjustedStartPosition = 1;
@@ -130,11 +121,7 @@ export class OsuUserRecentScoresDaoImpl implements OsuUserRecentScoresDao {
       return recentScore;
     });
     let filteredScores = recentScores.filter(s =>
-      modMatchers.length === 0
-        ? true
-        : modMatchers.find(matcher =>
-            matcher.match(s.mods.map(m => m.acronym))
-          ) !== undefined
+      modMatcher.match(s.mods.map(m => m.acronym))
     );
     if (hasModFilters) {
       filteredScores = filteredScores.splice(startPosition - 1);

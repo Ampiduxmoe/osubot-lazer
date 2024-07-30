@@ -1,4 +1,4 @@
-import {ModCombinationPattern} from '../../../primitives/ModCombinationPattern';
+import {ModPatternCollection} from '../../../primitives/ModPatternCollection';
 import {OsuRuleset} from '../../../primitives/OsuRuleset';
 import {OsuServer} from '../../../primitives/OsuServer';
 
@@ -10,5 +10,5 @@ export type GetUserRecentPlaysRequest = {
   includeFails: boolean;
   startPosition: number;
   quantity: number;
-  modPatterns: ModCombinationPattern[];
+  modPatterns: ModPatternCollection;
 };

@@ -15,6 +15,7 @@ import {OsuUserSnapshotsTable} from '../../../main/data/persistence/db/tables/Os
 import {TimeWindowsTable} from '../../../main/data/persistence/db/tables/TimeWindowsTable';
 import {ModAcronym} from '../../../main/primitives/ModAcronym';
 import {ModCombinationPattern} from '../../../main/primitives/ModCombinationPattern';
+import {ModPatternCollection} from '../../../main/primitives/ModPatternCollection';
 import {
   ALL_OSU_RULESETS,
   OsuRuleset,
@@ -82,12 +83,12 @@ describe('GetUserRecentPlaysUseCase', function () {
             includeFails: true,
             startPosition: 1,
             quantity: 1,
-            modPatterns: [
+            modPatterns: new ModPatternCollection(
               new ModCombinationPattern({
                 mods: [new ModAcronym('HD')],
                 type: 'optional',
-              }),
-            ],
+              })
+            ),
           };
           const result = await usecase.execute(request);
           assert.strictEqual(result.recentPlays, undefined);
@@ -117,12 +118,12 @@ describe('GetUserRecentPlaysUseCase', function () {
           includeFails: true,
           startPosition: 1,
           quantity: 10,
-          modPatterns: [
+          modPatterns: new ModPatternCollection(
             new ModCombinationPattern({
               mods: [new ModAcronym('HD')],
               type: 'optional',
-            }),
-          ],
+            })
+          ),
         };
         const result = await usecase.execute(request);
         assert.notStrictEqual(result.recentPlays, undefined);
@@ -152,12 +153,12 @@ describe('GetUserRecentPlaysUseCase', function () {
           includeFails: true,
           startPosition: 1,
           quantity: 10,
-          modPatterns: [
+          modPatterns: new ModPatternCollection(
             new ModCombinationPattern({
               mods: [new ModAcronym('HD')],
               type: 'optional',
-            }),
-          ],
+            })
+          ),
         };
         const result = await usecase.execute(request);
         assert.notStrictEqual(result.recentPlays, undefined);

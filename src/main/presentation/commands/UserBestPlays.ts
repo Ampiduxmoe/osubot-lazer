@@ -1,7 +1,7 @@
 import {GetAppUserInfoUseCase} from '../../application/usecases/get_app_user_info/GetAppUserInfoUseCase';
 import {OsuUserBestPlays} from '../../application/usecases/get_user_best_plays/GetUserBestPlaysResponse';
 import {GetUserBestPlaysUseCase} from '../../application/usecases/get_user_best_plays/GetUserBestPlaysUseCase';
-import {ModCombinationPattern} from '../../primitives/ModCombinationPattern';
+import {ModPatternCollection} from '../../primitives/ModPatternCollection';
 import {clamp} from '../../primitives/Numbers';
 import {OsuRuleset} from '../../primitives/OsuRuleset';
 import {OsuServer} from '../../primitives/OsuServer';
@@ -149,7 +149,7 @@ export abstract class UserBestPlays<TContext, TOutput> extends TextCommand<
       ruleset: mode,
       startPosition: startPosition,
       quantity: quantity,
-      modPatterns: args.modPatterns ?? [],
+      modPatterns: args.modPatterns ?? new ModPatternCollection(),
     });
     if (bestPlaysResult.isFailure) {
       const internalFailureReason = bestPlaysResult.failureReason!;
@@ -240,7 +240,7 @@ export type UserBestPlaysExecutionArgs = {
   username: string | undefined;
   startPosition: number | undefined;
   quantity: number | undefined;
-  modPatterns: ModCombinationPattern[] | undefined;
+  modPatterns: ModPatternCollection | undefined;
   mode: OsuRuleset | undefined;
 };
 

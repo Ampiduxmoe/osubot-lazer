@@ -1,4 +1,4 @@
-import {ModCombinationPattern} from '../../../primitives/ModCombinationPattern';
+import {ModPatternCollection} from '../../../primitives/ModPatternCollection';
 import {OsuServer} from '../../../primitives/OsuServer';
 
 export type GetBeatmapUsersBestScoresRequest = {
@@ -8,5 +8,5 @@ export type GetBeatmapUsersBestScoresRequest = {
   usernames: string[];
   startPosition: number;
   quantityPerUser: number;
-  modPatterns: ModCombinationPattern[];
+  modPatterns: ModPatternCollection;
 };

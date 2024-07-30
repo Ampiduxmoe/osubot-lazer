@@ -1,7 +1,7 @@
 import {GetAppUserInfoUseCase} from '../../application/usecases/get_app_user_info/GetAppUserInfoUseCase';
 import {OsuUserRecentPlays} from '../../application/usecases/get_user_recent_plays/GetUserRecentPlaysResponse';
 import {GetUserRecentPlaysUseCase} from '../../application/usecases/get_user_recent_plays/GetUserRecentPlaysUseCase';
-import {ModCombinationPattern} from '../../primitives/ModCombinationPattern';
+import {ModPatternCollection} from '../../primitives/ModPatternCollection';
 import {clamp} from '../../primitives/Numbers';
 import {OsuRuleset} from '../../primitives/OsuRuleset';
 import {OsuServer} from '../../primitives/OsuServer';
@@ -154,7 +154,7 @@ export abstract class UserRecentPlays<TContext, TOutput> extends TextCommand<
       includeFails: !args.passesOnly,
       startPosition: startPosition,
       quantity: quantity,
-      modPatterns: args.modPatterns ?? [],
+      modPatterns: args.modPatterns ?? new ModPatternCollection(),
     });
     if (recentPlaysResult.isFailure) {
       const internalFailureReason = recentPlaysResult.failureReason!;
@@ -266,7 +266,7 @@ export type UserRecentPlaysExecutionArgs = {
   username: string | undefined;
   startPosition: number | undefined;
   quantity: number | undefined;
-  modPatterns: ModCombinationPattern[] | undefined;
+  modPatterns: ModPatternCollection | undefined;
   mode: OsuRuleset | undefined;
 };
 
