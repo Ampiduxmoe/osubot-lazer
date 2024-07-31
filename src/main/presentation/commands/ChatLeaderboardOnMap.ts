@@ -10,6 +10,7 @@ import {OsuServer} from '../../primitives/OsuServer';
 import {
   BEATMAP_ID,
   MOD_PATTERNS,
+  ModPatternsArg,
   OWN_COMMAND_PREFIX,
   SERVER_PREFIX,
   USERNAME_LIST,
@@ -176,6 +177,18 @@ export abstract class ChatLeaderboardOnMap<
         isOnlyLocalMembersLb: isOnlyLocalMembersLb,
       };
     }
+    const modPatterns: ModPatternCollection = (() => {
+      if (args.modPatterns === undefined) {
+        return new ModPatternCollection();
+      }
+      if (args.modPatterns.strictMatch) {
+        return args.modPatterns.collection;
+      }
+      return args.modPatterns.collection
+        .allowLegacy()
+        .treatAsInterchangeable('DT', 'NC')
+        .treatAsInterchangeable('HT', 'DC');
+    })();
     const leaderboardResponse = await this.getBeatmapBestScores.execute({
       initiatorAppUserId: this.getInitiatorAppUserId(ctx),
       server: args.server,
@@ -183,7 +196,7 @@ export abstract class ChatLeaderboardOnMap<
       usernames: usernames,
       startPosition: 1,
       quantityPerUser: 1,
-      modPatterns: args.modPatterns ?? new ModPatternCollection(),
+      modPatterns: modPatterns,
     });
     if (leaderboardResponse.failureReason !== undefined) {
       switch (leaderboardResponse.failureReason) {
@@ -294,7 +307,7 @@ export type ChatLeaderboardOnMapExecutionArgs = {
   server: OsuServer;
   beatmapId: number | undefined;
   usernameList: {usernames: string[]; isAdditive: boolean} | undefined;
-  modPatterns: ModPatternCollection | undefined;
+  modPatterns: ModPatternsArg | undefined;
 };
 
 export type ChatLeaderboardOnMapViewParams = {

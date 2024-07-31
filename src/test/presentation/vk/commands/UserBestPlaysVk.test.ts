@@ -30,6 +30,7 @@ import {
 import {
   MOD_PATTERNS,
   MODE,
+  ModPatternsArg,
   OWN_COMMAND_PREFIX,
   QUANTITY,
   SERVER_PREFIX,
@@ -268,12 +269,15 @@ describe('UserBestPlaysVk', function () {
       const username = 'username';
       const startPosition = 2;
       const quantity = 5;
-      const modPatterns = new ModPatternCollection(
-        new ModCombinationPattern(
-          {mods: [new ModAcronym('HD')], type: 'optional'},
-          {mods: [new ModAcronym('DT')], type: 'required'}
-        )
-      );
+      const modPatterns: ModPatternsArg = {
+        collection: new ModPatternCollection(
+          new ModCombinationPattern(
+            {mods: [new ModAcronym('HD')], type: 'optional'},
+            {mods: [new ModAcronym('DT')], type: 'required'}
+          )
+        ),
+        strictMatch: true,
+      };
       const mode = OsuRuleset.osu;
 
       const usernameArg = USERNAME.unparse(username);
@@ -306,8 +310,8 @@ describe('UserBestPlaysVk', function () {
           );
           assert.strictEqual(matchResult.commandArgs?.quantity, quantity);
           assert.strictEqual(
-            matchResult.commandArgs?.modPatterns?.length,
-            modPatterns.length
+            matchResult.commandArgs?.modPatterns?.collection.length,
+            modPatterns.collection.length
           );
           assert.strictEqual(matchResult.commandArgs?.mode, mode);
         }
@@ -344,12 +348,15 @@ describe('UserBestPlaysVk', function () {
       const username = 'username';
       const startPosition = 3;
       const quantity = 6;
-      const modPatterns = new ModPatternCollection(
-        new ModCombinationPattern(
-          {mods: [new ModAcronym('HD')], type: 'optional'},
-          {mods: [new ModAcronym('HR')], type: 'required'}
-        )
-      );
+      const modPatterns: ModPatternsArg = {
+        collection: new ModPatternCollection(
+          new ModCombinationPattern(
+            {mods: [new ModAcronym('HD')], type: 'optional'},
+            {mods: [new ModAcronym('HR')], type: 'required'}
+          )
+        ),
+        strictMatch: true,
+      };
       const mode = OsuRuleset.osu;
 
       const usernameArg = USERNAME.unparse(username);
@@ -386,8 +393,8 @@ describe('UserBestPlaysVk', function () {
           );
           assert.strictEqual(matchResult.commandArgs?.quantity, quantity);
           assert.strictEqual(
-            matchResult.commandArgs?.modPatterns?.length,
-            modPatterns.length
+            matchResult.commandArgs?.modPatterns?.collection.length,
+            modPatterns.collection.length
           );
           assert.strictEqual(matchResult.commandArgs?.mode, mode);
         }
@@ -405,12 +412,15 @@ describe('UserBestPlaysVk', function () {
           username: usernameInput,
           startPosition: 2,
           quantity: 3,
-          modPatterns: new ModPatternCollection(
-            new ModCombinationPattern(
-              {mods: [new ModAcronym('HD')], type: 'optional'},
-              {mods: [new ModAcronym('DT')], type: 'required'}
-            )
-          ),
+          modPatterns: {
+            collection: new ModPatternCollection(
+              new ModCombinationPattern(
+                {mods: [new ModAcronym('HD')], type: 'optional'},
+                {mods: [new ModAcronym('DT')], type: 'required'}
+              )
+            ),
+            strictMatch: true,
+          },
           mode: mode,
         },
         createWithOnlyText({
@@ -432,12 +442,15 @@ describe('UserBestPlaysVk', function () {
           username: undefined,
           startPosition: 2,
           quantity: 3,
-          modPatterns: new ModPatternCollection(
-            new ModCombinationPattern(
-              {mods: [new ModAcronym('HD')], type: 'optional'},
-              {mods: [new ModAcronym('DT')], type: 'required'}
-            )
-          ),
+          modPatterns: {
+            collection: new ModPatternCollection(
+              new ModCombinationPattern(
+                {mods: [new ModAcronym('HD')], type: 'optional'},
+                {mods: [new ModAcronym('DT')], type: 'required'}
+              )
+            ),
+            strictMatch: true,
+          },
           mode: mode,
         },
         createWithOnlyText({
@@ -471,12 +484,15 @@ describe('UserBestPlaysVk', function () {
               username: username,
               startPosition: 2,
               quantity: 3,
-              modPatterns: new ModPatternCollection(
-                new ModCombinationPattern(
-                  {mods: [new ModAcronym('HD')], type: 'optional'},
-                  {mods: [new ModAcronym('DT')], type: 'required'}
-                )
-              ),
+              modPatterns: {
+                collection: new ModPatternCollection(
+                  new ModCombinationPattern(
+                    {mods: [new ModAcronym('HD')], type: 'optional'},
+                    {mods: [new ModAcronym('DT')], type: 'required'}
+                  )
+                ),
+                strictMatch: true,
+              },
               mode: undefined,
             },
             createWithOnlyText({
@@ -508,12 +524,15 @@ describe('UserBestPlaysVk', function () {
               username: osuUser.username,
               startPosition: 2,
               quantity: 3,
-              modPatterns: new ModPatternCollection(
-                new ModCombinationPattern(
-                  {mods: [new ModAcronym('HD')], type: 'optional'},
-                  {mods: [new ModAcronym('DT')], type: 'required'}
-                )
-              ),
+              modPatterns: {
+                collection: new ModPatternCollection(
+                  new ModCombinationPattern(
+                    {mods: [new ModAcronym('HD')], type: 'optional'},
+                    {mods: [new ModAcronym('DT')], type: 'required'}
+                  )
+                ),
+                strictMatch: true,
+              },
               mode: OsuRuleset[mode],
             },
             createWithOnlyText({
@@ -536,12 +555,15 @@ describe('UserBestPlaysVk', function () {
           username: undefined,
           startPosition: 2,
           quantity: 3,
-          modPatterns: new ModPatternCollection(
-            new ModCombinationPattern(
-              {mods: [new ModAcronym('HD')], type: 'optional'},
-              {mods: [new ModAcronym('DT')], type: 'required'}
-            )
-          ),
+          modPatterns: {
+            collection: new ModPatternCollection(
+              new ModCombinationPattern(
+                {mods: [new ModAcronym('HD')], type: 'optional'},
+                {mods: [new ModAcronym('DT')], type: 'required'}
+              )
+            ),
+            strictMatch: true,
+          },
           mode: undefined,
         },
         createWithOnlyText({

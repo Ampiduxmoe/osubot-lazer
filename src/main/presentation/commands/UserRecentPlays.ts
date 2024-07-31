@@ -8,6 +8,7 @@ import {OsuServer} from '../../primitives/OsuServer';
 import {
   MOD_PATTERNS,
   MODE,
+  ModPatternsArg,
   OWN_COMMAND_PREFIX,
   QUANTITY,
   SERVER_PREFIX,
@@ -146,6 +147,18 @@ export abstract class UserRecentPlays<TContext, TOutput> extends TextCommand<
     }
     const startPosition = clamp(args.startPosition ?? 1, 1, 100);
     const quantity = clamp(args.quantity ?? 1, 1, 10);
+    const modPatterns: ModPatternCollection = (() => {
+      if (args.modPatterns === undefined) {
+        return new ModPatternCollection();
+      }
+      if (args.modPatterns.strictMatch) {
+        return args.modPatterns.collection;
+      }
+      return args.modPatterns.collection
+        .allowLegacy()
+        .treatAsInterchangeable('DT', 'NC')
+        .treatAsInterchangeable('HT', 'DC');
+    })();
     const recentPlaysResult = await this.getRecentPlays.execute({
       initiatorAppUserId: this.getInitiatorAppUserId(ctx),
       server: args.server,
@@ -154,7 +167,7 @@ export abstract class UserRecentPlays<TContext, TOutput> extends TextCommand<
       includeFails: !args.passesOnly,
       startPosition: startPosition,
       quantity: quantity,
-      modPatterns: args.modPatterns ?? new ModPatternCollection(),
+      modPatterns: modPatterns,
     });
     if (recentPlaysResult.isFailure) {
       const internalFailureReason = recentPlaysResult.failureReason!;
@@ -266,7 +279,7 @@ export type UserRecentPlaysExecutionArgs = {
   username: string | undefined;
   startPosition: number | undefined;
   quantity: number | undefined;
-  modPatterns: ModPatternCollection | undefined;
+  modPatterns: ModPatternsArg | undefined;
   mode: OsuRuleset | undefined;
 };
 

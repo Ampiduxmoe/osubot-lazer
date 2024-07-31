@@ -259,7 +259,11 @@ export const MODS: CommandArgument<ModArg[]> = {
   },
 };
 
-export const MOD_PATTERNS: CommandArgument<ModPatternCollection> = {
+export type ModPatternsArg = {
+  collection: ModPatternCollection;
+  strictMatch: boolean;
+};
+export const MOD_PATTERNS: CommandArgument<ModPatternsArg> = {
   displayName: '+моды',
   description:
     'список модов, слитно; допускается указание нескольких списков через запятую',
@@ -278,7 +282,13 @@ export const MOD_PATTERNS: CommandArgument<ModPatternCollection> = {
     if (!token.startsWith('+') && !token.startsWith('-')) {
       return false;
     }
-    const potentialPatterns = token.substring(1).split(',');
+    const patternsString = (() => {
+      if (token.endsWith('!')) {
+        return token.substring(1, token.length - 1);
+      }
+      return token.substring(1);
+    })();
+    const potentialPatterns = patternsString.split(',');
     for (const potentialPattern of potentialPatterns) {
       if (!patternRegex.test(potentialPattern)) {
         return false;
@@ -286,8 +296,13 @@ export const MOD_PATTERNS: CommandArgument<ModPatternCollection> = {
     }
     return true;
   },
-  parse: function (token: string): ModPatternCollection {
-    const patternsString = token.substring(1);
+  parse: function (token: string): ModPatternsArg {
+    const patternsString = (() => {
+      if (token.endsWith('!')) {
+        return token.substring(1, token.length - 1);
+      }
+      return token.substring(1);
+    })();
     const patternStrings = patternsString.split(',');
     const modPatterns = patternStrings.map(rawPatternString => {
       const [patternString, isInverted] = (() => {
@@ -372,12 +387,15 @@ export const MOD_PATTERNS: CommandArgument<ModPatternCollection> = {
     if (token.startsWith('-')) {
       modPatternCollection.isInverted = true;
     }
-    return modPatternCollection;
+    return {
+      collection: modPatternCollection,
+      strictMatch: token.endsWith('!'),
+    };
   },
-  unparse: function (value: ModPatternCollection): string {
+  unparse: function (value: ModPatternsArg): string {
     return (
-      (value.isInverted ? '-' : '+') +
-      value
+      (value.collection.isInverted ? '-' : '+') +
+      value.collection
         .map(
           pattern =>
             (pattern.isInverted ? '^' : '') +
@@ -397,7 +415,8 @@ export const MOD_PATTERNS: CommandArgument<ModPatternCollection> = {
               })
               .join('')
         )
-        .join(',')
+        .join(',') +
+      (value.strictMatch ? '!' : '')
     );
   },
 };

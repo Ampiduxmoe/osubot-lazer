@@ -11,6 +11,7 @@ import {OsuServer} from '../../primitives/OsuServer';
 import {
   BEATMAP_ID,
   MOD_PATTERNS,
+  ModPatternsArg,
   OWN_COMMAND_PREFIX,
   QUANTITY,
   SERVER_PREFIX,
@@ -167,6 +168,18 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
         startPosition: undefined,
       };
     }
+    const modPatterns: ModPatternCollection = (() => {
+      if (args.modPatterns === undefined) {
+        return new ModPatternCollection();
+      }
+      if (args.modPatterns.strictMatch) {
+        return args.modPatterns.collection;
+      }
+      return args.modPatterns.collection
+        .allowLegacy()
+        .treatAsInterchangeable('DT', 'NC')
+        .treatAsInterchangeable('HT', 'DC');
+    })();
     const leaderboardResponse = await this.getBeatmapBestScores.execute({
       initiatorAppUserId: this.getInitiatorAppUserId(ctx),
       server: args.server,
@@ -174,7 +187,7 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
       usernames: [username],
       startPosition: Math.max(args.startPosition ?? 1, 1),
       quantityPerUser: clamp(args.quantity ?? 1, 1, 10),
-      modPatterns: args.modPatterns ?? new ModPatternCollection(),
+      modPatterns: modPatterns,
     });
     if (leaderboardResponse.failureReason !== undefined) {
       switch (leaderboardResponse.failureReason) {
@@ -298,7 +311,7 @@ export type UserBestPlaysOnMapExecutionArgs = {
   server: OsuServer;
   beatmapId: number | undefined;
   username: string | undefined;
-  modPatterns: ModPatternCollection | undefined;
+  modPatterns: ModPatternsArg | undefined;
   startPosition: number | undefined;
   quantity: number | undefined;
 };
