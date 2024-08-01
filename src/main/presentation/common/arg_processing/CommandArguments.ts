@@ -965,3 +965,44 @@ export const ALIAS_TARGET: CommandArgument<string> = {
     return value;
   },
 };
+
+export type VkMentionArg = {
+  type: 'group' | 'user';
+  id: number;
+  text: string;
+};
+export const VK_MENTION: CommandArgument<VkMentionArg> = {
+  displayName: 'команда_бота',
+  description: 'строка (до 40 символов), которая будет заменять ваш шаблон',
+  get usageExample(): string {
+    return pickRandom(['l r', 'l personalbest', 'l u', 'osubot-help']);
+  },
+  match: function (token: string): boolean {
+    return /^\[(?:club|id)\d+\|.+?\]$/.test(token);
+  },
+  parse: function (token: string): VkMentionArg {
+    const match = /^\[(club|id)(\d+)\|(.+?)\]$/.exec(token);
+    if (match === null) {
+      throw Error('Parse should only be called for matching tokens');
+    }
+    return {
+      type:
+        {
+          club: 'group' as const,
+          id: 'user' as const,
+        }[match[1]] ??
+        (() => {
+          throw Error('Unkown mention type');
+        })(),
+      id: parseInt(match[2]),
+      text: match[3],
+    };
+  },
+  unparse: function (value: VkMentionArg): string {
+    const prefix = {
+      group: 'club',
+      user: 'id',
+    }[value.type];
+    return `[${prefix}${value.id}|${value.text}]`;
+  },
+};

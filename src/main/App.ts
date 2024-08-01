@@ -8,6 +8,7 @@ import {GetBeatmapUsersBestScoresUseCase} from './application/usecases/get_beatm
 import {GetOsuUserInfoUseCase} from './application/usecases/get_osu_user_info/GetOsuUserInfoUseCase';
 import {GetUserBestPlaysUseCase} from './application/usecases/get_user_best_plays/GetUserBestPlaysUseCase';
 import {GetUserRecentPlaysUseCase} from './application/usecases/get_user_recent_plays/GetUserRecentPlaysUseCase';
+import {SaveContactAdminMessageUseCase} from './application/usecases/save_contact_admin_message/SaveContactAdminMessageUseCase';
 import {SetUsernameUseCase} from './application/usecases/set_username/SetUsernameUseCase';
 import {AppUserApiRequestsSummariesDaoImpl} from './data/dao/AppUserApiRequestsSummariesDaoImpl';
 import {AppUserRecentApiRequestsDaoImpl} from './data/dao/AppUserRecentApiRequestsDaoImpl';
@@ -19,6 +20,7 @@ import {OsuUserBestScoresDaoImpl} from './data/dao/OsuUserBestScoresDaoImpl';
 import {OsuUserRecentScoresDaoImpl} from './data/dao/OsuUserRecentScoresDaoImpl';
 import {OsuUsersDaoImpl} from './data/dao/OsuUsersDaoImpl';
 import {ScoreSimulationsDaoImpl} from './data/dao/ScoreSimulationsDaoImpl';
+import {UnreadMessagesDaoImpl} from './data/dao/UnreadMessagesDaoImpl';
 import {BanchoApi} from './data/http/bancho/BanchoApi';
 import {BanchoClient} from './data/http/bancho/client/BanchoClient';
 import {OsuOauthAccessToken} from './data/http/bancho/OsuOauthAccessToken';
@@ -31,6 +33,7 @@ import {AppUsersTable} from './data/persistence/db/tables/AppUsersTable';
 import {OsuUserSnapshotsTable} from './data/persistence/db/tables/OsuUserSnapshotsTable';
 import {SerializedObjectsTable} from './data/persistence/db/tables/SerializedObjectsTable';
 import {TimeWindowsTable} from './data/persistence/db/tables/TimeWindowsTable';
+import {UnreadMessagesTable} from './data/persistence/db/tables/UnreadMessagesTable';
 import {
   GetContextualBeatmapIds,
   GetInitiatorAppUserId,
@@ -62,6 +65,7 @@ import {BeatmapInfoVk} from './presentation/vk/commands/BeatmapInfoVk';
 import {BeatmapMenuVk} from './presentation/vk/commands/BeatmapMenuVk';
 import {ChatLeaderboardOnMapVk} from './presentation/vk/commands/ChatLeaderboardOnMapVk';
 import {ChatLeaderboardVk} from './presentation/vk/commands/ChatLeaderboardVk';
+import {ContactAdminVk} from './presentation/vk/commands/ContactAdminVk';
 import {HelpVk} from './presentation/vk/commands/HelpVk';
 import {SetUsernameVk} from './presentation/vk/commands/SetUsernameVk';
 import {UserBestPlaysOnMapVk} from './presentation/vk/commands/UserBestPlaysOnMapVk';
@@ -112,6 +116,7 @@ export class App {
     const aliases = new AppUserCommandAliasesTable(this.appDb);
     const anouncements = new AnouncementsTable(this.appDb);
     const pastAnouncements = new PastAnouncementsTable(this.appDb);
+    const unreadMessages = new UnreadMessagesTable(this.appDb);
 
     const allDbTables = [
       appUsers,
@@ -122,6 +127,7 @@ export class App {
       aliases,
       anouncements,
       pastAnouncements,
+      unreadMessages,
     ];
 
     const scoreSimulationApi = new OsutoolsSimulationApi(
@@ -180,6 +186,7 @@ export class App {
 
     const osuApiList = [banchoApi];
 
+    const unreadMessagesDao = new UnreadMessagesDaoImpl(unreadMessages);
     const requestSummariesDao = new AppUserApiRequestsSummariesDaoImpl(
       requestsCounts,
       timeWindows
@@ -244,6 +251,9 @@ export class App {
         cachedOsuUsersDao,
         osuUsersDao
       );
+    const saveContactAdminMessageUseCase = new SaveContactAdminMessageUseCase(
+      unreadMessagesDao
+    );
 
     this.vkClient = this.createVkClient({
       vkDb: this.vkDb,
@@ -257,6 +267,7 @@ export class App {
       getApiUsageSummaryUseCase: getApiUsageSummaryUseCase,
       getBeatmapInfoUseCase: getBeatmapInfoUseCase,
       getBeatmapUsersBestScoresUseCase: getBeatmapUsersBestScoresUseCase,
+      saveContactAdminMessageUseCase: saveContactAdminMessageUseCase,
 
       appUserCommandAliasesRepository: aliases,
       anouncementsRepository: anouncements,
@@ -296,6 +307,7 @@ export class App {
     const {getApiUsageSummaryUseCase} = params;
     const {getBeatmapInfoUseCase} = params;
     const {getBeatmapUsersBestScoresUseCase} = params;
+    const {saveContactAdminMessageUseCase} = params;
 
     const {appUserCommandAliasesRepository} = params;
     const {anouncementsRepository} = params;
@@ -336,6 +348,39 @@ export class App {
       return chatMembers.profiles.map(x =>
         VkIdConverter.vkUserIdToAppUserId(x.id)
       );
+    };
+    const getMessageId: (ctx: VkMessageContext) => string = ctx => {
+      return `${ctx.peerId}:${ctx.conversationMessageId}`;
+    };
+    const forwardToAdmin: (
+      ctx: VkMessageContext
+    ) => Promise<void> = async ctx => {
+      const appUserId = VkIdConverter.vkUserIdToAppUserId(ctx.senderId);
+      const messageId = getMessageId(ctx);
+      if (ctx.conversationMessageId === undefined) {
+        const possibleAttachments = ctx.attachments.filter(
+          a => a.canBeAttached
+        );
+        await vk.api.messages.send({
+          peer_id: group.owner,
+          message: `from: ${appUserId}\nmessage_id: ${messageId}\n\n${ctx.text}`,
+          attachment:
+            possibleAttachments.length === 0
+              ? undefined
+              : possibleAttachments.map(a => a.toString()).join(','),
+          random_id: Math.ceil(Math.random() * 1e6),
+        });
+        return;
+      }
+      await vk.api.messages.send({
+        peer_id: group.owner,
+        message: `from: ${appUserId}\nmessage_id: ${messageId}`,
+        forward: JSON.stringify({
+          peer_id: ctx.peerId,
+          conversation_message_ids: [ctx.conversationMessageId],
+        }),
+        random_id: Math.ceil(Math.random() * 1e6),
+      });
     };
     const sendToAllPeers = async (text: string): Promise<string[]> => {
       const basePeerIds: number[] = [];
@@ -596,6 +641,14 @@ export class App {
       ),
     ];
     const beatmapMenuCommand = new BeatmapMenuVk(mainTextProcessor);
+    const contactAdminCommand = new ContactAdminVk(
+      group.id,
+      mainTextProcessor,
+      getInitiatorAppUserId,
+      getMessageId,
+      forwardToAdmin,
+      saveContactAdminMessageUseCase
+    );
     for (const command of [...publicCommands, beatmapMenuCommand]) {
       command.link(publicCommands);
     }
@@ -612,7 +665,8 @@ export class App {
     vkClient.publicCommands.push(
       helpCommand,
       ...publicCommands,
-      beatmapMenuCommand
+      beatmapMenuCommand,
+      contactAdminCommand
     );
     vkClient.adminCommands.push(...adminCommands);
 
@@ -622,10 +676,21 @@ export class App {
     ];
     vkClient.initActions.push(...initActions);
 
+    const mentionRegex = /\[(?:club|id)\d+\|.+?\]/g;
     vkClient.preprocessors.push(async ctx => {
       if (!ctx.hasText || ctx.text === undefined) {
         return ctx;
       }
+      // make sure mentions are a single token for current TextProcessor
+      const matches = ctx.text.matchAll(mentionRegex);
+      for (const match of matches) {
+        const mention = match[0];
+        if (!mention.includes(' ')) {
+          continue;
+        }
+        ctx.text = ctx.text.replace(mention, `'${mention}'`);
+      }
+
       const appUserId = VkIdConverter.vkUserIdToAppUserId(ctx.senderId);
       const userAliases = await appUserCommandAliasesRepository.get({
         appUserId: appUserId,
@@ -698,6 +763,7 @@ type VkClientCreationParams = {
   getApiUsageSummaryUseCase: GetApiUsageSummaryUseCase;
   getBeatmapInfoUseCase: GetBeatmapInfoUseCase;
   getBeatmapUsersBestScoresUseCase: GetBeatmapUsersBestScoresUseCase;
+  saveContactAdminMessageUseCase: SaveContactAdminMessageUseCase;
 
   appUserCommandAliasesRepository: AppUserCommandAliasesRepository;
   anouncementsRepository: AnouncementsRepository;
