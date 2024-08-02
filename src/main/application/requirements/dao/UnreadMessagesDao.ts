@@ -5,6 +5,7 @@ export interface UnreadMessagesDao {
     messageId: string,
     text: string
   ): Promise<boolean>;
+  delete(appUserId: string): Promise<void>;
 }
 
 export type UnreadMessageInfo = {

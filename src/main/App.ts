@@ -1,10 +1,12 @@
 import axios from 'axios';
 import {AttachmentType, VK} from 'vk-io';
 import {AppConfig, VkGroup} from './AppConfig';
+import {DeleteContactAdminMessageUseCase} from './application/usecases/delete_contact_admin_message/DeleteContactAdminMessageUseCase';
 import {GetApiUsageSummaryUseCase} from './application/usecases/get_api_usage_summary/GetApiUsageSummaryUseCase';
 import {GetAppUserInfoUseCase} from './application/usecases/get_app_user_info/GetAppUserInfoUseCase';
 import {GetBeatmapInfoUseCase} from './application/usecases/get_beatmap_info/GetBeatmapInfoUseCase';
 import {GetBeatmapUsersBestScoresUseCase} from './application/usecases/get_beatmap_users_best_score/GetBeatmapUsersBestScoresUseCase';
+import {GetContactAdminMessageUseCase} from './application/usecases/get_contact_admin_message/GetContactAdminMessageUseCase';
 import {GetOsuUserInfoUseCase} from './application/usecases/get_osu_user_info/GetOsuUserInfoUseCase';
 import {GetUserBestPlaysUseCase} from './application/usecases/get_user_best_plays/GetUserBestPlaysUseCase';
 import {GetUserRecentPlaysUseCase} from './application/usecases/get_user_recent_plays/GetUserRecentPlaysUseCase';
@@ -67,6 +69,10 @@ import {ChatLeaderboardOnMapVk} from './presentation/vk/commands/ChatLeaderboard
 import {ChatLeaderboardVk} from './presentation/vk/commands/ChatLeaderboardVk';
 import {ContactAdminVk} from './presentation/vk/commands/ContactAdminVk';
 import {HelpVk} from './presentation/vk/commands/HelpVk';
+import {
+  ReplyAsBotVk,
+  VkCustomPayload,
+} from './presentation/vk/commands/ReplyAsBotVk';
 import {SetUsernameVk} from './presentation/vk/commands/SetUsernameVk';
 import {UserBestPlaysOnMapVk} from './presentation/vk/commands/UserBestPlaysOnMapVk';
 import {UserBestPlaysVk} from './presentation/vk/commands/UserBestPlaysVk';
@@ -254,6 +260,11 @@ export class App {
     const saveContactAdminMessageUseCase = new SaveContactAdminMessageUseCase(
       unreadMessagesDao
     );
+    const getContactAdminMessageUseCase = new GetContactAdminMessageUseCase(
+      unreadMessagesDao
+    );
+    const deleteContactAdminMessageUseCase =
+      new DeleteContactAdminMessageUseCase(unreadMessagesDao);
 
     this.vkClient = this.createVkClient({
       vkDb: this.vkDb,
@@ -268,6 +279,8 @@ export class App {
       getBeatmapInfoUseCase: getBeatmapInfoUseCase,
       getBeatmapUsersBestScoresUseCase: getBeatmapUsersBestScoresUseCase,
       saveContactAdminMessageUseCase: saveContactAdminMessageUseCase,
+      getContactAdminMessageUseCase: getContactAdminMessageUseCase,
+      deleteContactAdminMessageUseCase: deleteContactAdminMessageUseCase,
 
       appUserCommandAliasesRepository: aliases,
       anouncementsRepository: anouncements,
@@ -308,6 +321,8 @@ export class App {
     const {getBeatmapInfoUseCase} = params;
     const {getBeatmapUsersBestScoresUseCase} = params;
     const {saveContactAdminMessageUseCase} = params;
+    const {getContactAdminMessageUseCase} = params;
+    const {deleteContactAdminMessageUseCase} = params;
 
     const {appUserCommandAliasesRepository} = params;
     const {anouncementsRepository} = params;
@@ -381,6 +396,34 @@ export class App {
         }),
         random_id: Math.ceil(Math.random() * 1e6),
       });
+    };
+    const tryToReply = async (
+      appUserId: string,
+      messageId: string,
+      text: string,
+      payload: VkCustomPayload | undefined
+    ): Promise<boolean> => {
+      if (!VkIdConverter.isVkId(appUserId)) {
+        return false;
+      }
+      const [peerId, conversationMessageId] = messageId
+        .split(':')
+        .map(s => parseInt(s));
+      if (isNaN(peerId) || isNaN(conversationMessageId)) {
+        return false;
+      }
+      await vk.api.messages.send({
+        peer_id: peerId,
+        message: text,
+        forward: JSON.stringify({
+          peer_id: peerId,
+          conversation_message_ids: [conversationMessageId],
+          is_reply: true,
+        }),
+        attachment: payload?.attachment,
+        random_id: Math.ceil(Math.random() * 1e6),
+      });
+      return true;
     };
     const sendToAllPeers = async (text: string): Promise<string[]> => {
       const basePeerIds: number[] = [];
@@ -660,6 +703,13 @@ export class App {
         pastAnouncementsRepository,
         sendToAllPeers
       ),
+      new ReplyAsBotVk(
+        group.id,
+        mainTextProcessor,
+        tryToReply,
+        getContactAdminMessageUseCase,
+        deleteContactAdminMessageUseCase
+      ),
     ];
     const helpCommand = new HelpVk(mainTextProcessor, publicCommands);
     vkClient.publicCommands.push(
@@ -764,6 +814,8 @@ type VkClientCreationParams = {
   getBeatmapInfoUseCase: GetBeatmapInfoUseCase;
   getBeatmapUsersBestScoresUseCase: GetBeatmapUsersBestScoresUseCase;
   saveContactAdminMessageUseCase: SaveContactAdminMessageUseCase;
+  getContactAdminMessageUseCase: GetContactAdminMessageUseCase;
+  deleteContactAdminMessageUseCase: DeleteContactAdminMessageUseCase;
 
   appUserCommandAliasesRepository: AppUserCommandAliasesRepository;
   anouncementsRepository: AnouncementsRepository;

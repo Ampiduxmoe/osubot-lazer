@@ -30,4 +30,7 @@ export class UnreadMessagesDaoImpl implements UnreadMessagesDao {
     });
     return true;
   }
+  async delete(appUserId: string): Promise<void> {
+    await this.unreadMessagesRepository.delete({appUserId: appUserId});
+  }
 }

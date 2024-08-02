@@ -836,6 +836,24 @@ export const APP_USER_ID = ANY_STRING(
   'ид_польз_прил',
   'ID пользователя приложения'
 );
+export const MESSAGE_ID = ANY_STRING('ид_сообщения', 'ID сообщения');
+export const CUSTOM_PAYLOAD: CommandArgument<string> = {
+  displayName: 'payload=?',
+  description: 'дополнительные данные',
+  get usageExample(): string {
+    return pickRandom(['любаястрока', 'другаястрока']);
+  },
+  match: function (token: string): boolean {
+    return token.startsWith('payload=');
+  },
+  parse: function (token: string): string {
+    return token.substring('payload='.length);
+  },
+  unparse: function (value: string): string {
+    return `payload=${value}`;
+  },
+};
+
 export const VK_USER_ID = INTEGER('ид_вк', 'ID пользователя VK', 0, 99999999);
 
 type BeatmapLinkArg = {server: OsuServer; id: number};
