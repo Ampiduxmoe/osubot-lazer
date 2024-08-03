@@ -8,6 +8,7 @@ import {GetBeatmapInfoUseCase} from './application/usecases/get_beatmap_info/Get
 import {GetBeatmapUsersBestScoresUseCase} from './application/usecases/get_beatmap_users_best_score/GetBeatmapUsersBestScoresUseCase';
 import {GetContactAdminMessageUseCase} from './application/usecases/get_contact_admin_message/GetContactAdminMessageUseCase';
 import {GetOsuUserInfoUseCase} from './application/usecases/get_osu_user_info/GetOsuUserInfoUseCase';
+import {GetOsuUserUpdateUseCase} from './application/usecases/get_osu_user_update/GetOsuUserUpdateUseCase';
 import {GetUserBestPlaysUseCase} from './application/usecases/get_user_best_plays/GetUserBestPlaysUseCase';
 import {GetUserRecentPlaysUseCase} from './application/usecases/get_user_recent_plays/GetUserRecentPlaysUseCase';
 import {SaveContactAdminMessageUseCase} from './application/usecases/save_contact_admin_message/SaveContactAdminMessageUseCase';
@@ -21,6 +22,7 @@ import {OsuBeatmapUserScoresDaoImpl} from './data/dao/OsuBeatmapUserScoresDaoImp
 import {OsuUserBestScoresDaoImpl} from './data/dao/OsuUserBestScoresDaoImpl';
 import {OsuUserRecentScoresDaoImpl} from './data/dao/OsuUserRecentScoresDaoImpl';
 import {OsuUsersDaoImpl} from './data/dao/OsuUsersDaoImpl';
+import {OsuUserStatsUpdatesDaoImpl} from './data/dao/OsuUserStatsUpdatesDaoImpl';
 import {ScoreSimulationsDaoImpl} from './data/dao/ScoreSimulationsDaoImpl';
 import {UnreadMessagesDaoImpl} from './data/dao/UnreadMessagesDaoImpl';
 import {BanchoApi} from './data/http/bancho/BanchoApi';
@@ -78,6 +80,7 @@ import {UserBestPlaysOnMapVk} from './presentation/vk/commands/UserBestPlaysOnMa
 import {UserBestPlaysVk} from './presentation/vk/commands/UserBestPlaysVk';
 import {UserInfoVk} from './presentation/vk/commands/UserInfoVk';
 import {UserRecentPlaysVk} from './presentation/vk/commands/UserRecentPlaysVk';
+import {UserUpdateVk} from './presentation/vk/commands/UserUpdateVk';
 import {VkClient} from './presentation/vk/VkClient';
 import {VkIdConverter} from './presentation/vk/VkIdConverter';
 import {VkMessageContext} from './presentation/vk/VkMessageContext';
@@ -226,6 +229,9 @@ export class App {
     );
     const scoreSimulationsDao = new ScoreSimulationsDaoImpl(scoreSimulationApi);
     const cachedOsuUsersDao = new CachedOsuUsersDaoImpl(osuUserSnapshots);
+    const osuUserStatsUpdateDao = new OsuUserStatsUpdatesDaoImpl(
+      recentApiRequestsDao
+    );
 
     const getOsuUserInfoUseCase = new GetOsuUserInfoUseCase(osuUsersDao);
     const getAppUserInfoUseCase = new GetAppUserInfoUseCase(appUsersDao);
@@ -265,6 +271,11 @@ export class App {
     );
     const deleteContactAdminMessageUseCase =
       new DeleteContactAdminMessageUseCase(unreadMessagesDao);
+    const getOsuUserUpdateUseCase = new GetOsuUserUpdateUseCase(
+      osuUserStatsUpdateDao,
+      cachedOsuUsersDao,
+      osuUsersDao
+    );
 
     this.vkClient = this.createVkClient({
       vkDb: this.vkDb,
@@ -281,6 +292,7 @@ export class App {
       saveContactAdminMessageUseCase: saveContactAdminMessageUseCase,
       getContactAdminMessageUseCase: getContactAdminMessageUseCase,
       deleteContactAdminMessageUseCase: deleteContactAdminMessageUseCase,
+      getOsuUserUpdateUseCase: getOsuUserUpdateUseCase,
 
       appUserCommandAliasesRepository: aliases,
       anouncementsRepository: anouncements,
@@ -323,6 +335,7 @@ export class App {
     const {saveContactAdminMessageUseCase} = params;
     const {getContactAdminMessageUseCase} = params;
     const {deleteContactAdminMessageUseCase} = params;
+    const {getOsuUserUpdateUseCase} = params;
 
     const {appUserCommandAliasesRepository} = params;
     const {anouncementsRepository} = params;
@@ -676,6 +689,13 @@ export class App {
         getBeatmapUsersBestScoresUseCase,
         getAppUserInfoUseCase
       ),
+      new UserUpdateVk(
+        mainTextProcessor,
+        getInitiatorAppUserId,
+        getTargetAppUserId,
+        getOsuUserUpdateUseCase,
+        getAppUserInfoUseCase
+      ),
       new AliasVk(
         mainTextProcessor,
         getTargetAppUserId,
@@ -816,6 +836,7 @@ type VkClientCreationParams = {
   saveContactAdminMessageUseCase: SaveContactAdminMessageUseCase;
   getContactAdminMessageUseCase: GetContactAdminMessageUseCase;
   deleteContactAdminMessageUseCase: DeleteContactAdminMessageUseCase;
+  getOsuUserUpdateUseCase: GetOsuUserUpdateUseCase;
 
   appUserCommandAliasesRepository: AppUserCommandAliasesRepository;
   anouncementsRepository: AnouncementsRepository;
