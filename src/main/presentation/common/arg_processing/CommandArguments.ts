@@ -7,7 +7,6 @@ import {OsuServer} from '../../../primitives/OsuServer';
 import {CommandPrefixes} from '../CommandPrefixes';
 import {SERVERS} from '../OsuServers';
 import {CommandArgument} from './CommandArgument';
-import {ModArg} from './ModArg';
 
 export const SERVER_PREFIX: CommandArgument<OsuServer> = {
   displayName: 'сервер',
@@ -202,60 +201,34 @@ export const QUANTITY: CommandArgument<number> = {
   },
 };
 
-export const MODS: CommandArgument<ModArg[]> = {
+export const MODS: CommandArgument<ModAcronym[]> = {
   displayName: '+моды',
-  description:
-    'список модов, слитно; если мод указан в скобках, то его наличие допускается, но не является необходимым',
+  description: 'список модов, слитно',
   get usageExample(): string {
-    const maybeHd = pickRandom(['hd', 'HD', '(hd)', '(HD)', '']);
+    const maybeHd = pickRandom(['hd', 'HD', '']);
     const dtOrHr = pickRandom(['dt', 'DT', 'hr', 'HR']);
-    const maybeCl = pickRandom(['cl', 'CL', '(cl)', '(CL)', '']);
+    const maybeCl = pickRandom(['cl', 'CL', '']);
     return pickRandom([
       `+${maybeHd}${dtOrHr}${maybeCl}`,
       `+${maybeCl}${maybeHd}${dtOrHr}`,
     ]);
   },
   match: function (token: string): boolean {
-    const modsRegex = /^\+(([a-zA-Z]{2})|(\([a-zA-Z]{2}\)))+$/;
+    const modsRegex = /^\+(?:[a-zA-Z]{2})+$/;
     return modsRegex.test(token);
   },
-  parse: function (token: string): ModArg[] {
+  parse: function (token: string): ModAcronym[] {
     const acronymsString = token.substring(1);
-    const optionalModAcronyms =
+    return (
       acronymsString
-        .match(/\(.{2}\)/g)
-        ?.flat()
-        ?.filter(uniquesFilter)
-        ?.map(s => s.substring(1, 3)) ?? [];
-    const requiredModsAcronymsString = (() => {
-      let tmpStr = acronymsString;
-      for (const optionalMod of optionalModAcronyms) {
-        tmpStr = tmpStr.replace(`(${optionalMod})`, '');
-      }
-      return tmpStr;
-    })();
-    const requiredMods =
-      requiredModsAcronymsString
         .match(/.{2}/g)
         ?.flat()
-        ?.filter(uniquesFilter) ?? [];
-    const mods: ModArg[] = [
-      ...optionalModAcronyms.map(m => ({
-        acronym: new ModAcronym(m),
-        isOptional: true,
-      })),
-      ...requiredMods.map(m => ({
-        acronym: new ModAcronym(m),
-        isOptional: false,
-      })),
-    ];
-    return mods;
-  },
-  unparse: function (value: ModArg[]): string {
-    return (
-      '+' +
-      value.map(x => (x.isOptional ? `(${x.acronym})` : x.acronym)).join('')
+        ?.filter(uniquesFilter)
+        ?.map(s => new ModAcronym(s)) ?? []
     );
+  },
+  unparse: function (value: ModAcronym[]): string {
+    return '+' + value.join('');
   },
 };
 

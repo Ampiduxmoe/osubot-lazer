@@ -132,7 +132,7 @@ export abstract class BeatmapInfo<TContext, TOutput> extends TextCommand<
       return fail;
     }
     const osuSettings: MapScoreSimulationOsu = {
-      mods: mods?.map(m => m.acronym),
+      mods: mods,
       combo: scoreCombo,
       misses: misscount,
       accuracy: accuracy,
@@ -231,11 +231,7 @@ export abstract class BeatmapInfo<TContext, TOutput> extends TextCommand<
     }
     const simulationOsu = args.mapScoreSimulationOsu;
     if (simulationOsu.mods !== undefined) {
-      tokens.push(
-        MODS.unparse(
-          simulationOsu.mods.map(x => ({acronym: x, isOptional: false}))
-        )
-      );
+      tokens.push(MODS.unparse(simulationOsu.mods));
     }
     if (simulationOsu.combo !== undefined) {
       tokens.push(SCORE_COMBO.unparse(simulationOsu.combo));
