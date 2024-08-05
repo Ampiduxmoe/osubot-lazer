@@ -5,6 +5,7 @@ import {
   OsuMapUserBestPlays,
   OsuMapUserPlay,
 } from '../../../application/usecases/get_beatmap_users_best_score/GetBeatmapUsersBestScoresResponse';
+import {MaybeDeferred} from '../../../primitives/MaybeDeferred';
 import {round} from '../../../primitives/Numbers';
 import {OsuRuleset} from '../../../primitives/OsuRuleset';
 import {OsuServer} from '../../../primitives/OsuServer';
@@ -37,14 +38,14 @@ export class ChatLeaderboardOnMapVk extends ChatLeaderboardOnMap<
     return this.matchText(command);
   }
 
-  async createMapPlaysMessage(
+  createMapPlaysMessage(
     map: OsuMap,
     mapPlays: OsuMapUserBestPlays[],
     server: OsuServer,
     mode: OsuRuleset,
     missingUsernames: string[],
     isChatLb: boolean
-  ): Promise<VkOutputMessage> {
+  ): MaybeDeferred<VkOutputMessage> {
     const serverString = OsuServer[server];
     const modeString = OsuRuleset[mode];
     const {artist, title} = map.beatmapset;
@@ -109,11 +110,11 @@ ${scoresText}
 ${couldNotGetSomeStatsMessage}
 ${missingUsernamesMessage}
     `.trim();
-    return {
+    return MaybeDeferred.fromValue({
       text: text,
       attachment: undefined,
       buttons: undefined,
-    };
+    });
   }
 
   verboseScoreDescription(
@@ -191,56 +192,56 @@ ${pos}. ${username}　${modsString}
     `.trim();
   }
 
-  async createMapNotFoundMessage(
+  createMapNotFoundMessage(
     server: OsuServer,
     mapId: number
-  ): Promise<VkOutputMessage> {
+  ): MaybeDeferred<VkOutputMessage> {
     const serverString = OsuServer[server];
     const text = `
 [Server: ${serverString}]
 Карта ${mapId} не найдена
     `.trim();
-    return {
+    return MaybeDeferred.fromValue({
       text: text,
       attachment: undefined,
       buttons: undefined,
-    };
+    });
   }
 
-  async createNoUsernamesMessage(server: OsuServer): Promise<VkOutputMessage> {
+  createNoUsernamesMessage(server: OsuServer): MaybeDeferred<VkOutputMessage> {
     const serverString = OsuServer[server];
     const text = `
 [Server: ${serverString}]
 Невозможно выполнить команду для пустого списка игроков!
 Привяжите ник к аккаунту или укажите список ников для отображения
     `.trim();
-    return {
+    return MaybeDeferred.fromValue({
       text: text,
       attachment: undefined,
       buttons: undefined,
-    };
+    });
   }
 
-  async createBeatmapIdNotSpecifiedMessage(
+  createBeatmapIdNotSpecifiedMessage(
     server: OsuServer
-  ): Promise<VkOutputMessage> {
+  ): MaybeDeferred<VkOutputMessage> {
     const serverString = OsuServer[server];
     const text = `
 [Server: ${serverString}]
 Не указан ID карты / не найдено последней карты в истории чата
     `.trim();
-    return {
+    return MaybeDeferred.fromValue({
       text: text,
       attachment: undefined,
       buttons: undefined,
-    };
+    });
   }
 
-  async createNoMapPlaysMessage(
+  createNoMapPlaysMessage(
     server: OsuServer,
     mode: OsuRuleset,
     missingUsernames: string[]
-  ): Promise<VkOutputMessage> {
+  ): MaybeDeferred<VkOutputMessage> {
     const serverString = OsuServer[server];
     const modeString = OsuRuleset[mode];
     const missingUsernamesMessage =
@@ -253,11 +254,11 @@ ${pos}. ${username}　${modsString}
 
 ${missingUsernamesMessage}
     `.trim();
-    return {
+    return MaybeDeferred.fromValue({
       text: text,
       attachment: undefined,
       buttons: undefined,
-    };
+    });
   }
 }
 

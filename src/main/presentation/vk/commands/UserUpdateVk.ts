@@ -1,6 +1,7 @@
 /* eslint-disable no-irregular-whitespace */
 import {APP_CODE_NAME} from '../../../App';
 import {OsuUserUpdateInfo} from '../../../application/usecases/get_osu_user_update/GetOsuUserUpdateResponse';
+import {MaybeDeferred} from '../../../primitives/MaybeDeferred';
 import {OsuRuleset} from '../../../primitives/OsuRuleset';
 import {OsuServer} from '../../../primitives/OsuServer';
 import {UserUpdate, UserUpdateExecutionArgs} from '../../commands/UserUpdate';
@@ -28,11 +29,11 @@ export class UserUpdateVk extends UserUpdate<
     return this.matchText(command);
   }
 
-  async createUserUpdateMessage(
+  createUserUpdateMessage(
     server: OsuServer,
     mode: OsuRuleset,
     userUpdate: OsuUserUpdateInfo
-  ): Promise<VkOutputMessage> {
+  ): MaybeDeferred<VkOutputMessage> {
     const serverString = OsuServer[server];
     const modeString = OsuRuleset[mode];
     const {
@@ -70,49 +71,49 @@ Accuracy: ${accuracyChangeStr}%
 Playcount: +${playcountChange}
 https://ameobea.me/osutrack/user/${username}${highscoresText}${maybeMoreScoresText}
     `.trim();
-    return {
+    return MaybeDeferred.fromValue({
       text: text,
       attachment: undefined,
       buttons: undefined,
-    };
+    });
   }
 
-  async createUnsupportedServerMessage(): Promise<VkOutputMessage> {
-    return {
+  createUnsupportedServerMessage(): MaybeDeferred<VkOutputMessage> {
+    return MaybeDeferred.fromValue({
       text: 'Команда недоступна для этого сервера',
       attachment: undefined,
       buttons: undefined,
-    };
+    });
   }
 
-  async createUserNotFoundMessage(
+  createUserNotFoundMessage(
     server: OsuServer,
     username: string
-  ): Promise<VkOutputMessage> {
+  ): MaybeDeferred<VkOutputMessage> {
     const serverString = OsuServer[server];
     const text = `
 [Server: ${serverString}]
 Пользователь с ником ${username} не найден
     `.trim();
-    return {
+    return MaybeDeferred.fromValue({
       text: text,
       attachment: undefined,
       buttons: undefined,
-    };
+    });
   }
 
-  async createUsernameNotBoundMessage(
+  createUsernameNotBoundMessage(
     server: OsuServer
-  ): Promise<VkOutputMessage> {
+  ): MaybeDeferred<VkOutputMessage> {
     const serverString = OsuServer[server];
     const text = `
 [Server: ${serverString}]
 Не установлен ник!
     `.trim();
-    return {
+    return MaybeDeferred.fromValue({
       text: text,
       attachment: undefined,
       buttons: undefined,
-    };
+    });
   }
 }

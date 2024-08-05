@@ -1,5 +1,6 @@
 import {GetAppUserInfoUseCase} from '../../application/usecases/get_app_user_info/GetAppUserInfoUseCase';
 import {GetOsuUserInfoUseCase} from '../../application/usecases/get_osu_user_info/GetOsuUserInfoUseCase';
+import {MaybeDeferred} from '../../primitives/MaybeDeferred';
 import {OsuRuleset} from '../../primitives/OsuRuleset';
 import {OsuServer} from '../../primitives/OsuServer';
 import {Timespan} from '../../primitives/Timespan';
@@ -87,89 +88,92 @@ export abstract class UserInfo<TContext, TOutput> extends TextCommand<
     });
   }
 
-  async process(
+  process(
     args: UserInfoExecutionArgs,
     ctx: TContext
-  ): Promise<UserInfoViewParams> {
-    let username = args.username;
-    let mode = args.mode;
-    if (username === undefined) {
-      const appUserInfoResponse = await this.getAppUserInfo.execute({
-        id: this.getTargetAppUserId(ctx, {canTargetOthersAsNonAdmin: true}),
+  ): MaybeDeferred<UserInfoViewParams> {
+    const valuePromise: Promise<UserInfoViewParams> = (async () => {
+      let username = args.username;
+      let mode = args.mode;
+      if (username === undefined) {
+        const appUserInfoResponse = await this.getAppUserInfo.execute({
+          id: this.getTargetAppUserId(ctx, {canTargetOthersAsNonAdmin: true}),
+          server: args.server,
+        });
+        const boundUser = appUserInfoResponse.userInfo;
+        if (boundUser === undefined) {
+          return {
+            server: args.server,
+            mode: args.mode,
+            usernameInput: undefined,
+            userInfo: undefined,
+          };
+        }
+        username = boundUser.username;
+        mode ??= boundUser.ruleset;
+      }
+      const userInfoResponse = await this.getOsuUserInfo.execute({
+        initiatorAppUserId: this.getInitiatorAppUserId(ctx),
         server: args.server,
+        username: username,
+        ruleset: mode,
       });
-      const boundUser = appUserInfoResponse.userInfo;
-      if (boundUser === undefined) {
+      const userInfo = userInfoResponse.userInfo;
+      if (userInfo === undefined) {
         return {
           server: args.server,
           mode: args.mode,
-          usernameInput: undefined,
+          usernameInput: args.username,
           userInfo: undefined,
         };
       }
-      username = boundUser.username;
-      mode ??= boundUser.ruleset;
-    }
-    const userInfoResponse = await this.getOsuUserInfo.execute({
-      initiatorAppUserId: this.getInitiatorAppUserId(ctx),
-      server: args.server,
-      username: username,
-      ruleset: mode,
-    });
-    const userInfo = userInfoResponse.userInfo;
-    if (userInfo === undefined) {
+      let maybeRankGlobalHighest = userInfo.rankGlobalHighest;
+      let rankHighestDateInLocalFormat: string | undefined = undefined;
+      if (userInfo.rankGlobalHighestDate !== undefined) {
+        const date = new Date(userInfo.rankGlobalHighestDate);
+        const now = Date.now();
+        const threeMonthsMillis = new Timespan().addDays(90).totalMiliseconds();
+        if (
+          now - date.getTime() < threeMonthsMillis ||
+          userInfo.rankGlobal === maybeRankGlobalHighest
+        ) {
+          maybeRankGlobalHighest = undefined;
+        } else {
+          const day = date.getUTCDate();
+          const dayFormatted = (day > 9 ? '' : '0') + day;
+          const month = date.getUTCMonth() + 1;
+          const monthFormatted = (month > 9 ? '' : '0') + month;
+          const year = date.getUTCFullYear();
+          rankHighestDateInLocalFormat = `${dayFormatted}.${monthFormatted}.${year}`;
+        }
+      }
+      const playtime = new Timespan().addSeconds(userInfo.playtimeSeconds);
       return {
         server: args.server,
-        mode: args.mode,
+        mode: mode ?? userInfo.preferredMode,
         usernameInput: args.username,
-        userInfo: undefined,
+        userInfo: {
+          username: userInfo.username,
+          rankGlobal: userInfo.rankGlobal,
+          rankGlobalHighest: maybeRankGlobalHighest,
+          rankGlobalHighestDate: rankHighestDateInLocalFormat,
+          countryCode: userInfo.countryCode,
+          rankCountry: userInfo.rankCountry,
+          playcount: userInfo.playcount,
+          lvl: userInfo.level,
+          playtimeDays: playtime.days,
+          playtimeHours: playtime.hours,
+          playtimeMinutes: playtime.minutes,
+          pp: userInfo.pp,
+          accuracy: userInfo.accuracy,
+          userId: userInfo.userId,
+        },
       };
-    }
-    let maybeRankGlobalHighest = userInfo.rankGlobalHighest;
-    let rankHighestDateInLocalFormat: string | undefined = undefined;
-    if (userInfo.rankGlobalHighestDate !== undefined) {
-      const date = new Date(userInfo.rankGlobalHighestDate);
-      const now = Date.now();
-      const threeMonthsMillis = new Timespan().addDays(90).totalMiliseconds();
-      if (
-        now - date.getTime() < threeMonthsMillis ||
-        userInfo.rankGlobal === maybeRankGlobalHighest
-      ) {
-        maybeRankGlobalHighest = undefined;
-      } else {
-        const day = date.getUTCDate();
-        const dayFormatted = (day > 9 ? '' : '0') + day;
-        const month = date.getUTCMonth() + 1;
-        const monthFormatted = (month > 9 ? '' : '0') + month;
-        const year = date.getUTCFullYear();
-        rankHighestDateInLocalFormat = `${dayFormatted}.${monthFormatted}.${year}`;
-      }
-    }
-    const playtime = new Timespan().addSeconds(userInfo.playtimeSeconds);
-    return {
-      server: args.server,
-      mode: mode ?? userInfo.preferredMode,
-      usernameInput: args.username,
-      userInfo: {
-        username: userInfo.username,
-        rankGlobal: userInfo.rankGlobal,
-        rankGlobalHighest: maybeRankGlobalHighest,
-        rankGlobalHighestDate: rankHighestDateInLocalFormat,
-        countryCode: userInfo.countryCode,
-        rankCountry: userInfo.rankCountry,
-        playcount: userInfo.playcount,
-        lvl: userInfo.level,
-        playtimeDays: playtime.days,
-        playtimeHours: playtime.hours,
-        playtimeMinutes: playtime.minutes,
-        pp: userInfo.pp,
-        accuracy: userInfo.accuracy,
-        userId: userInfo.userId,
-      },
-    };
+    })();
+    return MaybeDeferred.fromFastPromise(valuePromise);
   }
 
-  createOutputMessage(params: UserInfoViewParams): Promise<TOutput> {
+  createOutputMessage(params: UserInfoViewParams): MaybeDeferred<TOutput> {
     const {server, mode, usernameInput, userInfo} = params;
     if (userInfo === undefined) {
       if (usernameInput === undefined) {
@@ -184,12 +188,14 @@ export abstract class UserInfo<TContext, TOutput> extends TextCommand<
     server: OsuServer,
     mode: OsuRuleset,
     userInfo: OsuUserInfo
-  ): Promise<TOutput>;
+  ): MaybeDeferred<TOutput>;
   abstract createUserNotFoundMessage(
     server: OsuServer,
     usernameInput: string
-  ): Promise<TOutput>;
-  abstract createUsernameNotBoundMessage(server: OsuServer): Promise<TOutput>;
+  ): MaybeDeferred<TOutput>;
+  abstract createUsernameNotBoundMessage(
+    server: OsuServer
+  ): MaybeDeferred<TOutput>;
 
   unparse(args: UserInfoExecutionArgs): string {
     const tokens = [

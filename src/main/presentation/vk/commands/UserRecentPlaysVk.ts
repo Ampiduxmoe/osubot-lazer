@@ -10,6 +10,7 @@ import {
   SettingsHT,
 } from '../../../application/usecases/get_user_recent_plays/GetUserRecentPlaysResponse';
 import {GetUserRecentPlaysUseCase} from '../../../application/usecases/get_user_recent_plays/GetUserRecentPlaysUseCase';
+import {MaybeDeferred} from '../../../primitives/MaybeDeferred';
 import {round} from '../../../primitives/Numbers';
 import {OsuRuleset} from '../../../primitives/OsuRuleset';
 import {OsuServer} from '../../../primitives/OsuServer';
@@ -71,55 +72,58 @@ export class UserRecentPlaysVk extends UserRecentPlays<
     return this.matchText(command);
   }
 
-  async createRecentPlaysMessage(
+  createRecentPlaysMessage(
     recentPlays: OsuUserRecentPlays,
     server: OsuServer,
     mode: OsuRuleset,
     passesOnly: boolean
-  ): Promise<VkOutputMessage> {
-    const serverString = OsuServer[server];
-    const modeString = OsuRuleset[mode];
-    const oneScore = recentPlays.plays.length === 1;
-    const passesString = oneScore ? 'Последний пасс' : 'Последние пассы';
-    const scoresString = oneScore ? 'Последний скор' : 'Последние скоры';
-    const username = recentPlays.username;
-    const scoresText = recentPlays.plays
-      .map(p =>
-        oneScore
-          ? this.verboseScoreDescription(p)
-          : this.shortScoreDescription(p)
-      )
-      .join('\n\n');
-    const couldNotGetSomeStatsMessage =
-      recentPlays.plays.find(
-        play => play.beatmap.estimatedStarRating === undefined
-      ) !== undefined
-        ? '\n(Не удалось получить часть статистики)'
-        : '';
-    const coverAttachment = oneScore
-      ? await getOrDownloadCoverAttachment(
-          recentPlays.plays[0],
-          this.vkBeatmapCovers
+  ): MaybeDeferred<VkOutputMessage> {
+    const valuePromise: Promise<VkOutputMessage> = (async () => {
+      const serverString = OsuServer[server];
+      const modeString = OsuRuleset[mode];
+      const oneScore = recentPlays.plays.length === 1;
+      const passesString = oneScore ? 'Последний пасс' : 'Последние пассы';
+      const scoresString = oneScore ? 'Последний скор' : 'Последние скоры';
+      const username = recentPlays.username;
+      const scoresText = recentPlays.plays
+        .map(p =>
+          oneScore
+            ? this.verboseScoreDescription(p)
+            : this.shortScoreDescription(p)
         )
-      : null;
-    const couldNotAttachCoverMessage =
-      coverAttachment === undefined
-        ? '\n\nБГ карты прикрепить не удалось 😭'
-        : '';
-    const text = `
+        .join('\n\n');
+      const couldNotGetSomeStatsMessage =
+        recentPlays.plays.find(
+          play => play.beatmap.estimatedStarRating === undefined
+        ) !== undefined
+          ? '\n(Не удалось получить часть статистики)'
+          : '';
+      const coverAttachment = oneScore
+        ? await getOrDownloadCoverAttachment(
+            recentPlays.plays[0],
+            this.vkBeatmapCovers
+          )
+        : null;
+      const couldNotAttachCoverMessage =
+        coverAttachment === undefined
+          ? '\n\nБГ карты прикрепить не удалось 😭'
+          : '';
+      const text = `
 [Server: ${serverString}, Mode: ${modeString}]
 ${passesOnly ? passesString : scoresString} ${username}
 
 ${scoresText}
 ${couldNotGetSomeStatsMessage}${couldNotAttachCoverMessage}
-    `.trim();
-    return {
-      text: text,
-      attachment: coverAttachment ?? undefined,
-      buttons: oneScore
-        ? this.createBeatmapButtons(server, recentPlays.plays[0].beatmap.id)
-        : [],
-    };
+      `.trim();
+      return {
+        text: text,
+        attachment: coverAttachment ?? undefined,
+        buttons: oneScore
+          ? this.createBeatmapButtons(server, recentPlays.plays[0].beatmap.id)
+          : [],
+      };
+    })();
+    return MaybeDeferred.fromFastPromise(valuePromise);
   }
 
   verboseScoreDescription(play: OsuUserRecentPlay): string {
@@ -282,50 +286,50 @@ ${ppEstimationMark}${pp}pp　 ${mapUrlShort}
     `.trim();
   }
 
-  async createUserNotFoundMessage(
+  createUserNotFoundMessage(
     server: OsuServer,
     usernameInput: string
-  ): Promise<VkOutputMessage> {
+  ): MaybeDeferred<VkOutputMessage> {
     const serverString = OsuServer[server];
     const text = `
 [Server: ${serverString}]
 Пользователь с ником ${usernameInput} не найден
     `.trim();
-    return {
+    return MaybeDeferred.fromValue({
       text: text,
       attachment: undefined,
       buttons: undefined,
-    };
+    });
   }
 
-  async createUsernameNotBoundMessage(
+  createUsernameNotBoundMessage(
     server: OsuServer
-  ): Promise<VkOutputMessage> {
+  ): MaybeDeferred<VkOutputMessage> {
     const serverString = OsuServer[server];
     const text = `
 [Server: ${serverString}]
 Не установлен ник!
     `.trim();
-    return {
+    return MaybeDeferred.fromValue({
       text: text,
       attachment: undefined,
       buttons: undefined,
-    };
+    });
   }
 
-  async createNoRecentPlaysMessage(
+  createNoRecentPlaysMessage(
     server: OsuServer,
     mode: OsuRuleset,
     passesOnly: boolean,
     username: string
-  ): Promise<VkOutputMessage> {
+  ): MaybeDeferred<VkOutputMessage> {
     const serverString = OsuServer[server];
     const modeString = OsuRuleset[mode];
     const text = `
 [Server: ${serverString}, Mode: ${modeString}]
 Нет последних ${passesOnly ? 'пассов' : 'скоров'}
     `.trim();
-    return {
+    return MaybeDeferred.fromValue({
       text: text,
       attachment: undefined,
       buttons: passesOnly
@@ -346,7 +350,7 @@ ${ppEstimationMark}${pp}pp　 ${mapUrlShort}
             ],
           ]
         : undefined,
-    };
+    });
   }
 
   createBeatmapButtons(

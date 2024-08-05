@@ -1,8 +1,9 @@
-import {VK, Keyboard, KeyboardBuilder} from 'vk-io';
+import {Keyboard, KeyboardBuilder, VK} from 'vk-io';
+import {APP_CODE_NAME} from '../../App';
+import {CalculationType} from '../../primitives/MaybeDeferred';
+import {TextCommand} from '../commands/base/TextCommand';
 import {VkMessageContext} from './VkMessageContext';
 import {VkOutputMessage, VkOutputMessageButton} from './VkOutputMessage';
-import {APP_CODE_NAME} from '../../App';
-import {TextCommand} from '../commands/base/TextCommand';
 
 type UnknownExecutionParams = unknown;
 type UnknownViewParams = unknown;
@@ -126,7 +127,10 @@ export class VkClient {
     if (!matchResult.isMatch) {
       return false;
     }
-    const replyPromise = ctx.reply('Команда выполняется...');
+    let replyMessagePromise: Promise<VkMessageContext> | undefined = undefined;
+    const isLongCalculation = (type: CalculationType): boolean => {
+      return type >= CalculationType.RemoteNetworkCalls;
+    };
     const executionArgs = matchResult.commandArgs!;
     console.log(
       `Trying to execute command ${
@@ -134,8 +138,18 @@ export class VkClient {
       } (args=${JSON.stringify(executionArgs)})`
     );
     try {
-      const viewParams = await command.process(executionArgs, ctx);
-      const outputMessage = await command.createOutputMessage(viewParams);
+      const processingWork = command.process(executionArgs, ctx);
+      if (isLongCalculation(processingWork.calculationType)) {
+        replyMessagePromise = ctx.reply('Команда выполняется...');
+      }
+      const viewParams = await processingWork.resultValue;
+      const outputCreationWork = command.createOutputMessage(viewParams);
+      if (isLongCalculation(outputCreationWork.calculationType)) {
+        if (replyMessagePromise === undefined) {
+          replyMessagePromise = ctx.reply('Команда выполняется...');
+        }
+      }
+      const outputMessage = await outputCreationWork.resultValue;
       if (!outputMessage.text && !outputMessage.attachment) {
         return true;
       }
@@ -143,14 +157,22 @@ export class VkClient {
       const attachment = outputMessage.attachment;
       const buttons = outputMessage.buttons;
       const keyboard = buttons && this.createKeyboard(buttons);
-      const botMessage = await replyPromise;
-      await botMessage.editMessage({message: text, attachment, keyboard});
+      if (replyMessagePromise !== undefined) {
+        const botMessage = await replyMessagePromise;
+        await botMessage.editMessage({message: text, attachment, keyboard});
+      } else {
+        ctx.reply(text, {attachment, keyboard});
+      }
     } catch (e) {
       console.error(e);
-      const botMessage = await replyPromise;
-      await botMessage.editMessage({
-        message: 'Произошла ошибка при выполнении команды',
-      });
+      if (replyMessagePromise !== undefined) {
+        const botMessage = await replyMessagePromise;
+        await botMessage.editMessage({
+          message: 'Произошла ошибка при выполнении команды',
+        });
+      } else {
+        ctx.reply('Произошла ошибка при выполнении команды');
+      }
     }
     return true;
   }

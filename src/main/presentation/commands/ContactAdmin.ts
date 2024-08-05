@@ -1,4 +1,5 @@
 import {SaveContactAdminMessageUseCase} from '../../application/usecases/save_contact_admin_message/SaveContactAdminMessageUseCase';
+import {MaybeDeferred} from '../../primitives/MaybeDeferred';
 import {CommandArgument} from '../common/arg_processing/CommandArgument';
 import {ANY_STRING} from '../common/arg_processing/CommandArguments';
 import {MainArgsProcessor} from '../common/arg_processing/MainArgsProcessor';
@@ -75,47 +76,50 @@ export abstract class ContactAdmin<
     });
   }
 
-  async process(
+  process(
     args: ContactAdminExecutionArgs,
     ctx: TContext
-  ): Promise<ContactAdminViewParams> {
-    try {
-      const appUserId = this.getInitiatorAppUserId(ctx);
-      const messageId = this.getMessageId(ctx);
-      const text = args.text;
-      const result = await this.saveContactAdminMessage.execute({
-        appUserId: appUserId,
-        messageId: messageId,
-        text: text,
-      });
-      if (result.success) {
-        try {
-          await this.forwardToAdmin(ctx);
-        } catch (e) {
-          console.error(e);
+  ): MaybeDeferred<ContactAdminViewParams> {
+    const valuePromise: Promise<ContactAdminViewParams> = (async () => {
+      try {
+        const appUserId = this.getInitiatorAppUserId(ctx);
+        const messageId = this.getMessageId(ctx);
+        const text = args.text;
+        const result = await this.saveContactAdminMessage.execute({
+          appUserId: appUserId,
+          messageId: messageId,
+          text: text,
+        });
+        if (result.success) {
+          try {
+            await this.forwardToAdmin(ctx);
+          } catch (e) {
+            console.error(e);
+          }
         }
+        return {
+          success: result.success,
+          isError: false,
+        };
+      } catch (e) {
+        console.error(e);
+        return {
+          success: false,
+          isError: true,
+        };
       }
-      return {
-        success: result.success,
-        isError: false,
-      };
-    } catch (e) {
-      console.error(e);
-      return {
-        success: false,
-        isError: true,
-      };
-    }
+    })();
+    return MaybeDeferred.fromInstantPromise(valuePromise);
   }
 
-  createOutputMessage(params: ContactAdminViewParams): Promise<TOutput> {
+  createOutputMessage(params: ContactAdminViewParams): MaybeDeferred<TOutput> {
     return this.createSuccessMessage(params.success, params.isError);
   }
 
   abstract createSuccessMessage(
     success: boolean,
     isError: boolean
-  ): Promise<TOutput>;
+  ): MaybeDeferred<TOutput>;
 }
 
 export type ContactAdminExecutionArgs = {

@@ -1,3 +1,4 @@
+import {MaybeDeferred} from '../../primitives/MaybeDeferred';
 import {OsuServer} from '../../primitives/OsuServer';
 import {BEATMAP_LINK} from '../common/arg_processing/CommandArguments';
 import {MainArgsProcessor} from '../common/arg_processing/MainArgsProcessor';
@@ -50,16 +51,19 @@ export abstract class BeatmapMenu<TContext, TOutput> extends TextCommand<
     });
   }
 
-  async process(
+  process(
     args: BeatmapMenuExecutionArgs
-  ): Promise<BeatmapMenuViewParams> {
-    return {
-      server: args.server,
-      beatmapId: args.beatmapId,
-    };
+  ): MaybeDeferred<BeatmapMenuViewParams> {
+    const value: BeatmapMenuViewParams = (() => {
+      return {
+        server: args.server,
+        beatmapId: args.beatmapId,
+      };
+    })();
+    return MaybeDeferred.fromValue(value);
   }
 
-  createOutputMessage(params: BeatmapMenuViewParams): Promise<TOutput> {
+  createOutputMessage(params: BeatmapMenuViewParams): MaybeDeferred<TOutput> {
     const {server, beatmapId} = params;
     return this.createMapMenuMessage(server, beatmapId);
   }
@@ -67,7 +71,7 @@ export abstract class BeatmapMenu<TContext, TOutput> extends TextCommand<
   abstract createMapMenuMessage(
     server: OsuServer,
     beatmapId: number
-  ): Promise<TOutput>;
+  ): MaybeDeferred<TOutput>;
 
   unparse(args: BeatmapMenuExecutionArgs): string {
     const tokens = [

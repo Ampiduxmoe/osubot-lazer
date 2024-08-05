@@ -4,6 +4,7 @@ import {
   BestPlay,
   OsuUserBestPlays,
 } from '../../../application/usecases/get_user_best_plays/GetUserBestPlaysResponse';
+import {MaybeDeferred} from '../../../primitives/MaybeDeferred';
 import {round} from '../../../primitives/Numbers';
 import {OsuRuleset} from '../../../primitives/OsuRuleset';
 import {OsuServer} from '../../../primitives/OsuServer';
@@ -39,57 +40,60 @@ export class UserBestPlaysVk extends UserBestPlays<
     return this.matchText(command);
   }
 
-  async createBestPlaysMessage(
+  createBestPlaysMessage(
     bestPlays: OsuUserBestPlays,
     server: OsuServer,
     mode: OsuRuleset
-  ): Promise<VkOutputMessage> {
-    const serverString = OsuServer[server];
-    const modeString = OsuRuleset[mode];
-    const oneScore = bestPlays.plays.length === 1;
-    const scoresString = oneScore ? 'Лучший скор' : 'Лучшие скоры';
-    const username = bestPlays.username;
-    const scoresText = bestPlays.plays
-      .map(p => {
-        if (oneScore) {
-          return this.verboseScoreDescription(p);
-        }
-        if (bestPlays.plays.length > 3) {
-          return this.shortScoreDescription(p);
-        }
-        return this.defaultScoreDescription(p);
-      })
-      .join('\n\n');
-    const couldNotGetSomeStatsMessage =
-      bestPlays.plays.find(
-        play => play.beatmap.estimatedStarRating === undefined
-      ) !== undefined
-        ? '\n(Не удалось получить часть статистики)'
-        : '';
-    const coverAttachment = oneScore
-      ? await getOrDownloadCoverAttachment(
-          bestPlays.plays[0],
-          this.vkBeatmapCovers
-        )
-      : null;
-    const couldNotAttachCoverMessage =
-      coverAttachment === undefined
-        ? '\n\nБГ карты прикрепить не удалось 😭'
-        : '';
-    const text = `
+  ): MaybeDeferred<VkOutputMessage> {
+    const valuePromise: Promise<VkOutputMessage> = (async () => {
+      const serverString = OsuServer[server];
+      const modeString = OsuRuleset[mode];
+      const oneScore = bestPlays.plays.length === 1;
+      const scoresString = oneScore ? 'Лучший скор' : 'Лучшие скоры';
+      const username = bestPlays.username;
+      const scoresText = bestPlays.plays
+        .map(p => {
+          if (oneScore) {
+            return this.verboseScoreDescription(p);
+          }
+          if (bestPlays.plays.length > 3) {
+            return this.shortScoreDescription(p);
+          }
+          return this.defaultScoreDescription(p);
+        })
+        .join('\n\n');
+      const couldNotGetSomeStatsMessage =
+        bestPlays.plays.find(
+          play => play.beatmap.estimatedStarRating === undefined
+        ) !== undefined
+          ? '\n(Не удалось получить часть статистики)'
+          : '';
+      const coverAttachment = oneScore
+        ? await getOrDownloadCoverAttachment(
+            bestPlays.plays[0],
+            this.vkBeatmapCovers
+          )
+        : null;
+      const couldNotAttachCoverMessage =
+        coverAttachment === undefined
+          ? '\n\nБГ карты прикрепить не удалось 😭'
+          : '';
+      const text = `
 [Server: ${serverString}, Mode: ${modeString}]
 ${scoresString} ${username}
 
 ${scoresText}
 ${couldNotGetSomeStatsMessage}${couldNotAttachCoverMessage}
-    `.trim();
-    return {
-      text: text,
-      attachment: coverAttachment ?? undefined,
-      buttons: oneScore
-        ? this.createBeatmapButtons(server, bestPlays.plays[0].beatmap.id)
-        : [],
-    };
+      `.trim();
+      return {
+        text: text,
+        attachment: coverAttachment ?? undefined,
+        buttons: oneScore
+          ? this.createBeatmapButtons(server, bestPlays.plays[0].beatmap.id)
+          : [],
+      };
+    })();
+    return MaybeDeferred.fromFastPromise(valuePromise);
   }
 
   verboseScoreDescription(play: BestPlay): string {
@@ -222,52 +226,52 @@ ${pp}pp　 ${mapUrlShort}
     `.trim();
   }
 
-  async createUserNotFoundMessage(
+  createUserNotFoundMessage(
     server: OsuServer,
     usernameInput: string
-  ): Promise<VkOutputMessage> {
+  ): MaybeDeferred<VkOutputMessage> {
     const serverString = OsuServer[server];
     const text = `
 [Server: ${serverString}]
 Пользователь с ником ${usernameInput} не найден
     `.trim();
-    return {
+    return MaybeDeferred.fromValue({
       text: text,
       attachment: undefined,
       buttons: undefined,
-    };
+    });
   }
 
-  async createUsernameNotBoundMessage(
+  createUsernameNotBoundMessage(
     server: OsuServer
-  ): Promise<VkOutputMessage> {
+  ): MaybeDeferred<VkOutputMessage> {
     const serverString = OsuServer[server];
     const text = `
 [Server: ${serverString}]
 Не установлен ник!
     `.trim();
-    return {
+    return MaybeDeferred.fromValue({
       text: text,
       attachment: undefined,
       buttons: undefined,
-    };
+    });
   }
 
-  async createNoBestPlaysMessage(
+  createNoBestPlaysMessage(
     server: OsuServer,
     mode: OsuRuleset
-  ): Promise<VkOutputMessage> {
+  ): MaybeDeferred<VkOutputMessage> {
     const serverString = OsuServer[server];
     const modeString = OsuRuleset[mode];
     const text = `
 [Server: ${serverString}, Mode: ${modeString}]
 Нет лучших скоров
     `.trim();
-    return {
+    return MaybeDeferred.fromValue({
       text: text,
       attachment: undefined,
       buttons: undefined,
-    };
+    });
   }
 
   createBeatmapButtons(

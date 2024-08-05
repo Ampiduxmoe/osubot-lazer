@@ -1,5 +1,6 @@
 import {APP_CODE_NAME} from '../../../App';
 import {pickRandom} from '../../../primitives/Arrays';
+import {MaybeDeferred} from '../../../primitives/MaybeDeferred';
 import {Help, HelpExecutionArgs} from '../../commands/Help';
 import {TextCommand} from '../../commands/base/TextCommand';
 import {CommandMatchResult} from '../../common/CommandMatchResult';
@@ -22,10 +23,10 @@ export class HelpVk extends Help<VkMessageContext, VkOutputMessage> {
     return this.matchText(command);
   }
 
-  async createCommandNotFoundMessage(
+  createCommandNotFoundMessage(
     commandPrefixInput: string
-  ): Promise<VkOutputMessage> {
-    return {
+  ): MaybeDeferred<VkOutputMessage> {
+    return MaybeDeferred.fromValue({
       text: `Команда ${commandPrefixInput} не найдена`,
       attachment: undefined,
       buttons: [
@@ -39,12 +40,12 @@ export class HelpVk extends Help<VkMessageContext, VkOutputMessage> {
           },
         ],
       ],
-    };
+    });
   }
 
-  async createCommandListMessage(
+  createCommandListMessage(
     commandList: TextCommand<unknown, unknown, unknown, unknown>[]
-  ): Promise<VkOutputMessage> {
+  ): MaybeDeferred<VkOutputMessage> {
     const commandBriefs = commandList.map(command => {
       const allPrefixes = command.prefixes.join(' | ');
       const description = command.shortDescription;
@@ -58,18 +59,18 @@ ${commandBriefs.join('\n')}
 
 Используйте «${helpPrefix} имя_команды» для получения подробной информации о команде
     `.trim();
-    return {
+    return MaybeDeferred.fromValue({
       text: text,
       attachment: undefined,
       buttons: undefined,
-    };
+    });
   }
 
-  async createCommandDescriptionMessage(
+  createCommandDescriptionMessage(
     commandPrefixInput: string,
     command: TextCommand<unknown, unknown, unknown, unknown>,
     argGroup: string | undefined
-  ): Promise<VkOutputMessage> {
+  ): MaybeDeferred<VkOutputMessage> {
     const inputPrefixLowercase = commandPrefixInput.toLowerCase();
     const inputPrefixUppercase = commandPrefixInput.toUpperCase();
     const structureElements: string[] = [];
@@ -102,7 +103,7 @@ ${commandBriefs.join('\n')}
               .filter(x => x !== inputPrefixLowercase)
               .join(', ')
           : '';
-      return {
+      return MaybeDeferred.fromValue({
         text: `
 Команда ${inputPrefixLowercase}
 ${description}${synonymsString}
@@ -114,7 +115,7 @@ ${argGroupKeysString}.
         `.trim(),
         attachment: undefined,
         buttons: [[{text: exampleUsage, command: exampleUsage}]],
-      };
+      });
     }
     const targetCommandStructure = (() => {
       if (argGroup === undefined) {
@@ -135,14 +136,14 @@ ${argGroupKeysString}.
         argGroupKeys.length === 0
           ? ''
           : `Доступные значения: ${argGroupKeys.map(x => `«${x}»`).join(',')}.`;
-      return {
+      return MaybeDeferred.fromValue({
         text: `
 Заданного варианта использования команды ${targetCommandPrefix} не существует
 ${usageVariantsString}
         `.trim(),
         attachment: undefined,
         buttons: [],
-      };
+      });
     }
     for (const structureElement of targetCommandStructure) {
       const {argument, isOptional} = structureElement;
@@ -212,7 +213,7 @@ ${argDescriptions.join('\n')}${commmandNoticeString}${optionalsHint}
 
 Пример: «${usageString}»
     `.trim();
-    return {
+    return MaybeDeferred.fromValue({
       text: text,
       attachment: undefined,
       buttons: [
@@ -223,6 +224,6 @@ ${argDescriptions.join('\n')}${commmandNoticeString}${optionalsHint}
           },
         ],
       ],
-    };
+    });
   }
 }

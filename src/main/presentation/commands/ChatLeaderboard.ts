@@ -2,6 +2,7 @@ import {GetAppUserInfoUseCase} from '../../application/usecases/get_app_user_inf
 import {OsuUserInfo} from '../../application/usecases/get_osu_user_info/GetOsuUserInfoResponse';
 import {GetOsuUserInfoUseCase} from '../../application/usecases/get_osu_user_info/GetOsuUserInfoUseCase';
 import {maxBy} from '../../primitives/Arrays';
+import {MaybeDeferred} from '../../primitives/MaybeDeferred';
 import {ALL_OSU_RULESETS, OsuRuleset} from '../../primitives/OsuRuleset';
 import {OsuServer} from '../../primitives/OsuServer';
 import {
@@ -88,145 +89,150 @@ export abstract class ChatLeaderboard<TContext, TOutput> extends TextCommand<
     });
   }
 
-  async process(
+  process(
     args: ChatLeaderboardExecutionArgs,
     ctx: TContext
-  ): Promise<ChatLeaderboardViewParams> {
-    const initiatorAppUserId = this.getInitiatorAppUserId(ctx);
-    let preferredModes: {
-      username: string;
-      mode: OsuRuleset | undefined;
-    }[] = await (async () => {
-      if (args.usernameList === undefined || args.usernameList.isAdditive) {
-        const localMembers = await this.getLocalAppUserIds(ctx);
-        const appUserInfoResponses = await Promise.all(
-          localMembers.map(appUserid =>
-            this.getAppUserInfo.execute({
-              id: appUserid,
+  ): MaybeDeferred<ChatLeaderboardViewParams> {
+    const valuePromise: Promise<ChatLeaderboardViewParams> = (async () => {
+      const initiatorAppUserId = this.getInitiatorAppUserId(ctx);
+      let preferredModes: {
+        username: string;
+        mode: OsuRuleset | undefined;
+      }[] = await (async () => {
+        if (args.usernameList === undefined || args.usernameList.isAdditive) {
+          const localMembers = await this.getLocalAppUserIds(ctx);
+          const appUserInfoResponses = await Promise.all(
+            localMembers.map(appUserid =>
+              this.getAppUserInfo.execute({
+                id: appUserid,
+                server: args.server,
+              })
+            )
+          );
+          const localEntries = appUserInfoResponses
+            .filter(x => x.userInfo !== undefined)
+            .map(x => ({
+              username: x.userInfo!.username,
+              mode: x.userInfo!.ruleset,
+            }));
+          const selectedEntries =
+            args.usernameList?.usernames?.map(x => ({
+              username: x,
+              mode: undefined,
+            })) ?? [];
+          return [...localEntries, ...selectedEntries];
+        }
+        return args.usernameList.usernames.map(x => ({
+          username: x,
+          mode: undefined,
+        }));
+      })();
+      const missingUsernames: string[] = [];
+      const selectedOsuUsers: (OsuUserInfo | undefined)[] = await Promise.all(
+        preferredModes
+          .filter(x => x.mode === undefined)
+          .map(async x => {
+            const osuUserInfoResponse = await this.getOsuUserInfo.execute({
+              initiatorAppUserId: initiatorAppUserId,
               server: args.server,
-            })
-          )
-        );
-        const localEntries = appUserInfoResponses
-          .filter(x => x.userInfo !== undefined)
-          .map(x => ({
-            username: x.userInfo!.username,
-            mode: x.userInfo!.ruleset,
-          }));
-        const selectedEntries =
-          args.usernameList?.usernames?.map(x => ({
-            username: x,
-            mode: undefined,
-          })) ?? [];
-        return [...localEntries, ...selectedEntries];
-      }
-      return args.usernameList.usernames.map(x => ({
-        username: x,
-        mode: undefined,
-      }));
-    })();
-    const missingUsernames: string[] = [];
-    const selectedOsuUsers: (OsuUserInfo | undefined)[] = await Promise.all(
-      preferredModes
-        .filter(x => x.mode === undefined)
-        .map(async x => {
-          const osuUserInfoResponse = await this.getOsuUserInfo.execute({
-            initiatorAppUserId: initiatorAppUserId,
-            server: args.server,
-            username: x.username,
-            ruleset: args.mode,
-          });
-          const osuUserInfo = osuUserInfoResponse.userInfo;
-          if (osuUserInfo === undefined) {
-            missingUsernames.push(x.username);
+              username: x.username,
+              ruleset: args.mode,
+            });
+            const osuUserInfo = osuUserInfoResponse.userInfo;
+            if (osuUserInfo === undefined) {
+              missingUsernames.push(x.username);
+              return osuUserInfo;
+            }
+            x.mode = osuUserInfo.preferredMode;
             return osuUserInfo;
-          }
-          x.mode = osuUserInfo.preferredMode;
-          return osuUserInfo;
-        })
-    );
-    preferredModes = preferredModes.filter(
-      x => !missingUsernames.includes(x.username)
-    );
-    const mode: OsuRuleset = (() => {
-      if (args.mode !== undefined) {
-        return args.mode;
-      }
-      const allUserModes = preferredModes
-        .filter(x => x.mode !== undefined)
-        .map(x => x.mode!);
-      const prevalentMode = maxBy(
-        ruleset => allUserModes.filter(m => m === ruleset).length,
-        ALL_OSU_RULESETS.map(k => OsuRuleset[k])
+          })
       );
-      return prevalentMode;
-    })();
-    const selectedOsuUsersFiltered = selectedOsuUsers.filter(
-      x => x !== undefined
-    ) as OsuUserInfo[];
-    const alreadyCheckedUsernames = [
-      ...selectedOsuUsersFiltered.map(x => x.username.toLowerCase()),
-      ...missingUsernames.map(x => x.toLowerCase()),
-    ];
-    const remainingUsers: (OsuUserInfo | undefined)[] = await Promise.all(
-      preferredModes
-        .filter(
-          x => !alreadyCheckedUsernames.includes(x.username.toLowerCase())
-        )
-        .map(async x => {
-          const osuUserInfoResponse = await this.getOsuUserInfo.execute({
-            initiatorAppUserId: initiatorAppUserId,
-            server: args.server,
-            username: x.username,
-            ruleset: mode,
-          });
-          const osuUserInfo = osuUserInfoResponse.userInfo;
-          if (osuUserInfo === undefined) {
-            missingUsernames.push(x.username);
-          }
-          return osuUserInfo;
-        })
-    );
-    const remainingUsersFiltered = remainingUsers.filter(
-      x => x !== undefined
-    ) as OsuUserInfo[];
-    const allUsersSorted = [
-      ...selectedOsuUsersFiltered,
-      ...remainingUsersFiltered,
-    ].sort((a, b) => {
-      const aPp = a.pp || 0;
-      const bPp = b.pp || 0;
-      if (aPp !== bPp) {
-        return bPp - aPp;
+      preferredModes = preferredModes.filter(
+        x => !missingUsernames.includes(x.username)
+      );
+      const mode: OsuRuleset = (() => {
+        if (args.mode !== undefined) {
+          return args.mode;
+        }
+        const allUserModes = preferredModes
+          .filter(x => x.mode !== undefined)
+          .map(x => x.mode!);
+        const prevalentMode = maxBy(
+          ruleset => allUserModes.filter(m => m === ruleset).length,
+          ALL_OSU_RULESETS.map(k => OsuRuleset[k])
+        );
+        return prevalentMode;
+      })();
+      const selectedOsuUsersFiltered = selectedOsuUsers.filter(
+        x => x !== undefined
+      ) as OsuUserInfo[];
+      const alreadyCheckedUsernames = [
+        ...selectedOsuUsersFiltered.map(x => x.username.toLowerCase()),
+        ...missingUsernames.map(x => x.toLowerCase()),
+      ];
+      const remainingUsers: (OsuUserInfo | undefined)[] = await Promise.all(
+        preferredModes
+          .filter(
+            x => !alreadyCheckedUsernames.includes(x.username.toLowerCase())
+          )
+          .map(async x => {
+            const osuUserInfoResponse = await this.getOsuUserInfo.execute({
+              initiatorAppUserId: initiatorAppUserId,
+              server: args.server,
+              username: x.username,
+              ruleset: mode,
+            });
+            const osuUserInfo = osuUserInfoResponse.userInfo;
+            if (osuUserInfo === undefined) {
+              missingUsernames.push(x.username);
+            }
+            return osuUserInfo;
+          })
+      );
+      const remainingUsersFiltered = remainingUsers.filter(
+        x => x !== undefined
+      ) as OsuUserInfo[];
+      const allUsersSorted = [
+        ...selectedOsuUsersFiltered,
+        ...remainingUsersFiltered,
+      ].sort((a, b) => {
+        const aPp = a.pp || 0;
+        const bPp = b.pp || 0;
+        if (aPp !== bPp) {
+          return bPp - aPp;
+        }
+        const aRank = a.rankGlobal ?? Number.MAX_VALUE;
+        const bRank = b.rankGlobal ?? Number.MAX_VALUE;
+        if (aRank !== bRank) {
+          return aRank - bRank;
+        }
+        return a.username > b.username ? 1 : -1;
+      });
+      const isChatLb =
+        args.usernameList === undefined || args.usernameList.isAdditive;
+      if (allUsersSorted.length === 0) {
+        return {
+          server: args.server,
+          mode: mode,
+          users: undefined,
+          missingUsernames: missingUsernames,
+          isOnlyLocalMembersLb: isChatLb,
+        };
       }
-      const aRank = a.rankGlobal ?? Number.MAX_VALUE;
-      const bRank = b.rankGlobal ?? Number.MAX_VALUE;
-      if (aRank !== bRank) {
-        return aRank - bRank;
-      }
-      return a.username > b.username ? 1 : -1;
-    });
-    const isChatLb =
-      args.usernameList === undefined || args.usernameList.isAdditive;
-    if (allUsersSorted.length === 0) {
       return {
         server: args.server,
         mode: mode,
-        users: undefined,
+        users: allUsersSorted,
         missingUsernames: missingUsernames,
         isOnlyLocalMembersLb: isChatLb,
       };
-    }
-    return {
-      server: args.server,
-      mode: mode,
-      users: allUsersSorted,
-      missingUsernames: missingUsernames,
-      isOnlyLocalMembersLb: isChatLb,
-    };
+    })();
+    return MaybeDeferred.fromFastPromise(valuePromise);
   }
 
-  createOutputMessage(params: ChatLeaderboardViewParams): Promise<TOutput> {
+  createOutputMessage(
+    params: ChatLeaderboardViewParams
+  ): MaybeDeferred<TOutput> {
     const {server, mode, users, missingUsernames, isOnlyLocalMembersLb} =
       params;
     if (users === undefined) {
@@ -247,12 +253,12 @@ export abstract class ChatLeaderboard<TContext, TOutput> extends TextCommand<
     mode: OsuRuleset,
     missingUsernames: string[],
     isOnlyLocalMembersLb: boolean
-  ): Promise<TOutput>;
+  ): MaybeDeferred<TOutput>;
 
   abstract createNoUsersMessage(
     server: OsuServer,
     missingUsernames: string[]
-  ): Promise<TOutput>;
+  ): MaybeDeferred<TOutput>;
 
   unparse(args: ChatLeaderboardExecutionArgs): string {
     const tokens = [

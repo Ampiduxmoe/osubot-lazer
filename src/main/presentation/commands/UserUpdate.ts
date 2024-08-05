@@ -1,6 +1,7 @@
 import {GetAppUserInfoUseCase} from '../../application/usecases/get_app_user_info/GetAppUserInfoUseCase';
 import {OsuUserUpdateInfo} from '../../application/usecases/get_osu_user_update/GetOsuUserUpdateResponse';
 import {GetOsuUserUpdateUseCase} from '../../application/usecases/get_osu_user_update/GetOsuUserUpdateUseCase';
+import {MaybeDeferred} from '../../primitives/MaybeDeferred';
 import {OsuRuleset} from '../../primitives/OsuRuleset';
 import {OsuServer} from '../../primitives/OsuServer';
 import {
@@ -88,67 +89,70 @@ export abstract class UserUpdate<TContext, TOutput> extends TextCommand<
     });
   }
 
-  async process(
+  process(
     args: UserUpdateExecutionArgs,
     ctx: TContext
-  ): Promise<UserUpdateViewParams> {
-    if (args.server !== OsuServer.Bancho) {
-      return {
-        failure: {
-          reason: 'usupported server',
-          serverInput: args.server,
-          usernameInput: args.username,
-          username: undefined,
-        },
-      };
-    }
-    let username = args.username;
-    let mode = args.mode;
-    if (username === undefined) {
-      const appUserInfoResponse = await this.getAppUserInfo.execute({
-        id: this.getTargetAppUserId(ctx, {canTargetOthersAsNonAdmin: true}),
-        server: args.server,
-      });
-      const boundUser = appUserInfoResponse.userInfo;
-      if (boundUser === undefined) {
+  ): MaybeDeferred<UserUpdateViewParams> {
+    const valuePromise: Promise<UserUpdateViewParams> = (async () => {
+      if (args.server !== OsuServer.Bancho) {
         return {
           failure: {
-            reason: 'username not bound',
+            reason: 'usupported server',
             serverInput: args.server,
-            usernameInput: undefined,
+            usernameInput: args.username,
             username: undefined,
           },
         };
       }
-      username = boundUser.username;
-      mode ??= boundUser.ruleset;
-    }
-    const userUpdateResponse = await this.getOsuUserUpdate.execute({
-      initiatorAppUserId: this.getInitiatorAppUserId(ctx),
-      username: username,
-      mode: mode,
-    });
-    const userUpdate = userUpdateResponse.userUpdateInfo;
-    if (userUpdate === undefined) {
+      let username = args.username;
+      let mode = args.mode;
+      if (username === undefined) {
+        const appUserInfoResponse = await this.getAppUserInfo.execute({
+          id: this.getTargetAppUserId(ctx, {canTargetOthersAsNonAdmin: true}),
+          server: args.server,
+        });
+        const boundUser = appUserInfoResponse.userInfo;
+        if (boundUser === undefined) {
+          return {
+            failure: {
+              reason: 'username not bound',
+              serverInput: args.server,
+              usernameInput: undefined,
+              username: undefined,
+            },
+          };
+        }
+        username = boundUser.username;
+        mode ??= boundUser.ruleset;
+      }
+      const userUpdateResponse = await this.getOsuUserUpdate.execute({
+        initiatorAppUserId: this.getInitiatorAppUserId(ctx),
+        username: username,
+        mode: mode,
+      });
+      const userUpdate = userUpdateResponse.userUpdateInfo;
+      if (userUpdate === undefined) {
+        return {
+          failure: {
+            reason: 'user not found',
+            serverInput: args.server,
+            usernameInput: args.username,
+            username: username,
+          },
+        };
+      }
       return {
-        failure: {
-          reason: 'user not found',
-          serverInput: args.server,
-          usernameInput: args.username,
-          username: username,
+        success: {
+          server: args.server,
+          mode: userUpdate.mode,
+          userUpdate: userUpdate,
         },
       };
-    }
-    return {
-      success: {
-        server: args.server,
-        mode: userUpdate.mode,
-        userUpdate: userUpdate,
-      },
-    };
+    })();
+    return MaybeDeferred.fromFastPromise(valuePromise);
   }
 
-  createOutputMessage(params: UserUpdateViewParams): Promise<TOutput> {
+  createOutputMessage(params: UserUpdateViewParams): MaybeDeferred<TOutput> {
     const {success, failure} = params;
     if (failure !== undefined) {
       switch (failure.reason) {
@@ -177,13 +181,17 @@ export abstract class UserUpdate<TContext, TOutput> extends TextCommand<
     server: OsuServer,
     mode: OsuRuleset,
     userUpdate: OsuUserUpdateInfo
-  ): Promise<TOutput>;
-  abstract createUnsupportedServerMessage(server: OsuServer): Promise<TOutput>;
+  ): MaybeDeferred<TOutput>;
+  abstract createUnsupportedServerMessage(
+    server: OsuServer
+  ): MaybeDeferred<TOutput>;
   abstract createUserNotFoundMessage(
     server: OsuServer,
     username: string
-  ): Promise<TOutput>;
-  abstract createUsernameNotBoundMessage(server: OsuServer): Promise<TOutput>;
+  ): MaybeDeferred<TOutput>;
+  abstract createUsernameNotBoundMessage(
+    server: OsuServer
+  ): MaybeDeferred<TOutput>;
 
   unparse(args: UserUpdateExecutionArgs): string {
     const tokens = [

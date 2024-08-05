@@ -1,6 +1,7 @@
 /* eslint-disable no-irregular-whitespace */
 import {APP_CODE_NAME} from '../../../App';
 import {SaveContactAdminMessageUseCase} from '../../../application/usecases/save_contact_admin_message/SaveContactAdminMessageUseCase';
+import {MaybeDeferred} from '../../../primitives/MaybeDeferred';
 import {GetInitiatorAppUserId} from '../../commands/common/Signatures';
 import {
   ContactAdmin,
@@ -56,19 +57,19 @@ export class ContactAdminVk extends ContactAdmin<
     return this.matchText(command);
   }
 
-  async createSuccessMessage(
+  createSuccessMessage(
     success: boolean,
     isError: boolean
-  ): Promise<VkOutputMessage> {
+  ): MaybeDeferred<VkOutputMessage> {
     const successString = success ? 'Сообщение получено' : '';
     const reasonString = isError
       ? 'Ошибка при обработке сообщения'
       : 'Превышен лимит обращений';
-    return {
+    return MaybeDeferred.fromValue({
       text: `${successString}\n${success ? '' : reasonString}`,
       attachment: undefined,
       buttons: undefined,
-    };
+    });
   }
 
   unparse(args: ContactAdminExecutionArgs): string {

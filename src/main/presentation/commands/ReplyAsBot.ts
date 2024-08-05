@@ -1,5 +1,6 @@
 import {DeleteContactAdminMessageUseCase} from '../../application/usecases/delete_contact_admin_message/DeleteContactAdminMessageUseCase';
 import {GetContactAdminMessageUseCase} from '../../application/usecases/get_contact_admin_message/GetContactAdminMessageUseCase';
+import {MaybeDeferred} from '../../primitives/MaybeDeferred';
 import {
   ANY_STRING,
   APP_USER_ID,
@@ -112,53 +113,56 @@ export abstract class ReplyAsBot<
     });
   }
 
-  async process(
+  process(
     args: ReplyAsBotExecutionArgs<TCustomPayload>
-  ): Promise<ReplyAsBotViewParams> {
-    try {
-      const success = await this.tryToReply(
-        args.targetAppUserId,
-        args.targetMessageId,
-        args.text,
-        args.fullPayload
-      );
-      if (success) {
-        try {
-          const contactAdminMessage =
-            await this.getContactAdminMessageUseCase.execute({
-              appUserId: args.targetAppUserId,
-            });
-          const messageId = contactAdminMessage.messageInfo?.messageId;
-          if (messageId === args.targetMessageId) {
-            await this.deleteContactAdminMessageUseCase.execute({
-              appUserId: args.targetAppUserId,
-            });
+  ): MaybeDeferred<ReplyAsBotViewParams> {
+    const valuePromise: Promise<ReplyAsBotViewParams> = (async () => {
+      try {
+        const success = await this.tryToReply(
+          args.targetAppUserId,
+          args.targetMessageId,
+          args.text,
+          args.fullPayload
+        );
+        if (success) {
+          try {
+            const contactAdminMessage =
+              await this.getContactAdminMessageUseCase.execute({
+                appUserId: args.targetAppUserId,
+              });
+            const messageId = contactAdminMessage.messageInfo?.messageId;
+            if (messageId === args.targetMessageId) {
+              await this.deleteContactAdminMessageUseCase.execute({
+                appUserId: args.targetAppUserId,
+              });
+            }
+          } catch (e) {
+            console.error(e);
           }
-        } catch (e) {
-          console.error(e);
         }
+        return {
+          success: success,
+          isError: false,
+        };
+      } catch (e) {
+        console.error(e);
+        return {
+          success: false,
+          isError: true,
+        };
       }
-      return {
-        success: success,
-        isError: false,
-      };
-    } catch (e) {
-      console.error(e);
-      return {
-        success: false,
-        isError: true,
-      };
-    }
+    })();
+    return MaybeDeferred.fromFastPromise(valuePromise);
   }
 
-  createOutputMessage(params: ReplyAsBotViewParams): Promise<TOutput> {
+  createOutputMessage(params: ReplyAsBotViewParams): MaybeDeferred<TOutput> {
     return this.createSuccessMessage(params.success, params.isError);
   }
 
   abstract createSuccessMessage(
     success: boolean,
     isError: boolean
-  ): Promise<TOutput>;
+  ): MaybeDeferred<TOutput>;
 }
 
 export type ReplyAsBotExecutionArgs<T> = {

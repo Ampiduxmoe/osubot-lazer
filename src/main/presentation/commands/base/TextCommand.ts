@@ -1,3 +1,4 @@
+import {MaybeDeferred} from '../../../primitives/MaybeDeferred';
 import {CommandArgument} from '../../common/arg_processing/CommandArgument';
 import {TextProcessor} from '../../common/arg_processing/TextProcessor';
 import {CommandMatchResult} from '../../common/CommandMatchResult';
@@ -35,8 +36,11 @@ export abstract class TextCommand<
 
   abstract matchText(text: string): CommandMatchResult<TExecutionArgs>;
   abstract matchMessage(ctx: TContext): CommandMatchResult<TExecutionArgs>;
-  abstract process(args: TExecutionArgs, ctx: TContext): Promise<TViewParams>;
-  abstract createOutputMessage(params: TViewParams): Promise<TOutput>;
+  abstract process(
+    args: TExecutionArgs,
+    ctx: TContext
+  ): MaybeDeferred<TViewParams>;
+  abstract createOutputMessage(params: TViewParams): MaybeDeferred<TOutput>;
   abstract unparse(args: TExecutionArgs): string;
 }
 

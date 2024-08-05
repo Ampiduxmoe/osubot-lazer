@@ -2,6 +2,7 @@
 import {APP_CODE_NAME} from '../../../App';
 import {DeleteContactAdminMessageUseCase} from '../../../application/usecases/delete_contact_admin_message/DeleteContactAdminMessageUseCase';
 import {GetContactAdminMessageUseCase} from '../../../application/usecases/get_contact_admin_message/GetContactAdminMessageUseCase';
+import {MaybeDeferred} from '../../../primitives/MaybeDeferred';
 import {ReplyAsBot, ReplyAsBotExecutionArgs} from '../../commands/ReplyAsBot';
 import {
   APP_USER_ID,
@@ -99,19 +100,19 @@ export class ReplyAsBotVk extends ReplyAsBot<
     return textMatch;
   }
 
-  async createSuccessMessage(
+  createSuccessMessage(
     success: boolean,
     isError: boolean
-  ): Promise<VkOutputMessage> {
+  ): MaybeDeferred<VkOutputMessage> {
     const successString = success
       ? 'Сообщение отправлено'
       : 'Не удалось отправить сообщение';
     const reasonString = isError ? 'Возникла непредвиденная ошибка' : '';
-    return {
+    return MaybeDeferred.fromValue({
       text: `${successString}${success ? '' : '\n' + reasonString}`,
       attachment: undefined,
       buttons: undefined,
-    };
+    });
   }
 
   unparse(args: ReplyAsBotExecutionArgs<VkCustomPayload>): string {

@@ -1,5 +1,6 @@
 import {TimeIntervalUsageSummary} from '../../application/usecases/get_api_usage_summary/GetApiUsageSummaryResponse';
 import {GetApiUsageSummaryUseCase} from '../../application/usecases/get_api_usage_summary/GetApiUsageSummaryUseCase';
+import {MaybeDeferred} from '../../primitives/MaybeDeferred';
 import {CommandMatchResult} from '../common/CommandMatchResult';
 import {CommandPrefixes} from '../common/CommandPrefixes';
 import {
@@ -74,25 +75,28 @@ export abstract class ApiUsageSummary<TContext, TOutput> extends TextCommand<
     });
   }
 
-  async process(
+  process(
     args: ApiUsageSummaryExecutionArgs
-  ): Promise<ApiUsageSummaryViewParams> {
-    const timeStart = args.date.setUTCHours(0, 0, 0, 0);
-    const timeEnd = args.date.setUTCHours(23, 59, 59, 999);
-
-    const apiUsageSummaryResponse = await this.getApiUsageSummary.execute({
-      timeStart: timeStart,
-      timeEnd: timeEnd,
-      appUserId: args.appUserId,
-    });
-
-    return {
-      appUserIdInput: args.appUserId,
-      apiUsageSummary: apiUsageSummaryResponse.usageSummary,
-    };
+  ): MaybeDeferred<ApiUsageSummaryViewParams> {
+    const valuePromise: Promise<ApiUsageSummaryViewParams> = (async () => {
+      const timeStart = args.date.setUTCHours(0, 0, 0, 0);
+      const timeEnd = args.date.setUTCHours(23, 59, 59, 999);
+      const apiUsageSummaryResponse = await this.getApiUsageSummary.execute({
+        timeStart: timeStart,
+        timeEnd: timeEnd,
+        appUserId: args.appUserId,
+      });
+      return {
+        appUserIdInput: args.appUserId,
+        apiUsageSummary: apiUsageSummaryResponse.usageSummary,
+      };
+    })();
+    return MaybeDeferred.fromInstantPromise(valuePromise);
   }
 
-  createOutputMessage(params: ApiUsageSummaryViewParams): Promise<TOutput> {
+  createOutputMessage(
+    params: ApiUsageSummaryViewParams
+  ): MaybeDeferred<TOutput> {
     const {appUserIdInput, apiUsageSummary} = params;
     if (apiUsageSummary.length === 0) {
       if (appUserIdInput !== undefined) {
@@ -105,9 +109,11 @@ export abstract class ApiUsageSummary<TContext, TOutput> extends TextCommand<
 
   abstract createUsageSummaryMessage(
     usageSummary: TimeIntervalUsageSummary[]
-  ): Promise<TOutput>;
-  abstract createEmptyUserSummaryMessage(appUserId: string): Promise<TOutput>;
-  abstract createEmptySummaryMessage(): Promise<TOutput>;
+  ): MaybeDeferred<TOutput>;
+  abstract createEmptyUserSummaryMessage(
+    appUserId: string
+  ): MaybeDeferred<TOutput>;
+  abstract createEmptySummaryMessage(): MaybeDeferred<TOutput>;
 
   unparse(args: ApiUsageSummaryExecutionArgs): string {
     const tokens = [

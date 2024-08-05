@@ -430,7 +430,7 @@ describe('UserRecentPlaysVk', function () {
           senderId: -1,
           text: 'should not be relevant',
         }) as VkMessageContext
-      );
+      ).resultValue;
       assert.strictEqual(viewParams.server, server);
       assert.strictEqual(viewParams.mode, mode);
       assert.strictEqual(viewParams.passesOnly, passesOnly);
@@ -463,7 +463,7 @@ describe('UserRecentPlaysVk', function () {
           senderId: -1,
           text: 'should not be relevant',
         }) as VkMessageContext
-      );
+      ).resultValue;
       assert.strictEqual(viewParams.server, server);
       assert.strictEqual(viewParams.mode, mode);
       assert.strictEqual(viewParams.passesOnly, passesOnly);
@@ -508,7 +508,7 @@ describe('UserRecentPlaysVk', function () {
               senderId: -1,
               text: 'should not be relevant',
             }) as VkMessageContext
-          );
+          ).resultValue;
           assert.strictEqual(viewParams.server, server);
           assert.strictEqual(viewParams.mode, osuUser.preferredMode);
           assert.strictEqual(viewParams.passesOnly, passesOnly);
@@ -529,7 +529,7 @@ describe('UserRecentPlaysVk', function () {
         }
         const modes = ALL_OSU_RULESETS;
         for (const mode of modes) {
-          const viewParams = await command.process(
+          const whyTheHellCompilerGivesTS7022 = command.process(
             {
               server: server,
               passesOnly: passesOnly,
@@ -552,6 +552,7 @@ describe('UserRecentPlaysVk', function () {
               text: 'should not be relevant',
             }) as VkMessageContext
           );
+          const viewParams = await whyTheHellCompilerGivesTS7022.resultValue;
           assert.strictEqual(viewParams.server, server);
           assert.strictEqual(viewParams.mode, OsuRuleset[mode]);
           assert.strictEqual(viewParams.passesOnly, passesOnly);
@@ -588,7 +589,7 @@ describe('UserRecentPlaysVk', function () {
           senderId: VkIdConverter.appUserIdToVkUserId(appUser.id),
           text: 'should not be relevant',
         }) as VkMessageContext
-      );
+      ).resultValue;
       assert.strictEqual(viewParams.server, appUser.server);
       assert.strictEqual(viewParams.mode, appUser.ruleset);
       assert.strictEqual(viewParams.passesOnly, passesOnly);
@@ -607,10 +608,10 @@ describe('UserRecentPlaysVk', function () {
         passesOnly: passesOnly,
         usernameInput: undefined,
         recentPlays: undefined,
-      });
+      }).resultValue;
       assert.strictEqual(
         outputMessage.text,
-        (await command.createUsernameNotBoundMessage(server)).text
+        (await command.createUsernameNotBoundMessage(server).resultValue).text
       );
     });
     it('should return "user not found" message if username is specified and there is no information about corresponding user', async function () {
@@ -623,10 +624,13 @@ describe('UserRecentPlaysVk', function () {
         passesOnly: passesOnly,
         usernameInput: usernameInput,
         recentPlays: undefined,
-      });
+      }).resultValue;
       assert.strictEqual(
         outputMessage.text,
-        (await command.createUserNotFoundMessage(server, usernameInput)).text
+        (
+          await command.createUserNotFoundMessage(server, usernameInput)
+            .resultValue
+        ).text
       );
     });
     it('should return "user plays" message if username is not specified but there is bound account info', async function () {
@@ -644,7 +648,7 @@ describe('UserRecentPlaysVk', function () {
         passesOnly: passesOnly,
         usernameInput: usernameInput,
         recentPlays: recentPlays,
-      });
+      }).resultValue;
       assert.strictEqual(
         outputMessage.text,
         (
@@ -653,7 +657,7 @@ describe('UserRecentPlaysVk', function () {
             server,
             mode,
             passesOnly
-          )
+          ).resultValue
         ).text
       );
     });
@@ -672,7 +676,7 @@ describe('UserRecentPlaysVk', function () {
         passesOnly: passesOnly,
         usernameInput: usernameInput,
         recentPlays: recentPlays,
-      });
+      }).resultValue;
       assert.strictEqual(
         outputMessage.text,
         (
@@ -681,7 +685,7 @@ describe('UserRecentPlaysVk', function () {
             server,
             mode,
             passesOnly
-          )
+          ).resultValue
         ).text
       );
     });

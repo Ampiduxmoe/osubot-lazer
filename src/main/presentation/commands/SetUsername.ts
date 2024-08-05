@@ -1,4 +1,5 @@
 import {SetUsernameUseCase} from '../../application/usecases/set_username/SetUsernameUseCase';
+import {MaybeDeferred} from '../../primitives/MaybeDeferred';
 import {OsuRuleset} from '../../primitives/OsuRuleset';
 import {OsuServer} from '../../primitives/OsuServer';
 import {
@@ -79,47 +80,50 @@ export abstract class SetUsername<TContext, TOutput> extends TextCommand<
     });
   }
 
-  async process(
+  process(
     args: SetUsernameExecutionArgs,
     ctx: TContext
-  ): Promise<SetUsernameViewParams> {
-    if (args.username === undefined) {
+  ): MaybeDeferred<SetUsernameViewParams> {
+    const valuePromise: Promise<SetUsernameViewParams> = (async () => {
+      if (args.username === undefined) {
+        return {
+          server: args.server,
+          usernameInput: undefined,
+          username: undefined,
+          mode: args.mode,
+        };
+      }
+      const result = await this.setUsername.execute({
+        appUserId: this.getTargetAppUserId(ctx, {
+          canTargetOthersAsNonAdmin: false,
+        }),
+        server: args.server,
+        username: args.username,
+        mode: args.mode,
+      });
+      if (result.isFailure) {
+        const internalFailureReason = result.failureReason!;
+        switch (internalFailureReason) {
+          case 'user not found':
+            return {
+              server: args.server,
+              usernameInput: args.username,
+              username: undefined,
+              mode: args.mode,
+            };
+        }
+      }
       return {
         server: args.server,
-        usernameInput: undefined,
-        username: undefined,
-        mode: args.mode,
+        usernameInput: args.username,
+        username: result.username!,
+        mode: result.mode!,
       };
-    }
-    const result = await this.setUsername.execute({
-      appUserId: this.getTargetAppUserId(ctx, {
-        canTargetOthersAsNonAdmin: false,
-      }),
-      server: args.server,
-      username: args.username,
-      mode: args.mode,
-    });
-    if (result.isFailure) {
-      const internalFailureReason = result.failureReason!;
-      switch (internalFailureReason) {
-        case 'user not found':
-          return {
-            server: args.server,
-            usernameInput: args.username,
-            username: undefined,
-            mode: args.mode,
-          };
-      }
-    }
-    return {
-      server: args.server,
-      usernameInput: args.username,
-      username: result.username!,
-      mode: result.mode!,
-    };
+    })();
+    return MaybeDeferred.fromFastPromise(valuePromise);
   }
 
-  createOutputMessage(params: SetUsernameViewParams): Promise<TOutput> {
+  createOutputMessage(params: SetUsernameViewParams): MaybeDeferred<TOutput> {
     const {server, usernameInput, username, mode} = params;
     if (username === undefined) {
       if (usernameInput === undefined) {
@@ -132,16 +136,16 @@ export abstract class SetUsername<TContext, TOutput> extends TextCommand<
 
   abstract createUsernameNotSpecifiedMessage(
     server: OsuServer
-  ): Promise<TOutput>;
+  ): MaybeDeferred<TOutput>;
   abstract createUserNotFoundMessage(
     server: OsuServer,
     usernameInput: string
-  ): Promise<TOutput>;
+  ): MaybeDeferred<TOutput>;
   abstract createUsernameSetMessage(
     server: OsuServer,
     username: string,
     mode: OsuRuleset
-  ): Promise<TOutput>;
+  ): MaybeDeferred<TOutput>;
 
   unparse(args: SetUsernameExecutionArgs): string {
     const tokens = [

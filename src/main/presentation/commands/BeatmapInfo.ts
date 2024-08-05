@@ -1,5 +1,6 @@
 import {MapInfo} from '../../application/usecases/get_beatmap_info/GetBeatmapInfoResponse';
 import {GetBeatmapInfoUseCase} from '../../application/usecases/get_beatmap_info/GetBeatmapInfoUseCase';
+import {MaybeDeferred} from '../../primitives/MaybeDeferred';
 import {ModAcronym} from '../../primitives/ModAcronym';
 import {OsuServer} from '../../primitives/OsuServer';
 import {
@@ -148,52 +149,55 @@ export abstract class BeatmapInfo<TContext, TOutput> extends TextCommand<
     });
   }
 
-  async process(
+  process(
     args: BeatmapInfoExecutionArgs,
     ctx: TContext
-  ): Promise<BeatmapInfoViewParams> {
-    const beatmapId: number | undefined = await (async () => {
-      if (args.beatmapId !== undefined) {
-        return args.beatmapId;
+  ): MaybeDeferred<BeatmapInfoViewParams> {
+    const valuePromise: Promise<BeatmapInfoViewParams> = (async () => {
+      const beatmapId: number | undefined = await (async () => {
+        if (args.beatmapId !== undefined) {
+          return args.beatmapId;
+        }
+        const closestIds = this.getContextualBeatmapIds(ctx);
+        if (closestIds.length === 1) {
+          return closestIds[0].id;
+        }
+        return await this.getLastSeenBeatmapId(ctx, args.server);
+      })();
+      if (beatmapId === undefined) {
+        return {
+          server: args.server,
+          beatmapIdInput: undefined,
+          beatmapInfo: undefined,
+        };
       }
-      const closestIds = this.getContextualBeatmapIds(ctx);
-      if (closestIds.length === 1) {
-        return closestIds[0].id;
-      }
-      return await this.getLastSeenBeatmapId(ctx, args.server);
-    })();
-    if (beatmapId === undefined) {
-      return {
+      const beatmapInfoResponse = await this.getBeatmapInfo.execute({
+        initiatorAppUserId: this.getInitiatorAppUserId(ctx),
+        beatmapId: beatmapId,
         server: args.server,
-        beatmapIdInput: undefined,
-        beatmapInfo: undefined,
-      };
-    }
-    const beatmapInfoResponse = await this.getBeatmapInfo.execute({
-      initiatorAppUserId: this.getInitiatorAppUserId(ctx),
-      beatmapId: beatmapId,
-      server: args.server,
-      mapScoreSimulationOsu: args.mapScoreSimulationOsu,
-    });
-    const beatmapInfo = beatmapInfoResponse.beatmapInfo;
-    if (beatmapInfo === undefined) {
+        mapScoreSimulationOsu: args.mapScoreSimulationOsu,
+      });
+      const beatmapInfo = beatmapInfoResponse.beatmapInfo;
+      if (beatmapInfo === undefined) {
+        return {
+          server: args.server,
+          beatmapIdInput: args.beatmapId,
+          beatmapInfo: undefined,
+        };
+      }
+      if (beatmapId !== undefined) {
+        await this.saveLastSeenBeatmapId(ctx, args.server, beatmapId);
+      }
       return {
         server: args.server,
         beatmapIdInput: args.beatmapId,
-        beatmapInfo: undefined,
+        beatmapInfo: beatmapInfo,
       };
-    }
-    if (beatmapId !== undefined) {
-      await this.saveLastSeenBeatmapId(ctx, args.server, beatmapId);
-    }
-    return {
-      server: args.server,
-      beatmapIdInput: args.beatmapId,
-      beatmapInfo: beatmapInfo,
-    };
+    })();
+    return MaybeDeferred.fromFastPromise(valuePromise);
   }
 
-  createOutputMessage(params: BeatmapInfoViewParams): Promise<TOutput> {
+  createOutputMessage(params: BeatmapInfoViewParams): MaybeDeferred<TOutput> {
     const {server, beatmapIdInput, beatmapInfo} = params;
     if (beatmapInfo === undefined) {
       if (beatmapIdInput === undefined) {
@@ -210,16 +214,18 @@ export abstract class BeatmapInfo<TContext, TOutput> extends TextCommand<
   abstract createMapInfoMessage(
     server: OsuServer,
     mapInfo: MapInfo
-  ): Promise<TOutput>;
+  ): MaybeDeferred<TOutput>;
   abstract createSimulatedScoreInfoMessage(
     server: OsuServer,
     mapInfo: MapInfo
-  ): Promise<TOutput>;
+  ): MaybeDeferred<TOutput>;
   abstract createMapNotFoundMessage(
     server: OsuServer,
     beatmapIdInput: number
-  ): Promise<TOutput>;
-  abstract createMapIdNotSpecifiedMessage(server: OsuServer): Promise<TOutput>;
+  ): MaybeDeferred<TOutput>;
+  abstract createMapIdNotSpecifiedMessage(
+    server: OsuServer
+  ): MaybeDeferred<TOutput>;
 
   unparse(args: BeatmapInfoExecutionArgs): string {
     const tokens = [

@@ -1,3 +1,4 @@
+import {MaybeDeferred} from '../../primitives/MaybeDeferred';
 import {CommandMatchResult} from '../common/CommandMatchResult';
 import {CommandPrefixes} from '../common/CommandPrefixes';
 import {
@@ -180,81 +181,88 @@ export abstract class Anouncements<TContext, TOutput> extends TextCommand<
     return CommandMatchResult.ok(executionArgs);
   }
 
-  async process(
+  process(
     args: AnouncementsExecutionArgs
-  ): Promise<AnouncementsViewParams> {
-    if (args.show !== undefined) {
-      const showArgs = args.show;
-      const anouncements = await (async () => {
-        if (showArgs.idStart === undefined || showArgs.idEnd === undefined) {
-          return (await this.anouncements.getLastAnouncements(10)).reverse();
-        }
-        return (
-          await this.anouncements.getManyByIdRange(
-            showArgs.idStart,
-            showArgs.idEnd
-          )
-        ).slice(0, 10);
-      })();
-      return {
-        anouncements: anouncements.length === 0 ? null : anouncements,
-      };
-    }
-    if (args.create !== undefined) {
-      const newId = (
-        await this.anouncements.addWithoutId({
-          description: args.create.description,
-          text: args.create.text,
-          id: -1,
-        })
-      ).id;
-      return {
-        action: 'create',
-        actionSuccess: true,
-        createId: newId,
-      };
-    }
+  ): MaybeDeferred<AnouncementsViewParams> {
     if (args.execute !== undefined) {
-      const anouncement = await this.anouncements.get({id: args.execute.id});
-      if (anouncement === undefined) {
+      const executeArgs = args.execute;
+      const valuePromise: Promise<AnouncementsViewParams> = (async () => {
+        const anouncement = await this.anouncements.get({id: executeArgs.id});
+        if (anouncement === undefined) {
+          return {
+            action: 'execute',
+            actionSuccess: false,
+            executeChatCount: 0,
+          };
+        }
+        const targets = await this.sendToAllPeers(anouncement.text);
+        await this.anouncementsHistory.addWithoutId({
+          anouncementId: executeArgs.id,
+          targets: `${this.messageMediumPrefix}: ` + targets.join(','),
+          time: Date.now(),
+          id: -1,
+        });
         return {
           action: 'execute',
-          actionSuccess: false,
-          executeChatCount: 0,
+          actionSuccess: true,
+          executeChatCount: targets.length,
         };
-      }
-      const targets = await this.sendToAllPeers(anouncement.text);
-      await this.anouncementsHistory.addWithoutId({
-        anouncementId: args.execute.id,
-        targets: `${this.messageMediumPrefix}: ` + targets.join(','),
-        time: Date.now(),
-        id: -1,
-      });
-      return {
-        action: 'execute',
-        actionSuccess: true,
-        executeChatCount: targets.length,
-      };
+      })();
+      return MaybeDeferred.fromFastPromise(valuePromise);
     }
-    if (args.echo !== undefined) {
-      const anouncement = await this.anouncements.get({id: args.echo.id});
-      if (anouncement === undefined) {
+    const valuePromise: Promise<AnouncementsViewParams> = (async () => {
+      if (args.show !== undefined) {
+        const showArgs = args.show;
+        const anouncements = await (async () => {
+          if (showArgs.idStart === undefined || showArgs.idEnd === undefined) {
+            return (await this.anouncements.getLastAnouncements(10)).reverse();
+          }
+          return (
+            await this.anouncements.getManyByIdRange(
+              showArgs.idStart,
+              showArgs.idEnd
+            )
+          ).slice(0, 10);
+        })();
         return {
-          action: 'execute',
-          actionSuccess: false,
-          executeChatCount: 0,
+          anouncements: anouncements.length === 0 ? null : anouncements,
         };
       }
-      return {
-        echo: anouncement.text,
-      };
-    }
-    throw Error(`Unknown ${this.internalName} command execution path`);
+      if (args.create !== undefined) {
+        const newId = (
+          await this.anouncements.addWithoutId({
+            description: args.create.description,
+            text: args.create.text,
+            id: -1,
+          })
+        ).id;
+        return {
+          action: 'create',
+          actionSuccess: true,
+          createId: newId,
+        };
+      }
+      if (args.echo !== undefined) {
+        const anouncement = await this.anouncements.get({id: args.echo.id});
+        if (anouncement === undefined) {
+          return {
+            action: 'execute',
+            actionSuccess: false,
+            executeChatCount: 0,
+          };
+        }
+        return {
+          echo: anouncement.text,
+        };
+      }
+      throw Error(`Unknown ${this.internalName} command execution path`);
+    })();
+    return MaybeDeferred.fromInstantPromise(valuePromise);
   }
 
   abstract messageMediumPrefix: string;
 
-  createOutputMessage(params: AnouncementsViewParams): Promise<TOutput> {
+  createOutputMessage(params: AnouncementsViewParams): MaybeDeferred<TOutput> {
     const {
       anouncements,
       action,
@@ -291,17 +299,17 @@ export abstract class Anouncements<TContext, TOutput> extends TextCommand<
 
   abstract createAnouncementsMessage(
     anouncements: Anouncement[]
-  ): Promise<TOutput>;
-  abstract createNoAnouncementsMessage(): Promise<TOutput>;
+  ): MaybeDeferred<TOutput>;
+  abstract createNoAnouncementsMessage(): MaybeDeferred<TOutput>;
   abstract createAnouncementCreateResultMessage(
     actionSuccess: boolean,
     id: number | undefined
-  ): Promise<TOutput>;
+  ): MaybeDeferred<TOutput>;
   abstract createAnouncementExecutionMessage(
     actionSuccess: boolean,
     executeChatCount: number
-  ): Promise<TOutput>;
-  abstract createAnouncementEchoMessage(echo: string): Promise<TOutput>;
+  ): MaybeDeferred<TOutput>;
+  abstract createAnouncementEchoMessage(echo: string): MaybeDeferred<TOutput>;
 
   unparse(args: AnouncementsExecutionArgs): string {
     const tokens = [this.COMMAND_PREFIX.unparse(this.prefixes[0])];

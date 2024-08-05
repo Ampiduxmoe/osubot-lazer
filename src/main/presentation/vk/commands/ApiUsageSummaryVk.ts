@@ -1,6 +1,7 @@
 import {APP_CODE_NAME} from '../../../App';
 import {TimeIntervalUsageSummary} from '../../../application/usecases/get_api_usage_summary/GetApiUsageSummaryResponse';
 import {sumBy} from '../../../primitives/Arrays';
+import {MaybeDeferred} from '../../../primitives/MaybeDeferred';
 import {Timespan} from '../../../primitives/Timespan';
 import {
   ApiUsageSummary,
@@ -30,9 +31,9 @@ export class ApiUsageSummaryVk extends ApiUsageSummary<
     return this.matchText(command);
   }
 
-  async createUsageSummaryMessage(
+  createUsageSummaryMessage(
     apiUsageSummary: TimeIntervalUsageSummary[]
-  ): Promise<VkOutputMessage> {
+  ): MaybeDeferred<VkOutputMessage> {
     const firstIntervalSummary = apiUsageSummary[0];
     const lastIntervalSummary = apiUsageSummary[apiUsageSummary.length - 1];
     const startDate = new Date(firstIntervalSummary.timeWindowStart);
@@ -112,28 +113,28 @@ ${rows.join('\n')}
 ${userContributionRows.join('\n')}
     `.trim();
 
-    return {
+    return MaybeDeferred.fromValue({
       text: text,
       attachment: undefined,
       buttons: undefined,
-    };
+    });
   }
 
-  async createEmptyUserSummaryMessage(
+  createEmptyUserSummaryMessage(
     appUserId: string
-  ): Promise<VkOutputMessage> {
-    return {
+  ): MaybeDeferred<VkOutputMessage> {
+    return MaybeDeferred.fromValue({
       text: `Статистика пользователя ${appUserId} не найдена`,
       attachment: undefined,
       buttons: undefined,
-    };
+    });
   }
 
-  async createEmptySummaryMessage(): Promise<VkOutputMessage> {
-    return {
+  createEmptySummaryMessage(): MaybeDeferred<VkOutputMessage> {
+    return MaybeDeferred.fromValue({
       text: 'Статистика не найдена',
       attachment: undefined,
       buttons: undefined,
-    };
+    });
   }
 }

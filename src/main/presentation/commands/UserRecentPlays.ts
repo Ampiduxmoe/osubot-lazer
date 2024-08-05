@@ -1,6 +1,7 @@
 import {GetAppUserInfoUseCase} from '../../application/usecases/get_app_user_info/GetAppUserInfoUseCase';
 import {OsuUserRecentPlays} from '../../application/usecases/get_user_recent_plays/GetUserRecentPlaysResponse';
 import {GetUserRecentPlaysUseCase} from '../../application/usecases/get_user_recent_plays/GetUserRecentPlaysUseCase';
+import {MaybeDeferred} from '../../primitives/MaybeDeferred';
 import {ModPatternCollection} from '../../primitives/ModPatternCollection';
 import {clamp} from '../../primitives/Numbers';
 import {OsuRuleset} from '../../primitives/OsuRuleset';
@@ -121,85 +122,90 @@ export abstract class UserRecentPlays<TContext, TOutput> extends TextCommand<
     });
   }
 
-  async process(
+  process(
     args: UserRecentPlaysExecutionArgs,
     ctx: TContext
-  ): Promise<UserRecentPlaysViewParams> {
-    let username = args.username;
-    let mode = args.mode;
-    if (username === undefined) {
-      const appUserInfoResponse = await this.getAppUserInfo.execute({
-        id: this.getTargetAppUserId(ctx, {canTargetOthersAsNonAdmin: true}),
-        server: args.server,
-      });
-      const boundUser = appUserInfoResponse.userInfo;
-      if (boundUser === undefined) {
-        return {
+  ): MaybeDeferred<UserRecentPlaysViewParams> {
+    const valuePromise: Promise<UserRecentPlaysViewParams> = (async () => {
+      let username = args.username;
+      let mode = args.mode;
+      if (username === undefined) {
+        const appUserInfoResponse = await this.getAppUserInfo.execute({
+          id: this.getTargetAppUserId(ctx, {canTargetOthersAsNonAdmin: true}),
           server: args.server,
-          mode: args.mode,
-          passesOnly: args.passesOnly,
-          usernameInput: undefined,
-          recentPlays: undefined,
-        };
-      }
-      username = boundUser.username;
-      mode ??= boundUser.ruleset;
-    }
-    const startPosition = clamp(args.startPosition ?? 1, 1, 100);
-    const quantity = clamp(args.quantity ?? 1, 1, 10);
-    const modPatterns: ModPatternCollection = (() => {
-      if (args.modPatterns === undefined) {
-        return new ModPatternCollection();
-      }
-      if (args.modPatterns.strictMatch) {
-        return args.modPatterns.collection;
-      }
-      return args.modPatterns.collection
-        .allowLegacy()
-        .treatAsInterchangeable('DT', 'NC')
-        .treatAsInterchangeable('HT', 'DC');
-    })();
-    const recentPlaysResult = await this.getRecentPlays.execute({
-      initiatorAppUserId: this.getInitiatorAppUserId(ctx),
-      server: args.server,
-      username: username,
-      ruleset: mode,
-      includeFails: !args.passesOnly,
-      startPosition: startPosition,
-      quantity: quantity,
-      modPatterns: modPatterns,
-    });
-    if (recentPlaysResult.isFailure) {
-      const internalFailureReason = recentPlaysResult.failureReason!;
-      switch (internalFailureReason) {
-        case 'user not found':
+        });
+        const boundUser = appUserInfoResponse.userInfo;
+        if (boundUser === undefined) {
           return {
             server: args.server,
-            mode: mode,
+            mode: args.mode,
             passesOnly: args.passesOnly,
-            usernameInput: args.username,
+            usernameInput: undefined,
             recentPlays: undefined,
           };
+        }
+        username = boundUser.username;
+        mode ??= boundUser.ruleset;
       }
-    }
-    const recentPlays = recentPlaysResult.recentPlays!;
-    if (recentPlays.plays.length === 1) {
-      await this.saveLastSeenBeatmapId(
-        ctx,
-        args.server,
-        recentPlays.plays[0].beatmap.id
-      );
-    }
-    return {
-      server: args.server,
-      mode: recentPlaysResult.ruleset!,
-      passesOnly: args.passesOnly,
-      usernameInput: args.username,
-      recentPlays: recentPlays,
-    };
+      const startPosition = clamp(args.startPosition ?? 1, 1, 100);
+      const quantity = clamp(args.quantity ?? 1, 1, 10);
+      const modPatterns: ModPatternCollection = (() => {
+        if (args.modPatterns === undefined) {
+          return new ModPatternCollection();
+        }
+        if (args.modPatterns.strictMatch) {
+          return args.modPatterns.collection;
+        }
+        return args.modPatterns.collection
+          .allowLegacy()
+          .treatAsInterchangeable('DT', 'NC')
+          .treatAsInterchangeable('HT', 'DC');
+      })();
+      const recentPlaysResult = await this.getRecentPlays.execute({
+        initiatorAppUserId: this.getInitiatorAppUserId(ctx),
+        server: args.server,
+        username: username,
+        ruleset: mode,
+        includeFails: !args.passesOnly,
+        startPosition: startPosition,
+        quantity: quantity,
+        modPatterns: modPatterns,
+      });
+      if (recentPlaysResult.isFailure) {
+        const internalFailureReason = recentPlaysResult.failureReason!;
+        switch (internalFailureReason) {
+          case 'user not found':
+            return {
+              server: args.server,
+              mode: mode,
+              passesOnly: args.passesOnly,
+              usernameInput: args.username,
+              recentPlays: undefined,
+            };
+        }
+      }
+      const recentPlays = recentPlaysResult.recentPlays!;
+      if (recentPlays.plays.length === 1) {
+        await this.saveLastSeenBeatmapId(
+          ctx,
+          args.server,
+          recentPlays.plays[0].beatmap.id
+        );
+      }
+      return {
+        server: args.server,
+        mode: recentPlaysResult.ruleset!,
+        passesOnly: args.passesOnly,
+        usernameInput: args.username,
+        recentPlays: recentPlays,
+      };
+    })();
+    return MaybeDeferred.fromFastPromise(valuePromise);
   }
 
-  createOutputMessage(params: UserRecentPlaysViewParams): Promise<TOutput> {
+  createOutputMessage(
+    params: UserRecentPlaysViewParams
+  ): MaybeDeferred<TOutput> {
     const {server, mode, passesOnly, recentPlays} = params;
     if (recentPlays === undefined) {
       if (params.usernameInput === undefined) {
@@ -232,18 +238,20 @@ export abstract class UserRecentPlays<TContext, TOutput> extends TextCommand<
     server: OsuServer,
     mode: OsuRuleset,
     passesOnly: boolean
-  ): Promise<TOutput>;
+  ): MaybeDeferred<TOutput>;
   abstract createUserNotFoundMessage(
     server: OsuServer,
     usernameInput: string
-  ): Promise<TOutput>;
-  abstract createUsernameNotBoundMessage(server: OsuServer): Promise<TOutput>;
+  ): MaybeDeferred<TOutput>;
+  abstract createUsernameNotBoundMessage(
+    server: OsuServer
+  ): MaybeDeferred<TOutput>;
   abstract createNoRecentPlaysMessage(
     server: OsuServer,
     mode: OsuRuleset,
     passesOnly: boolean,
     username: string
-  ): Promise<TOutput>;
+  ): MaybeDeferred<TOutput>;
 
   unparse(args: UserRecentPlaysExecutionArgs): string {
     const tokens = [

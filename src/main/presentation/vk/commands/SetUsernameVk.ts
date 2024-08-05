@@ -1,4 +1,5 @@
 import {APP_CODE_NAME} from '../../../App';
+import {MaybeDeferred} from '../../../primitives/MaybeDeferred';
 import {OsuRuleset} from '../../../primitives/OsuRuleset';
 import {OsuServer} from '../../../primitives/OsuServer';
 import {
@@ -29,52 +30,52 @@ export class SetUsernameVk extends SetUsername<
     return this.matchText(command);
   }
 
-  async createUsernameNotSpecifiedMessage(
+  createUsernameNotSpecifiedMessage(
     server: OsuServer
-  ): Promise<VkOutputMessage> {
+  ): MaybeDeferred<VkOutputMessage> {
     const serverString = OsuServer[server];
     const text = `
 [Server: ${serverString}]
 Не указан ник!
     `.trim();
-    return {
+    return MaybeDeferred.fromValue({
       text: text,
       attachment: undefined,
       buttons: undefined,
-    };
+    });
   }
 
-  async createUserNotFoundMessage(
+  createUserNotFoundMessage(
     server: OsuServer,
     usernameInput: string
-  ): Promise<VkOutputMessage> {
+  ): MaybeDeferred<VkOutputMessage> {
     const serverString = OsuServer[server];
     const text = `
 [Server: ${serverString}]
 Пользователь с ником ${usernameInput} не найден
     `.trim();
-    return {
+    return MaybeDeferred.fromValue({
       text: text,
       attachment: undefined,
       buttons: undefined,
-    };
+    });
   }
 
-  async createUsernameSetMessage(
+  createUsernameSetMessage(
     server: OsuServer,
     username: string,
     mode: OsuRuleset
-  ): Promise<VkOutputMessage> {
+  ): MaybeDeferred<VkOutputMessage> {
     const serverString = OsuServer[server];
     const modeString = OsuRuleset[mode];
     const text = `
 [Server: ${serverString}]
 Установлен ник ${username} (режим: ${modeString})
     `.trim();
-    return {
+    return MaybeDeferred.fromValue({
       text: text,
       attachment: undefined,
       buttons: undefined,
-    };
+    });
   }
 }

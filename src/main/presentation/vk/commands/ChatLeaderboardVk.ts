@@ -1,6 +1,7 @@
 /* eslint-disable no-irregular-whitespace */
 import {APP_CODE_NAME} from '../../../App';
 import {OsuUserInfo} from '../../../application/usecases/get_osu_user_info/GetOsuUserInfoResponse';
+import {MaybeDeferred} from '../../../primitives/MaybeDeferred';
 import {OsuRuleset} from '../../../primitives/OsuRuleset';
 import {OsuServer} from '../../../primitives/OsuServer';
 import {
@@ -31,13 +32,13 @@ export class ChatLeaderboardVk extends ChatLeaderboard<
     return this.matchText(command);
   }
 
-  async createLeaderboardMessage(
+  createLeaderboardMessage(
     server: OsuServer,
     users: OsuUserInfo[],
     mode: OsuRuleset,
     missingUsernames: string[],
     isChatLb: boolean
-  ): Promise<VkOutputMessage> {
+  ): MaybeDeferred<VkOutputMessage> {
     const serverString = OsuServer[server];
     const modeString = OsuRuleset[mode];
     const usersText = users
@@ -55,11 +56,11 @@ ${usersText}
 
 ${missingUsernamesMessage}
     `.trim();
-    return {
+    return MaybeDeferred.fromValue({
       text: text,
       attachment: undefined,
       buttons: undefined,
-    };
+    });
   }
 
   shortUserDescription(pos: number, user: OsuUserInfo): string {
@@ -72,10 +73,10 @@ ${pos}. ${user.username}
     `.trim();
   }
 
-  async createNoUsersMessage(
+  createNoUsersMessage(
     server: OsuServer,
     missingUsernames: string[]
-  ): Promise<VkOutputMessage> {
+  ): MaybeDeferred<VkOutputMessage> {
     const serverString = OsuServer[server];
     const missingUsernamesMessage =
       missingUsernames.length > 0
@@ -88,10 +89,10 @@ ${pos}. ${user.username}
 
 ${missingUsernamesMessage}
     `.trim();
-    return {
+    return MaybeDeferred.fromValue({
       text: text,
       attachment: undefined,
       buttons: undefined,
-    };
+    });
   }
 }

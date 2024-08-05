@@ -314,7 +314,7 @@ describe('UserInfoVk', function () {
           senderId: -1,
           text: 'should not be relevant',
         }) as VkMessageContext
-      );
+      ).resultValue;
       assert.strictEqual(viewParams.server, server);
       assert.strictEqual(viewParams.mode, mode);
       assert.strictEqual(viewParams.usernameInput, usernameInput);
@@ -333,7 +333,7 @@ describe('UserInfoVk', function () {
           senderId: -1,
           text: 'should not be relevant',
         }) as VkMessageContext
-      );
+      ).resultValue;
       assert.strictEqual(viewParams.server, server);
       assert.strictEqual(viewParams.mode, mode);
       assert.strictEqual(viewParams.usernameInput, undefined);
@@ -364,7 +364,7 @@ describe('UserInfoVk', function () {
               senderId: -1,
               text: 'should not be relevant',
             }) as VkMessageContext
-          );
+          ).resultValue;
           assert.strictEqual(viewParams.server, server);
           assert.strictEqual(viewParams.mode, osuUser.preferredMode);
           assert.strictEqual(viewParams.usernameInput, username);
@@ -398,7 +398,7 @@ describe('UserInfoVk', function () {
               senderId: -1,
               text: 'should not be relevant',
             }) as VkMessageContext
-          );
+          ).resultValue;
           assert.strictEqual(viewParams.server, server);
           assert.strictEqual(viewParams.mode, ruleset);
           assert.strictEqual(viewParams.usernameInput, username);
@@ -418,7 +418,7 @@ describe('UserInfoVk', function () {
           senderId: VkIdConverter.appUserIdToVkUserId(appUser.id),
           text: 'should not be relevant',
         }) as VkMessageContext
-      );
+      ).resultValue;
       assert.strictEqual(viewParams.server, appUser.server);
       assert.strictEqual(viewParams.mode, appUser.ruleset);
       assert.strictEqual(viewParams.usernameInput, undefined);
@@ -433,10 +433,10 @@ describe('UserInfoVk', function () {
         mode: undefined,
         usernameInput: undefined,
         userInfo: undefined,
-      });
+      }).resultValue;
       assert.strictEqual(
         outputMessage.text,
-        (await command.createUsernameNotBoundMessage(server)).text
+        (await command.createUsernameNotBoundMessage(server).resultValue).text
       );
     });
     it('should return "user not found" message if username is specified and there is no information about corresponding user', async function () {
@@ -447,10 +447,13 @@ describe('UserInfoVk', function () {
         mode: undefined,
         usernameInput: usernameInput,
         userInfo: undefined,
-      });
+      }).resultValue;
       assert.strictEqual(
         outputMessage.text,
-        (await command.createUserNotFoundMessage(server, usernameInput)).text
+        (
+          await command.createUserNotFoundMessage(server, usernameInput)
+            .resultValue
+        ).text
       );
     });
     it('should return "user info" message if username is not specified but there is bound account info', async function () {
@@ -478,10 +481,13 @@ describe('UserInfoVk', function () {
         mode: mode,
         usernameInput: usernameInput,
         userInfo: userInfo,
-      });
+      }).resultValue;
       assert.strictEqual(
         outputMessage.text,
-        (await command.createUserInfoMessage(server, mode, userInfo)).text
+        (
+          await command.createUserInfoMessage(server, mode, userInfo)
+            .resultValue
+        ).text
       );
     });
     it('should return "user info" message if username is specified and there is corresponding account info', async function () {
@@ -509,10 +515,13 @@ describe('UserInfoVk', function () {
         mode: mode,
         usernameInput: usernameInput,
         userInfo: userInfo,
-      });
+      }).resultValue;
       assert.strictEqual(
         outputMessage.text,
-        (await command.createUserInfoMessage(server, mode, userInfo)).text
+        (
+          await command.createUserInfoMessage(server, mode, userInfo)
+            .resultValue
+        ).text
       );
     });
   });

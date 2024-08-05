@@ -1,4 +1,5 @@
 import {APP_CODE_NAME} from '../../../App';
+import {MaybeDeferred} from '../../../primitives/MaybeDeferred';
 import {OsuRuleset} from '../../../primitives/OsuRuleset';
 import {OsuServer} from '../../../primitives/OsuServer';
 import {
@@ -29,11 +30,11 @@ export class UserInfoVk extends UserInfo<VkMessageContext, VkOutputMessage> {
     return this.matchText(command);
   }
 
-  async createUserInfoMessage(
+  createUserInfoMessage(
     server: OsuServer,
     mode: OsuRuleset,
     userInfo: OsuUserInfo
-  ): Promise<VkOutputMessage> {
+  ): MaybeDeferred<VkOutputMessage> {
     const serverString = OsuServer[server];
     const modeString = OsuRuleset[mode];
     const {username} = userInfo;
@@ -112,41 +113,41 @@ https://osu.ppy.sh/u/${userId}
         }
       );
     }
-    return {
+    return MaybeDeferred.fromValue({
       text: text,
       attachment: undefined,
       buttons: buttons.map(b => [b]),
-    };
+    });
   }
 
-  async createUserNotFoundMessage(
+  createUserNotFoundMessage(
     server: OsuServer,
     usernameInput: string
-  ): Promise<VkOutputMessage> {
+  ): MaybeDeferred<VkOutputMessage> {
     const serverString = OsuServer[server];
     const text = `
 [Server: ${serverString}]
 Пользователь с ником ${usernameInput} не найден
     `.trim();
-    return {
+    return MaybeDeferred.fromValue({
       text: text,
       attachment: undefined,
       buttons: undefined,
-    };
+    });
   }
 
-  async createUsernameNotBoundMessage(
+  createUsernameNotBoundMessage(
     server: OsuServer
-  ): Promise<VkOutputMessage> {
+  ): MaybeDeferred<VkOutputMessage> {
     const serverString = OsuServer[server];
     const text = `
 [Server: ${serverString}]
 Не установлен ник!
     `.trim();
-    return {
+    return MaybeDeferred.fromValue({
       text: text,
       attachment: undefined,
       buttons: undefined,
-    };
+    });
   }
 }

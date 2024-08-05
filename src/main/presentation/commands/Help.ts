@@ -1,3 +1,4 @@
+import {MaybeDeferred} from '../../primitives/MaybeDeferred';
 import {CommandMatchResult} from '../common/CommandMatchResult';
 import {CommandPrefixes} from '../common/CommandPrefixes';
 import {CommandArgument} from '../common/arg_processing/CommandArgument';
@@ -86,33 +87,36 @@ export abstract class Help<TContext, TOutput> extends TextCommand<
     });
   }
 
-  async process(args: HelpExecutionArgs): Promise<HelpViewParams> {
-    if (args.commandPrefix === undefined) {
-      return {
-        commandList: [this, ...this.commands],
-      };
-    }
-    if (this.prefixes.matchIgnoringCase(args.commandPrefix)) {
-      return {
-        commandPrefixInput: args.commandPrefix,
-        command: this,
-      };
-    }
-    for (const command of this.commands) {
-      if (command.prefixes.matchIgnoringCase(args.commandPrefix)) {
+  process(args: HelpExecutionArgs): MaybeDeferred<HelpViewParams> {
+    const value: HelpViewParams = (() => {
+      if (args.commandPrefix === undefined) {
         return {
-          commandPrefixInput: args.commandPrefix,
-          command: command,
-          usageVariant: args.usageVariant,
+          commandList: [this, ...this.commands],
         };
       }
-    }
-    return {
-      commandPrefixInput: args.commandPrefix,
-    };
+      if (this.prefixes.matchIgnoringCase(args.commandPrefix)) {
+        return {
+          commandPrefixInput: args.commandPrefix,
+          command: this,
+        };
+      }
+      for (const command of this.commands) {
+        if (command.prefixes.matchIgnoringCase(args.commandPrefix)) {
+          return {
+            commandPrefixInput: args.commandPrefix,
+            command: command,
+            usageVariant: args.usageVariant,
+          };
+        }
+      }
+      return {
+        commandPrefixInput: args.commandPrefix,
+      };
+    })();
+    return MaybeDeferred.fromValue(value);
   }
 
-  createOutputMessage(params: HelpViewParams): Promise<TOutput> {
+  createOutputMessage(params: HelpViewParams): MaybeDeferred<TOutput> {
     const {commandList, commandPrefixInput, command, usageVariant} = params;
     if (commandList !== undefined) {
       return this.createCommandListMessage(commandList);
@@ -129,16 +133,16 @@ export abstract class Help<TContext, TOutput> extends TextCommand<
 
   abstract createCommandNotFoundMessage(
     commandPrefixInput: string
-  ): Promise<TOutput>;
+  ): MaybeDeferred<TOutput>;
   abstract createCommandListMessage(
     commandList: TextCommand<unknown, unknown, unknown, unknown>[]
-  ): Promise<TOutput>;
+  ): MaybeDeferred<TOutput>;
 
   abstract createCommandDescriptionMessage(
     commandPrefixInput: string,
     command: TextCommand<unknown, unknown, unknown, unknown>,
     argGroup: string | undefined
-  ): Promise<TOutput>;
+  ): MaybeDeferred<TOutput>;
 
   unparse(args: HelpExecutionArgs): string {
     const tokens = [this.COMMAND_PREFIX.unparse(this.prefixes[0])];

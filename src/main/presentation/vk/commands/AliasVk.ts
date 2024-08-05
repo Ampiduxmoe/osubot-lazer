@@ -1,5 +1,6 @@
 /* eslint-disable no-irregular-whitespace */
 import {APP_CODE_NAME} from '../../../App';
+import {MaybeDeferred} from '../../../primitives/MaybeDeferred';
 import {Alias, AliasExecutionArgs} from '../../commands/Alias';
 import {CommandMatchResult} from '../../common/CommandMatchResult';
 import {AppUserCommandAliases} from '../../data/models/AppUserCommandAliases';
@@ -21,64 +22,64 @@ export class AliasVk extends Alias<VkMessageContext, VkOutputMessage> {
     return this.matchText(command);
   }
 
-  async createAliasesMessage(
+  createAliasesMessage(
     userAliases: AppUserCommandAliases
-  ): Promise<VkOutputMessage> {
+  ): MaybeDeferred<VkOutputMessage> {
     const text = userAliases.aliases
       .map(
         (v, i) => `${i + 1}. Шаблон: ${v.pattern}\n　 Замена: ${v.replacement}`
       )
       .join('\n');
-    return {
+    return MaybeDeferred.fromValue({
       text: text,
       attachment: undefined,
       buttons: undefined,
-    };
+    });
   }
 
-  async createNoAliasesMessage(): Promise<VkOutputMessage> {
+  createNoAliasesMessage(): MaybeDeferred<VkOutputMessage> {
     const text = 'Шаблоны отсутствуют!';
-    return {
+    return MaybeDeferred.fromValue({
       text: text,
       attachment: undefined,
       buttons: undefined,
-    };
+    });
   }
 
-  async createAliasAddResultMessage(
+  createAliasAddResultMessage(
     actionCount: number
-  ): Promise<VkOutputMessage> {
+  ): MaybeDeferred<VkOutputMessage> {
     const text =
       actionCount > 0
         ? 'Шаблонов добавлено: ' + actionCount
         : 'Не удалось добавить шаблон\nДостигнуто максимальное количество шаблонов';
-    return {
+    return MaybeDeferred.fromValue({
       text: text,
       attachment: undefined,
       buttons: undefined,
-    };
+    });
   }
 
-  async createAliasDeleteResultMessage(
+  createAliasDeleteResultMessage(
     actionCount: number
-  ): Promise<VkOutputMessage> {
+  ): MaybeDeferred<VkOutputMessage> {
     const text =
       actionCount > 0
         ? 'Шаблонов удалено: ' + actionCount
         : 'Не удалось удалить шаблон\nШаблон с заданным номером не найден';
-    return {
+    return MaybeDeferred.fromValue({
       text: text,
       attachment: undefined,
       buttons: undefined,
-    };
+    });
   }
 
-  async createTestResultMessage(result: string): Promise<VkOutputMessage> {
+  createTestResultMessage(result: string): MaybeDeferred<VkOutputMessage> {
     const text = result;
-    return {
+    return MaybeDeferred.fromValue({
       text: text,
       attachment: undefined,
       buttons: undefined,
-    };
+    });
   }
 }

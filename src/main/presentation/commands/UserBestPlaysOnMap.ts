@@ -4,6 +4,7 @@ import {
   OsuMapUserPlay,
 } from '../../application/usecases/get_beatmap_users_best_score/GetBeatmapUsersBestScoresResponse';
 import {GetBeatmapUsersBestScoresUseCase} from '../../application/usecases/get_beatmap_users_best_score/GetBeatmapUsersBestScoresUseCase';
+import {MaybeDeferred} from '../../primitives/MaybeDeferred';
 import {ModPatternCollection} from '../../primitives/ModPatternCollection';
 import {clamp} from '../../primitives/Numbers';
 import {OsuRuleset} from '../../primitives/OsuRuleset';
@@ -120,125 +121,130 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
     });
   }
 
-  async process(
+  process(
     args: UserBestPlaysOnMapExecutionArgs,
     ctx: TContext
-  ): Promise<UserBestPlaysOnMapViewParams> {
-    const username = await (async () => {
-      if (args.username !== undefined) {
-        return args.username;
+  ): MaybeDeferred<UserBestPlaysOnMapViewParams> {
+    const valuePromise: Promise<UserBestPlaysOnMapViewParams> = (async () => {
+      const username = await (async () => {
+        if (args.username !== undefined) {
+          return args.username;
+        }
+        const appUserInfoResponse = await this.getAppUserInfo.execute({
+          id: this.getTargetAppUserId(ctx, {canTargetOthersAsNonAdmin: true}),
+          server: args.server,
+        });
+        return appUserInfoResponse.userInfo?.username;
+      })();
+      if (username === undefined) {
+        return {
+          server: args.server,
+          beatmapIdInput: args.beatmapId,
+          usernameInput: undefined,
+          username: undefined,
+          mode: undefined,
+          map: undefined,
+          plays: undefined,
+          startPosition: undefined,
+        };
       }
-      const appUserInfoResponse = await this.getAppUserInfo.execute({
-        id: this.getTargetAppUserId(ctx, {canTargetOthersAsNonAdmin: true}),
+      const beatmapId: number | undefined = await (async () => {
+        if (args.beatmapId !== undefined) {
+          return args.beatmapId;
+        }
+        const closestIds = this.getContextualBeatmapIds(ctx);
+        if (closestIds.length === 1) {
+          return closestIds[0].id;
+        }
+        return await this.getLastSeenBeatmapId(ctx, args.server);
+      })();
+      if (beatmapId === undefined) {
+        return {
+          server: args.server,
+          beatmapIdInput: undefined,
+          usernameInput: args.username,
+          username: username,
+          mode: undefined,
+          map: undefined,
+          plays: undefined,
+          startPosition: undefined,
+        };
+      }
+      const modPatterns: ModPatternCollection = (() => {
+        if (args.modPatterns === undefined) {
+          return new ModPatternCollection();
+        }
+        if (args.modPatterns.strictMatch) {
+          return args.modPatterns.collection;
+        }
+        return args.modPatterns.collection
+          .allowLegacy()
+          .treatAsInterchangeable('DT', 'NC')
+          .treatAsInterchangeable('HT', 'DC');
+      })();
+      const leaderboardResponse = await this.getBeatmapBestScores.execute({
+        initiatorAppUserId: this.getInitiatorAppUserId(ctx),
         server: args.server,
+        beatmapId: beatmapId,
+        usernames: [username],
+        startPosition: Math.max(args.startPosition ?? 1, 1),
+        quantityPerUser: clamp(args.quantity ?? 1, 1, 10),
+        modPatterns: modPatterns,
       });
-      return appUserInfoResponse.userInfo?.username;
-    })();
-    if (username === undefined) {
-      return {
-        server: args.server,
-        beatmapIdInput: args.beatmapId,
-        usernameInput: undefined,
-        username: undefined,
-        mode: undefined,
-        map: undefined,
-        plays: undefined,
-        startPosition: undefined,
-      };
-    }
-    const beatmapId: number | undefined = await (async () => {
-      if (args.beatmapId !== undefined) {
-        return args.beatmapId;
+      if (leaderboardResponse.failureReason !== undefined) {
+        switch (leaderboardResponse.failureReason) {
+          case 'beatmap not found':
+            return {
+              server: args.server,
+              beatmapIdInput: args.beatmapId,
+              usernameInput: args.username,
+              username: username,
+              mode: undefined,
+              map: undefined,
+              plays: undefined,
+              startPosition: undefined,
+            };
+        }
       }
-      const closestIds = this.getContextualBeatmapIds(ctx);
-      if (closestIds.length === 1) {
-        return closestIds[0].id;
+      if (leaderboardResponse.mapPlays!.length === 0) {
+        return {
+          server: args.server,
+          beatmapIdInput: args.beatmapId,
+          usernameInput: args.username,
+          username: username,
+          mode: leaderboardResponse.ruleset!,
+          map: leaderboardResponse.map!,
+          plays: undefined,
+          startPosition: undefined,
+        };
       }
-      return await this.getLastSeenBeatmapId(ctx, args.server);
-    })();
-    if (beatmapId === undefined) {
-      return {
-        server: args.server,
-        beatmapIdInput: undefined,
-        usernameInput: args.username,
-        username: username,
-        mode: undefined,
-        map: undefined,
-        plays: undefined,
-        startPosition: undefined,
-      };
-    }
-    const modPatterns: ModPatternCollection = (() => {
-      if (args.modPatterns === undefined) {
-        return new ModPatternCollection();
+      const mapPlays =
+        args.quantity === undefined && args.startPosition !== undefined
+          ? leaderboardResponse.mapPlays![0].plays.slice(0, args.startPosition)
+          : leaderboardResponse.mapPlays![0].plays.slice(
+              0,
+              (args.startPosition ?? 1) + (args.quantity ?? 1) - 1
+            );
+      if (beatmapId !== undefined) {
+        await this.saveLastSeenBeatmapId(ctx, args.server, beatmapId);
       }
-      if (args.modPatterns.strictMatch) {
-        return args.modPatterns.collection;
-      }
-      return args.modPatterns.collection
-        .allowLegacy()
-        .treatAsInterchangeable('DT', 'NC')
-        .treatAsInterchangeable('HT', 'DC');
-    })();
-    const leaderboardResponse = await this.getBeatmapBestScores.execute({
-      initiatorAppUserId: this.getInitiatorAppUserId(ctx),
-      server: args.server,
-      beatmapId: beatmapId,
-      usernames: [username],
-      startPosition: Math.max(args.startPosition ?? 1, 1),
-      quantityPerUser: clamp(args.quantity ?? 1, 1, 10),
-      modPatterns: modPatterns,
-    });
-    if (leaderboardResponse.failureReason !== undefined) {
-      switch (leaderboardResponse.failureReason) {
-        case 'beatmap not found':
-          return {
-            server: args.server,
-            beatmapIdInput: args.beatmapId,
-            usernameInput: args.username,
-            username: username,
-            mode: undefined,
-            map: undefined,
-            plays: undefined,
-            startPosition: undefined,
-          };
-      }
-    }
-    if (leaderboardResponse.mapPlays!.length === 0) {
       return {
         server: args.server,
         beatmapIdInput: args.beatmapId,
         usernameInput: args.username,
-        username: username,
+        username: leaderboardResponse.mapPlays![0].username,
         mode: leaderboardResponse.ruleset!,
         map: leaderboardResponse.map!,
-        plays: undefined,
-        startPosition: undefined,
+        plays: mapPlays,
+        startPosition: args.startPosition ?? 1,
       };
-    }
-    const mapPlays =
-      args.quantity === undefined && args.startPosition !== undefined
-        ? leaderboardResponse.mapPlays![0].plays.slice(0, args.startPosition)
-        : leaderboardResponse.mapPlays![0].plays.slice(
-            0,
-            (args.startPosition ?? 1) + (args.quantity ?? 1) - 1
-          );
-    if (beatmapId !== undefined) {
-      await this.saveLastSeenBeatmapId(ctx, args.server, beatmapId);
-    }
-    return {
-      server: args.server,
-      beatmapIdInput: args.beatmapId,
-      usernameInput: args.username,
-      username: leaderboardResponse.mapPlays![0].username,
-      mode: leaderboardResponse.ruleset!,
-      map: leaderboardResponse.map!,
-      plays: mapPlays,
-      startPosition: args.startPosition ?? 1,
-    };
+    })();
+    return MaybeDeferred.fromFastPromise(valuePromise);
   }
 
-  createOutputMessage(params: UserBestPlaysOnMapViewParams): Promise<TOutput> {
+  createOutputMessage(
+    params: UserBestPlaysOnMapViewParams
+  ): MaybeDeferred<TOutput> {
     const {server, beatmapIdInput, usernameInput, username, mode, map, plays} =
       params;
     if (username === undefined) {
@@ -265,23 +271,25 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
     server: OsuServer,
     mode: OsuRuleset,
     username: string
-  ): Promise<TOutput>;
+  ): MaybeDeferred<TOutput>;
   abstract createMapNotFoundMessage(
     server: OsuServer,
     mapId: number
-  ): Promise<TOutput>;
+  ): MaybeDeferred<TOutput>;
   abstract createUserNotFoundMessage(
     server: OsuServer,
     usernameInput: string
-  ): Promise<TOutput>;
-  abstract createUsernameNotBoundMessage(server: OsuServer): Promise<TOutput>;
+  ): MaybeDeferred<TOutput>;
+  abstract createUsernameNotBoundMessage(
+    server: OsuServer
+  ): MaybeDeferred<TOutput>;
   abstract createBeatmapIdNotSpecifiedMessage(
     server: OsuServer
-  ): Promise<TOutput>;
+  ): MaybeDeferred<TOutput>;
   abstract createNoMapPlaysMessage(
     server: OsuServer,
     mode: OsuRuleset
-  ): Promise<TOutput>;
+  ): MaybeDeferred<TOutput>;
 
   unparse(args: UserBestPlaysOnMapExecutionArgs): string {
     const tokens = [

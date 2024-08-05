@@ -1,3 +1,4 @@
+import {MaybeDeferred} from '../../primitives/MaybeDeferred';
 import {ALL_OSU_SERVERS, OsuServer} from '../../primitives/OsuServer';
 import {CommandMatchResult} from '../common/CommandMatchResult';
 import {CommandPrefixes} from '../common/CommandPrefixes';
@@ -194,167 +195,174 @@ export abstract class Alias<TContext, TOutput> extends TextCommand<
     return CommandMatchResult.ok(executionArgs);
   }
 
-  async process(
+  process(
     args: AliasExecutionArgs,
     ctx: TContext
-  ): Promise<AliasViewParams> {
-    if (args.show !== undefined) {
-      const userAliases = await this.aliases.get({
-        appUserId: this.getTargetAppUserId(ctx, {
-          canTargetOthersAsNonAdmin: true,
-        }),
+  ): MaybeDeferred<AliasViewParams> {
+    const valuePromise: Promise<AliasViewParams> = (async () => {
+      if (args.show !== undefined) {
+        const userAliases = await this.aliases.get({
+          appUserId: this.getTargetAppUserId(ctx, {
+            canTargetOthersAsNonAdmin: true,
+          }),
+        });
+        return {
+          aliases:
+            (userAliases?.aliases.length ?? 0) === 0 ? null : userAliases!,
+        };
+      }
+      const appUserId = this.getTargetAppUserId(ctx, {
+        canTargetOthersAsNonAdmin: false,
       });
-      return {
-        aliases: (userAliases?.aliases.length ?? 0) === 0 ? null : userAliases!,
-      };
-    }
-    const appUserId = this.getTargetAppUserId(ctx, {
-      canTargetOthersAsNonAdmin: false,
-    });
-    const userAliases = await this.aliases.get({
-      appUserId: appUserId,
-    });
-    if (args.add !== undefined) {
-      if ((userAliases?.aliases.length ?? 0) >= Alias.maximumAliases) {
+      const userAliases = await this.aliases.get({
+        appUserId: appUserId,
+      });
+      if (args.add !== undefined) {
+        if ((userAliases?.aliases.length ?? 0) >= Alias.maximumAliases) {
+          return {
+            action: 'add',
+            actionCount: 0,
+          };
+        }
+        await this.aliases.save({
+          appUserId: appUserId,
+          aliases: [
+            ...(userAliases?.aliases ?? []),
+            {pattern: args.add.aliasPattern, replacement: args.add.aliasTarget},
+          ],
+        });
         return {
           action: 'add',
-          actionCount: 0,
+          actionCount: 1,
         };
       }
-      await this.aliases.save({
-        appUserId: appUserId,
-        aliases: [
-          ...(userAliases?.aliases ?? []),
-          {pattern: args.add.aliasPattern, replacement: args.add.aliasTarget},
-        ],
-      });
-      return {
-        action: 'add',
-        actionCount: 1,
-      };
-    }
-    if (args.delete !== undefined) {
-      if ((userAliases?.aliases.length ?? 0) === 0) {
-        return {
-          aliases: null,
-        };
-      }
-      const deleteArgs = args.delete;
-      let actionCount = 0;
-      await this.aliases.save({
-        appUserId: appUserId,
-        aliases: [
-          ...(userAliases?.aliases.filter((_v, i) => {
-            const aliasNumber = i + 1;
-            if (
-              aliasNumber >= deleteArgs.deleteStart &&
-              aliasNumber <= deleteArgs.deleteEnd
-            ) {
-              actionCount += 1;
-              return false;
-            }
-            return true;
-          }) ?? []),
-        ],
-      });
-      return {
-        action: 'delete',
-        actionCount: actionCount,
-      };
-    }
-    if (args.test !== undefined) {
-      let matchingAlias:
-        | {
-            pattern: string;
-            replacement: string;
-          }
-        | undefined = undefined;
-      for (const alias of userAliases?.aliases ?? []) {
-        if (this.aliasProcessor.match(args.test.testString, alias.pattern)) {
-          if (alias.pattern.length > (matchingAlias?.pattern.length ?? 0)) {
-            matchingAlias = alias;
-          }
+      if (args.delete !== undefined) {
+        if ((userAliases?.aliases.length ?? 0) === 0) {
+          return {
+            aliases: null,
+          };
         }
-      }
-      if (matchingAlias === undefined) {
-        return {
-          testResult: 'Не найдено подходящего шаблона!',
-        };
-      }
-      return {
-        testResult: this.aliasProcessor.process(
-          args.test.testString,
-          matchingAlias.pattern,
-          matchingAlias.replacement
-        ),
-      };
-    }
-    if (args.legacy !== undefined) {
-      const oldPrefixes = {
-        nickname: 'n',
-        user: 'u',
-        recent: 'r',
-        personalBest: 't',
-        mapPersonalBest: 'c',
-        leaderboard: 'chat',
-        mapLeaderboard: 'lb',
-      };
-      const newAliases: AppUserCommandAliases = {
-        appUserId: appUserId,
-        aliases: [],
-      };
-      const aliasIfNeeded = (
-        oldPrefix: string,
-        newPrefixes: CommandPrefixes
-      ): void => {
-        if (!newPrefixes.matchIgnoringCase(oldPrefix)) {
-          const oldPrefixArg = OWN_COMMAND_PREFIX(
-            new CommandPrefixes(oldPrefix)
-          ).unparse(oldPrefix);
-          const newPrefixArg = OWN_COMMAND_PREFIX(SetUsername.prefixes).unparse(
-            newPrefixes[0]
-          );
-          for (const server of ALL_OSU_SERVERS) {
-            const serverArg = SERVER_PREFIX.unparse(OsuServer[server]);
-            const pattern = `${serverArg} ${oldPrefixArg}*`;
-            const replacement = `${serverArg} ${newPrefixArg}`;
-            newAliases.aliases.push({
-              pattern: pattern,
-              replacement: replacement,
-            });
-          }
-        }
-      };
-      aliasIfNeeded(oldPrefixes.nickname, SetUsername.prefixes);
-      aliasIfNeeded(oldPrefixes.user, UserInfo.prefixes);
-      aliasIfNeeded(oldPrefixes.recent, UserRecentPlays.prefixes);
-      aliasIfNeeded(oldPrefixes.personalBest, UserBestPlays.prefixes);
-      aliasIfNeeded(oldPrefixes.mapPersonalBest, UserBestPlaysOnMap.prefixes);
-      aliasIfNeeded(oldPrefixes.leaderboard, ChatLeaderboard.prefixes);
-      aliasIfNeeded(oldPrefixes.mapLeaderboard, ChatLeaderboardOnMap.prefixes);
-      // special case for map because old version was not prefixed
-      (() => {
-        const serverArg = SERVER_PREFIX.unparse(OsuServer.Bancho);
-        const newPrefixArg = OWN_COMMAND_PREFIX(BeatmapInfo.prefixes).unparse(
-          BeatmapInfo.prefixes[0]
-        );
-        const pattern = 'map*';
-        const replacement = `${serverArg} ${newPrefixArg}`;
-        newAliases.aliases.push({
-          pattern: pattern,
-          replacement: replacement,
+        const deleteArgs = args.delete;
+        let actionCount = 0;
+        await this.aliases.save({
+          appUserId: appUserId,
+          aliases: [
+            ...(userAliases?.aliases.filter((_v, i) => {
+              const aliasNumber = i + 1;
+              if (
+                aliasNumber >= deleteArgs.deleteStart &&
+                aliasNumber <= deleteArgs.deleteEnd
+              ) {
+                actionCount += 1;
+                return false;
+              }
+              return true;
+            }) ?? []),
+          ],
         });
-      })();
-      await this.aliases.save(newAliases);
-      return {
-        action: 'add',
-        actionCount: newAliases.aliases.length,
-      };
-    }
-    throw Error(`Unknown ${this.internalName} command execution path`);
+        return {
+          action: 'delete',
+          actionCount: actionCount,
+        };
+      }
+      if (args.test !== undefined) {
+        let matchingAlias:
+          | {
+              pattern: string;
+              replacement: string;
+            }
+          | undefined = undefined;
+        for (const alias of userAliases?.aliases ?? []) {
+          if (this.aliasProcessor.match(args.test.testString, alias.pattern)) {
+            if (alias.pattern.length > (matchingAlias?.pattern.length ?? 0)) {
+              matchingAlias = alias;
+            }
+          }
+        }
+        if (matchingAlias === undefined) {
+          return {
+            testResult: 'Не найдено подходящего шаблона!',
+          };
+        }
+        return {
+          testResult: this.aliasProcessor.process(
+            args.test.testString,
+            matchingAlias.pattern,
+            matchingAlias.replacement
+          ),
+        };
+      }
+      if (args.legacy !== undefined) {
+        const oldPrefixes = {
+          nickname: 'n',
+          user: 'u',
+          recent: 'r',
+          personalBest: 't',
+          mapPersonalBest: 'c',
+          leaderboard: 'chat',
+          mapLeaderboard: 'lb',
+        };
+        const newAliases: AppUserCommandAliases = {
+          appUserId: appUserId,
+          aliases: [],
+        };
+        const aliasIfNeeded = (
+          oldPrefix: string,
+          newPrefixes: CommandPrefixes
+        ): void => {
+          if (!newPrefixes.matchIgnoringCase(oldPrefix)) {
+            const oldPrefixArg = OWN_COMMAND_PREFIX(
+              new CommandPrefixes(oldPrefix)
+            ).unparse(oldPrefix);
+            const newPrefixArg = OWN_COMMAND_PREFIX(
+              SetUsername.prefixes
+            ).unparse(newPrefixes[0]);
+            for (const server of ALL_OSU_SERVERS) {
+              const serverArg = SERVER_PREFIX.unparse(OsuServer[server]);
+              const pattern = `${serverArg} ${oldPrefixArg}*`;
+              const replacement = `${serverArg} ${newPrefixArg}`;
+              newAliases.aliases.push({
+                pattern: pattern,
+                replacement: replacement,
+              });
+            }
+          }
+        };
+        aliasIfNeeded(oldPrefixes.nickname, SetUsername.prefixes);
+        aliasIfNeeded(oldPrefixes.user, UserInfo.prefixes);
+        aliasIfNeeded(oldPrefixes.recent, UserRecentPlays.prefixes);
+        aliasIfNeeded(oldPrefixes.personalBest, UserBestPlays.prefixes);
+        aliasIfNeeded(oldPrefixes.mapPersonalBest, UserBestPlaysOnMap.prefixes);
+        aliasIfNeeded(oldPrefixes.leaderboard, ChatLeaderboard.prefixes);
+        aliasIfNeeded(
+          oldPrefixes.mapLeaderboard,
+          ChatLeaderboardOnMap.prefixes
+        );
+        // special case for map because old version was not prefixed
+        (() => {
+          const serverArg = SERVER_PREFIX.unparse(OsuServer.Bancho);
+          const newPrefixArg = OWN_COMMAND_PREFIX(BeatmapInfo.prefixes).unparse(
+            BeatmapInfo.prefixes[0]
+          );
+          const pattern = 'map*';
+          const replacement = `${serverArg} ${newPrefixArg}`;
+          newAliases.aliases.push({
+            pattern: pattern,
+            replacement: replacement,
+          });
+        })();
+        await this.aliases.save(newAliases);
+        return {
+          action: 'add',
+          actionCount: newAliases.aliases.length,
+        };
+      }
+      throw Error(`Unknown ${this.internalName} command execution path`);
+    })();
+    return MaybeDeferred.fromInstantPromise(valuePromise);
   }
 
-  createOutputMessage(params: AliasViewParams): Promise<TOutput> {
+  createOutputMessage(params: AliasViewParams): MaybeDeferred<TOutput> {
     const {aliases, action, actionCount: actionSuccess, testResult} = params;
     if (aliases !== undefined) {
       if (aliases === null) {
@@ -378,13 +386,15 @@ export abstract class Alias<TContext, TOutput> extends TextCommand<
 
   abstract createAliasesMessage(
     userAliases: AppUserCommandAliases
-  ): Promise<TOutput>;
-  abstract createNoAliasesMessage(): Promise<TOutput>;
-  abstract createAliasAddResultMessage(actionCount: number): Promise<TOutput>;
+  ): MaybeDeferred<TOutput>;
+  abstract createNoAliasesMessage(): MaybeDeferred<TOutput>;
+  abstract createAliasAddResultMessage(
+    actionCount: number
+  ): MaybeDeferred<TOutput>;
   abstract createAliasDeleteResultMessage(
     actionCount: number
-  ): Promise<TOutput>;
-  abstract createTestResultMessage(result: string): Promise<TOutput>;
+  ): MaybeDeferred<TOutput>;
+  abstract createTestResultMessage(result: string): MaybeDeferred<TOutput>;
 
   unparse(args: AliasExecutionArgs): string {
     const tokens = [this.COMMAND_PREFIX.unparse(this.prefixes[0])];

@@ -1,5 +1,6 @@
 /* eslint-disable no-irregular-whitespace */
 import {APP_CODE_NAME} from '../../../App';
+import {MaybeDeferred} from '../../../primitives/MaybeDeferred';
 import {
   Anouncements,
   AnouncementsExecutionArgs,
@@ -31,60 +32,60 @@ export class AnouncementsVk extends Anouncements<
     return this.matchText(command);
   }
 
-  async createAnouncementsMessage(
+  createAnouncementsMessage(
     anouncements: Anouncement[]
-  ): Promise<VkOutputMessage> {
+  ): MaybeDeferred<VkOutputMessage> {
     const text = anouncements.map(x => `${x.id}. ${x.description}`).join('\n');
-    return {
+    return MaybeDeferred.fromValue({
       text: text,
       attachment: undefined,
       buttons: undefined,
-    };
+    });
   }
 
-  async createNoAnouncementsMessage(): Promise<VkOutputMessage> {
+  createNoAnouncementsMessage(): MaybeDeferred<VkOutputMessage> {
     const text = 'Объявления отсутствуют!';
-    return {
+    return MaybeDeferred.fromValue({
       text: text,
       attachment: undefined,
       buttons: undefined,
-    };
+    });
   }
 
-  async createAnouncementCreateResultMessage(
+  createAnouncementCreateResultMessage(
     actionSuccess: boolean,
     id: number | undefined
-  ): Promise<VkOutputMessage> {
+  ): MaybeDeferred<VkOutputMessage> {
     const text = actionSuccess
       ? `Объявление создано (id: ${id})`
       : 'Не удалось создать объявление';
-    return {
+    return MaybeDeferred.fromValue({
       text: text,
       attachment: undefined,
       buttons: undefined,
-    };
+    });
   }
 
-  async createAnouncementExecutionMessage(
+  createAnouncementExecutionMessage(
     actionSuccess: boolean,
     executeChatCount: number
-  ): Promise<VkOutputMessage> {
+  ): MaybeDeferred<VkOutputMessage> {
     const text = actionSuccess
       ? `Объявление отправлено (чатов: ${executeChatCount})`
       : 'Объявление не найдено';
-    return {
+    return MaybeDeferred.fromValue({
       text: text,
       attachment: undefined,
       buttons: undefined,
-    };
+    });
   }
 
-  async createAnouncementEchoMessage(echo: string): Promise<VkOutputMessage> {
+  createAnouncementEchoMessage(echo: string): MaybeDeferred<VkOutputMessage> {
     const text = echo;
-    return {
+    return MaybeDeferred.fromValue({
       text: text,
       attachment: undefined,
       buttons: undefined,
-    };
+    });
   }
 }

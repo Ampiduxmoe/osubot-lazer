@@ -1,6 +1,7 @@
 /* eslint-disable no-irregular-whitespace */
 import {AttachmentType} from 'vk-io';
 import {APP_CODE_NAME} from '../../../App';
+import {MaybeDeferred} from '../../../primitives/MaybeDeferred';
 import {OsuServer} from '../../../primitives/OsuServer';
 import {
   BeatmapMenu,
@@ -40,17 +41,18 @@ export class BeatmapMenuVk extends BeatmapMenu<
     return this.matchText(command);
   }
 
-  async createMapMenuMessage(
+  createMapMenuMessage(
     server: OsuServer,
     beatmapId: number
-  ): Promise<VkOutputMessage> {
+  ): MaybeDeferred<VkOutputMessage> {
     const serverString = OsuServer[server];
-    return {
+    return MaybeDeferred.fromValue({
       text: `[Server: ${serverString}]`,
       attachment: undefined,
       buttons: this.createBeatmapButtons(server, beatmapId),
-    };
+    });
   }
+
   createBeatmapButtons(
     server: OsuServer,
     beatmapId: number

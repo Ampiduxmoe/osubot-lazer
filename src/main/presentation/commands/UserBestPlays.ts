@@ -1,6 +1,7 @@
 import {GetAppUserInfoUseCase} from '../../application/usecases/get_app_user_info/GetAppUserInfoUseCase';
 import {OsuUserBestPlays} from '../../application/usecases/get_user_best_plays/GetUserBestPlaysResponse';
 import {GetUserBestPlaysUseCase} from '../../application/usecases/get_user_best_plays/GetUserBestPlaysUseCase';
+import {MaybeDeferred} from '../../primitives/MaybeDeferred';
 import {ModPatternCollection} from '../../primitives/ModPatternCollection';
 import {clamp} from '../../primitives/Numbers';
 import {OsuRuleset} from '../../primitives/OsuRuleset';
@@ -113,86 +114,89 @@ export abstract class UserBestPlays<TContext, TOutput> extends TextCommand<
     });
   }
 
-  async process(
+  process(
     args: UserBestPlaysExecutionArgs,
     ctx: TContext
-  ): Promise<UserBestPlaysViewParams> {
-    let username = args.username;
-    let mode = args.mode;
-    if (username === undefined) {
-      const appUserInfoResponse = await this.getAppUserInfo.execute({
-        id: this.getTargetAppUserId(ctx, {canTargetOthersAsNonAdmin: true}),
-        server: args.server,
-      });
-      const boundUser = appUserInfoResponse.userInfo;
-      if (boundUser === undefined) {
-        return {
+  ): MaybeDeferred<UserBestPlaysViewParams> {
+    const valuePromise: Promise<UserBestPlaysViewParams> = (async () => {
+      let username = args.username;
+      let mode = args.mode;
+      if (username === undefined) {
+        const appUserInfoResponse = await this.getAppUserInfo.execute({
+          id: this.getTargetAppUserId(ctx, {canTargetOthersAsNonAdmin: true}),
           server: args.server,
-          mode: args.mode,
-          usernameInput: undefined,
-          bestPlays: undefined,
-        };
-      }
-      username = boundUser.username;
-      mode ??= boundUser.ruleset;
-    }
-    const startPosition = clamp(args.startPosition ?? 1, 1, 100);
-    let quantity: number;
-    if (args.startPosition === undefined) {
-      quantity = clamp(args.quantity ?? 3, 1, 10);
-    } else {
-      quantity = clamp(args.quantity ?? 1, 1, 10);
-    }
-    const modPatterns: ModPatternCollection = (() => {
-      if (args.modPatterns === undefined) {
-        return new ModPatternCollection();
-      }
-      if (args.modPatterns.strictMatch) {
-        return args.modPatterns.collection;
-      }
-      return args.modPatterns.collection
-        .allowLegacy()
-        .treatAsInterchangeable('DT', 'NC')
-        .treatAsInterchangeable('HT', 'DC');
-    })();
-    const bestPlaysResult = await this.getUserBestPlays.execute({
-      initiatorAppUserId: this.getInitiatorAppUserId(ctx),
-      server: args.server,
-      username: username,
-      ruleset: mode,
-      startPosition: startPosition,
-      quantity: quantity,
-      modPatterns: modPatterns,
-    });
-    if (bestPlaysResult.isFailure) {
-      const internalFailureReason = bestPlaysResult.failureReason!;
-      switch (internalFailureReason) {
-        case 'user not found':
+        });
+        const boundUser = appUserInfoResponse.userInfo;
+        if (boundUser === undefined) {
           return {
             server: args.server,
-            mode: mode,
-            usernameInput: args.username,
+            mode: args.mode,
+            usernameInput: undefined,
             bestPlays: undefined,
           };
+        }
+        username = boundUser.username;
+        mode ??= boundUser.ruleset;
       }
-    }
-    const bestPlays = bestPlaysResult.bestPlays!;
-    if (bestPlays.plays.length === 1) {
-      await this.saveLastSeenBeatmapId(
-        ctx,
-        args.server,
-        bestPlays.plays[0].beatmap.id
-      );
-    }
-    return {
-      server: args.server,
-      mode: bestPlaysResult.ruleset!,
-      usernameInput: args.username,
-      bestPlays: bestPlays,
-    };
+      const startPosition = clamp(args.startPosition ?? 1, 1, 100);
+      let quantity: number;
+      if (args.startPosition === undefined) {
+        quantity = clamp(args.quantity ?? 3, 1, 10);
+      } else {
+        quantity = clamp(args.quantity ?? 1, 1, 10);
+      }
+      const modPatterns: ModPatternCollection = (() => {
+        if (args.modPatterns === undefined) {
+          return new ModPatternCollection();
+        }
+        if (args.modPatterns.strictMatch) {
+          return args.modPatterns.collection;
+        }
+        return args.modPatterns.collection
+          .allowLegacy()
+          .treatAsInterchangeable('DT', 'NC')
+          .treatAsInterchangeable('HT', 'DC');
+      })();
+      const bestPlaysResult = await this.getUserBestPlays.execute({
+        initiatorAppUserId: this.getInitiatorAppUserId(ctx),
+        server: args.server,
+        username: username,
+        ruleset: mode,
+        startPosition: startPosition,
+        quantity: quantity,
+        modPatterns: modPatterns,
+      });
+      if (bestPlaysResult.isFailure) {
+        const internalFailureReason = bestPlaysResult.failureReason!;
+        switch (internalFailureReason) {
+          case 'user not found':
+            return {
+              server: args.server,
+              mode: mode,
+              usernameInput: args.username,
+              bestPlays: undefined,
+            };
+        }
+      }
+      const bestPlays = bestPlaysResult.bestPlays!;
+      if (bestPlays.plays.length === 1) {
+        await this.saveLastSeenBeatmapId(
+          ctx,
+          args.server,
+          bestPlays.plays[0].beatmap.id
+        );
+      }
+      return {
+        server: args.server,
+        mode: bestPlaysResult.ruleset!,
+        usernameInput: args.username,
+        bestPlays: bestPlays,
+      };
+    })();
+    return MaybeDeferred.fromFastPromise(valuePromise);
   }
 
-  createOutputMessage(params: UserBestPlaysViewParams): Promise<TOutput> {
+  createOutputMessage(params: UserBestPlaysViewParams): MaybeDeferred<TOutput> {
     const {server, mode, bestPlays} = params;
     if (bestPlays === undefined) {
       if (params.usernameInput === undefined) {
@@ -213,16 +217,18 @@ export abstract class UserBestPlays<TContext, TOutput> extends TextCommand<
     bestPlays: OsuUserBestPlays,
     server: OsuServer,
     mode: OsuRuleset
-  ): Promise<TOutput>;
+  ): MaybeDeferred<TOutput>;
   abstract createUserNotFoundMessage(
     server: OsuServer,
     usernameInput: string
-  ): Promise<TOutput>;
-  abstract createUsernameNotBoundMessage(server: OsuServer): Promise<TOutput>;
+  ): MaybeDeferred<TOutput>;
+  abstract createUsernameNotBoundMessage(
+    server: OsuServer
+  ): MaybeDeferred<TOutput>;
   abstract createNoBestPlaysMessage(
     server: OsuServer,
     mode: OsuRuleset
-  ): Promise<TOutput>;
+  ): MaybeDeferred<TOutput>;
 
   unparse(args: UserBestPlaysExecutionArgs): string {
     const tokens = [
