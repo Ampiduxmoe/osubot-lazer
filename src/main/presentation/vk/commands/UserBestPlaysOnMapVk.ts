@@ -125,7 +125,7 @@ export class UserBestPlaysOnMapVk extends UserBestPlaysOnMap<
           : '';
       const mapUrlShort = map.beatmap.url.replace('beatmaps', 'b');
       const coverAttachment = oneScore
-        ? await getOrDownloadCoverAttachment(map, this.vkBeatmapCovers)
+        ? await getOrDownloadCoverAttachment(server, map, this.vkBeatmapCovers)
         : null;
       const couldNotAttachCoverMessage =
         coverAttachment === undefined
@@ -417,10 +417,12 @@ function getScoreDateStringWithTime(date: Date): string {
 }
 
 async function getOrDownloadCoverAttachment(
+  server: OsuServer,
   mapInfo: OsuMap,
   coversRepository: VkBeatmapCoversRepository
 ): Promise<CoverAttachment> {
   const existingAttachment = await coversRepository.get({
+    server: server,
     beatmapsetId: mapInfo.beatmapset.id,
   });
   if (existingAttachment !== undefined) {
@@ -428,6 +430,7 @@ async function getOrDownloadCoverAttachment(
   }
   try {
     const newAttachment = await coversRepository.downloadAndSave(
+      server,
       mapInfo.beatmapset.id,
       mapInfo.beatmapset.coverUrl
     );

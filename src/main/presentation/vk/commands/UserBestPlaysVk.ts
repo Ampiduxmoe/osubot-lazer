@@ -70,6 +70,7 @@ export class UserBestPlaysVk extends UserBestPlays<
           : '';
       const coverAttachment = oneScore
         ? await getOrDownloadCoverAttachment(
+            server,
             bestPlays.plays[0],
             this.vkBeatmapCovers
           )
@@ -331,10 +332,12 @@ function getScoreDateString(date: Date): string {
 }
 
 async function getOrDownloadCoverAttachment(
+  server: OsuServer,
   playInfo: BestPlay,
   coversRepository: VkBeatmapCoversRepository
 ): Promise<CoverAttachment> {
   const existingAttachment = await coversRepository.get({
+    server: server,
     beatmapsetId: playInfo.beatmapset.id,
   });
   if (existingAttachment !== undefined) {
@@ -342,6 +345,7 @@ async function getOrDownloadCoverAttachment(
   }
   try {
     const newAttachment = await coversRepository.downloadAndSave(
+      server,
       playInfo.beatmapset.id,
       playInfo.beatmapset.coverUrl
     );

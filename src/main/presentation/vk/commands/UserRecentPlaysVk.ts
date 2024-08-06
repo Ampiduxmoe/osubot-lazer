@@ -100,6 +100,7 @@ export class UserRecentPlaysVk extends UserRecentPlays<
           : '';
       const coverAttachment = oneScore
         ? await getOrDownloadCoverAttachment(
+            server,
             recentPlays.plays[0],
             this.vkBeatmapCovers
           )
@@ -395,10 +396,12 @@ ${ppEstimationMark}${pp}pp　 ${mapUrlShort}
 type CoverAttachment = string | null | undefined;
 
 async function getOrDownloadCoverAttachment(
+  server: OsuServer,
   playInfo: OsuUserRecentPlay,
   coversRepository: VkBeatmapCoversRepository
 ): Promise<CoverAttachment> {
   const existingAttachment = await coversRepository.get({
+    server: server,
     beatmapsetId: playInfo.beatmapset.id,
   });
   if (existingAttachment !== undefined) {
@@ -406,6 +409,7 @@ async function getOrDownloadCoverAttachment(
   }
   try {
     const newAttachment = await coversRepository.downloadAndSave(
+      server,
       playInfo.beatmapset.id,
       playInfo.beatmapset.coverUrl
     );

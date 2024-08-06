@@ -1,11 +1,13 @@
-import {VkBeatmapCover, VkBeatmapCoverKey} from '../models/VkBeatmapCover';
-import {Repository} from '../../../data/repository/Repository';
-import {SqlDbTable} from '../../../data/persistence/db/SqlDbTable';
 import {SqlDb} from '../../../data/persistence/db/SqlDb';
+import {SqlDbTable} from '../../../data/persistence/db/SqlDbTable';
+import {Repository} from '../../../data/repository/Repository';
+import {OsuServer} from '../../../primitives/OsuServer';
+import {VkBeatmapCover, VkBeatmapCoverKey} from '../models/VkBeatmapCover';
 
 export interface VkBeatmapCoversRepository
   extends Repository<VkBeatmapCoverKey, VkBeatmapCover> {
   downloadAndSave(
+    server: OsuServer,
     beatmapsetId: number,
     url: string
   ): Promise<string | undefined>;
@@ -35,6 +37,7 @@ export class VkBeatmapCoversTable
   private selectModelFields = `
 
 SELECT
+  server,
   beatmapset_id as beatmapsetId,
   attachment
     
@@ -44,6 +47,7 @@ SELECT
     const query = `
 
 CREATE TABLE IF NOT EXISTS ${this.tableName} (
+  server INTEGER,
   beatmapset_id INTEGER,
   attachment TEXT
 )
@@ -58,23 +62,29 @@ CREATE TABLE IF NOT EXISTS ${this.tableName} (
 ${this.selectModelFields}
 FROM ${this.tableName}
 WHERE
+  server = ? AND
   beatmapset_id = ?
 LIMIT 1
 
     `.trim();
-    return await this.db.get(query, [key.beatmapsetId]);
+    return await this.db.get(query, [key.server, key.beatmapsetId]);
   }
 
   async add(value: VkBeatmapCover): Promise<void> {
     const query = `
 
 INSERT INTO ${this.tableName} (
+  server,
   beatmapset_id,
   attachment
 ) VALUES (?, ?)
 
     `.trim();
-    await this.db.run(query, [value.beatmapsetId, value.attachment]);
+    await this.db.run(query, [
+      value.server,
+      value.beatmapsetId,
+      value.attachment,
+    ]);
   }
 
   async update(value: VkBeatmapCover): Promise<void> {
@@ -83,11 +93,16 @@ INSERT INTO ${this.tableName} (
 UPDATE ${this.tableName}
 SET
   attachment = ?
-WHERE 
+WHERE
+  server = ? AND
   beatmapset_id = ?
 
     `.trim();
-    await this.db.run(query, [value.attachment, value.beatmapsetId]);
+    await this.db.run(query, [
+      value.attachment,
+      value.server,
+      value.beatmapsetId,
+    ]);
   }
 
   async delete(key: VkBeatmapCoverKey): Promise<void> {
@@ -95,13 +110,15 @@ WHERE
 
 DELETE FROM ${this.tableName}
 WHERE
+  server = ? AND
   beatmapset_id = ?
 
     `.trim();
-    await this.db.run(query, [key.beatmapsetId]);
+    await this.db.run(query, [key.server, key.beatmapsetId]);
   }
 
   async downloadAndSave(
+    server: OsuServer,
     beatmapsetId: number,
     url: string
   ): Promise<string | undefined> {
@@ -130,7 +147,11 @@ WHERE
       console.log(`Successfully uploaded cover ${beatmapsetId} to VK`);
     }
 
-    await this.add({beatmapsetId: beatmapsetId, attachment: attachment});
+    await this.add({
+      server: server,
+      beatmapsetId: beatmapsetId,
+      attachment: attachment,
+    });
     return attachment;
   }
 }

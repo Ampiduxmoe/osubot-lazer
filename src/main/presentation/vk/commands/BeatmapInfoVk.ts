@@ -71,6 +71,7 @@ export class BeatmapInfoVk extends BeatmapInfo<
   ): MaybeDeferred<VkOutputMessage> {
     const valuePromise: Promise<VkOutputMessage> = (async () => {
       const coverAttachment = await getOrDownloadCoverAttachment(
+        server,
         mapInfo,
         this.vkBeatmapCovers
       );
@@ -139,6 +140,7 @@ URL: ${mapUrlShort}${couldNotAttachCoverMessage}
         throw Error('Simulated stats should not be undefined');
       }
       const coverAttachment = await getOrDownloadCoverAttachment(
+        server,
         mapInfo,
         this.vkBeatmapCovers
       );
@@ -304,10 +306,12 @@ URL: ${mapUrlShort}${couldNotAttachCoverMessage}
 type CoverAttachment = string | null | undefined;
 
 async function getOrDownloadCoverAttachment(
+  server: OsuServer,
   mapInfo: MapInfo,
   coversRepository: VkBeatmapCoversRepository
 ): Promise<CoverAttachment> {
   const existingAttachment = await coversRepository.get({
+    server: server,
     beatmapsetId: mapInfo.beatmapset.id,
   });
   if (existingAttachment !== undefined) {
@@ -315,6 +319,7 @@ async function getOrDownloadCoverAttachment(
   }
   try {
     const newAttachment = await coversRepository.downloadAndSave(
+      server,
       mapInfo.beatmapset.id,
       mapInfo.beatmapset.coverUrl
     );
