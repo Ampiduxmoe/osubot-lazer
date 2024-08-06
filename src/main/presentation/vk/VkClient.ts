@@ -151,6 +151,12 @@ export class VkClient {
       }
       const outputMessage = await outputCreationWork.resultValue;
       if (!outputMessage.text && !outputMessage.attachment) {
+        if (replyMessagePromise !== undefined) {
+          const botMessage = await replyMessagePromise;
+          await botMessage.editMessage({message: 'Команда выполнена'});
+        } else {
+          ctx.reply('Команда выполнена');
+        }
         return true;
       }
       const text = outputMessage.text || '';

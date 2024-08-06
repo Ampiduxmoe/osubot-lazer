@@ -106,12 +106,12 @@ export class App {
     this.config = config;
     const isProd = isProduction({fallbackValue: true});
     if (isProd) {
-      console.log('Configuring as production configuration');
+      console.log('Initializing with production configuration');
       this.currentVkGroup = config.vk.group;
       this.appDb = new SqliteDb('osu.db');
       this.vkDb = new SqliteDb('vk.db');
     } else {
-      console.log('Configuring as development configuration');
+      console.log('Initializing with development configuration');
       this.currentVkGroup = config.vk.group_dev;
       this.appDb = new SqliteDb('osu_dev.db');
       this.vkDb = new SqliteDb('vk_dev.db');
@@ -811,7 +811,7 @@ export class App {
 }
 
 function isProduction({fallbackValue}: {fallbackValue: boolean}): boolean {
-  switch (process.env.NODE_ENV) {
+  switch (process.env.NODE_ENV?.toLowerCase()) {
     case 'development':
       return false;
     case 'production':

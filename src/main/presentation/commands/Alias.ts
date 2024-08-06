@@ -153,7 +153,10 @@ export abstract class Alias<TContext, TOutput> extends TextCommand<
         return fail;
       }
       for (const prefix of this.prefixes) {
-        if (pattern.toLowerCase().startsWith(prefix.toLowerCase())) {
+        // Try to prevent users from shooting themselves in the foot.
+        // The idea there is if you can delete your first alias,
+        // you can delete all of them one by one.
+        if (this.aliasProcessor.match(`${prefix} delete 1`, pattern)) {
           return fail;
         }
       }

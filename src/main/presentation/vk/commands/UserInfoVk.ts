@@ -55,7 +55,7 @@ export class UserInfoVk extends UserInfo<VkMessageContext, VkOutputMessage> {
 
     const text = `
 [Server: ${serverString}, Mode: ${modeString}]
-Player: ${username} (STD)
+Player: ${username}
 Rank: #${rankGlobal} (${countryCode} #${rankCountry})${maybePeakRankString}
 Playcount: ${playcount} (Lv${lvl})
 Playtime: ${playtimeDays}d ${playtimeHours}h ${playtimeMinutes}m
