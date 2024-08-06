@@ -6,7 +6,7 @@ It is inspired by [osubot by OctopuSSX](https://github.com/OctoDumb/osubot-old) 
 The way original bot was written does not really support easy expansion in the directions I want. For example addition of Telegram client, update of Performance Points calculation or implementation of something like "Top plays of the week" for chat groups is not feasible without rewriting most of the codebase. I have a lot of new features in mind, so it is in my best interest to build a more robust and maintainable bot from the ground up.
 
 # What's different
-Though it is still early in development, [bot](https://vk.com/club224713087) already has some notable changes and features you might be interested in if you used [the old one](https://vk.com/sosubot).
+Though [bot](https://vk.com/club224713087) is not quite finishied yet, it already has some notable changes and features you might be interested in if you used [the old one](https://vk.com/sosubot).
 ### Changes
 - Responses have less clutter and more alignment (important for lists like chat leaderboard on a map) and therefore are easier to read.
   
@@ -20,9 +20,10 @@ Though it is still early in development, [bot](https://vk.com/club224713087) alr
 
 
 - Score default sorting is by PP.
-- Responses to some commands have more information that is useful. An example of this is beatmapset/beatmap playcount and favourite count. Or if PP value is an estimation and was not actually achieved, it will be prefixed with `~`. Or a number of 50s and 100s on `l map X%` command. You get the idea.
+- Responses to some commands have more information that is useful. An example of this is beatmapset/beatmap playcount and favourite count. Or if PP value is an estimation and was not actually achieved, it will be prefixed with `~`. Or a number of 50s on `l map X%` command. You get the idea.
 - Performance Points calculation is more in line with current version of the game, done using official [performance calculation tool](https://github.com/ppy/osu-tools/tree/master/PerformanceCalculator).
-- Commands have names that are more structured. No more `compare` for just showing single play on specific map. Chat leaderboard is `l`/`lb`/`leaderboard`, chat leaderboard **on map** is `ml`/`mlb`/`mapleaderboard`. Your best plays is `p`/`pb`/`personalbest`, your best plays **on map** is `mp`/`mpb`/`mappersonalbest`. Same will go for future `top` and `maptop` commands to show global/country player ranking and ranking on a map. If you are not a fan of this and really want to use old naming you can just type `osubot-alias legacy`.
+- Commands have names that are more structured. No more `compare` for just showing single play on specific map. Chat leaderboard is `l`/`lb`/`leaderboard`, chat leaderboard **on map** is `ml`/`mlb`/`mapleaderboard`. Your best plays are `p`/`pb`/`personalbest`, your best plays **on map** are `mp`/`mpb`/`mappersonalbest`. Same will go for future `top` and `maptop` commands to show global/country player ranking and ranking on a map. If you are not a fan of this and really want to use old naming you can just type `osubot-alias legacy`.
+- By default, if you write DT (or NC) in your mod filter for any command, it will also show NC (or DT) scores. Same goes for HT and DC. Additionally, CL mod presence is allowed, for example writing +NM will give you both NM and CL-only scores. If you want the bot to match your filter strictly, add `!` at the end (like `+(HD)HR!`)
 
 ### New features
 - `osubot-help` command that shows all available commands or a detailed explanation on selected command.
@@ -32,9 +33,16 @@ Though it is still early in development, [bot](https://vk.com/club224713087) alr
 - `rp` (`recentpass`) command. Same as `r`/`recent`, but shows passes only.
 - Ability to specify how many scores to show through a `:number` argument. For example `l personalbest mrekk +dt \2 :5` will show up to five DT-only top scores from [mrekk's profile](https://osu.ppy.sh/users/7562902/osu#top_ranks) starting from the second DT score.
 - Ability to specify mods on your `r`/`recent` (including new `rp`/`recentpass`) commands. `l r :10 +hdhr` will show 10 of your latest HDHR scores using short score description.
-- Ability to specify optional mods. If you type `+(hd)dt` as a mod filter you will get both HD and HDDT scores.
+- Advanced mod filter:
+  - You can specify optional mods with `()`. If you type `+(hd)dt` as a mod filter you will get both HD and HDDT scores. NOTE: `(hdhr)dt` and `(hd)(hr)dt` are not the same!
+  - You can exclude mods from your search with `{}`. If you type `+{clnm}`, you will see all scores that do not have CL mod while also not being NM scores.
+  - You can specify 'only one of' mod group with `[]`. `+HD[HRDT]` will ensure you get either HDHR or HDDT scores.
+  - You can specify multiple mod patterns with `,`. If you type `+dt,(hd)hr`, bot will show you DT, HR and HDHR scores.
+  - You can negate mod pattern with `^`. If you type `+nc,^(hd)dt`, you will get NC scores AND everything except HD and HDDT scores.
+  - You can negate a whole filter when starting with `-` instead of `+`. `-{hr}` can be translated as `don't show scores without hr`, so essentially it is a filter for any score with HR in it.
 - You don't need to send a map link in chat before your actual command to select the map. `l MapPersonalBest https://osu.ppy.sh/beatmapsets/6180#osu/28578` or `l mp *28578` will work fine.
-- If for some reason you don't want to switch a language when you chat and use the bot, it is fine. `д к эцщкые рк здфнукэ Ж5` will be treated as `l r 'worst hr player' :5`. Works in reverse too, for example if you have aliases in a different language. 
+- If for some reason you don't want to switch a language when you chat and use the bot, it is fine. `д к эцщкые рк здфнукэ Ж5` will be treated as `l r 'worst hr player' :5`. Works in reverse too, for example if you have aliases in a different language.
+- You can contact bot admin by starting your message with bot mention (for private messages you need to manually type `[club<group_id>|<link text>] <your question>`). You won't be able to send anything again until admin replies to your message.
  
 ### What's not there yet
 Most notably:
@@ -52,7 +60,7 @@ If you are curious about some of the more technical differences, here are main t
 - Current version is trying to follow Clean Architecture principles as closely as reasonably possible for current scope of the project. This should make it easy to add any feature later: be it a Telegram support or something like an admin web interface.
 - For official server commands bot now uses [API v2](https://osu.ppy.sh/docs/index.html#api-versions) exclusively. This is what allows bot to see [lazer](https://osu.ppy.sh/wiki/en/Help_centre/Upgrading_to_lazer) scores.
 - Bot also uses `x-api-version` of 20220705 to be able to see new mod options (like DT speed rate adjust) from [lazer client](https://osu.ppy.sh/wiki/en/Help_centre/Upgrading_to_lazer) scores.
-- Performance Points calculation is delegated to an external endpoint ([repo](https://github.com/Ampiduxmoe/osutools-simulate-wrapper)) which wraps [official calculation tool](https://github.com/ppy/osu-tools/tree/master/PerformanceCalculator) to better handle performance reworks. Migration to [rosu-pp](https://github.com/MaxOhn/rosu-pp) as a primary calculation tool is planned (osutools can still be useful, e.g. to calculate profiles for pending reworks).
+- Performance Points calculation is delegated to an external endpoint ([repo](https://github.com/Ampiduxmoe/osutools-simulate-wrapper)) which wraps [official calculation tool](https://github.com/ppy/osu-tools/tree/master/PerformanceCalculator) to better handle performance reworks. Migration to [rosu-pp](https://github.com/MaxOhn/rosu-pp) as a primary calculation tool is planned (osutools can still be useful in the future, e.g. to calculate profiles for pending reworks).
 
 # How to run
 1. Install [node](https://nodejs.org/) v20.11.1
