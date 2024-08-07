@@ -34,7 +34,7 @@ Though [bot](https://vk.com/club224713087) is not quite finishied yet, it alread
 - Ability to specify how many scores to show through a `:number` argument. For example `l personalbest mrekk +dt \2 :5` will show up to five DT-only top scores from [mrekk's profile](https://osu.ppy.sh/users/7562902/osu#top_ranks) starting from the second DT score.
 - Ability to specify mods on your `r`/`recent` (including new `rp`/`recentpass`) commands. `l r :10 +hdhr` will show 10 of your latest HDHR scores using short score description.
 - Advanced mod filter:
-  - You can specify optional mods with `()`. If you type `+(hd)dt` as a mod filter you will get both HD and HDDT scores. NOTE: `(hdhr)dt` and `(hd)(hr)dt` are not the same!
+  - You can specify optional mods with `()`. If you type `+(hd)dt` as a mod filter you will get both DT and HDDT scores. NOTE: `(hdhr)dt` and `(hd)(hr)dt` are not the same!
   - You can exclude mods from your search with `{}`. If you type `+{clnm}`, you will see all scores that do not have CL mod while also not being NM scores.
   - You can specify 'only one of' mod group with `[]`. `+HD[HRDT]` will ensure you get either HDHR or HDDT scores.
   - You can specify multiple mod patterns with `,`. If you type `+dt,(hd)hr`, bot will show you DT, HR and HDHR scores.
