@@ -77,7 +77,7 @@ INSERT INTO ${this.tableName} (
   server,
   beatmapset_id,
   attachment
-) VALUES (?, ?)
+) VALUES (?, ?, ?)
 
     `.trim();
     await this.db.run(query, [
