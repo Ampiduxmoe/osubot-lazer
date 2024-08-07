@@ -37,7 +37,8 @@ export abstract class Alias<TContext, TOutput> extends TextCommand<
   shortDescription = 'управление алиасами';
   longDescription =
     'Позволяет отобразить/добавить/удалить/протестировать ваши личные синонимы для команд бота';
-  notice = undefined;
+  notice =
+    'ЕСЛИ ВЫ ДОБАВЛЯЕТЕ АЛИАС И ВАШ ПАТТЕРН ИЛИ ЗАМЕНА СОДЕРЖАТ ПРОБЕЛЫ, УКАЗЫВАЙТЕ КАЖДЫЙ ИЗ НИХ В КАВЫЧКАХ';
 
   static readonly maximumAliases: number = 20;
 
