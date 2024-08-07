@@ -65,7 +65,7 @@ export abstract class ContactAdmin<
       this.commandStructure.map(e => e.argument)
     );
     const mention = argsProcessor.use(this.mentionArgument).at(0).extract();
-    if (mention === undefined) {
+    if (mention === undefined || !this.isBotMention(mention)) {
       return fail;
     }
     if (argsProcessor.remainingTokens.length === 0) {
