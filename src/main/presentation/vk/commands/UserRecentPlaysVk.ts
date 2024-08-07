@@ -155,7 +155,7 @@ ${couldNotGetSomeStatsMessage}${couldNotAttachCoverMessage}
       ];
     })();
 
-    const absPos = `\\${play.absolutePosition}`;
+    const absPos = `${play.absolutePosition}`;
     const {artist, title} = mapset;
     const diffname = map.difficultyName;
     const mapperName = mapset.creator;
@@ -248,7 +248,7 @@ Beatmap: ${mapUrlShort}
         SettingsDefaults.HT.speedChange;
     }
 
-    const absPos = `\\${play.absolutePosition}`;
+    const absPos = `${play.absolutePosition}`;
     const {title} = mapset;
     const diffname = map.difficultyName;
     const sr = play.beatmap.estimatedStarRating?.toFixed(2) ?? '—';

@@ -69,7 +69,7 @@ ${missingUsernamesMessage}
     const pp = isNaN(user.pp) ? '—' : user.pp.toFixed(0);
     return `
 ${pos}. ${user.username}
-　 ${acc}%　${pp}pp　#${rankGlobal}
+${acc}%　${pp}pp　#${rankGlobal}
     `.trim();
   }
 

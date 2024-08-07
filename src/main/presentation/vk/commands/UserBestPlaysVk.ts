@@ -100,7 +100,7 @@ ${couldNotGetSomeStatsMessage}${couldNotAttachCoverMessage}
   verboseScoreDescription(play: BestPlay): string {
     const map = play.beatmap;
     const mapset = play.beatmapset;
-    const absPos = `\\${play.absolutePosition}`;
+    const absPos = `${play.absolutePosition}`;
     const {artist, title} = mapset;
     const diffname = map.difficultyName;
     const mapperName = mapset.creator;
@@ -157,7 +157,7 @@ Beatmap: ${mapUrlShort}
   defaultScoreDescription(play: BestPlay): string {
     const map = play.beatmap;
     const mapset = play.beatmapset;
-    const absPos = `\\${play.absolutePosition}`;
+    const absPos = `${play.absolutePosition}`;
     const {title} = mapset;
     const diffname = map.difficultyName;
     const lengthString = (() => {
@@ -203,7 +203,7 @@ ${mapUrlShort}
   shortScoreDescription(play: BestPlay): string {
     const map = play.beatmap;
     const mapset = play.beatmapset;
-    const absPos = `\\${play.absolutePosition}`;
+    const absPos = `${play.absolutePosition}`;
     const {title} = mapset;
     const diffname = map.difficultyName;
     const sr = play.beatmap.estimatedStarRating?.toFixed(2) ?? '—';
