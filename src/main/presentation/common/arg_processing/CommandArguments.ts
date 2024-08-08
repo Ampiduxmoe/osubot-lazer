@@ -895,26 +895,26 @@ export const BEATMAP_ID: CommandArgument<number> = (() => {
   const integerArg = INTEGER('', '', 0, 1e9);
   const beatmapLinkArg = BEATMAP_LINK;
   return {
-    displayName: '*ид_карты|ссылка',
+    displayName: '#ид_карты|ссылка',
     description: 'ID карты или ссылка на карту (не мапсет!)',
     get usageExample(): string {
       const mapIdStr = integerArg.usageExample;
-      return pickRandom(['*' + mapIdStr, beatmapLinkArg.usageExample]);
+      return pickRandom(['#' + mapIdStr, beatmapLinkArg.usageExample]);
     },
     match: function (token: string): boolean {
-      if (token.startsWith('*')) {
+      if (token.startsWith('#')) {
         return integerArg.match(token.substring(1));
       }
       return beatmapLinkArg.match(token);
     },
     parse: function (token: string): number {
-      if (token.startsWith('*')) {
+      if (token.startsWith('#')) {
         return integerArg.parse(token.substring(1));
       }
       return beatmapLinkArg.parse(token).id;
     },
     unparse: function (value: number): string {
-      return '*' + value;
+      return '#' + value;
     },
   };
 })();
