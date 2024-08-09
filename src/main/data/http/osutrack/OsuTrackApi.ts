@@ -19,7 +19,7 @@ export class OsuTrackApi {
       playcountChange: rawResponse.playcount,
       rankChange: rawResponse.pp_rank,
       ppChange: rawResponse.pp_raw,
-      accuracyChange: rawResponse.accuracy / 1000,
+      accuracyChange: rawResponse.accuracy,
       newHighscores: rawResponse.newhs.map(s => ({
         beatmapId: parseInt(s.beatmap_id),
         pp: parseFloat(s.pp),

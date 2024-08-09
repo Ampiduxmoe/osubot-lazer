@@ -44,13 +44,13 @@ export class UserUpdateVk extends UserUpdate<
       playcountChange,
       newHighscores,
     } = userUpdate;
-    const rankChangeStr = rankChange < 0 ? `-${rankChange}` : `+${rankChange}`;
+    const rankChangeStr = rankChange < 0 ? `${rankChange}` : `+${rankChange}`;
     const ppChangeStr =
-      ppChange < 0 ? `-${ppChange.toFixed(2)}` : `+${ppChange.toFixed(2)}`;
+      ppChange < 0 ? `${ppChange.toFixed(2)}` : `+${ppChange.toFixed(2)}`;
     const accuracyChangeStr =
       accuracyChange < 0
-        ? `-${ppChange.toFixed(2)}`
-        : `+${ppChange.toFixed(2)}`;
+        ? `${accuracyChange.toFixed(2)}`
+        : `+${accuracyChange.toFixed(2)}`;
     const highscoresText =
       newHighscores.length === 0
         ? ''
