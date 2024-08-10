@@ -33,7 +33,7 @@ export class ContactAdminVk extends ContactAdmin<
     super(
       textProcessor,
       VK_MENTION,
-      mention => mention.id === groupId,
+      mention => mention.type === 'group' && mention.id === groupId,
       getInitiatorAppUserId,
       getMessageId,
       forwardToAdmin,
