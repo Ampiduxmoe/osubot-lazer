@@ -14,7 +14,17 @@ import {ModAcronym} from '../../primitives/ModAcronym';
 
 export class ScoreSimulationsDaoImpl implements ScoreSimulationsDao {
   private apiHealthCheckJob: NodeJS.Timeout | undefined = undefined;
-  private isApiAvailable = true;
+  private _isApiAvailable = true;
+  private get isApiAvailable() {
+    return this._isApiAvailable;
+  }
+  private set isApiAvailable(value: boolean) {
+    const prevValue = this._isApiAvailable;
+    if (value !== prevValue) {
+      this._isApiAvailable = value;
+      console.log(`Score simulation API became ${value ? '' : 'un'}available`);
+    }
+  }
 
   private api: ScoreSimulationApi;
   constructor(api: ScoreSimulationApi) {
