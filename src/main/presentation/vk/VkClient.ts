@@ -1,3 +1,4 @@
+import {randomUUID} from 'crypto';
 import {Keyboard, KeyboardBuilder, VK} from 'vk-io';
 import {APP_CODE_NAME} from '../../App';
 import {CalculationType} from '../../primitives/MaybeDeferred';
@@ -64,6 +65,15 @@ export class VkClient {
   }
 
   private async process(ctx: VkMessageContext): Promise<void> {
+    if (ctx.messagePayload?.target === APP_CODE_NAME) {
+      if (ctx.messagePayload.switchPage !== undefined) {
+        const messageKey: string = ctx.messagePayload.switchPage;
+        const targetIndex: number = ctx.messagePayload.targetIndex;
+        if (typeof messageKey === 'string' && typeof targetIndex === 'number') {
+          this.paginatedMessages[messageKey]?.goTo(targetIndex);
+        }
+      }
+    }
     const allLayouts = [this.kbLayouts.en, this.kbLayouts.ru];
     for (const layout of allLayouts) {
       const ctxCopy = Object.assign({}, ctx);
@@ -150,6 +160,10 @@ export class VkClient {
         }
       }
       const outputMessage = await outputCreationWork.resultValue;
+      if (outputMessage.pagination !== undefined) {
+        await this.replyWithPagination(ctx, replyMessagePromise, outputMessage);
+        return true;
+      }
       if (!outputMessage.text && !outputMessage.attachment) {
         if (replyMessagePromise !== undefined) {
           const botMessage = await replyMessagePromise;
@@ -159,7 +173,7 @@ export class VkClient {
         }
         return true;
       }
-      const text = outputMessage.text || '';
+      const text = outputMessage.text ?? '';
       const attachment = outputMessage.attachment;
       const buttons = outputMessage.buttons;
       const keyboard = buttons && this.createKeyboard(buttons);
@@ -206,5 +220,154 @@ export class VkClient {
       keyboard.row();
     }
     return keyboard;
+  }
+
+  private paginatedMessages: {
+    [key: string]: {
+      peerId: number;
+      goTo: (index: number) => void;
+      onExpire: () => void;
+    };
+  } = {};
+  private async replyWithPagination(
+    ctx: VkMessageContext,
+    replyMessagePromise: Promise<VkMessageContext> | undefined,
+    outputMessage: VkOutputMessage
+  ): Promise<void> {
+    for (const paginatedMessage of Object.values(this.paginatedMessages)) {
+      if (paginatedMessage.peerId === ctx.peerId) {
+        paginatedMessage.onExpire();
+        break;
+      }
+    }
+    const pagination = outputMessage.pagination!;
+    type DisplayMessage = {
+      text: string | undefined;
+      attachment: string | undefined;
+      keyboard: KeyboardBuilder | undefined;
+    };
+    const createMessage: (
+      targetIndex: number,
+      paginationEnabled: boolean,
+      messageKey: string
+    ) => DisplayMessage | undefined = (i, paginationEnabled, messageKey) => {
+      const content = pagination.contents[i];
+      if (content === undefined) {
+        return;
+      }
+      const text = content.text ?? '';
+      const attachment = content.attachment;
+      const buttons = content.buttons ?? [];
+      const keyboard = Keyboard.builder().inline(true);
+      const buttonPrevText = pagination.buttonText(i, i - 1);
+      const buttonNextText = pagination.buttonText(i, i + 1);
+      if (
+        paginationEnabled &&
+        (buttonPrevText !== undefined || buttonNextText !== undefined)
+      ) {
+        if (buttonPrevText !== undefined) {
+          keyboard.callbackButton({
+            label:
+              buttonPrevText.length > 40
+                ? buttonPrevText.substring(0, 37) + '...'
+                : buttonPrevText,
+            payload: {
+              target: APP_CODE_NAME,
+              switchPage: {
+                messageKey: messageKey,
+                targetIndex: i - 1,
+              },
+            },
+          });
+        }
+        if (buttonNextText !== undefined) {
+          keyboard.callbackButton({
+            label:
+              buttonNextText.length > 40
+                ? buttonNextText.substring(0, 37) + '...'
+                : buttonNextText,
+            payload: {
+              target: APP_CODE_NAME,
+              switchPage: {
+                messageKey: messageKey,
+                targetIndex: i + 1,
+              },
+            },
+          });
+        }
+        keyboard.row();
+      }
+      for (const row of buttons) {
+        for (const button of row) {
+          keyboard.textButton({
+            label:
+              button.text.length > 40
+                ? button.text.substring(0, 37) + '...'
+                : button.text,
+            payload: {
+              target: APP_CODE_NAME,
+              command: button.command,
+            },
+          });
+        }
+        keyboard.row();
+      }
+      return {
+        text: text,
+        attachment: attachment,
+        keyboard: keyboard,
+      };
+    };
+    let lastTargetIndex = pagination.startingIndex;
+    const messageKey = randomUUID();
+    const botMessageCtx = await (async () => {
+      const firstMessage = createMessage(
+        pagination.startingIndex,
+        true,
+        messageKey
+      );
+      if (firstMessage === undefined) {
+        throw Error('Could not create first page of the message');
+      }
+      const text = firstMessage.text ?? '';
+      const attachment = firstMessage.attachment;
+      const keyboard = firstMessage.keyboard;
+      if (replyMessagePromise !== undefined) {
+        const botMessage = await replyMessagePromise;
+        await botMessage.editMessage({
+          message: text,
+          attachment,
+          keyboard,
+        });
+        return botMessage;
+      } else {
+        return await ctx.reply(text, {attachment, keyboard});
+      }
+    })();
+    this.paginatedMessages[messageKey] = {
+      peerId: ctx.peerId,
+      goTo: index => {
+        const targetMessage = createMessage(index, true, messageKey);
+        if (targetMessage === undefined) {
+          return;
+        }
+        const text = targetMessage.text ?? '';
+        const attachment = targetMessage.attachment;
+        const keyboard = targetMessage.keyboard;
+        botMessageCtx.editMessage({message: text, attachment, keyboard});
+        lastTargetIndex = index;
+      },
+      onExpire: () => {
+        const targetMessage = createMessage(lastTargetIndex, false, messageKey);
+        if (targetMessage === undefined) {
+          return;
+        }
+        const text = targetMessage.text ?? '';
+        const attachment = targetMessage.attachment;
+        const keyboard = targetMessage.keyboard;
+        botMessageCtx.editMessage({message: text, attachment, keyboard});
+        delete this.paginatedMessages[messageKey];
+      },
+    };
   }
 }

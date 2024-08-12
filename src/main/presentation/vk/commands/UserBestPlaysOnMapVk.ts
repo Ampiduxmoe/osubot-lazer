@@ -26,7 +26,11 @@ import {TextProcessor} from '../../common/arg_processing/TextProcessor';
 import {CommandMatchResult} from '../../common/CommandMatchResult';
 import {VkBeatmapCoversRepository} from '../../data/repositories/VkBeatmapCoversRepository';
 import {VkMessageContext} from '../VkMessageContext';
-import {VkOutputMessage, VkOutputMessageButton} from '../VkOutputMessage';
+import {
+  VkOutputMessage,
+  VkOutputMessageButton,
+  VkOutputMessagePageContent,
+} from '../VkOutputMessage';
 import {ChatLeaderboardOnMapVk} from './ChatLeaderboardOnMapVk';
 
 export class UserBestPlaysOnMapVk extends UserBestPlaysOnMap<
@@ -76,62 +80,135 @@ export class UserBestPlaysOnMapVk extends UserBestPlaysOnMap<
   createMapPlaysMessage(
     map: OsuMap,
     mapPlays: OsuMapUserPlay[],
+    quantity: number,
     server: OsuServer,
     mode: OsuRuleset,
     username: string
   ): MaybeDeferred<VkOutputMessage> {
     const valuePromise: Promise<VkOutputMessage> = (async () => {
-      const serverString = OsuServer[server];
-      const modeString = OsuRuleset[mode];
-      const {artist, title} = map.beatmapset;
-      const diffname = map.beatmap.difficultyName;
-      const mapperName = map.beatmapset.creator;
-      const mapStatus = map.beatmapset.status;
-      const [lengthString, drainString] = (() => {
-        const totalLength = new Timespan().addSeconds(map.beatmap.totalLength);
-        const z0 = totalLength.minutes <= 9 ? '0' : '';
-        const z1 = totalLength.seconds <= 9 ? '0' : '';
-        const drainLength = new Timespan().addSeconds(map.beatmap.drainLength);
-        const z2 = drainLength.minutes <= 9 ? '0' : '';
-        const z3 = drainLength.seconds <= 9 ? '0' : '';
-        const lengthString = `${z0}${totalLength.minutes}:${z1}${totalLength.seconds}`;
-        const drainString = `${z2}${drainLength.minutes}:${z3}${drainLength.seconds}`;
-        return [lengthString, drainString];
-      })();
-      const bpm = round(map.beatmap.bpm, 2);
-      const sr = map.beatmap.estimatedStarRating?.toFixed(2) ?? '—';
-      const ar = round(map.beatmap.ar, 2);
-      const cs = round(map.beatmap.cs, 2);
-      const od = round(map.beatmap.od, 2);
-      const hp = round(map.beatmap.hp, 2);
-      const fewScores = mapPlays.length <= 5;
-      const oneScore = mapPlays.length === 1;
-      const maxCombo = map.beatmap.maxCombo;
-      const scoresString = oneScore ? 'Лучший скор' : 'Лучшие скоры';
-      const maxComboString = oneScore ? '' : `\nMax combo: ${maxCombo}x`;
-      const scoresText = mapPlays
-        .map(p =>
-          fewScores
-            ? oneScore
-              ? this.verboseScoreDescription(p, maxCombo)
-              : this.normalScoreDescription(p)
-            : this.shortScoreDescription(p)
-        )
-        .join(fewScores ? '\n' : '\n');
-      const couldNotGetSomeStatsMessage =
-        mapPlays.find(play => play.pp.estimatedValue === undefined) !==
-        undefined
-          ? '\n(Не удалось получить часть статистики)'
-          : '';
-      const mapUrlShort = map.beatmap.url.replace('beatmaps', 'b');
+      const oneScore = quantity === 1;
       const coverAttachment = oneScore
         ? await getOrDownloadCoverAttachment(server, map, this.vkBeatmapCovers)
         : null;
+      const attachment = coverAttachment ?? undefined;
+      const buttons = oneScore
+        ? this.createBeatmapButtons(server, map.beatmap.id)
+        : [];
       const couldNotAttachCoverMessage =
         coverAttachment === undefined
           ? '\n\nБГ карты прикрепить не удалось 😭'
           : '';
-      const text = `
+      if (quantity >= mapPlays.length) {
+        const text = this.createMapPlaysText(
+          map,
+          mapPlays,
+          mapPlays.length,
+          server,
+          mode,
+          username
+        );
+        const fullText = `${text}${couldNotAttachCoverMessage}`;
+        return {
+          text: fullText,
+          attachment: attachment,
+          buttons: buttons,
+        };
+      }
+      const playsChunks: OsuMapUserPlay[][] = [];
+      for (let i = 0; i < mapPlays.length; i += quantity) {
+        playsChunks.push(mapPlays.slice(i, i + quantity));
+      }
+      const pageContents: VkOutputMessagePageContent[] = playsChunks.map(
+        chunk => {
+          const text = this.createMapPlaysText(
+            map,
+            chunk,
+            quantity,
+            server,
+            mode,
+            username
+          );
+          const fullText = `${text}${couldNotAttachCoverMessage}`;
+          return {
+            text: fullText,
+            attachment: attachment,
+            buttons: buttons,
+          };
+        }
+      );
+      return {
+        text: undefined,
+        attachment: undefined,
+        buttons: undefined,
+        pagination: {
+          contents: pageContents,
+          startingIndex: 0,
+          buttonText: (currentIndex: number, targetIndex: number) => {
+            if (targetIndex < 0 || targetIndex >= mapPlays.length) {
+              return undefined;
+            }
+            if (targetIndex > currentIndex) {
+              return `След. стр. (${targetIndex + 1}/${mapPlays.length})`;
+            }
+            return `Пред. стр. (${targetIndex + 1}/${mapPlays.length})`;
+          },
+        },
+      };
+    })();
+    return MaybeDeferred.fromFastPromise(valuePromise);
+  }
+
+  createMapPlaysText(
+    map: OsuMap,
+    mapPlays: OsuMapUserPlay[],
+    targetQuantity: number,
+    server: OsuServer,
+    mode: OsuRuleset,
+    username: string
+  ): string {
+    const serverString = OsuServer[server];
+    const modeString = OsuRuleset[mode];
+    const {artist, title} = map.beatmapset;
+    const diffname = map.beatmap.difficultyName;
+    const mapperName = map.beatmapset.creator;
+    const mapStatus = map.beatmapset.status;
+    const [lengthString, drainString] = (() => {
+      const totalLength = new Timespan().addSeconds(map.beatmap.totalLength);
+      const z0 = totalLength.minutes <= 9 ? '0' : '';
+      const z1 = totalLength.seconds <= 9 ? '0' : '';
+      const drainLength = new Timespan().addSeconds(map.beatmap.drainLength);
+      const z2 = drainLength.minutes <= 9 ? '0' : '';
+      const z3 = drainLength.seconds <= 9 ? '0' : '';
+      const lengthString = `${z0}${totalLength.minutes}:${z1}${totalLength.seconds}`;
+      const drainString = `${z2}${drainLength.minutes}:${z3}${drainLength.seconds}`;
+      return [lengthString, drainString];
+    })();
+    const bpm = round(map.beatmap.bpm, 2);
+    const sr = map.beatmap.estimatedStarRating?.toFixed(2) ?? '—';
+    const ar = round(map.beatmap.ar, 2);
+    const cs = round(map.beatmap.cs, 2);
+    const od = round(map.beatmap.od, 2);
+    const hp = round(map.beatmap.hp, 2);
+    const fewScores = targetQuantity <= 5;
+    const oneScore = targetQuantity === 1;
+    const maxCombo = map.beatmap.maxCombo;
+    const scoresString = oneScore ? 'Лучший скор' : 'Лучшие скоры';
+    const maxComboString = oneScore ? '' : `\nMax combo: ${maxCombo}x`;
+    const scoresText = mapPlays
+      .map(p =>
+        fewScores
+          ? oneScore
+            ? this.verboseScoreDescription(p, maxCombo)
+            : this.normalScoreDescription(p)
+          : this.shortScoreDescription(p)
+      )
+      .join(fewScores ? '\n' : '\n');
+    const couldNotGetSomeStatsMessage =
+      mapPlays.find(play => play.pp.estimatedValue === undefined) !== undefined
+        ? '\n(Не удалось получить часть статистики)'
+        : '';
+    const mapUrlShort = map.beatmap.url.replace('beatmaps', 'b');
+    const text = `
 [Server: ${serverString}, Mode: ${modeString}]
 ${scoresString} ${username} на карте
 
@@ -141,17 +218,9 @@ AR: ${ar}　CS: ${cs}　OD: ${od}　HP: ${hp}${maxComboString}
 ${mapUrlShort}
 
 ${scoresText}
-${couldNotGetSomeStatsMessage}${couldNotAttachCoverMessage}
-      `.trim();
-      return {
-        text: text,
-        attachment: coverAttachment ?? undefined,
-        buttons: oneScore
-          ? this.createBeatmapButtons(server, map.beatmap.id)
-          : [],
-      };
-    })();
-    return MaybeDeferred.fromFastPromise(valuePromise);
+${couldNotGetSomeStatsMessage}
+    `.trim();
+    return text;
   }
 
   verboseScoreDescription(play: OsuMapUserPlay, mapMaxCombo: number): string {

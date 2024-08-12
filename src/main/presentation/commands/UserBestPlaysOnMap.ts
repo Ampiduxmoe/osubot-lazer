@@ -145,7 +145,7 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
           mode: undefined,
           map: undefined,
           plays: undefined,
-          startPosition: undefined,
+          quantity: undefined,
         };
       }
       const beatmapId: number | undefined = await (async () => {
@@ -167,7 +167,7 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
           mode: undefined,
           map: undefined,
           plays: undefined,
-          startPosition: undefined,
+          quantity: undefined,
         };
       }
       const modPatterns: ModPatternCollection = (() => {
@@ -188,7 +188,7 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
         beatmapId: beatmapId,
         usernames: [username],
         startPosition: Math.max(args.startPosition ?? 1, 1),
-        quantityPerUser: clamp(args.quantity ?? 1, 1, 10),
+        quantityPerUser: clamp(args.quantity ?? 10, 1, 10),
         modPatterns: modPatterns,
       });
       if (leaderboardResponse.failureReason !== undefined) {
@@ -202,7 +202,7 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
               mode: undefined,
               map: undefined,
               plays: undefined,
-              startPosition: undefined,
+              quantity: undefined,
             };
         }
       }
@@ -215,7 +215,7 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
           mode: leaderboardResponse.ruleset!,
           map: leaderboardResponse.map!,
           plays: undefined,
-          startPosition: undefined,
+          quantity: undefined,
         };
       }
       const mapPlays =
@@ -223,7 +223,7 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
           ? leaderboardResponse.mapPlays![0].plays.slice(0, args.startPosition)
           : leaderboardResponse.mapPlays![0].plays.slice(
               0,
-              (args.startPosition ?? 1) + (args.quantity ?? 1) - 1
+              (args.startPosition ?? 1) + (args.quantity ?? 10) - 1
             );
       if (beatmapId !== undefined) {
         await this.saveLastSeenBeatmapId(ctx, args.server, beatmapId);
@@ -236,7 +236,7 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
         mode: leaderboardResponse.ruleset!,
         map: leaderboardResponse.map!,
         plays: mapPlays,
-        startPosition: args.startPosition ?? 1,
+        quantity: args.quantity ?? 1,
       };
     })();
     return MaybeDeferred.fromFastPromise(valuePromise);
@@ -245,8 +245,16 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
   createOutputMessage(
     params: UserBestPlaysOnMapViewParams
   ): MaybeDeferred<TOutput> {
-    const {server, beatmapIdInput, usernameInput, username, mode, map, plays} =
-      params;
+    const {
+      server,
+      beatmapIdInput,
+      usernameInput,
+      username,
+      mode,
+      map,
+      plays,
+      quantity,
+    } = params;
     if (username === undefined) {
       if (usernameInput === undefined) {
         return this.createUsernameNotBoundMessage(server);
@@ -262,12 +270,20 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
     if (plays === undefined) {
       return this.createNoMapPlaysMessage(server, mode!);
     }
-    return this.createMapPlaysMessage(map, plays, server, mode!, username);
+    return this.createMapPlaysMessage(
+      map,
+      plays,
+      quantity!,
+      server,
+      mode!,
+      username
+    );
   }
 
   abstract createMapPlaysMessage(
     map: OsuMap,
     mapPlays: OsuMapUserPlay[],
+    quantity: number,
     server: OsuServer,
     mode: OsuRuleset,
     username: string
@@ -332,5 +348,5 @@ export type UserBestPlaysOnMapViewParams = {
   mode: OsuRuleset | undefined;
   map: OsuMap | undefined;
   plays: OsuMapUserPlay[] | undefined;
-  startPosition: number | undefined;
+  quantity: number | undefined;
 };
