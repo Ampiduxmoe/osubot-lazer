@@ -2,6 +2,7 @@ import {randomUUID} from 'crypto';
 import {Keyboard, KeyboardBuilder, VK} from 'vk-io';
 import {APP_CODE_NAME} from '../../App';
 import {CalculationType} from '../../primitives/MaybeDeferred';
+import {Timespan} from '../../primitives/Timespan';
 import {TextCommand} from '../commands/base/TextCommand';
 import {VkMessageContext} from './VkMessageContext';
 import {VkOutputMessage, VkOutputMessageButton} from './VkOutputMessage';
@@ -11,6 +12,7 @@ type UnknownViewParams = unknown;
 
 export class VkClient {
   readonly vk: VK;
+  readonly groupId: number;
   readonly adminIds: readonly number[];
   readonly publicCommands: TextCommand<
     UnknownExecutionParams,
@@ -39,10 +41,96 @@ export class VkClient {
     ).split(''),
   };
 
-  constructor(vk: VK, adminIds: number[]) {
+  constructor(vk: VK, groupId: number, adminIds: number[]) {
     this.vk = vk;
+    this.groupId = groupId;
     this.adminIds = adminIds;
     this.vk.updates.on('message', ctx => this.process(ctx));
+    this.vk.updates.on('message_event', async ctx => {
+      if (isVkPaginationPayload(ctx.eventPayload)) {
+        const messageKey = ctx.eventPayload.switchPage.messageKey;
+        const targetIndex = ctx.eventPayload.switchPage.targetIndex;
+        const paginatedMessage = this.paginatedMessages[messageKey];
+        if (paginatedMessage !== undefined) {
+          paginatedMessage.goTo(targetIndex);
+        } else {
+          // Bot probably crashed and can't switch pages on this message anymore
+          // So we try to remove callback buttons
+          const messages =
+            await this.vk.api.messages.getByConversationMessageId({
+              group_id: this.groupId,
+              peer_id: ctx.peerId,
+              conversation_message_ids: [ctx.conversationMessageId],
+            });
+          const targetMessage = messages.items[0];
+          if (targetMessage === undefined) {
+            console.error('Could not get own message with callback buttons');
+            return;
+          }
+          const targetText = targetMessage.text;
+          const targetAttachment =
+            targetMessage.attachments.length > 0
+              ? targetMessage.attachments
+                  .map(a => {
+                    let type: string | undefined = undefined;
+                    let ownerId: number | undefined = undefined;
+                    let id: number | undefined = undefined;
+                    for (const key in a) {
+                      if (key === 'type') {
+                        type = a[key];
+                      } else {
+                        if (a[key].owner_id !== undefined) {
+                          ownerId = a[key].owner_id;
+                        }
+                        if (a[key].owner_id !== undefined) {
+                          id = a[key].id;
+                        }
+                      }
+                    }
+                    if ((type && ownerId && id) === undefined) {
+                      return undefined;
+                    }
+                    return `${type}${ownerId}_${id}`;
+                  })
+                  .filter(a => a !== undefined)
+                  .join(',')
+              : undefined;
+          const targetKeyboard = (() => {
+            const kb = Object.assign({}, targetMessage.keyboard);
+            kb.buttons = kb.buttons
+              ?.map((row: {action?: {type?: string; payload?: string}}[]) =>
+                row.filter(b => {
+                  if (b.action?.type !== 'callback') {
+                    return true;
+                  }
+                  if (typeof b.action?.payload !== 'string') {
+                    return true;
+                  }
+                  try {
+                    if (JSON.parse(b.action.payload).switchPage !== undefined) {
+                      return false;
+                    }
+                  } catch {
+                    return true;
+                  }
+                  return true;
+                })
+              )
+              .filter((row: unknown[]) => row.length > 0);
+            delete kb.author_id;
+            return kb;
+          })();
+          await this.vk.api.messages.edit({
+            group_id: this.groupId,
+            peer_id: ctx.peerId,
+            conversation_message_id: ctx.conversationMessageId,
+            message: targetText,
+            attachment: targetAttachment,
+            keyboard: JSON.stringify(targetKeyboard),
+          });
+        }
+      }
+    });
   }
 
   async start(): Promise<void> {
@@ -55,25 +143,38 @@ export class VkClient {
     await this.vk.updates.start();
     console.log('VK updates started');
 
+    this.startPaginationCleanups({
+      intervalMs: 15e3,
+      expireTime: new Timespan().addMinutes(5),
+    });
+    console.log('Pagination cleanups started');
+
     console.log('VK client started!');
   }
 
   async stop(): Promise<void> {
     console.log('VK client stopping...');
+
     await this.vk.updates.stop();
+    console.log('VK updates stopped');
+
+    this.stopPaginationCleanups();
+    console.log('Pagination cleanups stopped');
+
+    const paginatedMessagesCount = Object.values(this.paginatedMessages).length;
+    if (paginatedMessagesCount > 0) {
+      this.cleanUpPaginatedMessages(0);
+      const cleanUpCount =
+        paginatedMessagesCount - Object.values(this.paginatedMessages).length;
+      console.log(
+        `Successfull pagination cleanup count: ${cleanUpCount}/${paginatedMessagesCount}`
+      );
+    }
+
     console.log('VK client stopped!');
   }
 
   private async process(ctx: VkMessageContext): Promise<void> {
-    if (ctx.messagePayload?.target === APP_CODE_NAME) {
-      if (ctx.messagePayload.switchPage !== undefined) {
-        const messageKey: string = ctx.messagePayload.switchPage;
-        const targetIndex: number = ctx.messagePayload.targetIndex;
-        if (typeof messageKey === 'string' && typeof targetIndex === 'number') {
-          this.paginatedMessages[messageKey]?.goTo(targetIndex);
-        }
-      }
-    }
     const allLayouts = [this.kbLayouts.en, this.kbLayouts.ru];
     for (const layout of allLayouts) {
       const ctxCopy = Object.assign({}, ctx);
@@ -222,8 +323,36 @@ export class VkClient {
     return keyboard;
   }
 
+  private paginationCleanupsJob: NodeJS.Timeout | undefined = undefined;
+  startPaginationCleanups({
+    intervalMs,
+    expireTime,
+  }: {
+    intervalMs: number;
+    expireTime: Timespan;
+  }): void {
+    const expireTimeMs = expireTime.totalMiliseconds();
+    this.paginationCleanupsJob ??= setInterval(() => {
+      this.cleanUpPaginatedMessages(expireTimeMs);
+    }, intervalMs);
+  }
+  cleanUpPaginatedMessages(maxAgeMs: number): void {
+    const now = Date.now();
+    for (const entry of Object.values(this.paginatedMessages)) {
+      if (now >= entry.creationTime + maxAgeMs) {
+        entry.onExpire();
+      }
+    }
+  }
+  stopPaginationCleanups(): void {
+    if (this.paginationCleanupsJob !== undefined) {
+      clearInterval(this.paginationCleanupsJob);
+    }
+  }
+
   private paginatedMessages: {
     [key: string]: {
+      creationTime: number;
       peerId: number;
       goTo: (index: number) => void;
       onExpire: () => void;
@@ -234,10 +363,15 @@ export class VkClient {
     replyMessagePromise: Promise<VkMessageContext> | undefined,
     outputMessage: VkOutputMessage
   ): Promise<void> {
-    for (const paginatedMessage of Object.values(this.paginatedMessages)) {
+    const allowedPaginatedMessages = 3;
+    let foundPaginatedMessages = 0;
+    const allPaginatedMessages = [...Object.values(this.paginatedMessages)];
+    for (const paginatedMessage of allPaginatedMessages.reverse()) {
       if (paginatedMessage.peerId === ctx.peerId) {
-        paginatedMessage.onExpire();
-        break;
+        foundPaginatedMessages += 1;
+        if (foundPaginatedMessages >= allowedPaginatedMessages) {
+          paginatedMessage.onExpire();
+        }
       }
     }
     const pagination = outputMessage.pagination!;
@@ -277,7 +411,7 @@ export class VkClient {
                 messageKey: messageKey,
                 targetIndex: i - 1,
               },
-            },
+            } as VkPaginationButtonPayload,
           });
         }
         if (buttonNextText !== undefined) {
@@ -292,7 +426,7 @@ export class VkClient {
                 messageKey: messageKey,
                 targetIndex: i + 1,
               },
-            },
+            } as VkPaginationButtonPayload,
           });
         }
         keyboard.row();
@@ -345,6 +479,7 @@ export class VkClient {
       }
     })();
     this.paginatedMessages[messageKey] = {
+      creationTime: Date.now(),
       peerId: ctx.peerId,
       goTo: index => {
         const targetMessage = createMessage(index, true, messageKey);
@@ -370,4 +505,34 @@ export class VkClient {
       },
     };
   }
+}
+
+type VkPaginationButtonPayload = {
+  target: typeof APP_CODE_NAME;
+  switchPage: {
+    messageKey: string;
+    targetIndex: number;
+  };
+};
+
+function isVkPaginationPayload(
+  payload: unknown
+): payload is VkPaginationButtonPayload {
+  if (typeof payload !== 'object') {
+    return false;
+  }
+  const paginationPayload = payload as Partial<VkPaginationButtonPayload>;
+  if (paginationPayload.target !== APP_CODE_NAME) {
+    return false;
+  }
+  if (paginationPayload.switchPage === undefined) {
+    return false;
+  }
+  if (
+    typeof paginationPayload.switchPage?.messageKey !== 'string' ||
+    typeof paginationPayload.switchPage?.targetIndex !== 'number'
+  ) {
+    return false;
+  }
+  return true;
 }

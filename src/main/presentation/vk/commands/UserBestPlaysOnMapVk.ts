@@ -148,9 +148,9 @@ export class UserBestPlaysOnMapVk extends UserBestPlaysOnMap<
               return undefined;
             }
             if (targetIndex > currentIndex) {
-              return `След. стр. (${targetIndex + 1}/${mapPlays.length})`;
+              return `▶　(${targetIndex + 1}/${mapPlays.length})`;
             }
-            return `Пред. стр. (${targetIndex + 1}/${mapPlays.length})`;
+            return `(${targetIndex + 1}/${mapPlays.length})　◀`;
           },
         },
       };

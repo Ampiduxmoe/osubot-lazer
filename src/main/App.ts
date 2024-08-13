@@ -345,7 +345,7 @@ export class App {
       pollingGroupId: group.id,
       token: group.token,
     });
-    const vkClient = new VkClient(vk, [group.owner]);
+    const vkClient = new VkClient(vk, group.id, [group.owner]);
 
     const mainTextProcessor = new MainTextProcessor(' ', "'", '\\');
 
