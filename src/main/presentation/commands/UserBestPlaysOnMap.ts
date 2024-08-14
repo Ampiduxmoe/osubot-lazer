@@ -213,15 +213,18 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
           usernameInput: args.username,
           username: username,
           mode: leaderboardResponse.ruleset!,
-          map: leaderboardResponse.map!,
+          map: leaderboardResponse.baseBeatmap!,
           plays: undefined,
           quantity: undefined,
         };
       }
       const mapPlays =
         args.quantity === undefined && args.startPosition !== undefined
-          ? leaderboardResponse.mapPlays![0].plays.slice(0, args.startPosition)
-          : leaderboardResponse.mapPlays![0].plays.slice(
+          ? leaderboardResponse.mapPlays![0].collection.slice(
+              0,
+              args.startPosition
+            )
+          : leaderboardResponse.mapPlays![0].collection.slice(
               0,
               (args.startPosition ?? 1) + (args.quantity ?? 10) - 1
             );
@@ -234,7 +237,7 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
         usernameInput: args.username,
         username: leaderboardResponse.mapPlays![0].username,
         mode: leaderboardResponse.ruleset!,
-        map: leaderboardResponse.map!,
+        map: leaderboardResponse.baseBeatmap!,
         plays: mapPlays,
         quantity: args.quantity ?? 1,
       };
@@ -282,7 +285,7 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
 
   abstract createMapPlaysMessage(
     map: OsuMap,
-    mapPlays: OsuMapUserPlay[],
+    mapPlays: UserPlayCollection,
     quantity: number,
     server: OsuServer,
     mode: OsuRuleset,
@@ -347,6 +350,8 @@ export type UserBestPlaysOnMapViewParams = {
   username: string | undefined;
   mode: OsuRuleset | undefined;
   map: OsuMap | undefined;
-  plays: OsuMapUserPlay[] | undefined;
+  plays: UserPlayCollection | undefined;
   quantity: number | undefined;
 };
+
+type UserPlayCollection = {playResult: OsuMapUserPlay; mapInfo: OsuMap}[];

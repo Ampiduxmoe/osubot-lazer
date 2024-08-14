@@ -2,6 +2,7 @@ import {UseCase} from '../UseCase';
 import {GetBeatmapUsersBestScoresRequest} from './GetBeatmapUsersBestScoresRequest';
 import {
   GetBeatmapUsersBestScoresResponse,
+  OsuMap,
   OsuMapUserBestPlays,
   OsuMapUserPlay,
 } from './GetBeatmapUsersBestScoresResponse';
@@ -165,7 +166,10 @@ export class GetBeatmapUsersBestScoresUseCase
         }))
       );
       const offset = startPosition - 1;
-      const playerScores: OsuMapUserPlay[] = await Promise.all(
+      const playerScoresCollection: {
+        playResult: OsuMapUserPlay;
+        mapInfo: OsuMap;
+      }[] = await Promise.all(
         beatmapScoreSortValues
           .sort((a, b) => b.sortValue - a.sortValue)
           .map((e, i) => ({pos: i + 1, score: e.s}))
@@ -173,46 +177,82 @@ export class GetBeatmapUsersBestScoresUseCase
           .map(async entry => {
             const pos = entry.pos;
             const mapScore = entry.score;
-            return {
-              sortedPosition: pos,
-              mods: mapScore.mods.map(m => ({
-                acronym: m.acronym,
-                settings: m.settings,
-              })),
-              totalScore: mapScore.totalScore,
-              combo: mapScore.maxCombo,
-              accuracy: mapScore.accuracy,
-              pp: await (async () => {
-                const fcAndSs =
-                  scoreCount === 1
-                    ? await getFcAndSsEstimations(mapScore)
-                    : {fc: undefined, ss: undefined};
-                return {
-                  value: mapScore.pp !== null ? mapScore.pp : undefined,
-                  estimatedValue:
-                    mapScore.pp !== null
-                      ? mapScore.pp
-                      : await mapScore.getEstimatedPp(),
-                  ifFc: fcAndSs.fc,
-                  ifSs: fcAndSs.ss,
-                };
-              })(),
-              orderedHitcounts: [...mapScore.hitcounts.orderedValues],
-              grade: mapScore.rank,
-              date: mapScore.endedAt.getTime(),
+            const collection: {
+              playResult: OsuMapUserPlay;
+              mapInfo: OsuMap;
+            } = {
+              playResult: {
+                sortedPosition: pos,
+                mods: mapScore.mods.map(m => ({
+                  acronym: m.acronym,
+                  settings: m.settings,
+                })),
+                totalScore: mapScore.totalScore,
+                combo: mapScore.maxCombo,
+                accuracy: mapScore.accuracy,
+                pp: await (async () => {
+                  const fcAndSs =
+                    scoreCount === 1
+                      ? await getFcAndSsEstimations(mapScore)
+                      : {fc: undefined, ss: undefined};
+                  return {
+                    value: mapScore.pp !== null ? mapScore.pp : undefined,
+                    estimatedValue:
+                      mapScore.pp !== null
+                        ? mapScore.pp
+                        : await mapScore.getEstimatedPp(),
+                    ifFc: fcAndSs.fc,
+                    ifSs: fcAndSs.ss,
+                  };
+                })(),
+                orderedHitcounts: [...mapScore.hitcounts.orderedValues],
+                grade: mapScore.rank,
+                date: mapScore.endedAt.getTime(),
+              },
+              mapInfo: {
+                beatmapset: {
+                  id: mapScore.moddedBeatmap.beatmapset.id,
+                  status: mapScore.moddedBeatmap.beatmapset.status,
+                  artist: mapScore.moddedBeatmap.song.artist,
+                  title: mapScore.moddedBeatmap.song.title,
+                  creator: mapScore.moddedBeatmap.beatmapset.creatorUsername,
+                  coverUrl: beatmap.beatmapset.coverUrl,
+                },
+                beatmap: {
+                  id: mapScore.moddedBeatmap.id,
+                  difficultyName: mapScore.moddedBeatmap.difficultyName,
+                  totalLength: mapScore.moddedBeatmap.song.length,
+                  drainLength: mapScore.moddedBeatmap.length,
+                  bpm: mapScore.moddedBeatmap.song.bpm,
+                  estimatedStarRating: await (async () => {
+                    const starRatingEstimation =
+                      mapScore.hasStarRatingChangingMods
+                        ? await mapScore.getEstimatedStarRating()
+                        : mapScore.baseBeatmap.starRating;
+                    return starRatingEstimation;
+                  })(),
+                  ar: mapScore.moddedBeatmap.stats.ar,
+                  cs: mapScore.moddedBeatmap.stats.cs,
+                  od: mapScore.moddedBeatmap.stats.od,
+                  hp: mapScore.moddedBeatmap.stats.hp,
+                  maxCombo: mapScore.moddedBeatmap.maxCombo,
+                  url: beatmap.url,
+                },
+              },
             };
+            return collection;
           })
       );
-      if (playerScores.length > 0) {
+      if (playerScoresCollection.length > 0) {
         bestScoresOutput.push({
           username: username,
-          plays: playerScores,
+          collection: playerScoresCollection,
         });
       }
     }
     return {
       isFailure: false,
-      map: {
+      baseBeatmap: {
         beatmapset: {
           id: beatmap.beatmapset.id,
           status: beatmap.beatmapset.status,

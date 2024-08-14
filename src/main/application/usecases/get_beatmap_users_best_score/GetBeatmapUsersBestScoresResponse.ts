@@ -4,7 +4,7 @@ import {OsuRuleset} from '../../../primitives/OsuRuleset';
 export type GetBeatmapUsersBestScoresResponse = {
   isFailure: boolean;
   failureReason?: 'beatmap not found';
-  map?: OsuMap;
+  baseBeatmap?: OsuMap;
   mapPlays?: OsuMapUserBestPlays[];
   ruleset?: OsuRuleset;
   missingUsernames?: string[];
@@ -37,7 +37,10 @@ export type OsuMap = {
 
 export type OsuMapUserBestPlays = {
   username: string;
-  plays: OsuMapUserPlay[];
+  collection: {
+    playResult: OsuMapUserPlay;
+    mapInfo: OsuMap;
+  }[];
 };
 
 export type OsuMapUserPlay = {

@@ -46,56 +46,82 @@ export class ChatLeaderboardOnMapVk extends ChatLeaderboardOnMap<
     missingUsernames: string[],
     isChatLb: boolean
   ): MaybeDeferred<VkOutputMessage> {
+    const firstMap = mapPlays[0].collection[0].mapInfo;
+    const areAllMapsSame: boolean = (() => {
+      for (let i = 1; i < mapPlays.length; i++) {
+        const compareMap = mapPlays[i].collection[0].mapInfo;
+        if (areMapsDifferentInStats(firstMap, compareMap)) {
+          return false;
+        }
+      }
+      return true;
+    })();
+    const displayedMap = areAllMapsSame ? firstMap : map;
     const serverString = OsuServer[server];
     const modeString = OsuRuleset[mode];
-    const {artist, title} = map.beatmapset;
-    const diffname = map.beatmap.difficultyName;
-    const mapperName = map.beatmapset.creator;
-    const mapStatus = map.beatmapset.status;
+    const {artist, title} = displayedMap.beatmapset;
+    const diffname = displayedMap.beatmap.difficultyName;
+    const mapperName = displayedMap.beatmapset.creator;
+    const mapStatus = displayedMap.beatmapset.status;
     const [lengthString, drainString] = (() => {
-      const totalLength = new Timespan().addSeconds(map.beatmap.totalLength);
+      const totalLength = new Timespan().addSeconds(
+        displayedMap.beatmap.totalLength
+      );
       const z0 = totalLength.minutes <= 9 ? '0' : '';
       const z1 = totalLength.seconds <= 9 ? '0' : '';
-      const drainLength = new Timespan().addSeconds(map.beatmap.drainLength);
+      const drainLength = new Timespan().addSeconds(
+        displayedMap.beatmap.drainLength
+      );
       const z2 = drainLength.minutes <= 9 ? '0' : '';
       const z3 = drainLength.seconds <= 9 ? '0' : '';
       const lengthString = `${z0}${totalLength.minutes}:${z1}${totalLength.seconds}`;
       const drainString = `${z2}${drainLength.minutes}:${z3}${drainLength.seconds}`;
       return [lengthString, drainString];
     })();
-    const bpm = round(map.beatmap.bpm, 2);
-    const sr = map.beatmap.estimatedStarRating?.toFixed(2) ?? '—';
-    const ar = round(map.beatmap.ar, 2);
-    const cs = round(map.beatmap.cs, 2);
-    const od = round(map.beatmap.od, 2);
-    const hp = round(map.beatmap.hp, 2);
-    const maxCombo = map.beatmap.maxCombo;
+    const bpm = round(displayedMap.beatmap.bpm, 2);
+    const sr = displayedMap.beatmap.estimatedStarRating?.toFixed(2) ?? '—';
+    const ar = round(displayedMap.beatmap.ar, 2);
+    const cs = round(displayedMap.beatmap.cs, 2);
+    const od = round(displayedMap.beatmap.od, 2);
+    const hp = round(displayedMap.beatmap.hp, 2);
+    const maxCombo = displayedMap.beatmap.maxCombo;
     const fewScores = mapPlays.length <= 5;
     const sortedMapPlays = mapPlays.sort((a, b) => {
-      const aPp = a.plays[0].pp.estimatedValue ?? 0;
-      const bPp = b.plays[0].pp.estimatedValue ?? 0;
+      const aPlayResult = a.collection[0].playResult;
+      const bPlayResult = b.collection[0].playResult;
+      const aPp = aPlayResult.pp.estimatedValue ?? 0;
+      const bPp = bPlayResult.pp.estimatedValue ?? 0;
       if (aPp === bPp) {
-        return b.plays[0].totalScore - a.plays[0].totalScore;
+        return bPlayResult.totalScore - aPlayResult.totalScore;
       }
       return bPp - aPp;
     });
     const scoresText = sortedMapPlays
       .map((p, i) =>
         fewScores
-          ? this.verboseScoreDescription(i + 1, p.username, p.plays[0])
-          : this.shortScoreDescription(i + 1, p.username, p.plays[0])
+          ? this.verboseScoreDescription(
+              i + 1,
+              p.username,
+              p.collection[0].playResult
+            )
+          : this.shortScoreDescription(
+              i + 1,
+              p.username,
+              p.collection[0].playResult
+            )
       )
       .join(fewScores ? '\n' : '\n');
     const couldNotGetSomeStatsMessage =
-      mapPlays.find(play => play.plays[0].pp.estimatedValue === undefined) !==
-      undefined
+      mapPlays.find(
+        play => play.collection[0].playResult.pp.estimatedValue === undefined
+      ) !== undefined
         ? '\n(Не удалось получить часть статистики)'
         : '';
     const missingUsernamesMessage =
       missingUsernames.length > 0
         ? '\nНе удалось найти игроков с никами:\n' + missingUsernames.join(', ')
         : '';
-    const mapUrlShort = map.beatmap.url.replace('beatmaps', 'b');
+    const mapUrlShort = displayedMap.beatmap.url.replace('beatmaps', 'b');
     const text = `
 [Server: ${serverString}, Mode: ${modeString}]
 Топ ${isChatLb ? 'чата' : 'выбранных игроков'} на карте
@@ -270,4 +296,24 @@ function getScoreDateString(date: Date): string {
   const year = date.getUTCFullYear();
   const datePart = `${dayFormatted}.${monthFormatted}.${year}`;
   return `${datePart}`;
+}
+
+function areMapsDifferentInStats(a: OsuMap, b: OsuMap): boolean {
+  const keyStats: (keyof OsuMap['beatmap'])[] = [
+    'totalLength',
+    'drainLength',
+    'bpm',
+    'estimatedStarRating',
+    'ar',
+    'cs',
+    'od',
+    'hp',
+    'maxCombo',
+  ];
+  for (const stat of keyStats) {
+    if (a.beatmap[stat] !== b.beatmap[stat]) {
+      return true;
+    }
+  }
+  return false;
 }

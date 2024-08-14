@@ -223,7 +223,7 @@ export abstract class ChatLeaderboardOnMap<
         usernames: usernames,
         beatmapIdInput: args.beatmapId,
         mode: leaderboardResponse.ruleset!,
-        map: leaderboardResponse.map!,
+        map: leaderboardResponse.baseBeatmap!,
         plays: leaderboardResponse.mapPlays!,
         missingUsernames: leaderboardResponse.missingUsernames!,
         isOnlyLocalMembersLb: isOnlyLocalMembersLb,

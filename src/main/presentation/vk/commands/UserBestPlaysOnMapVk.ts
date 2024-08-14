@@ -79,13 +79,23 @@ export class UserBestPlaysOnMapVk extends UserBestPlaysOnMap<
 
   createMapPlaysMessage(
     map: OsuMap,
-    mapPlays: OsuMapUserPlay[],
+    mapPlays: UserPlayCollection,
     quantity: number,
     server: OsuServer,
     mode: OsuRuleset,
     username: string
   ): MaybeDeferred<VkOutputMessage> {
     const valuePromise: Promise<VkOutputMessage> = (async () => {
+      const areAllMapsSame: boolean = (() => {
+        for (let i = 1; i < mapPlays.length; i++) {
+          if (
+            areMapsDifferentInStats(mapPlays[0].mapInfo, mapPlays[i].mapInfo)
+          ) {
+            return false;
+          }
+        }
+        return true;
+      })();
       const oneScore = quantity === 1;
       const coverAttachment = oneScore
         ? await getOrDownloadCoverAttachment(server, map, this.vkBeatmapCovers)
@@ -100,8 +110,8 @@ export class UserBestPlaysOnMapVk extends UserBestPlaysOnMap<
           : '';
       if (quantity >= mapPlays.length) {
         const text = this.createMapPlaysText(
-          map,
-          mapPlays,
+          areAllMapsSame ? mapPlays[0].mapInfo : map,
+          mapPlays.map(c => c.playResult),
           mapPlays.length,
           server,
           mode,
@@ -114,15 +124,23 @@ export class UserBestPlaysOnMapVk extends UserBestPlaysOnMap<
           buttons: buttons,
         };
       }
-      const playsChunks: OsuMapUserPlay[][] = [];
+      const playsChunks: UserPlayCollection[] = [];
       for (let i = 0; i < mapPlays.length; i += quantity) {
         playsChunks.push(mapPlays.slice(i, i + quantity));
       }
       const pageContents: VkOutputMessagePageContent[] = playsChunks.map(
         chunk => {
+          const areAllMapsInChunkSame: boolean = (() => {
+            for (let i = 1; i < chunk.length; i++) {
+              if (areMapsDifferentInStats(chunk[0].mapInfo, chunk[i].mapInfo)) {
+                return false;
+              }
+            }
+            return true;
+          })();
           const text = this.createMapPlaysText(
-            map,
-            chunk,
+            areAllMapsInChunkSame ? chunk[0].mapInfo : map,
+            chunk.map(c => c.playResult),
             quantity,
             server,
             mode,
@@ -510,4 +528,26 @@ async function getOrDownloadCoverAttachment(
   } catch (e) {
     return undefined;
   }
+}
+
+type UserPlayCollection = {playResult: OsuMapUserPlay; mapInfo: OsuMap}[];
+
+function areMapsDifferentInStats(a: OsuMap, b: OsuMap): boolean {
+  const keyStats: (keyof OsuMap['beatmap'])[] = [
+    'totalLength',
+    'drainLength',
+    'bpm',
+    'estimatedStarRating',
+    'ar',
+    'cs',
+    'od',
+    'hp',
+    'maxCombo',
+  ];
+  for (const stat of keyStats) {
+    if (a.beatmap[stat] !== b.beatmap[stat]) {
+      return true;
+    }
+  }
+  return false;
 }
