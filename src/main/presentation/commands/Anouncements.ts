@@ -93,21 +93,13 @@ export abstract class Anouncements<TContext, TOutput> extends TextCommand<
     },
   };
 
-  textProcessor: TextProcessor;
-  anouncements: AnouncementsRepository;
-  anouncementsHistory: PastAnouncementsRepository;
-  sendToAllPeers: (text: string) => Promise<string[]>;
   constructor(
-    textProcessor: TextProcessor,
-    anouncements: AnouncementsRepository,
-    anouncementsHistory: PastAnouncementsRepository,
-    sendToAllPeers: (text: string) => Promise<string[]>
+    public textProcessor: TextProcessor,
+    protected anouncements: AnouncementsRepository,
+    protected anouncementsHistory: PastAnouncementsRepository,
+    protected sendToAllPeers: (text: string) => Promise<string[]>
   ) {
     super(Anouncements.commandStructure);
-    this.textProcessor = textProcessor;
-    this.anouncements = anouncements;
-    this.anouncementsHistory = anouncementsHistory;
-    this.sendToAllPeers = sendToAllPeers;
   }
 
   matchText(text: string): CommandMatchResult<AnouncementsExecutionArgs> {

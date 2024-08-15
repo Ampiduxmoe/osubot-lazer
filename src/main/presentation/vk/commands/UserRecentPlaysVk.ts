@@ -1,6 +1,5 @@
 /* eslint-disable no-irregular-whitespace */
 import {APP_CODE_NAME} from '../../../App';
-import {GetAppUserInfoUseCase} from '../../../application/usecases/get_app_user_info/GetAppUserInfoUseCase';
 import {
   OsuUserRecentPlay,
   OsuUserRecentPlays,
@@ -9,22 +8,15 @@ import {
   SettingsDefaults,
   SettingsHT,
 } from '../../../application/usecases/get_user_recent_plays/GetUserRecentPlaysResponse';
-import {GetUserRecentPlaysUseCase} from '../../../application/usecases/get_user_recent_plays/GetUserRecentPlaysUseCase';
 import {MaybeDeferred} from '../../../primitives/MaybeDeferred';
 import {round} from '../../../primitives/Numbers';
 import {OsuRuleset} from '../../../primitives/OsuRuleset';
 import {OsuServer} from '../../../primitives/OsuServer';
 import {Timespan} from '../../../primitives/Timespan';
 import {
-  GetInitiatorAppUserId,
-  GetTargetAppUserId,
-  SaveLastSeenBeatmapId,
-} from '../../commands/common/Signatures';
-import {
   UserRecentPlays,
   UserRecentPlaysExecutionArgs,
 } from '../../commands/UserRecentPlays';
-import {TextProcessor} from '../../common/arg_processing/TextProcessor';
 import {CommandMatchResult} from '../../common/CommandMatchResult';
 import {VkBeatmapCoversRepository} from '../../data/repositories/VkBeatmapCoversRepository';
 import {VkMessageContext} from '../VkMessageContext';
@@ -36,25 +28,11 @@ export class UserRecentPlaysVk extends UserRecentPlays<
   VkMessageContext,
   VkOutputMessage
 > {
-  vkBeatmapCovers: VkBeatmapCoversRepository;
   constructor(
-    textProcessor: TextProcessor,
-    getInitiatorAppUserId: GetInitiatorAppUserId<VkMessageContext>,
-    getTargetAppUserId: GetTargetAppUserId<VkMessageContext>,
-    saveLastSeenBeatmapId: SaveLastSeenBeatmapId<VkMessageContext>,
-    getRecentPlays: GetUserRecentPlaysUseCase,
-    getAppUserInfo: GetAppUserInfoUseCase,
-    vkBeatmapCovers: VkBeatmapCoversRepository
+    protected vkBeatmapCovers: VkBeatmapCoversRepository,
+    ...parentParams: ConstructorParameters<typeof UserRecentPlays>
   ) {
-    super(
-      textProcessor,
-      getInitiatorAppUserId,
-      getTargetAppUserId,
-      saveLastSeenBeatmapId,
-      getRecentPlays,
-      getAppUserInfo
-    );
-    this.vkBeatmapCovers = vkBeatmapCovers;
+    super(...parentParams);
   }
   matchMessage(
     ctx: VkMessageContext

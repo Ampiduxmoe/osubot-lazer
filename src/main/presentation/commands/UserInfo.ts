@@ -43,24 +43,14 @@ export abstract class UserInfo<TContext, TOutput> extends TextCommand<
     {argument: MODE, isOptional: true},
   ];
 
-  textProcessor: TextProcessor;
-  getInitiatorAppUserId: GetInitiatorAppUserId<TContext>;
-  getTargetAppUserId: GetTargetAppUserId<TContext>;
-  getOsuUserInfo: GetOsuUserInfoUseCase;
-  getAppUserInfo: GetAppUserInfoUseCase;
   constructor(
-    textProcessor: TextProcessor,
-    getInitiatorAppUserId: GetInitiatorAppUserId<TContext>,
-    getTargetAppUserId: GetTargetAppUserId<TContext>,
-    getRecentPlays: GetOsuUserInfoUseCase,
-    getAppUserInfo: GetAppUserInfoUseCase
+    public textProcessor: TextProcessor,
+    protected getInitiatorAppUserId: GetInitiatorAppUserId<TContext>,
+    protected getTargetAppUserId: GetTargetAppUserId<TContext>,
+    protected getOsuUserInfo: GetOsuUserInfoUseCase,
+    protected getAppUserInfo: GetAppUserInfoUseCase
   ) {
     super(UserInfo.commandStructure);
-    this.textProcessor = textProcessor;
-    this.getInitiatorAppUserId = getInitiatorAppUserId;
-    this.getTargetAppUserId = getTargetAppUserId;
-    this.getOsuUserInfo = getRecentPlays;
-    this.getAppUserInfo = getAppUserInfo;
   }
 
   matchText(text: string): CommandMatchResult<UserInfoExecutionArgs> {

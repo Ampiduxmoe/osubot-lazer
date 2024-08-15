@@ -116,21 +116,13 @@ export abstract class Alias<TContext, TOutput> extends TextCommand<
     },
   };
 
-  textProcessor: TextProcessor;
-  getTargetAppUserId: GetTargetAppUserId<TContext>;
-  aliases: AppUserCommandAliasesRepository;
-  aliasProcessor: AliasProcessor;
   constructor(
-    textProcessor: TextProcessor,
-    getTargetAppUserId: GetTargetAppUserId<TContext>,
-    aliases: AppUserCommandAliasesRepository,
-    aliasProcessor: AliasProcessor
+    public textProcessor: TextProcessor,
+    protected getTargetAppUserId: GetTargetAppUserId<TContext>,
+    protected aliases: AppUserCommandAliasesRepository,
+    protected aliasProcessor: AliasProcessor
   ) {
     super(Alias.commandStructure);
-    this.textProcessor = textProcessor;
-    this.getTargetAppUserId = getTargetAppUserId;
-    this.aliases = aliases;
-    this.aliasProcessor = aliasProcessor;
   }
 
   matchText(text: string): CommandMatchResult<AliasExecutionArgs> {

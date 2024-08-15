@@ -29,11 +29,9 @@ export abstract class Help<TContext, TOutput> extends TextCommand<
   protected FOREIGN_COMMAND_PREFIX: CommandArgument<string>;
   protected USAGE_VARIANT: CommandArgument<string>;
 
-  textProcessor: TextProcessor;
-  commands: TextCommand<unknown, unknown, TContext, TOutput>[];
   constructor(
-    textProcessor: TextProcessor,
-    commands: TextCommand<unknown, unknown, TContext, TOutput>[]
+    public textProcessor: TextProcessor,
+    protected commands: TextCommand<unknown, unknown, TContext, TOutput>[]
   ) {
     const COMMAND_PREFIX = OWN_COMMAND_PREFIX(Help.prefixes);
     const FOREIGN_COMMAND_PREFIX = VK_FOREIGN_COMMAND_PREFIX(
@@ -51,8 +49,6 @@ export abstract class Help<TContext, TOutput> extends TextCommand<
     this.COMMAND_PREFIX = COMMAND_PREFIX;
     this.FOREIGN_COMMAND_PREFIX = FOREIGN_COMMAND_PREFIX;
     this.USAGE_VARIANT = USAGE_VARIANT;
-    this.textProcessor = textProcessor;
-    this.commands = commands;
   }
 
   matchText(text: string): CommandMatchResult<HelpExecutionArgs> {

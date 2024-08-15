@@ -27,19 +27,13 @@ import {HitcountsMania} from '../../../domain/entities/hitcounts/HitcountsMania'
 export class GetUserRecentPlaysUseCase
   implements UseCase<GetUserRecentPlaysRequest, GetUserRecentPlaysResponse>
 {
-  recentScores: OsuUserRecentScoresDao;
-  cachedOsuUsers: CachedOsuUsersDao;
-  osuUsers: OsuUsersDao;
   recentScoreAdapter: UserRecentScoreAdapter;
   constructor(
-    recentScores: OsuUserRecentScoresDao,
-    scoreSimulations: ScoreSimulationsDao,
-    cachedOsuUsers: CachedOsuUsersDao,
-    osuUsers: OsuUsersDao
+    protected recentScores: OsuUserRecentScoresDao,
+    protected cachedOsuUsers: CachedOsuUsersDao,
+    protected osuUsers: OsuUsersDao,
+    scoreSimulations: ScoreSimulationsDao
   ) {
-    this.recentScores = recentScores;
-    this.cachedOsuUsers = cachedOsuUsers;
-    this.osuUsers = osuUsers;
     this.recentScoreAdapter = new UserRecentScoreAdapter(scoreSimulations);
   }
   async execute(

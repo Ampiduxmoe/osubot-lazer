@@ -37,15 +37,11 @@ export abstract class ApiUsageSummary<TContext, TOutput> extends TextCommand<
     {argument: APP_USER_ID, isOptional: true},
   ];
 
-  textProcessor: TextProcessor;
-  getApiUsageSummary: GetApiUsageSummaryUseCase;
   constructor(
-    textProcessor: TextProcessor,
-    getApiUsageSummary: GetApiUsageSummaryUseCase
+    public textProcessor: TextProcessor,
+    protected getApiUsageSummary: GetApiUsageSummaryUseCase
   ) {
     super(ApiUsageSummary.commandStructure);
-    this.textProcessor = textProcessor;
-    this.getApiUsageSummary = getApiUsageSummary;
   }
 
   matchText(text: string): CommandMatchResult<ApiUsageSummaryExecutionArgs> {

@@ -21,9 +21,8 @@ export class ContactAdminVk extends ContactAdmin<
   VkOutputMessage,
   VkMentionArg
 > {
-  groupId: number;
   constructor(
-    groupId: number,
+    protected groupId: number,
     textProcessor: TextProcessor,
     getInitiatorAppUserId: GetInitiatorAppUserId<VkMessageContext>,
     getMessageId: (ctx: VkMessageContext) => string,
@@ -39,7 +38,6 @@ export class ContactAdminVk extends ContactAdmin<
       forwardToAdmin,
       saveContactAdminMessage
     );
-    this.groupId = groupId;
   }
   matchMessage(
     ctx: VkMessageContext

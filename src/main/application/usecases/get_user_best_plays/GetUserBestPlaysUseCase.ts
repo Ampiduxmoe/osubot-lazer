@@ -13,19 +13,13 @@ import {UserBestScoreAdapter} from '../../adapters/user_best_score/UserBestScore
 export class GetUserBestPlaysUseCase
   implements UseCase<GetUserBestPlaysRequest, GetUserBestPlaysResponse>
 {
-  userBestPlays: OsuUserBestScoresDao;
-  cachedOsuUsers: CachedOsuUsersDao;
-  osuUsers: OsuUsersDao;
   userBestScoreAdapter: UserBestScoreAdapter;
   constructor(
-    userBestPlays: OsuUserBestScoresDao,
-    scoreSimulations: ScoreSimulationsDao,
-    cachedOsuUsers: CachedOsuUsersDao,
-    osuUsers: OsuUsersDao
+    protected userBestPlays: OsuUserBestScoresDao,
+    protected cachedOsuUsers: CachedOsuUsersDao,
+    protected osuUsers: OsuUsersDao,
+    scoreSimulations: ScoreSimulationsDao
   ) {
-    this.userBestPlays = userBestPlays;
-    this.cachedOsuUsers = cachedOsuUsers;
-    this.osuUsers = osuUsers;
     this.userBestScoreAdapter = new UserBestScoreAdapter(scoreSimulations);
   }
   async execute(

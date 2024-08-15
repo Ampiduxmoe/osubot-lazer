@@ -15,18 +15,11 @@ import {COMMON_REQUEST_SUBTARGETS} from './AppUserApiRequestsSummariesDaoImpl';
 import {OsuUserSnapshotsRepository} from '../repository/repositories/OsuUserSnapshotsRepository';
 
 export class OsuUsersDaoImpl implements OsuUsersDao {
-  private apis: OsuApi[];
-  private osuUserSnapshotsRepository: OsuUserSnapshotsRepository;
-  private recentApiRequests: AppUserRecentApiRequestsDao;
   constructor(
-    apis: OsuApi[],
-    osuUserSnapshotsRepository: OsuUserSnapshotsRepository,
-    recentApiRequests: AppUserRecentApiRequestsDao
-  ) {
-    this.apis = apis;
-    this.osuUserSnapshotsRepository = osuUserSnapshotsRepository;
-    this.recentApiRequests = recentApiRequests;
-  }
+    protected apis: OsuApi[],
+    protected osuUserSnapshotsRepository: OsuUserSnapshotsRepository,
+    protected recentApiRequests: AppUserRecentApiRequestsDao
+  ) {}
   async getByUsername(
     appUserId: string,
     username: string,

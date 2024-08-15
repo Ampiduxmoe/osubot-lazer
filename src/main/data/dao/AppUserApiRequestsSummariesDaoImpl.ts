@@ -10,15 +10,10 @@ export class AppUserApiRequestsSummariesDaoImpl
   implements AppUserApiRequestsSummariesDao
 {
   private bucketTimeWindow = new Timespan().addMinutes(20);
-  private requestsCounts: AppUserApiRequestsCountsRepository;
-  private timeWindows: TimeWindowsRepository;
   constructor(
-    requestsCounts: AppUserApiRequestsCountsRepository,
-    timeWindows: TimeWindowsRepository
-  ) {
-    this.requestsCounts = requestsCounts;
-    this.timeWindows = timeWindows;
-  }
+    protected requestsCounts: AppUserApiRequestsCountsRepository,
+    protected timeWindows: TimeWindowsRepository
+  ) {}
 
   async add(requests: AppUserApiRequests): Promise<void> {
     const requestsTime = requests.time;

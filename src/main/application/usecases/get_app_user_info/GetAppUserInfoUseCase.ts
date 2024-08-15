@@ -6,10 +6,7 @@ import {GetAppUserInfoResponse} from './GetAppUserInfoResponse';
 export class GetAppUserInfoUseCase
   implements UseCase<GetAppUserInfoRequest, GetAppUserInfoResponse>
 {
-  appUsers: AppUsersDao;
-  constructor(appUsers: AppUsersDao) {
-    this.appUsers = appUsers;
-  }
+  constructor(protected appUsers: AppUsersDao) {}
 
   async execute(
     params: GetAppUserInfoRequest

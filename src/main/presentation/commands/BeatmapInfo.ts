@@ -80,27 +80,15 @@ export abstract class BeatmapInfo<TContext, TOutput> extends TextCommand<
     },
   };
 
-  textProcessor: TextProcessor;
-  getInitiatorAppUserId: GetInitiatorAppUserId<TContext>;
-  getContextualBeatmapIds: GetContextualBeatmapIds<TContext>;
-  getLastSeenBeatmapId: GetLastSeenBeatmapId<TContext>;
-  saveLastSeenBeatmapId: SaveLastSeenBeatmapId<TContext>;
-  getBeatmapInfo: GetBeatmapInfoUseCase;
   constructor(
-    textProcessor: TextProcessor,
-    getInitiatorAppUserId: GetInitiatorAppUserId<TContext>,
-    getContextualBeatmapIds: GetContextualBeatmapIds<TContext>,
-    getLastSeenBeatmapId: GetLastSeenBeatmapId<TContext>,
-    saveLastSeenBeatmapId: SaveLastSeenBeatmapId<TContext>,
-    getBeatmapInfo: GetBeatmapInfoUseCase
+    public textProcessor: TextProcessor,
+    protected getInitiatorAppUserId: GetInitiatorAppUserId<TContext>,
+    protected getContextualBeatmapIds: GetContextualBeatmapIds<TContext>,
+    protected getLastSeenBeatmapId: GetLastSeenBeatmapId<TContext>,
+    protected saveLastSeenBeatmapId: SaveLastSeenBeatmapId<TContext>,
+    protected getBeatmapInfo: GetBeatmapInfoUseCase
   ) {
     super(BeatmapInfo.commandStructure);
-    this.textProcessor = textProcessor;
-    this.getInitiatorAppUserId = getInitiatorAppUserId;
-    this.getContextualBeatmapIds = getContextualBeatmapIds;
-    this.getLastSeenBeatmapId = getLastSeenBeatmapId;
-    this.saveLastSeenBeatmapId = saveLastSeenBeatmapId;
-    this.getBeatmapInfo = getBeatmapInfo;
   }
 
   matchText(text: string): CommandMatchResult<BeatmapInfoExecutionArgs> {

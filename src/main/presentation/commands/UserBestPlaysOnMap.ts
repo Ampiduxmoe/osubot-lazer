@@ -61,33 +61,17 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
     {argument: MOD_PATTERNS, isOptional: true},
   ];
 
-  textProcessor: TextProcessor;
-  getInitiatorAppUserId: GetInitiatorAppUserId<TContext>;
-  getTargetAppUserId: GetTargetAppUserId<TContext>;
-  getContextualBeatmapIds: GetContextualBeatmapIds<TContext>;
-  getLastSeenBeatmapId: GetLastSeenBeatmapId<TContext>;
-  saveLastSeenBeatmapId: SaveLastSeenBeatmapId<TContext>;
-  getBeatmapBestScores: GetBeatmapUsersBestScoresUseCase;
-  getAppUserInfo: GetAppUserInfoUseCase;
   constructor(
-    textProcessor: TextProcessor,
-    getInitiatorAppUserId: GetInitiatorAppUserId<TContext>,
-    getTargetAppUserId: GetTargetAppUserId<TContext>,
-    getContextualBeatmapIds: GetContextualBeatmapIds<TContext>,
-    getLastSeenBeatmapId: GetLastSeenBeatmapId<TContext>,
-    saveLastSeenBeatmapId: SaveLastSeenBeatmapId<TContext>,
-    getBeatmapBestScores: GetBeatmapUsersBestScoresUseCase,
-    getAppUserInfo: GetAppUserInfoUseCase
+    public textProcessor: TextProcessor,
+    protected getInitiatorAppUserId: GetInitiatorAppUserId<TContext>,
+    protected getTargetAppUserId: GetTargetAppUserId<TContext>,
+    protected getContextualBeatmapIds: GetContextualBeatmapIds<TContext>,
+    protected getLastSeenBeatmapId: GetLastSeenBeatmapId<TContext>,
+    protected saveLastSeenBeatmapId: SaveLastSeenBeatmapId<TContext>,
+    protected getBeatmapBestScores: GetBeatmapUsersBestScoresUseCase,
+    protected getAppUserInfo: GetAppUserInfoUseCase
   ) {
     super(UserBestPlaysOnMap.commandStructure);
-    this.textProcessor = textProcessor;
-    this.getInitiatorAppUserId = getInitiatorAppUserId;
-    this.getTargetAppUserId = getTargetAppUserId;
-    this.getContextualBeatmapIds = getContextualBeatmapIds;
-    this.getLastSeenBeatmapId = getLastSeenBeatmapId;
-    this.saveLastSeenBeatmapId = saveLastSeenBeatmapId;
-    this.getBeatmapBestScores = getBeatmapBestScores;
-    this.getAppUserInfo = getAppUserInfo;
   }
 
   matchText(text: string): CommandMatchResult<UserBestPlaysOnMapExecutionArgs> {

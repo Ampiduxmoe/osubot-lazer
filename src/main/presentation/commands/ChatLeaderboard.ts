@@ -44,24 +44,14 @@ export abstract class ChatLeaderboard<TContext, TOutput> extends TextCommand<
     {argument: MODE, isOptional: true},
   ];
 
-  textProcessor: TextProcessor;
-  getInitiatorAppUserId: GetInitiatorAppUserId<TContext>;
-  getLocalAppUserIds: GetLocalAppUserIds<TContext>;
-  getOsuUserInfo: GetOsuUserInfoUseCase;
-  getAppUserInfo: GetAppUserInfoUseCase;
   constructor(
-    textProcessor: TextProcessor,
-    getInitiatorAppUserId: GetInitiatorAppUserId<TContext>,
-    getLocalAppUserIds: GetLocalAppUserIds<TContext>,
-    getOsuUserInfo: GetOsuUserInfoUseCase,
-    getAppUserInfo: GetAppUserInfoUseCase
+    public textProcessor: TextProcessor,
+    protected getInitiatorAppUserId: GetInitiatorAppUserId<TContext>,
+    protected getLocalAppUserIds: GetLocalAppUserIds<TContext>,
+    protected getOsuUserInfo: GetOsuUserInfoUseCase,
+    protected getAppUserInfo: GetAppUserInfoUseCase
   ) {
     super(ChatLeaderboard.commandStructure);
-    this.textProcessor = textProcessor;
-    this.getInitiatorAppUserId = getInitiatorAppUserId;
-    this.getLocalAppUserIds = getLocalAppUserIds;
-    this.getOsuUserInfo = getOsuUserInfo;
-    this.getAppUserInfo = getAppUserInfo;
   }
 
   matchText(text: string): CommandMatchResult<ChatLeaderboardExecutionArgs> {

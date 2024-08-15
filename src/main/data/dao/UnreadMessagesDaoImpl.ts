@@ -5,10 +5,7 @@ import {
 import {UnreadMessagesRepository} from '../repository/repositories/UnreadMessagesRepository';
 
 export class UnreadMessagesDaoImpl implements UnreadMessagesDao {
-  private unreadMessagesRepository: UnreadMessagesRepository;
-  constructor(unreadMessagesRepository: UnreadMessagesRepository) {
-    this.unreadMessagesRepository = unreadMessagesRepository;
-  }
+  constructor(protected unreadMessagesRepository: UnreadMessagesRepository) {}
   async get(appUserId: string): Promise<UnreadMessageInfo | undefined> {
     return await this.unreadMessagesRepository.get({appUserId: appUserId});
   }

@@ -47,31 +47,18 @@ export abstract class ReplyAsBot<
     {argument: CUSTOM_PAYLOAD, isOptional: true},
   ];
 
-  textProcessor: TextProcessor;
-  tryToReply: (
-    appUserId: string,
-    messageId: string,
-    text: string,
-    payload: TCustomPayload | undefined
-  ) => Promise<boolean>;
-  getContactAdminMessageUseCase: GetContactAdminMessageUseCase;
-  deleteContactAdminMessageUseCase: DeleteContactAdminMessageUseCase;
   constructor(
-    textProcessor: TextProcessor,
-    tryToReply: (
+    public textProcessor: TextProcessor,
+    protected tryToReply: (
       appUserId: string,
       messageId: string,
       text: string,
       payload: TCustomPayload | undefined
     ) => Promise<boolean>,
-    getContactAdminMessageUseCase: GetContactAdminMessageUseCase,
-    deleteContactAdminMessageUseCase: DeleteContactAdminMessageUseCase
+    protected getContactAdminMessageUseCase: GetContactAdminMessageUseCase,
+    protected deleteContactAdminMessageUseCase: DeleteContactAdminMessageUseCase
   ) {
     super(ReplyAsBot.commandStructure);
-    this.textProcessor = textProcessor;
-    this.tryToReply = tryToReply;
-    this.getContactAdminMessageUseCase = getContactAdminMessageUseCase;
-    this.deleteContactAdminMessageUseCase = deleteContactAdminMessageUseCase;
   }
 
   matchText(

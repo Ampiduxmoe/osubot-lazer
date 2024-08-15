@@ -44,24 +44,14 @@ export abstract class UserUpdate<TContext, TOutput> extends TextCommand<
     {argument: MODE, isOptional: true},
   ];
 
-  textProcessor: TextProcessor;
-  getInitiatorAppUserId: GetInitiatorAppUserId<TContext>;
-  getTargetAppUserId: GetTargetAppUserId<TContext>;
-  getOsuUserUpdate: GetOsuUserUpdateUseCase;
-  getAppUserInfo: GetAppUserInfoUseCase;
   constructor(
-    textProcessor: TextProcessor,
-    getInitiatorAppUserId: GetInitiatorAppUserId<TContext>,
-    getTargetAppUserId: GetTargetAppUserId<TContext>,
-    getOsuUserUpdate: GetOsuUserUpdateUseCase,
-    getAppUserInfo: GetAppUserInfoUseCase
+    public textProcessor: TextProcessor,
+    protected getInitiatorAppUserId: GetInitiatorAppUserId<TContext>,
+    protected getTargetAppUserId: GetTargetAppUserId<TContext>,
+    protected getOsuUserUpdate: GetOsuUserUpdateUseCase,
+    protected getAppUserInfo: GetAppUserInfoUseCase
   ) {
     super(UserUpdate.commandStructure);
-    this.textProcessor = textProcessor;
-    this.getInitiatorAppUserId = getInitiatorAppUserId;
-    this.getTargetAppUserId = getTargetAppUserId;
-    this.getOsuUserUpdate = getOsuUserUpdate;
-    this.getAppUserInfo = getAppUserInfo;
   }
 
   matchText(text: string): CommandMatchResult<UserUpdateExecutionArgs> {

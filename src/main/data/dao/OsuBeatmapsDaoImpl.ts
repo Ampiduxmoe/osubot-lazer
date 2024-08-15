@@ -9,12 +9,10 @@ import {OsuBeatmapInfo} from '../http/boundary/OsuBeatmapInfo';
 import {COMMON_REQUEST_SUBTARGETS} from './AppUserApiRequestsSummariesDaoImpl';
 
 export class OsuBeatmapsDaoImpl implements OsuBeatmapsDao {
-  private apis: OsuApi[];
-  private recentApiRequests: AppUserRecentApiRequestsDao;
-  constructor(apis: OsuApi[], recentApiRequests: AppUserRecentApiRequestsDao) {
-    this.apis = apis;
-    this.recentApiRequests = recentApiRequests;
-  }
+  constructor(
+    protected apis: OsuApi[],
+    protected recentApiRequests: AppUserRecentApiRequestsDao
+  ) {}
   async get(
     appUserId: string,
     id: number,

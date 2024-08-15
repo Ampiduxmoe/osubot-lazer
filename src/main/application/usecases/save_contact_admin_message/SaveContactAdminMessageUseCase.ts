@@ -7,10 +7,7 @@ export class SaveContactAdminMessageUseCase
   implements
     UseCase<SaveContactAdminMessageRequest, SaveContactAdminMessageResponse>
 {
-  unreadMessages: UnreadMessagesDao;
-  constructor(unreadMessages: UnreadMessagesDao) {
-    this.unreadMessages = unreadMessages;
-  }
+  constructor(protected unreadMessages: UnreadMessagesDao) {}
 
   async execute(
     params: SaveContactAdminMessageRequest

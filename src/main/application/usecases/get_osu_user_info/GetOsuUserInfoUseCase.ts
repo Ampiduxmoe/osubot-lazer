@@ -6,10 +6,7 @@ import {OsuUsersDao} from '../../requirements/dao/OsuUsersDao';
 export class GetOsuUserInfoUseCase
   implements UseCase<GetOsuUserInfoRequest, GetOsuUserInfoResponse>
 {
-  osuUsers: OsuUsersDao;
-  constructor(osuUsers: OsuUsersDao) {
-    this.osuUsers = osuUsers;
-  }
+  constructor(protected osuUsers: OsuUsersDao) {}
 
   async execute(
     params: GetOsuUserInfoRequest

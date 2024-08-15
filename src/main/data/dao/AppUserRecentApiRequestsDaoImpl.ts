@@ -11,12 +11,9 @@ export class AppUserRecentApiRequestsDaoImpl
   private requestsCleanupJob: NodeJS.Timeout | undefined = undefined;
   private requests: AppUserApiRequests[] = [];
 
-  private requestSummaries: AppUserApiRequestsSummariesDao;
-  constructor(requestSummaries: AppUserApiRequestsSummariesDao) {
-    this.requestSummaries = requestSummaries;
-  }
-
   minStoreTime = new Timespan().addMinutes(5);
+
+  constructor(protected requestSummaries: AppUserApiRequestsSummariesDao) {}
 
   async cleanUp(): Promise<void> {
     const requests = this.requests;

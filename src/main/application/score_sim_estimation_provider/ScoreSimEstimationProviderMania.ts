@@ -14,11 +14,7 @@ export class ScoreSimEstimationProviderMania {
     score: BeatmapScoreMania;
     result: Promise<SimulatedScoreMania | undefined>;
   }[] = [];
-
-  scoreSimulations: ScoreSimulationsDao;
-  constructor(scoreSimulations: ScoreSimulationsDao) {
-    this.scoreSimulations = scoreSimulations;
-  }
+  constructor(protected scoreSimulations: ScoreSimulationsDao) {}
 
   starRatingEstimationProvider: StarRatingEstimationProviderMania = (() => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars

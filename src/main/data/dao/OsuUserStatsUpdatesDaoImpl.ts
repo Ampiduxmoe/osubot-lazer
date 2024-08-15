@@ -9,10 +9,7 @@ import {OsuTrackApi} from '../http/osutrack/OsuTrackApi';
 export class OsuUserStatsUpdatesDaoImpl implements OsuUserStatsUpdatesDao {
   private osuTrackApi = new OsuTrackApi();
 
-  private recentApiRequests: AppUserRecentApiRequestsDao;
-  constructor(recentApiRequests: AppUserRecentApiRequestsDao) {
-    this.recentApiRequests = recentApiRequests;
-  }
+  constructor(protected recentApiRequests: AppUserRecentApiRequestsDao) {}
 
   async get(
     appUserId: string,

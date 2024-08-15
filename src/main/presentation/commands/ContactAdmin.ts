@@ -27,34 +27,20 @@ export abstract class ContactAdmin<
   static prefixes = new CommandPrefixes('[bot_mention]');
   prefixes = ContactAdmin.prefixes;
 
-  textProcessor: TextProcessor;
-  mentionArgument: CommandArgument<TMention>;
-  isBotMention: (mention: TMention) => boolean;
-  getInitiatorAppUserId: GetInitiatorAppUserId<TContext>;
-  getMessageId: (ctx: TContext) => string;
-  forwardToAdmin: (ctx: TContext) => Promise<void>;
-  saveContactAdminMessage: SaveContactAdminMessageUseCase;
   constructor(
-    textProcessor: TextProcessor,
-    mentionArgument: CommandArgument<TMention>,
-    isBotMention: (mention: TMention) => boolean,
-    getInitiatorAppUserId: GetInitiatorAppUserId<TContext>,
-    getMessageId: (ctx: TContext) => string,
-    forwardToAdmin: (ctx: TContext) => Promise<void>,
-    saveContactAdminMessage: SaveContactAdminMessageUseCase
+    public textProcessor: TextProcessor,
+    protected mentionArgument: CommandArgument<TMention>,
+    protected isBotMention: (mention: TMention) => boolean,
+    protected getInitiatorAppUserId: GetInitiatorAppUserId<TContext>,
+    protected getMessageId: (ctx: TContext) => string,
+    protected forwardToAdmin: (ctx: TContext) => Promise<void>,
+    protected saveContactAdminMessage: SaveContactAdminMessageUseCase
   ) {
     const USER_MESSAGE = ANY_STRING('сообщение', 'сообщение пользователя');
     super([
       {argument: mentionArgument, isOptional: false},
       {argument: USER_MESSAGE, isOptional: false},
     ]);
-    this.mentionArgument = mentionArgument;
-    this.textProcessor = textProcessor;
-    this.isBotMention = isBotMention;
-    this.getInitiatorAppUserId = getInitiatorAppUserId;
-    this.getMessageId = getMessageId;
-    this.forwardToAdmin = forwardToAdmin;
-    this.saveContactAdminMessage = saveContactAdminMessage;
   }
 
   matchText(text: string): CommandMatchResult<ContactAdminExecutionArgs> {

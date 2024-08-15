@@ -26,10 +26,8 @@ export class ScoreSimulationsDaoImpl implements ScoreSimulationsDao {
     }
   }
 
-  private api: ScoreSimulationApi;
-  constructor(api: ScoreSimulationApi) {
-    this.api = api;
-  }
+  constructor(protected api: ScoreSimulationApi) {}
+
   async getForOsu(
     beatmapId: number,
     mods: ModAcronym[],

@@ -13,18 +13,11 @@ import {COMMON_REQUEST_SUBTARGETS} from './AppUserApiRequestsSummariesDaoImpl';
 import {ModPatternCollectionMatcher} from './common/ModPatternCollectionMatcher';
 
 export class OsuUserRecentScoresDaoImpl implements OsuUserRecentScoresDao {
-  private apis: OsuApi[];
-  private osuUserSnapshotsRepository: OsuUserSnapshotsRepository;
-  private recentApiRequests: AppUserRecentApiRequestsDao;
   constructor(
-    apis: OsuApi[],
-    osuUserSnapshotsRepository: OsuUserSnapshotsRepository,
-    recentApiRequests: AppUserRecentApiRequestsDao
-  ) {
-    this.apis = apis;
-    this.osuUserSnapshotsRepository = osuUserSnapshotsRepository;
-    this.recentApiRequests = recentApiRequests;
-  }
+    protected apis: OsuApi[],
+    protected osuUserSnapshotsRepository: OsuUserSnapshotsRepository,
+    protected recentApiRequests: AppUserRecentApiRequestsDao
+  ) {}
   async get(
     appUserId: string,
     osuUserId: number,

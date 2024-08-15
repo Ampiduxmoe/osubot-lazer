@@ -6,10 +6,7 @@ import {AppUserApiRequestsSummariesDao} from '../../requirements/dao/AppUserApiR
 export class GetApiUsageSummaryUseCase
   implements UseCase<GetApiUsageSummaryRequest, GetApiUsageSummaryResponse>
 {
-  apiRequestsSummaries: AppUserApiRequestsSummariesDao;
-  constructor(apiRequestsSummaries: AppUserApiRequestsSummariesDao) {
-    this.apiRequestsSummaries = apiRequestsSummaries;
-  }
+  constructor(protected apiRequestsSummaries: AppUserApiRequestsSummariesDao) {}
 
   async execute(
     params: GetApiUsageSummaryRequest

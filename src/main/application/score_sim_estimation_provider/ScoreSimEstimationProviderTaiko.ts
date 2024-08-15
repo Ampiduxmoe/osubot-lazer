@@ -15,10 +15,7 @@ export class ScoreSimEstimationProviderTaiko {
     result: Promise<SimulatedScoreTaiko | undefined>;
   }[] = [];
 
-  scoreSimulations: ScoreSimulationsDao;
-  constructor(scoreSimulations: ScoreSimulationsDao) {
-    this.scoreSimulations = scoreSimulations;
-  }
+  constructor(protected scoreSimulations: ScoreSimulationsDao) {}
 
   starRatingEstimationProvider: StarRatingEstimationProviderTaiko = (() => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars

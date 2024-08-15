@@ -62,33 +62,17 @@ export abstract class ChatLeaderboardOnMap<
     {argument: MOD_PATTERNS, isOptional: true},
   ];
 
-  textProcessor: TextProcessor;
-  getInitiatorAppUserId: GetInitiatorAppUserId<TContext>;
-  getLocalAppUserIds: GetLocalAppUserIds<TContext>;
-  getContextualBeatmapIds: GetContextualBeatmapIds<TContext>;
-  getLastSeenBeatmapId: GetLastSeenBeatmapId<TContext>;
-  saveLastSeenBeatmapId: SaveLastSeenBeatmapId<TContext>;
-  getBeatmapBestScores: GetBeatmapUsersBestScoresUseCase;
-  getAppUserInfo: GetAppUserInfoUseCase;
   constructor(
-    textProcessor: TextProcessor,
-    getInitiatorAppUserId: GetInitiatorAppUserId<TContext>,
-    getLocalAppUserIds: GetLocalAppUserIds<TContext>,
-    getContextualBeatmapIds: GetContextualBeatmapIds<TContext>,
-    getLastSeenBeatmapId: GetLastSeenBeatmapId<TContext>,
-    saveLastSeenBeatmapId: SaveLastSeenBeatmapId<TContext>,
-    getBeatmapBestScores: GetBeatmapUsersBestScoresUseCase,
-    getAppUserInfo: GetAppUserInfoUseCase
+    public textProcessor: TextProcessor,
+    protected getInitiatorAppUserId: GetInitiatorAppUserId<TContext>,
+    protected getLocalAppUserIds: GetLocalAppUserIds<TContext>,
+    protected getContextualBeatmapIds: GetContextualBeatmapIds<TContext>,
+    protected getLastSeenBeatmapId: GetLastSeenBeatmapId<TContext>,
+    protected saveLastSeenBeatmapId: SaveLastSeenBeatmapId<TContext>,
+    protected getBeatmapBestScores: GetBeatmapUsersBestScoresUseCase,
+    protected getAppUserInfo: GetAppUserInfoUseCase
   ) {
     super(ChatLeaderboardOnMap.commandStructure);
-    this.textProcessor = textProcessor;
-    this.getInitiatorAppUserId = getInitiatorAppUserId;
-    this.getLocalAppUserIds = getLocalAppUserIds;
-    this.getContextualBeatmapIds = getContextualBeatmapIds;
-    this.getLastSeenBeatmapId = getLastSeenBeatmapId;
-    this.saveLastSeenBeatmapId = saveLastSeenBeatmapId;
-    this.getBeatmapBestScores = getBeatmapBestScores;
-    this.getAppUserInfo = getAppUserInfo;
   }
 
   matchText(

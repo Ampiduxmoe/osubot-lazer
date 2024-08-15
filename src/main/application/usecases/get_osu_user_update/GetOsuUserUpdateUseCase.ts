@@ -9,18 +9,11 @@ import {GetOsuUserUpdateResponse} from './GetOsuUserUpdateResponse';
 export class GetOsuUserUpdateUseCase
   implements UseCase<GetOsuUserUpdateRequest, GetOsuUserUpdateResponse>
 {
-  userUpdates: OsuUserStatsUpdatesDao;
-  cachedOsuUsers: CachedOsuUsersDao;
-  osuUsers: OsuUsersDao;
   constructor(
-    userUpdates: OsuUserStatsUpdatesDao,
-    cachedOsuUsers: CachedOsuUsersDao,
-    osuUsers: OsuUsersDao
-  ) {
-    this.userUpdates = userUpdates;
-    this.cachedOsuUsers = cachedOsuUsers;
-    this.osuUsers = osuUsers;
-  }
+    protected userUpdates: OsuUserStatsUpdatesDao,
+    protected cachedOsuUsers: CachedOsuUsersDao,
+    protected osuUsers: OsuUsersDao
+  ) {}
 
   async execute(
     params: GetOsuUserUpdateRequest

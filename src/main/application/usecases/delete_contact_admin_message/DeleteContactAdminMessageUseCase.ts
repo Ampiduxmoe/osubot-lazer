@@ -10,10 +10,7 @@ export class DeleteContactAdminMessageUseCase
       DeleteContactAdminMessageResponse
     >
 {
-  unreadMessages: UnreadMessagesDao;
-  constructor(unreadMessages: UnreadMessagesDao) {
-    this.unreadMessages = unreadMessages;
-  }
+  constructor(protected unreadMessages: UnreadMessagesDao) {}
 
   async execute(
     params: DeleteContactAdminMessageRequest

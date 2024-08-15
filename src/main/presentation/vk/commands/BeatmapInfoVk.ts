@@ -1,7 +1,6 @@
 /* eslint-disable no-irregular-whitespace */
 import {APP_CODE_NAME} from '../../../App';
 import {MapInfo} from '../../../application/usecases/get_beatmap_info/GetBeatmapInfoResponse';
-import {GetBeatmapInfoUseCase} from '../../../application/usecases/get_beatmap_info/GetBeatmapInfoUseCase';
 import {MaybeDeferred} from '../../../primitives/MaybeDeferred';
 import {integerShortForm, round} from '../../../primitives/Numbers';
 import {OsuRuleset} from '../../../primitives/OsuRuleset';
@@ -11,13 +10,6 @@ import {
   BeatmapInfo,
   BeatmapInfoExecutionArgs,
 } from '../../commands/BeatmapInfo';
-import {
-  GetContextualBeatmapIds,
-  GetInitiatorAppUserId,
-  GetLastSeenBeatmapId,
-  SaveLastSeenBeatmapId,
-} from '../../commands/common/Signatures';
-import {TextProcessor} from '../../common/arg_processing/TextProcessor';
 import {CommandMatchResult} from '../../common/CommandMatchResult';
 import {VkBeatmapCoversRepository} from '../../data/repositories/VkBeatmapCoversRepository';
 import {VkMessageContext} from '../VkMessageContext';
@@ -29,25 +21,11 @@ export class BeatmapInfoVk extends BeatmapInfo<
   VkMessageContext,
   VkOutputMessage
 > {
-  vkBeatmapCovers: VkBeatmapCoversRepository;
   constructor(
-    textProcessor: TextProcessor,
-    getInitiatorAppUserId: GetInitiatorAppUserId<VkMessageContext>,
-    getContextualBeatmapIds: GetContextualBeatmapIds<VkMessageContext>,
-    getLastSeenBeatmapId: GetLastSeenBeatmapId<VkMessageContext>,
-    saveLastSeenBeatmapId: SaveLastSeenBeatmapId<VkMessageContext>,
-    getBeatmapInfo: GetBeatmapInfoUseCase,
-    vkBeatmapCovers: VkBeatmapCoversRepository
+    protected vkBeatmapCovers: VkBeatmapCoversRepository,
+    ...parentParams: ConstructorParameters<typeof BeatmapInfo>
   ) {
-    super(
-      textProcessor,
-      getInitiatorAppUserId,
-      getContextualBeatmapIds,
-      getLastSeenBeatmapId,
-      saveLastSeenBeatmapId,
-      getBeatmapInfo
-    );
-    this.vkBeatmapCovers = vkBeatmapCovers;
+    super(...parentParams);
   }
   matchMessage(
     ctx: VkMessageContext

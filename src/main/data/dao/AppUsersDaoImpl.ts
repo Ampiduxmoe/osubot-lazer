@@ -7,10 +7,7 @@ import {
 import {AppUsersRepository} from '../repository/repositories/AppUsersRepository';
 
 export class AppUsersDaoImpl implements AppUsersDao {
-  private appUsersRepository: AppUsersRepository;
-  constructor(appUsersRepository: AppUsersRepository) {
-    this.appUsersRepository = appUsersRepository;
-  }
+  constructor(protected appUsersRepository: AppUsersRepository) {}
   async get(id: string, server: OsuServer): Promise<AppUserInfo | undefined> {
     const appUser = await this.appUsersRepository.get({
       id: id,

@@ -6,10 +6,9 @@ import {
 import {OsuUserSnapshotsRepository} from '../repository/repositories/OsuUserSnapshotsRepository';
 
 export class CachedOsuUsersDaoImpl implements CachedOsuUsersDao {
-  private osuUserSnapshotsRepository: OsuUserSnapshotsRepository;
-  constructor(osuUserSnapshotsRepository: OsuUserSnapshotsRepository) {
-    this.osuUserSnapshotsRepository = osuUserSnapshotsRepository;
-  }
+  constructor(
+    protected osuUserSnapshotsRepository: OsuUserSnapshotsRepository
+  ) {}
   async get(
     username: string,
     server: OsuServer

@@ -35,22 +35,14 @@ export class GetBeatmapUsersBestScoresUseCase
       GetBeatmapUsersBestScoresResponse
     >
 {
-  beatmaps: OsuBeatmapsDao;
-  mapUserScores: OsuBeatmapUserScoresDao;
-  cachedOsuUsers: CachedOsuUsersDao;
-  osuUsers: OsuUsersDao;
   beatmapUserScoresAdapter: BeatmapUserScoreAdapter;
   constructor(
-    beatmaps: OsuBeatmapsDao,
-    mapUserScores: OsuBeatmapUserScoresDao,
-    scoreSimulations: ScoreSimulationsDao,
-    cachedOsuUsers: CachedOsuUsersDao,
-    osuUsers: OsuUsersDao
+    protected beatmaps: OsuBeatmapsDao,
+    protected mapUserScores: OsuBeatmapUserScoresDao,
+    protected cachedOsuUsers: CachedOsuUsersDao,
+    protected osuUsers: OsuUsersDao,
+    scoreSimulations: ScoreSimulationsDao
   ) {
-    this.beatmaps = beatmaps;
-    this.mapUserScores = mapUserScores;
-    this.cachedOsuUsers = cachedOsuUsers;
-    this.osuUsers = osuUsers;
     this.beatmapUserScoresAdapter = new BeatmapUserScoreAdapter(
       scoreSimulations
     );

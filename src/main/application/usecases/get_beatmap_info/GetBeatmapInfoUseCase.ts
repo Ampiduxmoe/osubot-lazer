@@ -21,12 +21,11 @@ import {BeatmapScore} from '../../../domain/entities/BeatmapScore';
 export class GetBeatmapInfoUseCase
   implements UseCase<GetBeatmapInfoRequest, GetBeatmapInfoResponse>
 {
-  beatmaps: OsuBeatmapsDao;
-  scoreSimulations: ScoreSimulationsDao;
   beatmapInfoAdapter: BeatmapInfoAdapter;
-  constructor(osuUsers: OsuBeatmapsDao, scoreSimulations: ScoreSimulationsDao) {
-    this.beatmaps = osuUsers;
-    this.scoreSimulations = scoreSimulations;
+  constructor(
+    protected beatmaps: OsuBeatmapsDao,
+    protected scoreSimulations: ScoreSimulationsDao
+  ) {
     this.beatmapInfoAdapter = new BeatmapInfoAdapter(scoreSimulations);
   }
 

@@ -25,10 +25,8 @@ export abstract class BeatmapMenu<TContext, TOutput> extends TextCommand<
     {argument: BEATMAP_LINK, isOptional: false},
   ];
 
-  textProcessor: TextProcessor;
-  constructor(textProcessor: TextProcessor) {
+  constructor(public textProcessor: TextProcessor) {
     super(BeatmapMenu.commandStructure);
-    this.textProcessor = textProcessor;
   }
 
   matchText(text: string): CommandMatchResult<BeatmapMenuExecutionArgs> {

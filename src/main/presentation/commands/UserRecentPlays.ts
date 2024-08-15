@@ -67,27 +67,15 @@ export abstract class UserRecentPlays<TContext, TOutput> extends TextCommand<
     {argument: MODE, isOptional: true},
   ];
 
-  textProcessor: TextProcessor;
-  getInitiatorAppUserId: GetInitiatorAppUserId<TContext>;
-  getTargetAppUserId: GetTargetAppUserId<TContext>;
-  saveLastSeenBeatmapId: SaveLastSeenBeatmapId<TContext>;
-  getRecentPlays: GetUserRecentPlaysUseCase;
-  getAppUserInfo: GetAppUserInfoUseCase;
   constructor(
-    textProcessor: TextProcessor,
-    getInitiatorAppUserId: GetInitiatorAppUserId<TContext>,
-    getTargetAppUserId: GetTargetAppUserId<TContext>,
-    saveLastSeenBeatmapId: SaveLastSeenBeatmapId<TContext>,
-    getRecentPlays: GetUserRecentPlaysUseCase,
-    getAppUserInfo: GetAppUserInfoUseCase
+    public textProcessor: TextProcessor,
+    protected getInitiatorAppUserId: GetInitiatorAppUserId<TContext>,
+    protected getTargetAppUserId: GetTargetAppUserId<TContext>,
+    protected saveLastSeenBeatmapId: SaveLastSeenBeatmapId<TContext>,
+    protected getRecentPlays: GetUserRecentPlaysUseCase,
+    protected getAppUserInfo: GetAppUserInfoUseCase
   ) {
     super(UserRecentPlays.commandStructure);
-    this.textProcessor = textProcessor;
-    this.getInitiatorAppUserId = getInitiatorAppUserId;
-    this.getTargetAppUserId = getTargetAppUserId;
-    this.saveLastSeenBeatmapId = saveLastSeenBeatmapId;
-    this.getRecentPlays = getRecentPlays;
-    this.getAppUserInfo = getAppUserInfo;
   }
 
   matchText(text: string): CommandMatchResult<UserRecentPlaysExecutionArgs> {

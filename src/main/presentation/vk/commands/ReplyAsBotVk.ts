@@ -1,7 +1,5 @@
 /* eslint-disable no-irregular-whitespace */
 import {APP_CODE_NAME} from '../../../App';
-import {DeleteContactAdminMessageUseCase} from '../../../application/usecases/delete_contact_admin_message/DeleteContactAdminMessageUseCase';
-import {GetContactAdminMessageUseCase} from '../../../application/usecases/get_contact_admin_message/GetContactAdminMessageUseCase';
 import {MaybeDeferred} from '../../../primitives/MaybeDeferred';
 import {ReplyAsBot, ReplyAsBotExecutionArgs} from '../../commands/ReplyAsBot';
 import {
@@ -9,7 +7,6 @@ import {
   CUSTOM_PAYLOAD,
   MESSAGE_ID,
 } from '../../common/arg_processing/CommandArguments';
-import {TextProcessor} from '../../common/arg_processing/TextProcessor';
 import {CommandMatchResult} from '../../common/CommandMatchResult';
 import {VkMessageContext} from '../VkMessageContext';
 import {VkOutputMessage} from '../VkOutputMessage';
@@ -19,26 +16,11 @@ export class ReplyAsBotVk extends ReplyAsBot<
   VkOutputMessage,
   VkCustomPayload
 > {
-  groupId: number;
   constructor(
-    groupId: number,
-    textProcessor: TextProcessor,
-    tryToReply: (
-      appUserId: string,
-      messageId: string,
-      text: string,
-      payload: VkCustomPayload | undefined
-    ) => Promise<boolean>,
-    getContactAdminMessageUseCase: GetContactAdminMessageUseCase,
-    deleteContactAdminMessageUseCase: DeleteContactAdminMessageUseCase
+    protected groupId: number,
+    ...parentParams: ConstructorParameters<typeof ReplyAsBot>
   ) {
-    super(
-      textProcessor,
-      tryToReply,
-      getContactAdminMessageUseCase,
-      deleteContactAdminMessageUseCase
-    );
-    this.groupId = groupId;
+    super(...parentParams);
   }
 
   matchMessage(

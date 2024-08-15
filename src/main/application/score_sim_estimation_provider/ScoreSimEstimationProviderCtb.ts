@@ -15,10 +15,7 @@ export class ScoreSimEstimationProviderCtb {
     result: Promise<SimulatedScoreCtb | undefined>;
   }[] = [];
 
-  scoreSimulations: ScoreSimulationsDao;
-  constructor(scoreSimulations: ScoreSimulationsDao) {
-    this.scoreSimulations = scoreSimulations;
-  }
+  constructor(protected scoreSimulations: ScoreSimulationsDao) {}
 
   starRatingEstimationProvider: StarRatingEstimationProviderCtb = (() => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars

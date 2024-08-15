@@ -41,18 +41,12 @@ export abstract class SetUsername<TContext, TOutput> extends TextCommand<
     {argument: MODE, isOptional: true},
   ];
 
-  textProcessor: TextProcessor;
-  getTargetAppUserId: GetTargetAppUserId<TContext>;
-  setUsername: SetUsernameUseCase;
   constructor(
-    textProcessor: TextProcessor,
-    getTargetAppUserId: GetTargetAppUserId<TContext>,
-    setUsername: SetUsernameUseCase
+    public textProcessor: TextProcessor,
+    protected getTargetAppUserId: GetTargetAppUserId<TContext>,
+    protected setUsername: SetUsernameUseCase
   ) {
     super(SetUsername.commandStructure);
-    this.textProcessor = textProcessor;
-    this.getTargetAppUserId = getTargetAppUserId;
-    this.setUsername = setUsername;
   }
 
   matchText(text: string): CommandMatchResult<SetUsernameExecutionArgs> {

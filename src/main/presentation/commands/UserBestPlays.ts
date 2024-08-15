@@ -57,30 +57,16 @@ export abstract class UserBestPlays<TContext, TOutput> extends TextCommand<
     {argument: MODE, isOptional: true},
   ];
 
-  textProcessor: TextProcessor;
-  getInitiatorAppUserId: GetInitiatorAppUserId<TContext>;
-  getTargetAppUserId: GetTargetAppUserId<TContext>;
-  saveLastSeenBeatmapId: SaveLastSeenBeatmapId<TContext>;
-  getUserBestPlays: GetUserBestPlaysUseCase;
-  getAppUserInfo: GetAppUserInfoUseCase;
-  vkBeatmapCovers: VkBeatmapCoversRepository;
   constructor(
-    textProcessor: TextProcessor,
-    getInitiatorAppUserId: GetInitiatorAppUserId<TContext>,
-    getTargetAppUserId: GetTargetAppUserId<TContext>,
-    saveLastSeenBeatmapId: SaveLastSeenBeatmapId<TContext>,
-    getUserBestPlays: GetUserBestPlaysUseCase,
-    getAppUserInfo: GetAppUserInfoUseCase,
-    vkBeatmapCovers: VkBeatmapCoversRepository
+    public textProcessor: TextProcessor,
+    protected getInitiatorAppUserId: GetInitiatorAppUserId<TContext>,
+    protected getTargetAppUserId: GetTargetAppUserId<TContext>,
+    protected saveLastSeenBeatmapId: SaveLastSeenBeatmapId<TContext>,
+    protected getUserBestPlays: GetUserBestPlaysUseCase,
+    protected getAppUserInfo: GetAppUserInfoUseCase,
+    protected vkBeatmapCovers: VkBeatmapCoversRepository
   ) {
     super(UserBestPlays.commandStructure);
-    this.textProcessor = textProcessor;
-    this.getInitiatorAppUserId = getInitiatorAppUserId;
-    this.getTargetAppUserId = getTargetAppUserId;
-    this.saveLastSeenBeatmapId = saveLastSeenBeatmapId;
-    this.getUserBestPlays = getUserBestPlays;
-    this.getAppUserInfo = getAppUserInfo;
-    this.vkBeatmapCovers = vkBeatmapCovers;
   }
 
   matchText(text: string): CommandMatchResult<UserBestPlaysExecutionArgs> {
