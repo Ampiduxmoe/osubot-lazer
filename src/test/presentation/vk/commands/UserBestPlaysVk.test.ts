@@ -106,9 +106,9 @@ describe('UserBestPlaysVk', function () {
 
     const getUserBestPlaysUseCase = new GetUserBestPlaysUseCase(
       userBestScoresDao,
-      scoreSimulationsDao,
       cachedOsuUsersDao,
-      osuUsersDao
+      osuUsersDao,
+      scoreSimulationsDao
     );
     const getAppUserInfoUseCase = new GetAppUserInfoUseCase(appUsersDao);
 
@@ -145,13 +145,13 @@ describe('UserBestPlaysVk', function () {
       return vkChatLastBeatmaps.save(ctx.peerId, server, beatmapId);
     };
     command = new UserBestPlaysVk(
+      vkBeatmapCovers,
       mainTextProcessor,
       getInitiatorAppUserId,
       getTargetAppUserId,
       saveLastSeenBeatmapId,
       getUserBestPlaysUseCase,
-      getAppUserInfoUseCase,
-      vkBeatmapCovers
+      getAppUserInfoUseCase
     );
   }
 

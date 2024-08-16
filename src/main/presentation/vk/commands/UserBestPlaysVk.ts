@@ -24,6 +24,15 @@ export class UserBestPlaysVk extends UserBestPlays<
   VkMessageContext,
   VkOutputMessage
 > {
+  constructor(
+    protected vkBeatmapCovers: VkBeatmapCoversRepository,
+    ...parentParams: ConstructorParameters<
+      typeof UserBestPlays<VkMessageContext, VkOutputMessage>
+    >
+  ) {
+    super(...parentParams);
+  }
+
   matchMessage(
     ctx: VkMessageContext
   ): CommandMatchResult<UserBestPlaysExecutionArgs> {

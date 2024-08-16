@@ -18,7 +18,9 @@ export class ReplyAsBotVk extends ReplyAsBot<
 > {
   constructor(
     protected groupId: number,
-    ...parentParams: ConstructorParameters<typeof ReplyAsBot>
+    ...parentParams: ConstructorParameters<
+      typeof ReplyAsBot<VkMessageContext, VkOutputMessage, VkCustomPayload>
+    >
   ) {
     super(...parentParams);
   }

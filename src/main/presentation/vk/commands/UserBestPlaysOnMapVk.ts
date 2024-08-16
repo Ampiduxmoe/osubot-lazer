@@ -29,7 +29,9 @@ export class UserBestPlaysOnMapVk extends UserBestPlaysOnMap<
 > {
   constructor(
     protected vkBeatmapCovers: VkBeatmapCoversRepository,
-    ...parentParams: ConstructorParameters<typeof UserBestPlaysOnMap>
+    ...parentParams: ConstructorParameters<
+      typeof UserBestPlaysOnMap<VkMessageContext, VkOutputMessage>
+    >
   ) {
     super(...parentParams);
   }

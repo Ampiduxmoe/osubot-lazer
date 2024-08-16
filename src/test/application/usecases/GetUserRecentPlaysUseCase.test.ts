@@ -58,9 +58,9 @@ describe('GetUserRecentPlaysUseCase', function () {
     tables = [osuUserSnapshots, appUserApiRequestsCounts, timeWindows];
     usecase = new GetUserRecentPlaysUseCase(
       recentScoresDao,
-      scoreSimulationsDao,
       cachedOsuUsersDao,
-      osuUsersDao
+      osuUsersDao,
+      scoreSimulationsDao
     );
   }
 

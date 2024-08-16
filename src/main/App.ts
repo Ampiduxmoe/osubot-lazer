@@ -238,15 +238,15 @@ export class App {
     const setUsernameUseCase = new SetUsernameUseCase(appUsersDao, osuUsersDao);
     const getRecentPlaysUseCase = new GetUserRecentPlaysUseCase(
       recentScoresDao,
-      scoreSimulationsDao,
       cachedOsuUsersDao,
-      osuUsersDao
+      osuUsersDao,
+      scoreSimulationsDao
     );
     const getUserBestPlaysUseCase = new GetUserBestPlaysUseCase(
       userBestScoresDao,
-      scoreSimulationsDao,
       cachedOsuUsersDao,
-      osuUsersDao
+      osuUsersDao,
+      scoreSimulationsDao
     );
     const getApiUsageSummaryUseCase = new GetApiUsageSummaryUseCase(
       requestSummariesDao
@@ -259,9 +259,9 @@ export class App {
       new GetBeatmapUsersBestScoresUseCase(
         osuBeatmapsDao,
         osuBeatmapUserScoresDao,
-        scoreSimulationsDao,
         cachedOsuUsersDao,
-        osuUsersDao
+        osuUsersDao,
+        scoreSimulationsDao
       );
     const saveContactAdminMessageUseCase = new SaveContactAdminMessageUseCase(
       unreadMessagesDao
@@ -635,33 +635,34 @@ export class App {
         getAppUserInfoUseCase
       ),
       new BeatmapInfoVk(
+        vkBeatmapCovers,
         mainTextProcessor,
         getInitiatorAppUserId,
         getContextualBeatmapIds,
         getLastSeenBeatmapId,
         saveLastSeenBeatmapId,
-        getBeatmapInfoUseCase,
-        vkBeatmapCovers
+        getBeatmapInfoUseCase
       ),
       new UserRecentPlaysVk(
+        vkBeatmapCovers,
         mainTextProcessor,
         getInitiatorAppUserId,
         getTargetAppUserId,
         saveLastSeenBeatmapId,
         getRecentPlaysUseCase,
-        getAppUserInfoUseCase,
-        vkBeatmapCovers
+        getAppUserInfoUseCase
       ),
       new UserBestPlaysVk(
+        vkBeatmapCovers,
         mainTextProcessor,
         getInitiatorAppUserId,
         getTargetAppUserId,
         saveLastSeenBeatmapId,
         getUserBestPlaysUseCase,
-        getAppUserInfoUseCase,
-        vkBeatmapCovers
+        getAppUserInfoUseCase
       ),
       new UserBestPlaysOnMapVk(
+        vkBeatmapCovers,
         mainTextProcessor,
         getInitiatorAppUserId,
         getTargetAppUserId,
@@ -669,8 +670,7 @@ export class App {
         getLastSeenBeatmapId,
         saveLastSeenBeatmapId,
         getBeatmapUsersBestScoresUseCase,
-        getAppUserInfoUseCase,
-        vkBeatmapCovers
+        getAppUserInfoUseCase
       ),
       new ChatLeaderboardVk(
         mainTextProcessor,

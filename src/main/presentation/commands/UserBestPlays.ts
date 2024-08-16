@@ -20,7 +20,6 @@ import {MainArgsProcessor} from '../common/arg_processing/MainArgsProcessor';
 import {TextProcessor} from '../common/arg_processing/TextProcessor';
 import {CommandMatchResult} from '../common/CommandMatchResult';
 import {CommandPrefixes} from '../common/CommandPrefixes';
-import {VkBeatmapCoversRepository} from '../data/repositories/VkBeatmapCoversRepository';
 import {
   NOTICE_ABOUT_SPACES_IN_USERNAMES,
   TextCommand,
@@ -63,8 +62,7 @@ export abstract class UserBestPlays<TContext, TOutput> extends TextCommand<
     protected getTargetAppUserId: GetTargetAppUserId<TContext>,
     protected saveLastSeenBeatmapId: SaveLastSeenBeatmapId<TContext>,
     protected getUserBestPlays: GetUserBestPlaysUseCase,
-    protected getAppUserInfo: GetAppUserInfoUseCase,
-    protected vkBeatmapCovers: VkBeatmapCoversRepository
+    protected getAppUserInfo: GetAppUserInfoUseCase
   ) {
     super(UserBestPlays.commandStructure);
   }

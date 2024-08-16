@@ -30,7 +30,9 @@ export class UserRecentPlaysVk extends UserRecentPlays<
 > {
   constructor(
     protected vkBeatmapCovers: VkBeatmapCoversRepository,
-    ...parentParams: ConstructorParameters<typeof UserRecentPlays>
+    ...parentParams: ConstructorParameters<
+      typeof UserRecentPlays<VkMessageContext, VkOutputMessage>
+    >
   ) {
     super(...parentParams);
   }

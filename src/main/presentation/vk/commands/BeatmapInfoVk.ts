@@ -23,7 +23,9 @@ export class BeatmapInfoVk extends BeatmapInfo<
 > {
   constructor(
     protected vkBeatmapCovers: VkBeatmapCoversRepository,
-    ...parentParams: ConstructorParameters<typeof BeatmapInfo>
+    ...parentParams: ConstructorParameters<
+      typeof BeatmapInfo<VkMessageContext, VkOutputMessage>
+    >
   ) {
     super(...parentParams);
   }
