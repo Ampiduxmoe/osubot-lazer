@@ -58,11 +58,14 @@ export class BanchoClient {
 
   private async refreshToken() {
     console.log(`Refreshing ${BanchoClient.name} OAuth token...`);
-    const token = await this.fetchToken();
+    const refreshStart = Date.now();
+    const token = await this.fetchTokenAndSave();
+    const refreshTime = Date.now() - refreshStart;
+    console.log(`Refreshed OAuth token in ${refreshTime}ms`);
     this.trySetToken(token);
   }
 
-  private async fetchToken(): Promise<OsuOauthAccessToken> {
+  private async fetchTokenAndSave(): Promise<OsuOauthAccessToken> {
     const body = {
       client_id: this.ouathClientId,
       client_secret: this.oauthClientSecret,

@@ -17,23 +17,25 @@ export class BanchoUsers {
     ruleset: OsuRuleset | undefined
   ): Promise<RawBanchoUserExtended | undefined> {
     const rulesetName = ruleset === undefined ? 'default' : OsuRuleset[ruleset];
-    console.log(`Trying to fetch Bancho user ${username} (${rulesetName})`);
+    console.log(`Trying to get Bancho user ${username} (${rulesetName})`);
     const httpClient = await this.getHttpClient();
     const playmode = ruleset === undefined ? '' : rulesetToPlaymode(ruleset);
     const url = `${this.url}/${username}/${playmode}`;
+    const fetchStart = Date.now();
     const response = await httpClient.get(url, {
       params: {
         key: 'username',
       },
     });
+    const fetchTime = Date.now() - fetchStart;
+    console.log(
+      `Fetched Bancho user ${username} (${rulesetName}) in ${fetchTime}ms`
+    );
     if (response.status === 404) {
       console.log(`Bancho user with username ${username} was not found`);
       return undefined;
     }
     const rawUser: RawBanchoUserExtended = response.data;
-    console.log(
-      `Successfully fetched Bancho user ${username} (${rulesetName})`
-    );
     return rawUser;
   }
 
@@ -47,7 +49,7 @@ export class BanchoUsers {
     const type: UserScoresType = 'recent';
     const rulesetName = ruleset === undefined ? 'default' : OsuRuleset[ruleset];
     console.log(
-      `Trying to fetch Bancho '${type}' scores for ${userId} (${rulesetName})`
+      `Trying to get Bancho '${type}' scores for ${userId} (${rulesetName})`
     );
     const httpClient = await this.getHttpClient();
     const url = `${this.url}/${userId}/scores/${type}`;
@@ -66,16 +68,18 @@ export class BanchoUsers {
     if (ruleset !== undefined) {
       params.mode = rulesetToPlaymode(ruleset);
     }
+    const fetchStart = Date.now();
     const response = await httpClient.get(url, {
       headers: {
         'x-api-version': 20220705,
       },
       params: params,
     });
-    const scores: RawBanchoUserRecentScore[] = response.data;
+    const fetchTime = Date.now() - fetchStart;
     console.log(
-      `Successfully fetched Bancho '${type}' scores for ${userId} (${rulesetName})`
+      `Fetched Bancho '${type}' scores for ${userId} (${rulesetName}) in ${fetchTime}ms`
     );
+    const scores: RawBanchoUserRecentScore[] = response.data;
     return scores;
   }
 
@@ -88,7 +92,7 @@ export class BanchoUsers {
     const type: UserScoresType = 'best';
     const rulesetName = ruleset === undefined ? 'default' : OsuRuleset[ruleset];
     console.log(
-      `Trying to fetch Bancho '${type}' scores for ${userId} (${rulesetName})`
+      `Trying to get Bancho '${type}' scores for ${userId} (${rulesetName})`
     );
     const httpClient = await this.getHttpClient();
     const url = `${this.url}/${userId}/scores/${type}`;
@@ -105,16 +109,18 @@ export class BanchoUsers {
     if (ruleset !== undefined) {
       params.mode = rulesetToPlaymode(ruleset);
     }
+    const fetchStart = Date.now();
     const response = await httpClient.get(url, {
       headers: {
         'x-api-version': 20220705,
       },
       params: params,
     });
-    const scores: RawBanchoUserBestScore[] = response.data;
+    const fetchTime = Date.now() - fetchStart;
     console.log(
-      `Successfully fetched Bancho '${type}' scores for ${userId} (${rulesetName})`
+      `Fetched Bancho '${type}' scores for ${userId} (${rulesetName}) in ${fetchTime}ms`
     );
+    const scores: RawBanchoUserBestScore[] = response.data;
     return scores;
   }
 }

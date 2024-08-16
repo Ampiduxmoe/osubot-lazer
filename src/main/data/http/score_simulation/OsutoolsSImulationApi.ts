@@ -96,8 +96,11 @@ export class OsutoolsSimulationApi implements ScoreSimulationApi {
         body.da_settings.hp = round(da.hp, 1);
       }
     }
-    console.log(`Trying to get score simulation (${JSON.stringify(body)})...`);
+    console.log(`Trying to get score simulation (${JSON.stringify(body)})`);
+    const fetchStart = Date.now();
     const response = await this.httpClient.post(url, body);
+    const fetchTime = Date.now() - fetchStart;
+    console.log(`Fetched score simulation in ${fetchTime}ms`);
     const simulationResult: RawScoreSimulationResultOsu = response.data;
     const {score, performance_attributes, difficulty_attributes} =
       simulationResult;
@@ -145,7 +148,7 @@ export class OsutoolsSimulationApi implements ScoreSimulationApi {
       misses: 0,
       goods: 0,
     };
-    console.log(`Trying to get score simulation (${JSON.stringify(body)})...`);
+    console.log(`Trying to get score simulation (${JSON.stringify(body)})`);
     const response = await this.httpClient.post(url, body);
     const simulationResult: RawScoreSimulationResultCompact = response.data;
     return {
@@ -168,7 +171,7 @@ export class OsutoolsSimulationApi implements ScoreSimulationApi {
       droplets: 0,
       tiny_droplets: 0,
     };
-    console.log(`Trying to get score simulation (${JSON.stringify(body)})...`);
+    console.log(`Trying to get score simulation (${JSON.stringify(body)})`);
     const response = await this.httpClient.post(url, body);
     const simulationResult: RawScoreSimulationResultCompact = response.data;
     return {
@@ -189,7 +192,7 @@ export class OsutoolsSimulationApi implements ScoreSimulationApi {
       mods: mods.map(m => m.toString()),
       score: 1e6,
     };
-    console.log(`Trying to get score simulation (${JSON.stringify(body)})...`);
+    console.log(`Trying to get score simulation (${JSON.stringify(body)})`);
     const response = await this.httpClient.post(url, body);
     const simulationResult: RawScoreSimulationResultCompact = response.data;
     return {

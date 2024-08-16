@@ -12,16 +12,18 @@ export class BanchoBeatmaps {
   }
 
   async getById(id: number): Promise<RawBanchoBeatmapExtended | undefined> {
-    console.log(`Trying to fetch Bancho beatmap ${id}`);
+    console.log(`Trying to get Bancho beatmap ${id}`);
     const httpClient = await this.getHttpClient();
     const url = `${this.url}/${id}`;
+    const fetchStart = Date.now();
     const response = await httpClient.get(url);
+    const fetchTime = Date.now() - fetchStart;
+    console.log(`Fetched Bancho beatmap ${id} in ${fetchTime}ms`);
     if (response.status === 404) {
       console.log(`Bancho beatmap ${id} was not found`);
       return undefined;
     }
     const rawBeatmap: RawBanchoBeatmapExtended = response.data;
-    console.log(`Successfully fetched Bancho beatmap ${id}`);
     return rawBeatmap;
   }
 
@@ -32,7 +34,7 @@ export class BanchoBeatmaps {
   ): Promise<RawBanchoBeatmapUserScore[] | undefined> {
     const rulesetName = ruleset === undefined ? 'default' : OsuRuleset[ruleset];
     console.log(
-      `Trying to fetch Bancho beatmap ${beatmapId} scores for user ${userId} (${rulesetName})`
+      `Trying to get Bancho beatmap ${beatmapId} scores for user ${userId} (${rulesetName})`
     );
     const httpClient = await this.getHttpClient();
     const url = `${this.url}/${beatmapId}/scores/users/${userId}/all`;
@@ -42,21 +44,23 @@ export class BanchoBeatmaps {
     if (ruleset !== undefined) {
       params.ruleset = rulesetToPlaymode(ruleset);
     }
+    const fetchStart = Date.now();
     const response = await httpClient.get(url, {
       headers: {
         'x-api-version': 20220705,
       },
       params: params,
     });
+    const fetchTime = Date.now() - fetchStart;
+    console.log(
+      `Fetched Bancho beatmap ${beatmapId} scores for user ${userId} (${rulesetName}) in ${fetchTime}ms`
+    );
     if (response.status === 404) {
       console.log(`Bancho beatmap ${beatmapId} was not found`);
       return undefined;
     }
     const data: {scores: RawBanchoBeatmapUserScore[]} = response.data;
     const rawScores = data.scores;
-    console.log(
-      `Successfully fetched Bancho beatmap ${beatmapId} scores for user ${userId} (${rulesetName})`
-    );
     return rawScores;
   }
 }

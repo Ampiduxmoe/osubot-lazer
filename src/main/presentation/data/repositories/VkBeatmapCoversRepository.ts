@@ -124,10 +124,16 @@ WHERE
   ): Promise<string | undefined> {
     let data: ArrayBuffer;
     try {
+      console.log(`Trying to get beatmap cover for ${beatmapsetId}`);
+      const fetchStart = Date.now();
       data = await this.fetchArrayBuffer(url);
+      const fetchTime = Date.now() - fetchStart;
+      if (this.verboseDownloadAndSave) {
+        console.log(`Fetched cover for ${beatmapsetId} in ${fetchTime}ms`);
+      }
     } catch (e) {
       if (this.verboseDownloadAndSave) {
-        console.log(`Could not download cover for beatmapset ${beatmapsetId}:`);
+        console.log(`Could not fetch cover for ${beatmapsetId}`);
         if (e instanceof Error) {
           console.log(e.message);
         } else {
@@ -136,15 +142,15 @@ WHERE
       }
       return undefined;
     }
+
+    console.log(`Trying to upload beatmap cover for ${beatmapsetId}`);
+    const uploadStart = Date.now();
+    const attachment = await this.uploadImageToVk(Buffer.from(data));
+    const uploadTime = Date.now() - uploadStart;
     if (this.verboseDownloadAndSave) {
       console.log(
-        `Successfully downloaded cover for beatmapset ${beatmapsetId}`
+        `Uploaded cover for ${beatmapsetId} to VK in ${uploadTime}ms`
       );
-    }
-
-    const attachment = await this.uploadImageToVk(Buffer.from(data));
-    if (this.verboseDownloadAndSave) {
-      console.log(`Successfully uploaded cover ${beatmapsetId} to VK`);
     }
 
     await this.add({
