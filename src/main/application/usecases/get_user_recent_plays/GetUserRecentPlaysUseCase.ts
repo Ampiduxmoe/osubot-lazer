@@ -92,7 +92,7 @@ export class GetUserRecentPlaysUseCase
         rawRecentScores[0],
         targetRuleset
       );
-      const estimatedPpValues = await getFcAndSsEstimations(beatmapScore);
+      const estimatedPpValues = getFcAndSsEstimations(beatmapScore);
       recentPlays[0].pp.ifFc = estimatedPpValues.fc;
       recentPlays[0].pp.ifSs = estimatedPpValues.ss;
     }
@@ -107,12 +107,9 @@ export class GetUserRecentPlaysUseCase
   }
 }
 
-async function getFcAndSsEstimations(
+function getFcAndSsEstimations(
   score: BeatmapScore<Mode, Hitcounts>
-): Promise<{
-  fc: number | undefined;
-  ss: number | undefined;
-}> {
+): FcAndSsEstimation {
   const modeClassName = score.baseBeatmap.mode.constructor.name;
   const hitcountsClassName = score.hitcounts.constructor.name;
   const unexpectedTypeCombinationError = Error(
@@ -153,12 +150,9 @@ async function getFcAndSsEstimations(
   throw Error(`Unexpected mode type ${modeClassName}`);
 }
 
-async function getOsuFcAndSsEstimations(
+function getOsuFcAndSsEstimations(
   score: BeatmapScore<ModeOsu, HitcountsOsu>
-): Promise<{
-  fc: number | undefined;
-  ss: number | undefined;
-}> {
+): FcAndSsEstimation {
   const totalHits =
     score.hitcounts.great +
     score.hitcounts.ok +
@@ -186,59 +180,50 @@ async function getOsuFcAndSsEstimations(
     }),
   });
   return {
-    fc: await fcScore.getEstimatedPp(),
-    ss: await ssScore.getEstimatedPp(),
+    fc: fcScore.getEstimatedPp(),
+    ss: ssScore.getEstimatedPp(),
   };
 }
 
-async function getTaikoFcAndSsEstimations(
+function getTaikoFcAndSsEstimations(
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   score: BeatmapScore<ModeTaiko, HitcountsTaiko>
-): Promise<{
-  fc: number | undefined;
-  ss: number | undefined;
-}> {
+): FcAndSsEstimation {
   return {
     fc: undefined,
     ss: undefined,
   };
 }
 
-async function getCtbFcAndSsEstimations(
+function getCtbFcAndSsEstimations(
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   score: BeatmapScore<ModeCtb, HitcountsCtb>
-): Promise<{
-  fc: number | undefined;
-  ss: number | undefined;
-}> {
+): FcAndSsEstimation {
   return {
     fc: undefined,
     ss: undefined,
   };
 }
 
-async function getManiaFcAndSsEstimations(
+function getManiaFcAndSsEstimations(
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   score: BeatmapScore<ModeMania, HitcountsMania>
-): Promise<{
-  fc: number | undefined;
-  ss: number | undefined;
-}> {
+): FcAndSsEstimation {
   return {
     fc: undefined,
     ss: undefined,
   };
 }
 
-async function getRecentPlayWithoutFcAndSsEstimations(
+function getRecentPlayWithoutFcAndSsEstimations(
   score: BeatmapScore<Mode, Hitcounts>,
   absolutePosition: number
-): Promise<OsuUserRecentPlay> {
+): OsuUserRecentPlay {
   const estimatedStarRating = score.hasStarRatingChangingMods
-    ? await score.getEstimatedStarRating()
+    ? score.getEstimatedStarRating()
     : score.baseBeatmap.starRating;
   const estimatedPpValue =
-    score.pp === null ? await score.getEstimatedPp() : score.pp;
+    score.pp === null ? score.getEstimatedPp() : score.pp;
   return {
     absolutePosition: absolutePosition,
     beatmapset: {
@@ -282,3 +267,8 @@ async function getRecentPlayWithoutFcAndSsEstimations(
     grade: score.rank,
   };
 }
+
+type FcAndSsEstimation = {
+  fc: Promise<number | undefined> | number | undefined;
+  ss: Promise<number | undefined> | number | undefined;
+};

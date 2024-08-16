@@ -29,7 +29,7 @@ export type OsuUserRecentPlay = {
     totalLength: number;
     drainLength: number;
     bpm: number;
-    estimatedStarRating: number | undefined;
+    estimatedStarRating: Promise<number | undefined> | number | undefined;
     ar: number;
     cs: number;
     od: number;
@@ -48,9 +48,9 @@ export type OsuUserRecentPlay = {
   accuracy: number;
   pp: {
     value: number | undefined;
-    estimatedValue: number | undefined;
-    ifFc: number | undefined;
-    ifSs: number | undefined;
+    estimatedValue: Promise<number | undefined> | number | undefined;
+    ifFc: Promise<number | undefined> | number | undefined;
+    ifSs: Promise<number | undefined> | number | undefined;
   };
   orderedHitcounts: number[];
   grade: ScoreGrade;

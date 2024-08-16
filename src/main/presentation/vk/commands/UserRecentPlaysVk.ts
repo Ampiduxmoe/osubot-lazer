@@ -65,13 +65,11 @@ export class UserRecentPlaysVk extends UserRecentPlays<
       const passesString = oneScore ? 'Последний пасс' : 'Последние пассы';
       const scoresString = oneScore ? 'Последний скор' : 'Последние скоры';
       const username = recentPlays.username;
-      const scoresText = recentPlays.plays
-        .map(p =>
-          oneScore
-            ? this.verboseScoreDescription(p)
-            : this.shortScoreDescription(p)
-        )
-        .join('\n\n');
+      const scoreDescriptions = recentPlays.plays.map(p =>
+        oneScore
+          ? this.verboseScoreDescription(p)
+          : this.shortScoreDescription(p)
+      );
       const couldNotGetSomeStatsMessage =
         recentPlays.plays.find(
           play => play.beatmap.estimatedStarRating === undefined
@@ -85,6 +83,7 @@ export class UserRecentPlaysVk extends UserRecentPlays<
             this.vkBeatmapCovers
           )
         : null;
+      const scoresText = (await Promise.all(scoreDescriptions)).join('\n\n');
       const couldNotAttachCoverMessage =
         coverAttachment === undefined
           ? '\n\nБГ карты прикрепить не удалось 😭'
@@ -107,7 +106,7 @@ ${couldNotGetSomeStatsMessage}${couldNotAttachCoverMessage}
     return MaybeDeferred.fromFastPromise(valuePromise);
   }
 
-  verboseScoreDescription(play: OsuUserRecentPlay): string {
+  async verboseScoreDescription(play: OsuUserRecentPlay): Promise<string> {
     const map = play.beatmap;
     const mapset = play.beatmapset;
 
@@ -152,7 +151,7 @@ ${couldNotGetSomeStatsMessage}${couldNotAttachCoverMessage}
       return [lengthString, drainString];
     })();
     const bpm = round(map.bpm, 2);
-    const sr = play.beatmap.estimatedStarRating?.toFixed(2) ?? '—';
+    const sr = (await play.beatmap.estimatedStarRating)?.toFixed(2) ?? '—';
     const modAcronyms = play.mods.map(m => m.acronym);
     let modsString = modAcronyms.join('');
     const defaultSpeeds = [
@@ -177,14 +176,14 @@ ${couldNotGetSomeStatsMessage}${couldNotAttachCoverMessage}
     const comboString = `${combo}x/${max_combo}x`;
     const acc = (play.accuracy * 100).toFixed(2);
     const ppValue = play.pp.value?.toFixed(2);
-    const ppValueEstimation = play.pp.estimatedValue?.toFixed(0);
+    const ppValueEstimation = (await play.pp.estimatedValue)?.toFixed(0);
     const pp = ppValue ?? ppValueEstimation ?? '—';
     const ppEstimationMark =
       ppValue === undefined && ppValueEstimation !== undefined ? '~' : '';
-    const ppFc =
-      play.pp.ifFc === undefined ? '—' : `~${play.pp.ifFc.toFixed(0)}`;
-    const ppSs =
-      play.pp.ifSs === undefined ? '—' : `~${play.pp.ifSs.toFixed(0)}`;
+    const ppFcValue = await play.pp.ifFc;
+    const ppSsValue = await play.pp.ifFc;
+    const ppFc = ppFcValue === undefined ? '—' : `~${ppFcValue.toFixed(0)}`;
+    const ppSs = ppSsValue === undefined ? '—' : `~${ppSsValue.toFixed(0)}`;
     const ppForFcAndSsString = [play.pp.ifFc, play.pp.ifSs].includes(undefined)
       ? ''
       : `　FC: ${ppFc}　SS: ${ppSs}`;
@@ -210,7 +209,7 @@ Beatmap: ${mapUrlShort}
     `.trim();
   }
 
-  shortScoreDescription(play: OsuUserRecentPlay): string {
+  async shortScoreDescription(play: OsuUserRecentPlay): Promise<string> {
     const map = play.beatmap;
     const mapset = play.beatmapset;
 
@@ -231,7 +230,7 @@ Beatmap: ${mapUrlShort}
     const absPos = `${play.absolutePosition}`;
     const {title} = mapset;
     const diffname = map.difficultyName;
-    const sr = play.beatmap.estimatedStarRating?.toFixed(2) ?? '—';
+    const sr = (await play.beatmap.estimatedStarRating)?.toFixed(2) ?? '—';
     const modAcronyms = play.mods.map(m => m.acronym);
     let modsString = modAcronyms.join('');
     const defaultSpeeds = [
@@ -251,7 +250,7 @@ Beatmap: ${mapUrlShort}
     const comboString = `${combo}x/${max_combo}x`;
     const acc = (play.accuracy * 100).toFixed(2);
     const ppValue = play.pp.value?.toFixed(2);
-    const ppValueEstimation = play.pp.estimatedValue?.toFixed(0);
+    const ppValueEstimation = (await play.pp.estimatedValue)?.toFixed(0);
     const pp = ppValue ?? ppValueEstimation ?? '—';
     const ppEstimationMark =
       ppValue === undefined && ppValueEstimation !== undefined ? '~' : '';
