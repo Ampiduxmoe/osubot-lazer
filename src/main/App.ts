@@ -527,29 +527,63 @@ export class App {
       }
       return sentIds.map(id => (id > 2e9 ? `c:${id - 2e9}` : `p:${id}`));
     };
-
-    const fetchArrayBuffer = async (url: string): Promise<ArrayBuffer> => {
-      return (
-        await axios.get(url, {
-          responseType: 'arraybuffer',
-        })
-      ).data;
-    };
-    const uploadImageToVk = async (buffer: Buffer): Promise<string> => {
-      return (
+    const uploadAndSave = async function (
+      this: VkBeatmapCoversTable,
+      server: OsuServer,
+      beatmapsetId: number,
+      url: string
+    ): Promise<string | undefined> {
+      const serverString = OsuServer[server];
+      let data: ArrayBuffer;
+      try {
+        console.log(
+          `Trying to get beatmap cover for ${beatmapsetId} (${serverString})`
+        );
+        const fetchStart = Date.now();
+        data = (
+          await axios.get(url, {
+            responseType: 'arraybuffer',
+          })
+        ).data;
+        const fetchTime = Date.now() - fetchStart;
+        console.log(
+          `Fetched cover for ${beatmapsetId} in ${fetchTime}ms (${serverString})`
+        );
+      } catch (e) {
+        console.log(
+          `Could not fetch cover for ${beatmapsetId} (${serverString})`
+        );
+        if (e instanceof Error) {
+          console.log(e.message);
+        } else {
+          console.log(e);
+        }
+        return undefined;
+      }
+      console.log(
+        `Trying to upload beatmap cover for ${beatmapsetId} (${serverString})`
+      );
+      const uploadStart = Date.now();
+      const attachment = (
         await vk.upload.messagePhoto({
           source: {
-            value: buffer,
+            value: Buffer.from(data),
           },
         })
       ).toString();
+      const uploadTime = Date.now() - uploadStart;
+      console.log(
+        `Uploaded cover for ${beatmapsetId} (${serverString}) to VK in ${uploadTime}ms`
+      );
+
+      await this.add({
+        server: server,
+        beatmapsetId: beatmapsetId,
+        attachment: attachment,
+      });
+      return attachment;
     };
-    const vkBeatmapCovers = new VkBeatmapCoversTable(
-      vkDb,
-      fetchArrayBuffer,
-      uploadImageToVk,
-      true
-    );
+    const vkBeatmapCovers = new VkBeatmapCoversTable(uploadAndSave, vkDb);
     const vkChatLastBeatmaps = new VkChatLastBeatmapsTable(vkDb);
     const getLastSeenBeatmapId: GetLastSeenBeatmapId<VkMessageContext> = async (
       ctx,

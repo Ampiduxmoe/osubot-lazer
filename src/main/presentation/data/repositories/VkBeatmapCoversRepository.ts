@@ -6,7 +6,7 @@ import {VkBeatmapCover, VkBeatmapCoverKey} from '../models/VkBeatmapCover';
 
 export interface VkBeatmapCoversRepository
   extends Repository<VkBeatmapCoverKey, VkBeatmapCover> {
-  downloadAndSave(
+  uploadAndSave(
     server: OsuServer,
     beatmapsetId: number,
     url: string
@@ -17,19 +17,15 @@ export class VkBeatmapCoversTable
   extends SqlDbTable
   implements VkBeatmapCoversRepository
 {
-  fetchArrayBuffer: (url: string) => Promise<ArrayBuffer>;
-  uploadImageToVk: (buffer: Buffer) => Promise<string>;
-  verboseDownloadAndSave: boolean;
   constructor(
-    db: SqlDb,
-    fetchArrayBuffer: (url: string) => Promise<ArrayBuffer>,
-    uploadImageToVk: (buffer: Buffer) => Promise<string>,
-    verboseDownloadAndSave: boolean
+    public uploadAndSave: (
+      server: OsuServer,
+      beatmapsetId: number,
+      url: string
+    ) => Promise<string | undefined>,
+    db: SqlDb
   ) {
     super(db);
-    this.fetchArrayBuffer = fetchArrayBuffer;
-    this.uploadImageToVk = uploadImageToVk;
-    this.verboseDownloadAndSave = verboseDownloadAndSave;
   }
 
   tableName = 'vk_beatmap_covers';
@@ -115,49 +111,5 @@ WHERE
 
     `.trim();
     await this.db.run(query, [key.server, key.beatmapsetId]);
-  }
-
-  async downloadAndSave(
-    server: OsuServer,
-    beatmapsetId: number,
-    url: string
-  ): Promise<string | undefined> {
-    let data: ArrayBuffer;
-    try {
-      console.log(`Trying to get beatmap cover for ${beatmapsetId}`);
-      const fetchStart = Date.now();
-      data = await this.fetchArrayBuffer(url);
-      const fetchTime = Date.now() - fetchStart;
-      if (this.verboseDownloadAndSave) {
-        console.log(`Fetched cover for ${beatmapsetId} in ${fetchTime}ms`);
-      }
-    } catch (e) {
-      if (this.verboseDownloadAndSave) {
-        console.log(`Could not fetch cover for ${beatmapsetId}`);
-        if (e instanceof Error) {
-          console.log(e.message);
-        } else {
-          console.log(e);
-        }
-      }
-      return undefined;
-    }
-
-    console.log(`Trying to upload beatmap cover for ${beatmapsetId}`);
-    const uploadStart = Date.now();
-    const attachment = await this.uploadImageToVk(Buffer.from(data));
-    const uploadTime = Date.now() - uploadStart;
-    if (this.verboseDownloadAndSave) {
-      console.log(
-        `Uploaded cover for ${beatmapsetId} to VK in ${uploadTime}ms`
-      );
-    }
-
-    await this.add({
-      server: server,
-      beatmapsetId: beatmapsetId,
-      attachment: attachment,
-    });
-    return attachment;
   }
 }

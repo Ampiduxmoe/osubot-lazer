@@ -298,7 +298,7 @@ async function getOrDownloadCoverAttachment(
     return existingAttachment.attachment;
   }
   try {
-    const newAttachment = await coversRepository.downloadAndSave(
+    const newAttachment = await coversRepository.uploadAndSave(
       server,
       mapInfo.beatmapset.id,
       mapInfo.beatmapset.coverUrl

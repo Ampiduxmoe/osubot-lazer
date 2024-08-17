@@ -75,12 +75,7 @@ describe('UserBestPlaysVk', function () {
     const appUserApiRequestsCounts = new AppUserApiRequestsCountsTable(db);
     const timeWindows = new TimeWindowsTable(db);
     appUsers = new AppUsersTable(db);
-    const vkBeatmapCovers = new VkBeatmapCoversTable(
-      db,
-      async () => new ArrayBuffer(0),
-      async () => '',
-      false
-    );
+    const vkBeatmapCovers = new VkBeatmapCoversTable(async () => '', db);
     const vkChatLastBeatmaps = new VkChatLastBeatmapsTable(db);
     const requestsSummariesDao = new AppUserApiRequestsSummariesDaoImpl(
       appUserApiRequestsCounts,
