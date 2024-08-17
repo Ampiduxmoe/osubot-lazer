@@ -181,7 +181,7 @@ ${couldNotGetSomeStatsMessage}${couldNotAttachCoverMessage}
     const ppEstimationMark =
       ppValue === undefined && ppValueEstimation !== undefined ? '~' : '';
     const ppFcValue = await play.pp.ifFc;
-    const ppSsValue = await play.pp.ifFc;
+    const ppSsValue = await play.pp.ifSs;
     const ppFc = ppFcValue === undefined ? '—' : `~${ppFcValue.toFixed(0)}`;
     const ppSs = ppSsValue === undefined ? '—' : `~${ppSsValue.toFixed(0)}`;
     const ppForFcAndSsString = [play.pp.ifFc, play.pp.ifSs].includes(undefined)
