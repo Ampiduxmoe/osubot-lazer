@@ -1,5 +1,4 @@
-import axios from 'axios';
-import {AttachmentType, VK} from 'vk-io';
+import {APIError, AttachmentType, VK} from 'vk-io';
 import {AppConfig, VkGroup} from './AppConfig';
 import {DeleteContactAdminMessageUseCase} from './application/usecases/delete_contact_admin_message/DeleteContactAdminMessageUseCase';
 import {GetApiUsageSummaryUseCase} from './application/usecases/get_api_usage_summary/GetApiUsageSummaryUseCase';
@@ -534,54 +533,38 @@ export class App {
       url: string
     ): Promise<string | undefined> {
       const serverString = OsuServer[server];
-      let data: ArrayBuffer;
       try {
         console.log(
-          `Trying to get beatmap cover for ${beatmapsetId} (${serverString})`
+          `Trying to upload beatmap cover for ${beatmapsetId} (${serverString})`
         );
-        const fetchStart = Date.now();
-        data = (
-          await axios.get(url, {
-            responseType: 'arraybuffer',
+        const uploadStart = Date.now();
+        const attachment = (
+          await vk.upload.messagePhoto({
+            source: {
+              value: url,
+            },
           })
-        ).data;
-        const fetchTime = Date.now() - fetchStart;
+        ).toString();
+        const uploadTime = Date.now() - uploadStart;
         console.log(
-          `Fetched cover for ${beatmapsetId} in ${fetchTime}ms (${serverString})`
+          `Uploaded cover for ${beatmapsetId} (${serverString}) to VK in ${uploadTime}ms`
         );
-      } catch (e) {
-        console.log(
-          `Could not fetch cover for ${beatmapsetId} (${serverString})`
-        );
-        if (e instanceof Error) {
-          console.log(e.message);
-        } else {
-          console.log(e);
-        }
-        return undefined;
-      }
-      console.log(
-        `Trying to upload beatmap cover for ${beatmapsetId} (${serverString})`
-      );
-      const uploadStart = Date.now();
-      const attachment = (
-        await vk.upload.messagePhoto({
-          source: {
-            value: Buffer.from(data),
-          },
-        })
-      ).toString();
-      const uploadTime = Date.now() - uploadStart;
-      console.log(
-        `Uploaded cover for ${beatmapsetId} (${serverString}) to VK in ${uploadTime}ms`
-      );
 
-      await this.add({
-        server: server,
-        beatmapsetId: beatmapsetId,
-        attachment: attachment,
-      });
-      return attachment;
+        await this.add({
+          server: server,
+          beatmapsetId: beatmapsetId,
+          attachment: attachment,
+        });
+        return attachment;
+      } catch (e) {
+        if (e instanceof APIError && e.code === 100) {
+          console.log(
+            `Cover for ${beatmapsetId} (${serverString}) does not exist`
+          );
+          return undefined;
+        }
+        throw e;
+      }
     };
     const vkBeatmapCovers = new VkBeatmapCoversTable(uploadAndSave, vkDb);
     const vkChatLastBeatmaps = new VkChatLastBeatmapsTable(vkDb);
