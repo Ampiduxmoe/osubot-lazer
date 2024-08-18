@@ -242,7 +242,7 @@ export class VkClient {
   ): Promise<boolean> {
     const commandExecutionStart = Date.now();
     const matchResult = command.matchMessage(ctx);
-    if (!matchResult.isMatch) {
+    if (!matchResult.isFullMatch) {
       return false;
     }
     let replyMessagePromise: Promise<VkMessageContext> | undefined = undefined;

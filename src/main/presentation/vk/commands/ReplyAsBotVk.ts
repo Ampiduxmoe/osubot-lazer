@@ -71,7 +71,7 @@ export class ReplyAsBotVk extends ReplyAsBot<
       });
     }
     const textMatch = this.matchText(command);
-    if (!textMatch.isMatch || textMatch.commandArgs === undefined) {
+    if (!textMatch.isFullMatch || textMatch.commandArgs === undefined) {
       return fail;
     }
     const attachments = [

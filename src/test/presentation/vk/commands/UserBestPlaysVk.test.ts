@@ -183,7 +183,7 @@ describe('UserBestPlaysVk', function () {
         text: '',
       }) as VkMessageContext;
       const matchResult = command.matchMessage(msg);
-      assert.strictEqual(matchResult.isMatch, false);
+      assert.strictEqual(matchResult.isFullMatch, false);
     });
     it('should not match unrelated message', function () {
       const unrelatedWords = ['x', 'lorem', 'ipsum', 'dolor', 'sit', 'amet'];
@@ -193,7 +193,7 @@ describe('UserBestPlaysVk', function () {
           text: unrelatedWords.slice(0, i + 1).join(' '),
         }) as VkMessageContext;
         const matchResult = command.matchMessage(msg);
-        assert.strictEqual(matchResult.isMatch, false);
+        assert.strictEqual(matchResult.isFullMatch, false);
       }
     });
     it('should not match when message has redundant words', function () {
@@ -205,7 +205,7 @@ describe('UserBestPlaysVk', function () {
           text: text + ' ][ lorem ! ipsum',
         }) as VkMessageContext;
         const matchResult = command.matchMessage(msg);
-        assert.strictEqual(matchResult.isMatch, false);
+        assert.strictEqual(matchResult.isFullMatch, false);
       }
     });
     it('should not match unrelated payload', function () {
@@ -218,7 +218,7 @@ describe('UserBestPlaysVk', function () {
           payload: text,
         }) as VkMessageContext;
         const matchResult = command.matchMessage(msg);
-        assert.strictEqual(matchResult.isMatch, false);
+        assert.strictEqual(matchResult.isFullMatch, false);
       }
     });
     it('should not match incorrect payload', function () {
@@ -234,7 +234,7 @@ describe('UserBestPlaysVk', function () {
           },
         }) as VkMessageContext;
         const matchResult = command.matchMessage(msg);
-        assert.strictEqual(matchResult.isMatch, false);
+        assert.strictEqual(matchResult.isFullMatch, false);
       }
     });
     it('should match short form', function () {
@@ -251,7 +251,7 @@ describe('UserBestPlaysVk', function () {
             text: goodText,
           }) as VkMessageContext;
           const matchResult = command.matchMessage(msg);
-          assert.strictEqual(matchResult.isMatch, true);
+          assert.strictEqual(matchResult.isFullMatch, true);
           assert.strictEqual(
             matchResult.commandArgs?.server,
             serverAndPrefix.server
@@ -293,7 +293,7 @@ describe('UserBestPlaysVk', function () {
             text: goodText,
           }) as VkMessageContext;
           const matchResult = command.matchMessage(msg);
-          assert.strictEqual(matchResult.isMatch, true);
+          assert.strictEqual(matchResult.isFullMatch, true);
           assert.strictEqual(
             matchResult.commandArgs?.server,
             serverAndPrefix.server
@@ -330,7 +330,7 @@ describe('UserBestPlaysVk', function () {
             },
           }) as VkMessageContext;
           const matchResult = command.matchMessage(msg);
-          assert.strictEqual(matchResult.isMatch, true);
+          assert.strictEqual(matchResult.isFullMatch, true);
           assert.strictEqual(
             matchResult.commandArgs?.server,
             serverAndPrefix.server
@@ -376,7 +376,7 @@ describe('UserBestPlaysVk', function () {
             },
           }) as VkMessageContext;
           const matchResult = command.matchMessage(msg);
-          assert.strictEqual(matchResult.isMatch, true);
+          assert.strictEqual(matchResult.isFullMatch, true);
           assert.strictEqual(
             matchResult.commandArgs?.server,
             serverAndPrefix.server
