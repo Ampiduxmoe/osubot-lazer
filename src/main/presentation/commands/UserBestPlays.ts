@@ -39,7 +39,7 @@ export abstract class UserBestPlays<TContext, TOutput> extends TextCommand<
   internalName = UserBestPlays.name;
   shortDescription = 'топ скоры игрока';
   longDescription = 'Отображает лучшие скоры игрока';
-  notice = NOTICE_ABOUT_SPACES_IN_USERNAMES;
+  notices = [NOTICE_ABOUT_SPACES_IN_USERNAMES];
 
   static prefixes = new CommandPrefixes('p', 'pb', 'PersonalBest');
   prefixes = UserBestPlays.prefixes;

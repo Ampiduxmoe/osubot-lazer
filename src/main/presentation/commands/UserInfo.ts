@@ -29,7 +29,7 @@ export abstract class UserInfo<TContext, TOutput> extends TextCommand<
   internalName = UserInfo.name;
   shortDescription = 'статы игрока';
   longDescription = 'Отображает основную информацию об игроке';
-  notice = NOTICE_ABOUT_SPACES_IN_USERNAMES;
+  notices = [NOTICE_ABOUT_SPACES_IN_USERNAMES];
 
   static prefixes = new CommandPrefixes('u', 'User');
   prefixes = UserInfo.prefixes;

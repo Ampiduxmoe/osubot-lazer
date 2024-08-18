@@ -47,7 +47,7 @@ export abstract class ChatLeaderboardOnMap<
     'На выбранной карте показывает топ, ' +
     'составленный из скоров игроков ' +
     '(по умолчанию игроки беседы)';
-  notice = NOTICE_ABOUT_SPACES_IN_USERNAMES;
+  notices = [NOTICE_ABOUT_SPACES_IN_USERNAMES];
 
   static prefixes = new CommandPrefixes('ml', 'mlb', 'MapLeaderboard');
   prefixes = ChatLeaderboardOnMap.prefixes;

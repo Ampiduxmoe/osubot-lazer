@@ -198,8 +198,8 @@ ${usageVariantsString}
       usage.toLowerCase(),
       usage.toUpperCase(),
     ]);
-    const commmandNoticeString =
-      command.notice === undefined ? '' : '\n\n' + command.notice;
+    const commmandNoticesString =
+      command.notices.length === 0 ? '' : '\n\n' + command.notices.join('\n\n');
     const optionalsHint = hasOptionalArgs
       ? '\n\nАргументы в [квадратных скобках] указывать не обязательно'
       : '';
@@ -209,7 +209,7 @@ ${description}${synonymsString}
 
 Использование:
 ${structureString}
-${argDescriptions.join('\n')}${commmandNoticeString}${optionalsHint}
+${argDescriptions.join('\n')}${commmandNoticesString}${optionalsHint}
 
 Пример: «${usageString}»
     `.trim();

@@ -22,7 +22,7 @@ export abstract class ContactAdmin<
   internalName = ContactAdmin.name;
   shortDescription = 'связь с админом';
   longDescription = 'Отправляет админу ваше сообщение';
-  notice = undefined;
+  notices = [];
 
   static prefixes = new CommandPrefixes('[bot_mention]');
   prefixes = ContactAdmin.prefixes;

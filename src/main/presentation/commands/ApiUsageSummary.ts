@@ -21,7 +21,7 @@ export abstract class ApiUsageSummary<TContext, TOutput> extends TextCommand<
   internalName = ApiUsageSummary.name;
   shortDescription = 'статистика обращений к osu API';
   longDescription = 'Отображает сводку по количеству обращений к API';
-  notice = undefined;
+  notices = [];
 
   static prefixes = new CommandPrefixes();
   prefixes = ApiUsageSummary.prefixes;

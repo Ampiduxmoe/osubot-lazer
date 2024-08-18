@@ -30,7 +30,7 @@ export abstract class ChatLeaderboard<TContext, TOutput> extends TextCommand<
   internalName = ChatLeaderboard.name;
   shortDescription = 'топ чата';
   longDescription = 'Показывает топ игроков (по умолчанию игроки беседы)';
-  notice = NOTICE_ABOUT_SPACES_IN_USERNAMES;
+  notices = [NOTICE_ABOUT_SPACES_IN_USERNAMES];
 
   static prefixes = new CommandPrefixes('l', 'lb', 'Leaderboard');
   prefixes = ChatLeaderboard.prefixes;

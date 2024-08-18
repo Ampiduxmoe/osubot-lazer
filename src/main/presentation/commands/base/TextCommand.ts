@@ -13,7 +13,7 @@ export abstract class TextCommand<
   abstract readonly internalName: string;
   abstract readonly shortDescription: string;
   abstract readonly longDescription: string;
-  abstract readonly notice: string | undefined;
+  abstract readonly notices: string[];
   abstract readonly prefixes: CommandPrefixes;
   abstract readonly textProcessor: TextProcessor;
   readonly commandStructure: Readonly<CommandStructureElement>[];

@@ -16,7 +16,7 @@ export abstract class BeatmapMenu<TContext, TOutput> extends TextCommand<
   internalName = BeatmapMenu.name;
   shortDescription = 'показать меню для карты';
   longDescription = 'Отображает контекстное меню для карты';
-  notice = undefined;
+  notices = [];
 
   static prefixes = new CommandPrefixes('[beatmap]');
   prefixes = BeatmapMenu.prefixes;

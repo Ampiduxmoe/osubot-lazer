@@ -45,7 +45,7 @@ export abstract class UserRecentPlays<TContext, TOutput> extends TextCommand<
     ' для всех скоров, и ' +
     UserRecentPlays.recentPassesPrefixes.map(s => `«${s}»`).join(' или ') +
     ' для пассов';
-  notice = NOTICE_ABOUT_SPACES_IN_USERNAMES;
+  notices = [NOTICE_ABOUT_SPACES_IN_USERNAMES];
 
   static recentPlaysPrefixes = new CommandPrefixes('r', 'Recent');
   static recentPassesPrefixes = new CommandPrefixes('rp', 'RecentPass');

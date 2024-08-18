@@ -30,7 +30,7 @@ export abstract class UserUpdate<TContext, TOutput> extends TextCommand<
   shortDescription = 'обновить стату игрока';
   longDescription =
     'Показывает изменения ранга, пп, плейкаунта и топ скоров с момента последнего апдейта';
-  notice = NOTICE_ABOUT_SPACES_IN_USERNAMES;
+  notices = [NOTICE_ABOUT_SPACES_IN_USERNAMES];
 
   static prefixes = new CommandPrefixes('update');
   prefixes = UserUpdate.prefixes;

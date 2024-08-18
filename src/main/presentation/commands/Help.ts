@@ -20,7 +20,7 @@ export abstract class Help<TContext, TOutput> extends TextCommand<
   internalName = Help.name;
   shortDescription = 'информация о командах';
   longDescription = 'Отображает информацию о доступных командах';
-  notice = undefined;
+  notices = [];
 
   static prefixes = new CommandPrefixes('osubot', 'osubot-help');
   prefixes = Help.prefixes;

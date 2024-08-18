@@ -27,7 +27,7 @@ export abstract class ReplyAsBot<
   internalName = ReplyAsBot.name;
   shortDescription = 'ответ на сообщение пользователя';
   longDescription = 'Отправляет пользователю ответ на его сообщение';
-  notice = undefined;
+  notices = [];
 
   static prefixes = new CommandPrefixes('osubot-reply');
   prefixes = ReplyAsBot.prefixes;

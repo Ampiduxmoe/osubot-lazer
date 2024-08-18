@@ -44,7 +44,7 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
   internalName = UserBestPlaysOnMap.name;
   shortDescription = 'топ скоры игрока на карте';
   longDescription = 'Показывает ваши лучшие скоры выбранной на карте';
-  notice = NOTICE_ABOUT_SPACES_IN_USERNAMES;
+  notices = [NOTICE_ABOUT_SPACES_IN_USERNAMES];
 
   static prefixes = new CommandPrefixes('mp', 'mpb', 'MapPersonalBest');
   prefixes = UserBestPlaysOnMap.prefixes;

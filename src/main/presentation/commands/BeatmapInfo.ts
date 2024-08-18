@@ -37,7 +37,7 @@ export abstract class BeatmapInfo<TContext, TOutput> extends TextCommand<
   internalName = BeatmapInfo.name;
   shortDescription = 'показать карту';
   longDescription = 'Отображает основную информацию о карте';
-  notice = undefined;
+  notices = [];
 
   static prefixes = new CommandPrefixes('m', 'Map');
   prefixes = BeatmapInfo.prefixes;

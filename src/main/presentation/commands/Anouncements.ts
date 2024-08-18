@@ -24,7 +24,7 @@ export abstract class Anouncements<TContext, TOutput> extends TextCommand<
   shortDescription = 'управление объявлениями';
   longDescription =
     'Позволяет отобразить/добавить/протестировать объявления бота';
-  notice = undefined;
+  notices = [];
 
   static prefixes = new CommandPrefixes('osubot-anouncements');
   prefixes = Anouncements.prefixes;

@@ -27,7 +27,7 @@ export abstract class SetUsername<TContext, TOutput> extends TextCommand<
   internalName = SetUsername.name;
   shortDescription = 'установить ник';
   longDescription = 'Привязывает игровой никнейм к вашему аккаунту ВК';
-  notice = NOTICE_ABOUT_SPACES_IN_USERNAMES;
+  notices = [NOTICE_ABOUT_SPACES_IN_USERNAMES];
 
   static prefixes = new CommandPrefixes('n', 'Nickname');
   prefixes = SetUsername.prefixes;
