@@ -64,18 +64,22 @@ export abstract class BeatmapInfo<TContext, TOutput> extends TextCommand<
         this.longDescription +
         ' и показывает результаты симуляции гипотетического скора, ' +
         'если были выбраны дополнительные параметры',
+      notices: [],
       memberIndices: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
     },
     taiko: {
       description: this.longDescription,
+      notices: [],
       memberIndices: [0, 1, 2],
     },
     ctb: {
       description: this.longDescription,
+      notices: [],
       memberIndices: [0, 1, 2],
     },
     mania: {
       description: this.longDescription,
+      notices: [],
       memberIndices: [0, 1, 2],
     },
   };

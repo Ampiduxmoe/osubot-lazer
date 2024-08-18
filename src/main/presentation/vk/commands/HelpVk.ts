@@ -198,6 +198,10 @@ ${usageVariantsString}
       usage.toLowerCase(),
       usage.toUpperCase(),
     ]);
+    const variantNoticesString =
+      argGroup !== undefined && command.argGroups[argGroup].notices.length !== 0
+        ? '\n\n' + command.argGroups[argGroup].notices.join('\n\n')
+        : '';
     const commmandNoticesString =
       command.notices.length === 0 ? '' : '\n\n' + command.notices.join('\n\n');
     const optionalsHint = hasOptionalArgs
@@ -209,7 +213,7 @@ ${description}${synonymsString}
 
 Использование:
 ${structureString}
-${argDescriptions.join('\n')}${commmandNoticesString}${optionalsHint}
+${argDescriptions.join('\n')}${variantNoticesString}${commmandNoticesString}${optionalsHint}
 
 Пример: «${usageString}»
     `.trim();

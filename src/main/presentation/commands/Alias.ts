@@ -37,9 +37,7 @@ export abstract class Alias<TContext, TOutput> extends TextCommand<
   shortDescription = 'управление алиасами';
   longDescription =
     'Позволяет отобразить/добавить/удалить/протестировать ваши личные синонимы для команд бота';
-  notices = [
-    'ЕСЛИ ВЫ ДОБАВЛЯЕТЕ АЛИАС В КОТОРОМ ПАТТЕРН/ЗАМЕНА СОДЕРЖИТ ПРОБЕЛЫ, ОБЕРНИТЕ ПАТТЕРН/ЗАМЕНУ В \'ОДИНАРНЫЕ\', "ДВОЙНЫЕ" ИЛИ `ВОТ ТАКИЕ` КАВЫЧКИ',
-  ];
+  notices = [];
 
   static readonly maximumAliases: number = 20;
 
@@ -92,14 +90,26 @@ export abstract class Alias<TContext, TOutput> extends TextCommand<
   argGroups = {
     show: {
       description: 'Показывает ваши шаблоны',
+      notices: [],
       memberIndices: [0, 1],
     },
     add: {
       description: 'Добавляет шаблон',
+      notices: [
+        'ЕСЛИ ВЫ ДОБАВЛЯЕТЕ АЛИАС В КОТОРОМ ПАТТЕРН/ЗАМЕНА СОДЕРЖИТ ПРОБЕЛЫ, ОБЕРНИТЕ ПАТТЕРН/ЗАМЕНУ В \'ОДИНАРНЫЕ\', "ДВОЙНЫЕ" ИЛИ `ВОТ ТАКИЕ` КАВЫЧКИ',
+        'Наглядные примеры:\n' +
+          // eslint-disable-next-line no-irregular-whitespace
+          `1. Вы ввели «${this.prefixes[0]} add SCORE* 'l r "worst hr player" -osu'»:\n` +
+          'В данном случае бот отреагирует как на «SCORE», так и на «SCORE +dt»\n' +
+          // eslint-disable-next-line no-irregular-whitespace
+          `2. Вы ввели «${this.prefixes[0]} add SCORE 'l r "worst hr player" -osu'»:\n` +
+          'В данном случае бот будет отвечать только на «SCORE»',
+      ],
       memberIndices: [0, 2, 3, 4],
     },
     delete: {
       description: 'Удаляет шаблон',
+      notices: [],
       memberIndices: [0, 5, 6],
     },
     test: {
@@ -107,12 +117,14 @@ export abstract class Alias<TContext, TOutput> extends TextCommand<
         'Позволяет протестировать свои шаблоны; ' +
         'используйте эту команду, для того чтобы увидеть, ' +
         'как сообщение изменяется с помощью ваших шаблонов',
+      notices: [],
       memberIndices: [0, 7, 8],
     },
     legacy: {
       description:
         'Заменяет все ваши шаблоны на те, ' +
         'что позволяют использовать старые сокращения команд',
+      notices: [],
       memberIndices: [0, 9],
     },
   };

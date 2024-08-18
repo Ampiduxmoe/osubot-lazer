@@ -20,6 +20,7 @@ export abstract class TextCommand<
   readonly argGroups: Readonly<{
     [name: string]: {
       readonly description: string;
+      readonly notices: string[];
       readonly memberIndices: readonly number[];
     };
   }> = {};

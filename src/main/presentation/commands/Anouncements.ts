@@ -77,18 +77,24 @@ export abstract class Anouncements<TContext, TOutput> extends TextCommand<
   argGroups = {
     show: {
       description: 'Показывает созданные объявления',
+      notices: [],
       memberIndices: [0, 1, 8],
     },
     create: {
       description: 'Создает объявление с заданными описанием и текстом',
+      notices: [
+        'Пробельные символы с конца и начала текста не попадают в финальный текст объявления',
+      ],
       memberIndices: [0, 2, 3, 4],
     },
     execute: {
       description: 'Отправляет объявление во все чаты',
+      notices: [],
       memberIndices: [0, 5, 7],
     },
     echo: {
       description: 'Отправляет в ответ текст выбранного объявления',
+      notices: [],
       memberIndices: [0, 6, 7],
     },
   };
