@@ -3,7 +3,7 @@ import assert from 'assert';
 import {MainTextProcessor} from '../../../../main/presentation/common/arg_processing/MainTextProcessor';
 
 describe('TextProcessor', function () {
-  const textProcessor = new MainTextProcessor(' ', "'", '\\');
+  const textProcessor = new MainTextProcessor(' ', ["'", '"', '`'], '\\');
   describe('#tokenize()', function () {
     it('should return single token for text "foo"', function () {
       const tokens = textProcessor.tokenize('foo');
@@ -162,6 +162,23 @@ describe('TextProcessor', function () {
       assert.strictEqual(tokens.length, 1);
       assert.strictEqual(tokens[0], "fo'o\\ \\'bar");
     });
+
+    it('should allow non-escaped quotation character inside quotation that started with another character', function () {
+      for (const outerQ of textProcessor.quoteChars) {
+        for (const innerQ of textProcessor.quoteChars) {
+          if (innerQ === outerQ) {
+            continue;
+          }
+          const tokens = textProcessor.tokenize(
+            `foo ${outerQ}one ${innerQ}two${innerQ} three${outerQ} bar`
+          );
+          assert.strictEqual(tokens.length, 3);
+          assert.strictEqual(tokens[0], 'foo');
+          assert.strictEqual(tokens[1], `one ${innerQ}two${innerQ} three`);
+          assert.strictEqual(tokens[2], 'bar');
+        }
+      }
+    });
   });
 
   describe('#detokenize()', function () {
@@ -180,24 +197,24 @@ describe('TextProcessor', function () {
       assert.strictEqual(text, "'foo bar'");
     });
 
-    it("should return \"'\\'foo\\''\" for tokens ['foo']", function () {
+    it("should return \"\"''foo'\"\" for tokens ['foo']", function () {
       const text = textProcessor.detokenize(["'foo'"]);
-      assert.strictEqual(text, "'\\'foo\\''");
+      assert.strictEqual(text, '"\'foo\'"');
     });
 
-    it("should return \"'\\'foo\\'' '\\'bar\\''\" for tokens ['foo', 'bar']", function () {
+    it("should return \"\"'foo'\" \"'bar'\"\" for tokens ['foo', 'bar']", function () {
       const text = textProcessor.detokenize(["'foo'", "'bar'"]);
-      assert.strictEqual(text, "'\\'foo\\'' '\\'bar\\''");
+      assert.strictEqual(text, '"\'foo\'" "\'bar\'"');
     });
 
-    it("should return \"'\\'fo\\\\o\\''\" for tokens ['fo\\o']", function () {
+    it('should return ""\'fo\\\\o\'"" for tokens [\'fo\\o\']', function () {
       const text = textProcessor.detokenize(["'fo\\o'"]);
-      assert.strictEqual(text, "'\\'fo\\\\o\\''");
+      assert.strictEqual(text, '"\'fo\\\\o\'"');
     });
 
-    it("should return \"fo\\o 'b\\'ar'\" for tokens [fo\\o, b'ar]", function () {
+    it('should return "fo\\o "b\'ar"" for tokens [fo\\o, b\'ar]', function () {
       const text = textProcessor.detokenize(['fo\\o', "b'ar"]);
-      assert.strictEqual(text, "fo\\o 'b\\'ar'");
+      assert.strictEqual(text, 'fo\\o "b\'ar"');
     });
 
     it("should return \"' ' ' \\\\ '\" for tokens [ ,   ]", function () {

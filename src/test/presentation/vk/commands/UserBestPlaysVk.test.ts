@@ -115,7 +115,7 @@ describe('UserBestPlaysVk', function () {
       vkBeatmapCovers,
       vkChatLastBeatmaps,
     ];
-    const mainTextProcessor = new MainTextProcessor(' ', "'", '\\');
+    const mainTextProcessor = new MainTextProcessor(' ', ["'", '"', '`'], '\\');
     const getInitiatorAppUserId: GetInitiatorAppUserId<
       VkMessageContext
     > = ctx => {

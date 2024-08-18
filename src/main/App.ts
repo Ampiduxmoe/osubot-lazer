@@ -346,7 +346,7 @@ export class App {
     });
     const vkClient = new VkClient(vk, group.id, [group.owner]);
 
-    const mainTextProcessor = new MainTextProcessor(' ', "'", '\\');
+    const mainTextProcessor = new MainTextProcessor(' ', ["'", '"', '`'], '\\');
 
     const getInitiatorAppUserId: GetInitiatorAppUserId<
       VkMessageContext
@@ -775,7 +775,10 @@ export class App {
         if (!mention.includes(' ')) {
           continue;
         }
-        ctx.text = ctx.text.replace(mention, `'${mention}'`);
+        ctx.text = ctx.text.replace(
+          mention,
+          mainTextProcessor.detokenize([mention])
+        );
       }
 
       const appUserId = VkIdConverter.vkUserIdToAppUserId(ctx.senderId);

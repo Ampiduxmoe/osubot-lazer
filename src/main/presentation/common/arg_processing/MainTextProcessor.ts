@@ -1,23 +1,20 @@
 import {TextProcessor} from './TextProcessor';
 
 export class MainTextProcessor implements TextProcessor {
-  separatorChar: string;
-  quoteChar: string;
-  escapeChar: string;
-
-  constructor(separatorChar: string, quoteChar: string, escapeChar: string) {
-    this.separatorChar = separatorChar;
-    this.quoteChar = quoteChar;
-    this.escapeChar = escapeChar;
-  }
+  constructor(
+    public separatorChar: string,
+    public quoteChars: string[],
+    public escapeChar: string
+  ) {}
 
   tokenize(text: string): string[] {
-    const {separatorChar, quoteChar, escapeChar} = this;
+    const {separatorChar, quoteChars, escapeChar} = this;
     const tokenParts: string[][] = [];
     let currentTokenIndex = 0;
     let currentTokenPartStart: number | undefined = undefined;
-    let isInsideQuotes = false;
+    let currentQuotationChar: string | undefined = undefined;
     let isCurrentCharacterEscaped = false;
+    const isInsideQuotes = () => currentQuotationChar !== undefined;
     const saveTokenPart = (part: string) => {
       const currentTokenParts = tokenParts[currentTokenIndex];
       if (currentTokenParts === undefined) {
@@ -27,44 +24,56 @@ export class MainTextProcessor implements TextProcessor {
       }
     };
     for (const [i, c] of text.split('').entries()) {
-      if (c === escapeChar && isInsideQuotes) {
-        // we encountered escape character inside quotes
-        // where it can be used to escape next character
-        // it has no effect outside quotes
+      if (c === escapeChar && isInsideQuotes()) {
+        // We encountered escape character inside quotes
+        // where it can be used to escape next character.
+        // It has no special effect outside of quotes
         if (!isCurrentCharacterEscaped) {
-          // this escape character was not escaped
-          // it means it is escapes next character
-          // and is not a part of an actual text
+          // This escape character was not escaped.
+          // It means it escapes next character
+          // and is not a part of an actual text,
           isCurrentCharacterEscaped = true;
-          // so we try to save current token part and skip this character
+          // so we try to save current token part and skip this character.
           if (currentTokenPartStart === undefined) {
-            // we encountered escape character right after quote char: '\
+            // We encountered escape character right after quote char
+            // so there is nothing to save.
             continue;
           }
           saveTokenPart(text.substring(currentTokenPartStart, i));
           currentTokenPartStart = undefined;
           continue;
         }
-        // this escape character was escaped
-        // we treat it as any other character and fall through:
+        // This escape character was escaped.
+        // We treat it as any other character and fall through.
       }
+      const isRelatedToQuotation =
+        currentQuotationChar === undefined
+          ? quoteChars.includes(c)
+          : c === currentQuotationChar;
       if (
-        (c !== separatorChar || isInsideQuotes) &&
-        (c !== quoteChar || isCurrentCharacterEscaped)
+        (c !== separatorChar || isInsideQuotes()) &&
+        (!isRelatedToQuotation || isCurrentCharacterEscaped)
       ) {
-        // we encountered regular character
-        if (currentTokenPartStart === undefined) {
-          currentTokenPartStart = i; // mark it as token start if needed
-        }
-        isCurrentCharacterEscaped = false; // tell next char it is not escaped
-        continue; // and go to next character
+        // We encountered regular character.
+        // Mark it as token start if needed,
+        currentTokenPartStart ??= i;
+        // tell next character it is not escaped
+        isCurrentCharacterEscaped = false;
+        // and go to next character
+        continue;
       }
-      if (c === quoteChar) {
-        // we encountered quote character that actually opens or closes the quotation
-        isInsideQuotes = !isInsideQuotes;
+      if (quoteChars.includes(c)) {
+        // We encountered quote character
+        // that actually opens or closes the quotation.
+        if (isInsideQuotes()) {
+          currentQuotationChar = undefined;
+        } else {
+          currentQuotationChar = c;
+        }
         if (currentTokenPartStart === undefined) {
-          // we encountered multiple quotes back to back
+          // We encountered multiple quotes back to back
           // or a quote after a separator
+          // so there is nothing to save.
           continue;
         }
         saveTokenPart(text.substring(currentTokenPartStart, i));
@@ -72,11 +81,12 @@ export class MainTextProcessor implements TextProcessor {
         continue;
       }
       if (c === separatorChar) {
-        // we encountered separator character that actually separates tokens
-        // we should try to save current token part and move to the next token
+        // We encountered separator character that actually separates tokens.
+        // We should try to save current token part and move to the next token.
         if (currentTokenPartStart === undefined) {
-          // we either encountered this separator in the beginning of the text
-          // or it is one of multiple separators written back to back
+          // We either encountered this separator in the beginning of the text
+          // or it is one of multiple separators written back to back.
+          // In any case there is nothing to save.
           currentTokenIndex += 1;
           continue;
         }
@@ -87,28 +97,54 @@ export class MainTextProcessor implements TextProcessor {
       }
     }
     if (currentTokenPartStart !== undefined) {
-      // text ended normally, on a non-separator character
-      // so we save last token part
+      // Text ended normally, on a non-separator character.
+      // We save remaining token part.
       saveTokenPart(text.substring(currentTokenPartStart, text.length));
     }
+    // Assemble token parts into tokens.
     return tokenParts.map(parts => parts.join(''));
   }
 
   detokenize(tokens: string[]): string {
+    const includesQuoteChar = (s: string): boolean => {
+      for (const c of this.quoteChars) {
+        if (s.includes(c)) {
+          return true;
+        }
+      }
+      return false;
+    };
+    const findUnusedQuotationChars = (s: string): string[] => {
+      const unusedQuoteChars: string[] = [];
+      for (const c of this.quoteChars) {
+        if (!s.includes(c)) {
+          unusedQuoteChars.push(c);
+        }
+      }
+      return unusedQuoteChars;
+    };
+    const transformString = (t: string, fn: (c: string) => string): string => {
+      return t
+        .split('')
+        .map(c => fn(c))
+        .join('');
+    };
     return tokens
       .map(t =>
-        !(t.includes(this.quoteChar) || t.includes(this.separatorChar))
+        !(includesQuoteChar(t) || t.includes(this.separatorChar))
           ? t
-          : this.quoteChar +
-            t
-              .split('')
-              .map(c =>
-                c === this.quoteChar || c === this.escapeChar
-                  ? this.escapeChar + c
-                  : c
-              )
-              .join('') +
-            this.quoteChar
+          : (() => {
+              const selectedQuotationChar =
+                findUnusedQuotationChars(t)[0] ?? this.quoteChars[0];
+              const escapedToken = transformString(t, c =>
+                c !== selectedQuotationChar && c !== this.escapeChar
+                  ? c
+                  : this.escapeChar + c
+              );
+              return (
+                selectedQuotationChar + escapedToken + selectedQuotationChar
+              );
+            })()
       )
       .join(this.separatorChar);
   }

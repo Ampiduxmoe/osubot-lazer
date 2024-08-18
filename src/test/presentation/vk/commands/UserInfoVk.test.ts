@@ -75,7 +75,7 @@ describe('UserInfoVk', function () {
       timeWindows,
       appUsers,
     ];
-    const mainTextProcessor = new MainTextProcessor(' ', "'", '\\');
+    const mainTextProcessor = new MainTextProcessor(' ', ["'", '"', '`'], '\\');
     const getInitiatorAppUserId: GetInitiatorAppUserId<
       VkMessageContext
     > = ctx => {
