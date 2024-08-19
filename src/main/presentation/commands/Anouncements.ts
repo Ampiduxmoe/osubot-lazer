@@ -76,11 +76,13 @@ export abstract class Anouncements<TContext, TOutput> extends TextCommand<
 
   argGroups = {
     show: {
+      isCompeting: true,
       description: 'Показывает созданные объявления',
       notices: [],
       memberIndices: [0, 1, 8],
     },
     create: {
+      isCompeting: true,
       description: 'Создает объявление с заданными описанием и текстом',
       notices: [
         'Пробельные символы с конца и начала текста не попадают в финальный текст объявления',
@@ -88,11 +90,13 @@ export abstract class Anouncements<TContext, TOutput> extends TextCommand<
       memberIndices: [0, 2, 3, 4],
     },
     execute: {
+      isCompeting: true,
       description: 'Отправляет объявление во все чаты',
       notices: [],
       memberIndices: [0, 5, 7],
     },
     echo: {
+      isCompeting: true,
       description: 'Отправляет в ответ текст выбранного объявления',
       notices: [],
       memberIndices: [0, 6, 7],

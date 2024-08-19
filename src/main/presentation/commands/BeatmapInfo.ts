@@ -62,6 +62,7 @@ export abstract class BeatmapInfo<TContext, TOutput> extends TextCommand<
   ];
   argGroups = {
     osu: {
+      isCompeting: false,
       description:
         this.longDescription +
         ' и показывает результаты симуляции гипотетического скора, ' +
@@ -70,16 +71,19 @@ export abstract class BeatmapInfo<TContext, TOutput> extends TextCommand<
       memberIndices: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
     },
     taiko: {
+      isCompeting: false,
       description: this.longDescription,
       notices: [],
       memberIndices: [0, 1, 2],
     },
     ctb: {
+      isCompeting: false,
       description: this.longDescription,
       notices: [],
       memberIndices: [0, 1, 2],
     },
     mania: {
+      isCompeting: false,
       description: this.longDescription,
       notices: [],
       memberIndices: [0, 1, 2],

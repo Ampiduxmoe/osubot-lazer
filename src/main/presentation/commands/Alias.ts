@@ -90,11 +90,13 @@ export abstract class Alias<TContext, TOutput> extends TextCommand<
 
   argGroups = {
     show: {
+      isCompeting: true,
       description: 'Показывает ваши шаблоны',
       notices: [],
       memberIndices: [0, 1],
     },
     add: {
+      isCompeting: true,
       description: 'Добавляет шаблон',
       notices: [
         'ЕСЛИ ВЫ ДОБАВЛЯЕТЕ АЛИАС В КОТОРОМ ПАТТЕРН/ЗАМЕНА СОДЕРЖИТ ПРОБЕЛЫ, ОБЕРНИТЕ ПАТТЕРН/ЗАМЕНУ В \'ОДИНАРНЫЕ\', "ДВОЙНЫЕ" ИЛИ `ВОТ ТАКИЕ` КАВЫЧКИ',
@@ -109,11 +111,13 @@ export abstract class Alias<TContext, TOutput> extends TextCommand<
       memberIndices: [0, 2, 3, 4],
     },
     delete: {
+      isCompeting: true,
       description: 'Удаляет шаблон',
       notices: [],
       memberIndices: [0, 5, 6],
     },
     test: {
+      isCompeting: true,
       description:
         'Позволяет протестировать свои шаблоны; ' +
         'используйте эту команду, для того чтобы увидеть, ' +
@@ -122,6 +126,7 @@ export abstract class Alias<TContext, TOutput> extends TextCommand<
       memberIndices: [0, 7, 8],
     },
     legacy: {
+      isCompeting: true,
       description:
         'Заменяет все ваши шаблоны на те, ' +
         'что позволяют использовать старые сокращения команд',

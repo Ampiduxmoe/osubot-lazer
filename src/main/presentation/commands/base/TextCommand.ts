@@ -19,6 +19,7 @@ export abstract class TextCommand<
   readonly commandStructure: Readonly<CommandStructureElement>[];
   readonly argGroups: Readonly<{
     [name: string]: {
+      readonly isCompeting: boolean;
       readonly description: string;
       readonly notices: string[];
       readonly memberIndices: readonly number[];
