@@ -1,4 +1,3 @@
-import {clamp} from '../../../primitives/Numbers';
 import {ValueExtractor, ArgsProcessor} from './ArgsProcessor';
 import {CommandArgument} from './CommandArgument';
 
@@ -67,7 +66,7 @@ class MainValueExtractor<T> implements ValueExtractor<T> {
       return undefined;
     }
     this.tokensRef.splice(this.index!, 1);
-    this.index = clamp(this.index!, 0, this.tokensRef.length - 1);
+    this.index = undefined;
     return value;
   }
   extractWithToken(): [T | undefined, string | undefined] {
@@ -76,7 +75,7 @@ class MainValueExtractor<T> implements ValueExtractor<T> {
       return result;
     }
     this.tokensRef.splice(this.index!, 1);
-    this.index = clamp(this.index!, 0, this.tokensRef.length - 1);
+    this.index = undefined;
     return result;
   }
 }
