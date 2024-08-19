@@ -98,7 +98,7 @@ export class GetBeatmapInfoUseCase
         }
       }
       const {ar, cs, od, hp} = params.mapScoreSimulationOsu;
-      if ((ar || cs || od || hp) !== undefined) {
+      if ((ar ?? cs ?? od ?? hp) !== undefined) {
         mods.push(new DifficultyAdjust({ar, cs, od, hp}));
       }
       // We can calculate score pp using useAccuracyForPp with values true and false.
