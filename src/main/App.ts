@@ -80,6 +80,7 @@ import {UserBestPlaysVk} from './presentation/vk/commands/UserBestPlaysVk';
 import {UserInfoVk} from './presentation/vk/commands/UserInfoVk';
 import {UserRecentPlaysVk} from './presentation/vk/commands/UserRecentPlaysVk';
 import {UserUpdateVk} from './presentation/vk/commands/UserUpdateVk';
+import {WhynotVk} from './presentation/vk/commands/WhynotVk';
 import {VkClient} from './presentation/vk/VkClient';
 import {VkIdConverter} from './presentation/vk/VkIdConverter';
 import {VkMessageContext} from './presentation/vk/VkMessageContext';
@@ -729,6 +730,7 @@ export class App {
       forwardToAdmin,
       saveContactAdminMessageUseCase
     );
+    const whynotCommand = new WhynotVk(publicCommands, []);
     for (const command of [...publicCommands, beatmapMenuCommand]) {
       command.link(publicCommands);
     }
@@ -748,11 +750,15 @@ export class App {
         deleteContactAdminMessageUseCase
       ),
     ];
-    const helpCommand = new HelpVk(mainTextProcessor, publicCommands);
+    const helpCommand = new HelpVk(mainTextProcessor, [
+      ...publicCommands,
+      whynotCommand,
+    ]);
     vkClient.publicCommands.push(
       helpCommand,
       ...publicCommands,
       beatmapMenuCommand,
+      whynotCommand,
       contactAdminCommand
     );
     vkClient.adminCommands.push(...adminCommands);
@@ -829,16 +835,24 @@ export class App {
         commandPrefix: usedPrefix,
         usageVariant: undefined,
       });
+      if (ctx.text === undefined) {
+        throw Error('Text should not be undefined on match');
+      }
+      const whynotCommandStr = whynotCommand.unparse({
+        commandText: ctx.text,
+      });
       const replyText = `
 
 Вы хотели использовать команду ${usedPrefix} (${command.shortDescription})?
 
 Помощь по команде: «${helpCommandStr}»
+Почему команда не сработала: «${whynotCommandStr}»
 
       `.trim();
       ctx.reply(replyText, {
         keyboard: vkClient.createKeyboard([
           [{text: helpCommandStr, command: helpCommandStr}],
+          [{text: whynotCommandStr, command: whynotCommandStr}],
         ]),
       });
     });
