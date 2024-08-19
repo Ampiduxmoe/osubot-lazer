@@ -8,5 +8,7 @@ export interface ArgsProcessor {
 export interface ValueExtractor<T> {
   at(pos: number): ValueExtractor<T>;
   get(): T | undefined;
+  getWithToken(): [T | undefined, string | undefined];
   extract(): T | undefined;
+  extractWithToken(): [T | undefined, string | undefined];
 }

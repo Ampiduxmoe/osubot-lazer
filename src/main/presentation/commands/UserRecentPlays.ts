@@ -6,6 +6,7 @@ import {ModPatternCollection} from '../../primitives/ModPatternCollection';
 import {clamp} from '../../primitives/Numbers';
 import {OsuRuleset} from '../../primitives/OsuRuleset';
 import {OsuServer} from '../../primitives/OsuServer';
+import {CommandArgument} from '../common/arg_processing/CommandArgument';
 import {
   MOD_PATTERNS,
   MODE,
@@ -85,20 +86,53 @@ export abstract class UserRecentPlays<TContext, TOutput> extends TextCommand<
       [...tokens],
       this.commandStructure.map(e => e.argument)
     );
-    const server = argsProcessor.use(SERVER_PREFIX).at(0).extract();
-    const ownPrefix = argsProcessor.use(this.COMMAND_PREFIX).at(0).extract();
-    if (server === undefined || ownPrefix === undefined) {
+    const serverRes = argsProcessor.use(SERVER_PREFIX).at(0).extractWithToken();
+    const ownPrefixRes = argsProcessor
+      .use(this.COMMAND_PREFIX)
+      .at(0)
+      .extractWithToken();
+    if (serverRes[0] === undefined || ownPrefixRes[0] === undefined) {
       return fail;
     }
-    const startPosition = argsProcessor.use(START_POSITION).extract();
-    const quantity = argsProcessor.use(QUANTITY).extract();
-    const modPatterns = argsProcessor.use(MOD_PATTERNS).extract();
-    const mode = argsProcessor.use(MODE).extract();
-    const username = argsProcessor.use(USERNAME).extract();
+    const startPositionRes = argsProcessor
+      .use(START_POSITION)
+      .extractWithToken();
+    const quantityRes = argsProcessor.use(QUANTITY).extractWithToken();
+    const modPatternsRes = argsProcessor.use(MOD_PATTERNS).extractWithToken();
+    const modeRes = argsProcessor.use(MODE).extractWithToken();
+    const usernameRes = argsProcessor.use(USERNAME).extractWithToken();
 
     if (argsProcessor.remainingTokens.length > 0) {
-      return fail;
+      const extractionResults = [
+        [...serverRes, SERVER_PREFIX],
+        [...ownPrefixRes, this.COMMAND_PREFIX],
+        [...startPositionRes, START_POSITION],
+        [...quantityRes, QUANTITY],
+        [...modPatternsRes, MOD_PATTERNS],
+        [...modeRes, MODE],
+        [...usernameRes, USERNAME],
+      ];
+      const mapping: Record<string, CommandArgument<unknown> | undefined> = {};
+      for (const originalToken of tokens) {
+        const extractionResult = extractionResults.find(
+          r => r[1] === originalToken
+        );
+        if (extractionResult === undefined) {
+          mapping[originalToken] = undefined;
+          continue;
+        }
+        mapping[originalToken] =
+          extractionResult[2] as CommandArgument<unknown>;
+      }
+      return CommandMatchResult.partial(mapping);
     }
+    const server = serverRes[0];
+    const ownPrefix = ownPrefixRes[0];
+    const startPosition = startPositionRes[0];
+    const quantity = quantityRes[0];
+    const modPatterns = modPatternsRes[0];
+    const mode = modeRes[0];
+    const username = usernameRes[0];
     return CommandMatchResult.ok({
       server: server,
       passesOnly: UserRecentPlays.recentPassesPrefixes.includes(ownPrefix),

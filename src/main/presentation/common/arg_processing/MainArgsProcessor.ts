@@ -54,6 +54,13 @@ class MainValueExtractor<T> implements ValueExtractor<T> {
       return undefined;
     }
   }
+  getWithToken(): [T | undefined, string | undefined] {
+    const value = this.get();
+    if (value === undefined) {
+      return [undefined, undefined];
+    }
+    return [value, this.tokensRef[this.index!]];
+  }
   extract(): T | undefined {
     const value = this.get();
     if (value === undefined) {
@@ -62,5 +69,14 @@ class MainValueExtractor<T> implements ValueExtractor<T> {
     this.tokensRef.splice(this.index!, 1);
     this.index = clamp(this.index!, 0, this.tokensRef.length - 1);
     return value;
+  }
+  extractWithToken(): [T | undefined, string | undefined] {
+    const result = this.getWithToken();
+    if (result[0] === undefined) {
+      return result;
+    }
+    this.tokensRef.splice(this.index!, 1);
+    this.index = clamp(this.index!, 0, this.tokensRef.length - 1);
+    return result;
   }
 }

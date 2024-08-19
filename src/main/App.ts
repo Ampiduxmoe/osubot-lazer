@@ -807,6 +807,39 @@ export class App {
       }
       return ctx;
     });
+    vkClient.onCommandMatch.push((matchResult, command, ctx) => {
+      console.log(matchResult);
+      if (!matchResult.isPartialMatch) {
+        return;
+      }
+      const tokenMapping = matchResult.partialMapping!;
+      const tokens = Object.keys(tokenMapping);
+      const usedPrefix = tokens.find(t =>
+        command.prefixes.matchIgnoringCase(t)
+      );
+      if (usedPrefix === undefined) {
+        console.warn(
+          'Command prefix was not found when searching user input tokens on partial match'
+        );
+        return;
+      }
+      const helpCommandStr = helpCommand.unparse({
+        commandPrefix: usedPrefix,
+        usageVariant: undefined,
+      });
+      const replyText = `
+
+Вы хотели использовать команду ${usedPrefix} (${command.shortDescription})?
+
+Помощь по команде: «${helpCommandStr}»
+
+      `.trim();
+      ctx.reply(replyText, {
+        keyboard: vkClient.createKeyboard([
+          [{text: helpCommandStr, command: helpCommandStr}],
+        ]),
+      });
+    });
 
     return vkClient;
   }

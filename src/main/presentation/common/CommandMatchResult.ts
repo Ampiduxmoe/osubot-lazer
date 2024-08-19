@@ -26,7 +26,9 @@ export class CommandMatchResult<T> {
 
   private constructor(
     matchLevel: MatchLevel,
-    partialMapping: Record<string, CommandArgument<unknown>> | undefined,
+    partialMapping:
+      | Record<string, CommandArgument<unknown> | undefined>
+      | undefined,
     executionArgs: T | undefined
   ) {
     this.matchLevel = matchLevel;
@@ -47,7 +49,7 @@ export class CommandMatchResult<T> {
   }
 
   static partial<R>(
-    partialMapping: Record<string, CommandArgument<unknown>> | undefined
+    partialMapping: Record<string, CommandArgument<unknown> | undefined>
   ): CommandMatchResult<R> {
     return new CommandMatchResult<R>(
       MatchLevel.PARTIAL_MATCH,
@@ -62,7 +64,7 @@ export class CommandMatchResult<T> {
 }
 
 export enum MatchLevel {
-  FULL_MATCH,
-  PARTIAL_MATCH,
   NO_MATCH,
+  PARTIAL_MATCH,
+  FULL_MATCH,
 }

@@ -4,6 +4,7 @@ import {APP_CODE_NAME} from '../../App';
 import {CalculationType} from '../../primitives/MaybeDeferred';
 import {Timespan} from '../../primitives/Timespan';
 import {TextCommand} from '../commands/base/TextCommand';
+import {CommandMatchResult, MatchLevel} from '../common/CommandMatchResult';
 import {VkMessageContext} from './VkMessageContext';
 import {VkOutputMessage, VkOutputMessageButton} from './VkOutputMessage';
 
@@ -40,6 +41,17 @@ export class VkClient {
       'Ё!"№;%:?*()_+ЙЦУКЕНГШЩЗХЪ/ФЫВАПРОЛДЖЭЯЧСМИТЬБЮ,'
     ).split(''),
   };
+
+  onCommandMatch: ((
+    matchResult: CommandMatchResult<UnknownExecutionParams>,
+    command: TextCommand<
+      UnknownExecutionParams,
+      UnknownViewParams,
+      VkMessageContext,
+      VkOutputMessage
+    >,
+    ctx: VkMessageContext
+  ) => void)[] = [];
 
   constructor(vk: VK, groupId: number, adminIds: number[]) {
     this.vk = vk;
@@ -182,12 +194,26 @@ export class VkClient {
 
   private async process(ctx: VkMessageContext): Promise<void> {
     const allLayouts = [this.kbLayouts.en, this.kbLayouts.ru];
+    let bestCommandMatch: BestCommandMatch | undefined = undefined;
     for (const layout of allLayouts) {
       const ctxCopy = Object.assign({}, ctx);
       Object.setPrototypeOf(ctxCopy, Object.getPrototypeOf(ctx));
-      const commandExecuted = await this.processWithKbLayout(layout, ctxCopy);
-      if (commandExecuted) {
+      const layoutBestMatch = await this.processWithKbLayout(layout, ctxCopy);
+      const layoutMatchLevel = layoutBestMatch?.matchResult.matchLevel ?? 0;
+      if (layoutMatchLevel > (bestCommandMatch?.matchResult.matchLevel ?? 0)) {
+        bestCommandMatch = layoutBestMatch;
+      }
+      if (layoutMatchLevel === MatchLevel.FULL_MATCH) {
         break;
+      }
+    }
+    if (bestCommandMatch !== undefined) {
+      for (const onMatch of this.onCommandMatch) {
+        onMatch(
+          bestCommandMatch.matchResult,
+          bestCommandMatch.command,
+          bestCommandMatch.ctx
+        );
       }
     }
   }
@@ -195,7 +221,7 @@ export class VkClient {
   private async processWithKbLayout(
     layout: readonly string[],
     ctx: VkMessageContext
-  ): Promise<boolean> {
+  ): Promise<BestCommandMatch | undefined> {
     const originalText = ctx.text;
     if (originalText !== undefined && layout !== this.kbLayouts.en) {
       ctx.text = originalText
@@ -213,22 +239,42 @@ export class VkClient {
         })
         .join('');
       if (ctx.text === originalText) {
-        return false;
+        return undefined;
       }
     }
     for (const preproces of this.preprocessors) {
       ctx = await preproces(ctx);
     }
-    let commandExecuted = false;
+    let bestMatch: BestCommandMatch | undefined = undefined;
     for (const command of this.publicCommands) {
-      commandExecuted ||= await this.tryExecuteCommand(command, ctx);
+      const matchResult = await this.tryExecuteCommand(command, ctx);
+      if (matchResult.matchLevel > (bestMatch?.matchResult.matchLevel ?? 0)) {
+        bestMatch = {
+          matchResult: matchResult,
+          command: command,
+          ctx: ctx,
+        };
+      }
+      if (matchResult.isFullMatch) {
+        return bestMatch;
+      }
     }
     if (this.adminIds.includes(ctx.senderId)) {
       for (const command of this.adminCommands) {
-        commandExecuted ||= await this.tryExecuteCommand(command, ctx);
+        const matchResult = await this.tryExecuteCommand(command, ctx);
+        if (matchResult.matchLevel > (bestMatch?.matchResult.matchLevel ?? 0)) {
+          bestMatch = {
+            matchResult: matchResult,
+            command: command,
+            ctx: ctx,
+          };
+        }
+        if (matchResult.isFullMatch) {
+          return bestMatch;
+        }
       }
     }
-    return commandExecuted;
+    return bestMatch;
   }
 
   private async tryExecuteCommand(
@@ -239,11 +285,11 @@ export class VkClient {
       VkOutputMessage
     >,
     ctx: VkMessageContext
-  ): Promise<boolean> {
+  ): Promise<CommandMatchResult<UnknownExecutionParams>> {
     const commandExecutionStart = Date.now();
     const matchResult = command.matchMessage(ctx);
     if (!matchResult.isFullMatch) {
-      return false;
+      return matchResult;
     }
     let replyMessagePromise: Promise<VkMessageContext> | undefined = undefined;
     const isLongCalculation = (type: CalculationType): boolean => {
@@ -274,7 +320,7 @@ export class VkClient {
       );
       if (outputMessage.pagination !== undefined) {
         await this.replyWithPagination(ctx, replyMessagePromise, outputMessage);
-        return true;
+        return matchResult;
       }
       if (!outputMessage.text && !outputMessage.attachment) {
         if (replyMessagePromise !== undefined) {
@@ -283,7 +329,7 @@ export class VkClient {
         } else {
           ctx.reply('Команда выполнена');
         }
-        return true;
+        return matchResult;
       }
       const text = outputMessage.text ?? '';
       const attachment = outputMessage.attachment;
@@ -306,10 +352,10 @@ export class VkClient {
         ctx.reply('Произошла ошибка при выполнении команды');
       }
     }
-    return true;
+    return matchResult;
   }
 
-  private createKeyboard(
+  createKeyboard(
     buttons: VkOutputMessageButton[][]
   ): KeyboardBuilder | undefined {
     if (!buttons.length) {
@@ -547,3 +593,14 @@ function isVkPaginationPayload(
   }
   return true;
 }
+
+type BestCommandMatch = {
+  matchResult: CommandMatchResult<UnknownExecutionParams>;
+  command: TextCommand<
+    UnknownExecutionParams,
+    UnknownViewParams,
+    VkMessageContext,
+    VkOutputMessage
+  >;
+  ctx: VkMessageContext;
+};
