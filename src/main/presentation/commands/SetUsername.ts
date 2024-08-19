@@ -2,6 +2,7 @@ import {SetUsernameUseCase} from '../../application/usecases/set_username/SetUse
 import {MaybeDeferred} from '../../primitives/MaybeDeferred';
 import {OsuRuleset} from '../../primitives/OsuRuleset';
 import {OsuServer} from '../../primitives/OsuServer';
+import {CommandArgument} from '../common/arg_processing/CommandArgument';
 import {
   MODE,
   OWN_COMMAND_PREFIX,
@@ -56,17 +57,41 @@ export abstract class SetUsername<TContext, TOutput> extends TextCommand<
       [...tokens],
       this.commandStructure.map(e => e.argument)
     );
-    const server = argsProcessor.use(SERVER_PREFIX).at(0).extract();
-    const ownPrefix = argsProcessor.use(this.COMMAND_PREFIX).at(0).extract();
-    if (server === undefined || ownPrefix === undefined) {
+    const serverRes = argsProcessor.use(SERVER_PREFIX).at(0).extractWithToken();
+    const ownPrefixRes = argsProcessor
+      .use(this.COMMAND_PREFIX)
+      .at(0)
+      .extractWithToken();
+    if (serverRes[0] === undefined || ownPrefixRes[0] === undefined) {
       return fail;
     }
-    const mode = argsProcessor.use(MODE).extract();
-    const username = argsProcessor.use(USERNAME).extract();
+    const modeRes = argsProcessor.use(MODE).extractWithToken();
+    const usernameRes = argsProcessor.use(USERNAME).extractWithToken();
 
     if (argsProcessor.remainingTokens.length > 0) {
-      return fail;
+      const extractionResults = [
+        [...serverRes, SERVER_PREFIX],
+        [...ownPrefixRes, this.COMMAND_PREFIX],
+        [...modeRes, MODE],
+        [...usernameRes, USERNAME],
+      ];
+      const mapping: Record<string, CommandArgument<unknown> | undefined> = {};
+      for (const originalToken of tokens) {
+        const extractionResult = extractionResults.find(
+          r => r[1] === originalToken
+        );
+        if (extractionResult === undefined) {
+          mapping[originalToken] = undefined;
+          continue;
+        }
+        mapping[originalToken] =
+          extractionResult[2] as CommandArgument<unknown>;
+      }
+      return CommandMatchResult.partial(mapping);
     }
+    const server = serverRes[0];
+    const mode = modeRes[0];
+    const username = usernameRes[0];
     return CommandMatchResult.ok({
       server: server,
       username: username,

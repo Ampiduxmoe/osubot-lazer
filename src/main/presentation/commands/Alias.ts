@@ -3,6 +3,7 @@ import {ALL_OSU_SERVERS, OsuServer} from '../../primitives/OsuServer';
 import {CommandMatchResult} from '../common/CommandMatchResult';
 import {CommandPrefixes} from '../common/CommandPrefixes';
 import {AliasProcessor} from '../common/alias_processing/AliasProcessor';
+import {CommandArgument} from '../common/arg_processing/CommandArgument';
 import {
   ALIAS_PATTERN,
   ALIAS_TARGET,
@@ -149,14 +150,31 @@ export abstract class Alias<TContext, TOutput> extends TextCommand<
       return fail;
     }
     const executionArgs: AliasExecutionArgs = {};
+    let tokenMapping: Record<string, CommandArgument<unknown> | undefined> = {};
 
     if (argsProcessor.use(this.WORD_SHOW).at(0).extract() !== undefined) {
+      tokenMapping = {
+        [tokens[0]]: this.COMMAND_PREFIX,
+        [tokens[1]]: this.WORD_SHOW,
+        ...tokens
+          .slice(2)
+          .reduce((mapping, t) => ({...mapping, [t]: undefined}), {}),
+      };
       executionArgs.show = {};
     } else if (argsProcessor.use(this.WORD_ADD).at(0).extract() !== undefined) {
       const pattern = argsProcessor.use(ALIAS_PATTERN).at(0).extract();
       const target = argsProcessor.use(ALIAS_TARGET).at(0).extract();
+      tokenMapping = {
+        [tokens[0]]: this.COMMAND_PREFIX,
+        [tokens[1]]: this.WORD_ADD,
+        [tokens[2]]: pattern !== undefined ? ALIAS_PATTERN : undefined,
+        [tokens[3]]: target !== undefined ? ALIAS_TARGET : undefined,
+        ...tokens
+          .slice(4)
+          .reduce((mapping, t) => ({...mapping, [t]: undefined}), {}),
+      };
       if (pattern === undefined || target === undefined) {
-        return fail;
+        return CommandMatchResult.partial(tokenMapping);
       }
       for (const prefix of this.prefixes) {
         // Try to prevent users from shooting themselves in the foot.
@@ -171,26 +189,49 @@ export abstract class Alias<TContext, TOutput> extends TextCommand<
       argsProcessor.use(this.WORD_DELETE).at(0).extract() !== undefined
     ) {
       const range = argsProcessor.use(this.ALIAS_NUMBER).at(0).extract();
+      tokenMapping = {
+        [tokens[0]]: this.COMMAND_PREFIX,
+        [tokens[1]]: this.WORD_DELETE,
+        [tokens[2]]: range !== undefined ? this.ALIAS_NUMBER : undefined,
+        ...tokens
+          .slice(3)
+          .reduce((mapping, t) => ({...mapping, [t]: undefined}), {}),
+      };
       if (range === undefined) {
-        return fail;
+        return CommandMatchResult.partial(tokenMapping);
       }
       executionArgs.delete = {deleteStart: range[0], deleteEnd: range[1]};
     } else if (
       argsProcessor.use(this.WORD_TEST).at(0).extract() !== undefined
     ) {
       const testString = argsProcessor.use(this.TEST_COMMAND).at(0).extract();
+      tokenMapping = {
+        [tokens[0]]: this.COMMAND_PREFIX,
+        [tokens[1]]: this.WORD_DELETE,
+        [tokens[2]]: testString !== undefined ? this.TEST_COMMAND : undefined,
+        ...tokens
+          .slice(3)
+          .reduce((mapping, t) => ({...mapping, [t]: undefined}), {}),
+      };
       if (testString === undefined) {
-        return fail;
+        return CommandMatchResult.partial(tokenMapping);
       }
       executionArgs.test = {testString: testString};
     } else if (
       argsProcessor.use(this.WORD_LEGACY).at(0).extract() !== undefined
     ) {
+      tokenMapping = {
+        [tokens[0]]: this.COMMAND_PREFIX,
+        [tokens[1]]: this.WORD_LEGACY,
+        ...tokens
+          .slice(2)
+          .reduce((mapping, t) => ({...mapping, [t]: undefined}), {}),
+      };
       executionArgs.legacy = {};
     }
 
     if (argsProcessor.remainingTokens.length > 0) {
-      return fail;
+      return CommandMatchResult.partial(tokenMapping);
     }
     if (
       (executionArgs.show ||

@@ -521,7 +521,7 @@ export const SPEED_RATE: CommandArgument<number> = {
   },
 };
 
-type ArgDA = {
+export type ArgDA = {
   ar?: number;
   cs?: number;
   od?: number;

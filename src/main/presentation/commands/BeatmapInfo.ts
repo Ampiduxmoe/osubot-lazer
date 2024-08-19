@@ -3,8 +3,10 @@ import {GetBeatmapInfoUseCase} from '../../application/usecases/get_beatmap_info
 import {MaybeDeferred} from '../../primitives/MaybeDeferred';
 import {ModAcronym} from '../../primitives/ModAcronym';
 import {OsuServer} from '../../primitives/OsuServer';
+import {CommandArgument} from '../common/arg_processing/CommandArgument';
 import {
   ACCURACY,
+  ArgDA,
   BEATMAP_ID,
   DIFFICULTY_ADJUST_SETTING,
   FIFTYCOUNT,
@@ -102,28 +104,68 @@ export abstract class BeatmapInfo<TContext, TOutput> extends TextCommand<
       [...tokens],
       this.commandStructure.map(e => e.argument)
     );
-    const server = argsProcessor.use(SERVER_PREFIX).at(0).extract();
-    const ownPrefix = argsProcessor.use(this.COMMAND_PREFIX).at(0).extract();
-    if (server === undefined || ownPrefix === undefined) {
+    const serverRes = argsProcessor.use(SERVER_PREFIX).at(0).extractWithToken();
+    const ownPrefixRes = argsProcessor
+      .use(this.COMMAND_PREFIX)
+      .at(0)
+      .extractWithToken();
+    if (serverRes[0] === undefined || ownPrefixRes[0] === undefined) {
       return fail;
     }
-    const beatmapId = argsProcessor.use(BEATMAP_ID).extract();
-    const mods = argsProcessor.use(MODS).extract();
-    const scoreCombo = argsProcessor.use(SCORE_COMBO).extract();
-    const misscount = argsProcessor.use(MISSCOUNT).extract();
-    const accuracy = argsProcessor.use(ACCURACY).extract();
-    const fiftycount = argsProcessor.use(FIFTYCOUNT).extract();
-    const hundredcount = argsProcessor.use(HUNDREDCOUNT).extract();
-    const speedRate = argsProcessor.use(SPEED_RATE).extract();
-    let daSettings = argsProcessor.use(DIFFICULTY_ADJUST_SETTING).extract();
-    let oneSetting = argsProcessor.use(DIFFICULTY_ADJUST_SETTING).extract();
-    while (oneSetting !== undefined) {
-      daSettings = {...daSettings, ...oneSetting};
-      oneSetting = argsProcessor.use(DIFFICULTY_ADJUST_SETTING).extract();
+    const beatmapIdRes = argsProcessor.use(BEATMAP_ID).extractWithToken();
+    const modsRes = argsProcessor.use(MODS).extractWithToken();
+    const scoreComboRes = argsProcessor.use(SCORE_COMBO).extractWithToken();
+    const misscountRes = argsProcessor.use(MISSCOUNT).extractWithToken();
+    const accuracyRes = argsProcessor.use(ACCURACY).extractWithToken();
+    const fiftycountRes = argsProcessor.use(FIFTYCOUNT).extractWithToken();
+    const hundredcountRes = argsProcessor.use(HUNDREDCOUNT).extractWithToken();
+    const speedRateRes = argsProcessor.use(SPEED_RATE).extractWithToken();
+    const daSettingsExtractor = argsProcessor.use(DIFFICULTY_ADJUST_SETTING);
+    const daSettingsRes: [ArgDA, string][] = [];
+    for (
+      let oneSettingRes = daSettingsExtractor.extractWithToken();
+      oneSettingRes[0] !== undefined;
+      oneSettingRes = daSettingsExtractor.extractWithToken()
+    ) {
+      daSettingsRes.push(oneSettingRes as [ArgDA, string]);
     }
     if (argsProcessor.remainingTokens.length > 0) {
-      return fail;
+      const extractionResults = [
+        [...serverRes, SERVER_PREFIX],
+        [...ownPrefixRes, this.COMMAND_PREFIX],
+        [...beatmapIdRes, BEATMAP_ID],
+        [...modsRes, MODS],
+        [...scoreComboRes, SCORE_COMBO],
+        [...misscountRes, MISSCOUNT],
+        [...accuracyRes, ACCURACY],
+        [...fiftycountRes, FIFTYCOUNT],
+        [...hundredcountRes, HUNDREDCOUNT],
+        [...speedRateRes, SPEED_RATE],
+        ...daSettingsRes,
+      ];
+      const mapping: Record<string, CommandArgument<unknown> | undefined> = {};
+      for (const originalToken of tokens) {
+        const extractionResult = extractionResults.find(
+          r => r[1] === originalToken
+        );
+        if (extractionResult === undefined) {
+          mapping[originalToken] = undefined;
+          continue;
+        }
+        mapping[originalToken] =
+          extractionResult[2] as CommandArgument<unknown>;
+      }
+      return CommandMatchResult.partial(mapping);
     }
+    const server = serverRes[0];
+    const beatmapId = beatmapIdRes[0];
+    const mods = modsRes[0];
+    const scoreCombo = scoreComboRes[0];
+    const misscount = misscountRes[0];
+    const accuracy = accuracyRes[0];
+    const fiftycount = fiftycountRes[0];
+    const hundredcount = hundredcountRes[0];
+    const speedRate = speedRateRes[0];
     const osuSettings: MapScoreSimulationOsu = {
       mods: mods,
       combo: scoreCombo,
@@ -132,7 +174,10 @@ export abstract class BeatmapInfo<TContext, TOutput> extends TextCommand<
       mehs: fiftycount,
       goods: hundredcount,
       speed: speedRate,
-      ...daSettings,
+      ...daSettingsRes.reduce(
+        (settings, oneRes) => ({...settings, ...oneRes[0]}),
+        {}
+      ),
     };
     return CommandMatchResult.ok({
       server: server,

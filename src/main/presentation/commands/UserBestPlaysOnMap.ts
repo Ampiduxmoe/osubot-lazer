@@ -9,6 +9,7 @@ import {ModPatternCollection} from '../../primitives/ModPatternCollection';
 import {clamp} from '../../primitives/Numbers';
 import {OsuRuleset} from '../../primitives/OsuRuleset';
 import {OsuServer} from '../../primitives/OsuServer';
+import {CommandArgument} from '../common/arg_processing/CommandArgument';
 import {
   BEATMAP_ID,
   MOD_PATTERNS,
@@ -81,20 +82,52 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
       [...tokens],
       this.commandStructure.map(e => e.argument)
     );
-    const server = argsProcessor.use(SERVER_PREFIX).at(0).extract();
-    const ownPrefix = argsProcessor.use(this.COMMAND_PREFIX).at(0).extract();
-    if (server === undefined || ownPrefix === undefined) {
+    const serverRes = argsProcessor.use(SERVER_PREFIX).at(0).extractWithToken();
+    const ownPrefixRes = argsProcessor
+      .use(this.COMMAND_PREFIX)
+      .at(0)
+      .extractWithToken();
+    if (serverRes[0] === undefined || ownPrefixRes[0] === undefined) {
       return fail;
     }
-    const beatmapId = argsProcessor.use(BEATMAP_ID).extract();
-    const username = argsProcessor.use(USERNAME).extract();
-    const modPatterns = argsProcessor.use(MOD_PATTERNS).extract();
-    const startPosition = argsProcessor.use(START_POSITION).extract();
-    const quantity = argsProcessor.use(QUANTITY).extract();
+    const beatmapIdRes = argsProcessor.use(BEATMAP_ID).extractWithToken();
+    const usernameRes = argsProcessor.use(USERNAME).extractWithToken();
+    const modPatternsRes = argsProcessor.use(MOD_PATTERNS).extractWithToken();
+    const startPositionRes = argsProcessor
+      .use(START_POSITION)
+      .extractWithToken();
+    const quantityRes = argsProcessor.use(QUANTITY).extractWithToken();
 
     if (argsProcessor.remainingTokens.length > 0) {
-      return fail;
+      const extractionResults = [
+        [...serverRes, SERVER_PREFIX],
+        [...ownPrefixRes, this.COMMAND_PREFIX],
+        [...beatmapIdRes, BEATMAP_ID],
+        [...usernameRes, USERNAME],
+        [...modPatternsRes, MOD_PATTERNS],
+        [...startPositionRes, START_POSITION],
+        [...quantityRes, QUANTITY],
+      ];
+      const mapping: Record<string, CommandArgument<unknown> | undefined> = {};
+      for (const originalToken of tokens) {
+        const extractionResult = extractionResults.find(
+          r => r[1] === originalToken
+        );
+        if (extractionResult === undefined) {
+          mapping[originalToken] = undefined;
+          continue;
+        }
+        mapping[originalToken] =
+          extractionResult[2] as CommandArgument<unknown>;
+      }
+      return CommandMatchResult.partial(mapping);
     }
+    const server = serverRes[0];
+    const beatmapId = beatmapIdRes[0];
+    const username = usernameRes[0];
+    const modPatterns = modPatternsRes[0];
+    const startPosition = startPositionRes[0];
+    const quantity = quantityRes[0];
     return CommandMatchResult.ok({
       server: server,
       beatmapId: beatmapId,

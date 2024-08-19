@@ -808,8 +808,10 @@ export class App {
       return ctx;
     });
     vkClient.onCommandMatch.push((matchResult, command, ctx) => {
-      console.log(matchResult);
       if (!matchResult.isPartialMatch) {
+        return;
+      }
+      if (![...helpCommand.commands, helpCommand].includes(command)) {
         return;
       }
       const tokenMapping = matchResult.partialMapping!;

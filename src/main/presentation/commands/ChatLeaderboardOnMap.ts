@@ -8,6 +8,7 @@ import {MaybeDeferred} from '../../primitives/MaybeDeferred';
 import {ModPatternCollection} from '../../primitives/ModPatternCollection';
 import {OsuRuleset} from '../../primitives/OsuRuleset';
 import {OsuServer} from '../../primitives/OsuServer';
+import {CommandArgument} from '../common/arg_processing/CommandArgument';
 import {
   BEATMAP_ID,
   MOD_PATTERNS,
@@ -84,18 +85,44 @@ export abstract class ChatLeaderboardOnMap<
       [...tokens],
       this.commandStructure.map(e => e.argument)
     );
-    const server = argsProcessor.use(SERVER_PREFIX).at(0).extract();
-    const ownPrefix = argsProcessor.use(this.COMMAND_PREFIX).at(0).extract();
-    if (server === undefined || ownPrefix === undefined) {
+    const serverRes = argsProcessor.use(SERVER_PREFIX).at(0).extractWithToken();
+    const ownPrefixRes = argsProcessor
+      .use(this.COMMAND_PREFIX)
+      .at(0)
+      .extractWithToken();
+    if (serverRes[0] === undefined || ownPrefixRes[0] === undefined) {
       return fail;
     }
-    const beatmapId = argsProcessor.use(BEATMAP_ID).extract();
-    const usernameList = argsProcessor.use(USERNAME_LIST).extract();
-    const modPatterns = argsProcessor.use(MOD_PATTERNS).extract();
+    const beatmapIdRes = argsProcessor.use(BEATMAP_ID).extractWithToken();
+    const usernameListRes = argsProcessor.use(USERNAME_LIST).extractWithToken();
+    const modPatternsRes = argsProcessor.use(MOD_PATTERNS).extractWithToken();
 
     if (argsProcessor.remainingTokens.length > 0) {
-      return fail;
+      const extractionResults = [
+        [...serverRes, SERVER_PREFIX],
+        [...ownPrefixRes, this.COMMAND_PREFIX],
+        [...beatmapIdRes, BEATMAP_ID],
+        [...usernameListRes, USERNAME_LIST],
+        [...modPatternsRes, MOD_PATTERNS],
+      ];
+      const mapping: Record<string, CommandArgument<unknown> | undefined> = {};
+      for (const originalToken of tokens) {
+        const extractionResult = extractionResults.find(
+          r => r[1] === originalToken
+        );
+        if (extractionResult === undefined) {
+          mapping[originalToken] = undefined;
+          continue;
+        }
+        mapping[originalToken] =
+          extractionResult[2] as CommandArgument<unknown>;
+      }
+      return CommandMatchResult.partial(mapping);
     }
+    const server = serverRes[0];
+    const beatmapId = beatmapIdRes[0];
+    const usernameList = usernameListRes[0];
+    const modPatterns = modPatternsRes[0];
     return CommandMatchResult.ok({
       server: server,
       beatmapId: beatmapId,

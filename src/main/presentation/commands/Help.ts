@@ -31,7 +31,7 @@ export abstract class Help<TContext, TOutput> extends TextCommand<
 
   constructor(
     public textProcessor: TextProcessor,
-    protected commands: TextCommand<unknown, unknown, TContext, TOutput>[]
+    public commands: readonly TextCommand<unknown, unknown, TContext, TOutput>[]
   ) {
     const COMMAND_PREFIX = OWN_COMMAND_PREFIX(Help.prefixes);
     const FOREIGN_COMMAND_PREFIX = VK_FOREIGN_COMMAND_PREFIX(
