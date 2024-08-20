@@ -68,7 +68,10 @@ export abstract class SetUsername<TContext, TOutput> extends TextCommand<
     const modeRes = argsProcessor.use(MODE).extractWithToken();
     const usernameRes = argsProcessor.use(USERNAME).extractWithToken();
 
-    if (argsProcessor.remainingTokens.length > 0) {
+    if (
+      usernameRes[0] === undefined ||
+      argsProcessor.remainingTokens.length > 0
+    ) {
       const extractionResults = [
         [...serverRes, SERVER_PREFIX],
         [...ownPrefixRes, this.COMMAND_PREFIX],
@@ -104,14 +107,6 @@ export abstract class SetUsername<TContext, TOutput> extends TextCommand<
     ctx: TContext
   ): MaybeDeferred<SetUsernameViewParams> {
     const valuePromise: Promise<SetUsernameViewParams> = (async () => {
-      if (args.username === undefined) {
-        return {
-          server: args.server,
-          usernameInput: undefined,
-          username: undefined,
-          mode: args.mode,
-        };
-      }
       const result = await this.setUsername.execute({
         appUserId: this.getTargetAppUserId(ctx, {
           canTargetOthersAsNonAdmin: false,
@@ -145,9 +140,6 @@ export abstract class SetUsername<TContext, TOutput> extends TextCommand<
   createOutputMessage(params: SetUsernameViewParams): MaybeDeferred<TOutput> {
     const {server, usernameInput, username, mode} = params;
     if (username === undefined) {
-      if (usernameInput === undefined) {
-        return this.createUsernameNotSpecifiedMessage(server);
-      }
       return this.createUserNotFoundMessage(server, usernameInput);
     }
     return this.createUsernameSetMessage(server, username, mode!);
@@ -183,13 +175,13 @@ export abstract class SetUsername<TContext, TOutput> extends TextCommand<
 
 export type SetUsernameExecutionArgs = {
   server: OsuServer;
-  username: string | undefined;
+  username: string;
   mode: OsuRuleset | undefined;
 };
 
 export type SetUsernameViewParams = {
   server: OsuServer;
-  usernameInput: string | undefined;
+  usernameInput: string;
   username: string | undefined;
   mode: OsuRuleset | undefined;
 };
