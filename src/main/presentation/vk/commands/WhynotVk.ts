@@ -111,7 +111,7 @@ export class WhynotVk extends Whynot<VkMessageContext, VkOutputMessage> {
           .map(([token, arg]) => {
             if (arg !== undefined) {
               // eslint-disable-next-line no-irregular-whitespace
-              return `　✅ ${token} — ${arg.description}`;
+              return `　✅ ${token} — ${arg.entityName}`;
             }
             // eslint-disable-next-line no-irregular-whitespace
             return `　❌ ${token}`;
@@ -126,7 +126,7 @@ export class WhynotVk extends Whynot<VkMessageContext, VkOutputMessage> {
           missingRequiredArgs
             .map(
               // eslint-disable-next-line no-irregular-whitespace
-              arg => `　❌ ${arg.displayName} — ${arg.description}`
+              arg => `　❌ ${arg.displayName} — ${arg.entityName}`
             )
             .join('\n');
     return MaybeDeferred.fromValue({

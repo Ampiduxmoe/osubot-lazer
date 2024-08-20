@@ -10,6 +10,7 @@ import {CommandArgument} from './CommandArgument';
 
 export const SERVER_PREFIX: CommandArgument<OsuServer> = {
   displayName: 'сервер',
+  entityName: 'сервер',
   description: 'буква или название сервера',
   get usageExample(): string {
     const prefix = pickRandom(SERVERS).prefix;
@@ -35,6 +36,7 @@ export const OWN_COMMAND_PREFIX: (
   validPrefixes: CommandPrefixes
 ) => CommandArgument<string> = validPrefixes => ({
   displayName: validPrefixes.join('|'),
+  entityName: 'префикс команды',
   description: undefined,
   get usageExample(): string {
     return pickRandom(validPrefixes);
@@ -54,6 +56,7 @@ export const VK_FOREIGN_COMMAND_PREFIX: (
   validPrefixes: CommandPrefixes
 ) => CommandArgument<string> = validPrefixes => ({
   displayName: 'команда',
+  entityName: 'префикс другой команды',
   description: 'буква или название команды',
   get usageExample(): string {
     return pickRandom(validPrefixes);
@@ -71,6 +74,7 @@ export const VK_FOREIGN_COMMAND_PREFIX: (
 
 export const USERNAME: CommandArgument<string> = {
   displayName: 'ник',
+  entityName: 'ник',
   description: 'ник игрока',
   get usageExample(): string {
     const someUsernames = [
@@ -111,6 +115,7 @@ type UsernameList = {
 };
 export const USERNAME_LIST: CommandArgument<UsernameList> = {
   displayName: '~ники',
+  entityName: 'список ников',
   description:
     'ники игроков, через запятую; используйте вариант ~~ники ' +
     'для того чтобы ники «добавились» к никам этого чата',
@@ -153,6 +158,7 @@ export const USERNAME_LIST: CommandArgument<UsernameList> = {
 
 export const START_POSITION: CommandArgument<number> = {
   displayName: '\\номер',
+  entityName: 'номер скора',
   description: 'номер скора, с которого начинать поиск',
   get usageExample(): string {
     const randPos = 1 + Math.floor(Math.random() * 9);
@@ -178,6 +184,7 @@ export const START_POSITION: CommandArgument<number> = {
 
 export const QUANTITY: CommandArgument<number> = {
   displayName: ':количество',
+  entityName: 'количество скоров',
   description: 'количество скоров',
   get usageExample(): string {
     const randPos = 1 + Math.floor(Math.random() * 9);
@@ -203,6 +210,7 @@ export const QUANTITY: CommandArgument<number> = {
 
 export const MODS: CommandArgument<ModAcronym[]> = {
   displayName: '+моды',
+  entityName: 'список модов',
   description: 'список модов, слитно',
   get usageExample(): string {
     const maybeHd = pickRandom(['hd', 'HD', '']);
@@ -238,6 +246,7 @@ export type ModPatternsArg = {
 };
 export const MOD_PATTERNS: CommandArgument<ModPatternsArg> = {
   displayName: '+моды',
+  entityName: 'список мод-фильтров',
   description:
     'список модов, слитно; допускается указание нескольких списков через запятую',
   get usageExample(): string {
@@ -396,6 +405,7 @@ export const MOD_PATTERNS: CommandArgument<ModPatternsArg> = {
 
 export const MODE: CommandArgument<OsuRuleset> = {
   displayName: '-режим',
+  entityName: 'режим игры',
   description:
     'режим игры; возможные значения: ' +
     ALL_OSU_RULESETS.map(x => `«${x}»`).join(', '),
@@ -421,6 +431,7 @@ export const MODE: CommandArgument<OsuRuleset> = {
 
 export const SCORE_COMBO: CommandArgument<number> = {
   displayName: '?x',
+  entityName: 'комбо',
   description: 'комбо',
   get usageExample(): string {
     return pickRandom([100, 250, 375, 500, 727]) + 'x';
@@ -438,6 +449,7 @@ export const SCORE_COMBO: CommandArgument<number> = {
 
 export const MISSCOUNT: CommandArgument<number> = {
   displayName: '?xm',
+  entityName: 'количество миссов',
   description: 'количество миссов',
   get usageExample(): string {
     return pickRandom([1, 2, 5, 10, 25]) + 'xm';
@@ -455,6 +467,7 @@ export const MISSCOUNT: CommandArgument<number> = {
 
 export const ACCURACY: CommandArgument<number> = {
   displayName: '?%',
+  entityName: 'точность',
   description: 'точность',
   get usageExample(): string {
     return pickRandom([72.7, 92, 95.67, 98.5, 99.71]) + '%';
@@ -472,6 +485,7 @@ export const ACCURACY: CommandArgument<number> = {
 
 export const FIFTYCOUNT: CommandArgument<number> = {
   displayName: '?x50',
+  entityName: 'количество 50',
   description: 'количество 50',
   get usageExample(): string {
     return pickRandom([2, 4, 8, 16, 32]) + 'x50';
@@ -489,6 +503,7 @@ export const FIFTYCOUNT: CommandArgument<number> = {
 
 export const HUNDREDCOUNT: CommandArgument<number> = {
   displayName: '?x100',
+  entityName: 'количество 100',
   description: 'количество 100',
   get usageExample(): string {
     return pickRandom([1, 2, 3, 5, 8, 13, 21, 34]) + 'x100';
@@ -506,6 +521,7 @@ export const HUNDREDCOUNT: CommandArgument<number> = {
 
 export const SPEED_RATE: CommandArgument<number> = {
   displayName: '?.?x',
+  entityName: 'множитель HT/DT',
   description: 'скорость карты для модов HT/DC/DT/NC',
   get usageExample(): string {
     return pickRandom([1.01, 1.25, 1.67, 2, 0.99, 0.75, 0.67, 0.5]) + 'x';
@@ -530,6 +546,7 @@ export type ArgDA = {
 
 export const DIFFICULTY_ADJUST_SETTING: CommandArgument<ArgDA> = {
   displayName: 'ar?|cs?|od?|hp?',
+  entityName: 'настройки для DA мода',
   description: 'настройки для DA мода',
   get usageExample(): string {
     return pickRandom(['ar', 'cs', 'od', 'hp']) + pickRandom([6.7, 8, 9.5, 10]);
@@ -557,6 +574,7 @@ export const DIFFICULTY_ADJUST_SETTING: CommandArgument<ArgDA> = {
 
 export const WORD: (word: string) => CommandArgument<string> = word => ({
   displayName: word,
+  entityName: `слово «${word}»`,
   description: `слово «${word}»`,
   get usageExample(): string {
     return pickRandom([word.toLowerCase(), word.toUpperCase()]);
@@ -577,6 +595,7 @@ export const ANY_WORD: (
   description: string
 ) => CommandArgument<string> = (name, description) => ({
   displayName: name,
+  entityName: name,
   description: description,
   get usageExample(): string {
     return pickRandom(['любоеслово', 'другоеслово']);
@@ -597,6 +616,7 @@ export const ANY_STRING: (
   description: string
 ) => CommandArgument<string> = (name, description) => ({
   displayName: name,
+  entityName: name,
   description: description,
   get usageExample(): string {
     return pickRandom(['любаястрока', 'другаястрока']);
@@ -614,6 +634,7 @@ export const ANY_STRING: (
 
 export const DAY_OFFSET: CommandArgument<number> = {
   displayName: 'today{±?}',
+  entityName: 'номер дня относительно сегодня',
   description: 'номер дня относительно сегодня',
   get usageExample(): string {
     const randInt = Math.floor(Math.random() * 5);
@@ -640,6 +661,7 @@ export const DAY_OFFSET: CommandArgument<number> = {
 
 export const DATE: CommandArgument<Date> = {
   displayName: 'дата|' + DAY_OFFSET.displayName,
+  entityName: 'дата',
   description: 'дата в формате ISO8601 или номер дня относительно сегодня',
   get usageExample(): string {
     const date = new Date().toISOString().substring(0, 10);
@@ -670,6 +692,7 @@ export const INTEGER: (
   max: number | undefined
 ) => CommandArgument<number> = (displayName, description, min, max) => ({
   displayName: displayName,
+  entityName: displayName,
   description: description,
   get usageExample(): string {
     const exampleMin = min ?? -999999;
@@ -712,6 +735,7 @@ export const INTEGER_RANGE: (
   max
 ) => ({
   displayName: displayName,
+  entityName: displayName,
   description: description,
   get usageExample(): string {
     const exampleMin = min ?? -999999;
@@ -779,6 +803,7 @@ export const INTEGER_OR_RANGE: (
   const rangeArg = INTEGER_RANGE('', '', min, max);
   return {
     displayName: displayName,
+    entityName: displayName,
     description: description,
     get usageExample(): string {
       return pickRandom([
@@ -812,6 +837,7 @@ export const APP_USER_ID = ANY_STRING(
 export const MESSAGE_ID = ANY_STRING('ид_сообщения', 'ID сообщения');
 export const CUSTOM_PAYLOAD: CommandArgument<string> = {
   displayName: 'payload=?',
+  entityName: 'дополнительные данные',
   description: 'дополнительные данные',
   get usageExample(): string {
     return pickRandom(['любаястрока', 'другаястрока']);
@@ -842,6 +868,7 @@ export const BEATMAP_LINK: CommandArgument<BeatmapLinkArg> = (() => {
   };
   return {
     displayName: 'ссылка_на_карту',
+    entityName: 'ссылка на карту',
     description: 'ссылка на карту (не мапсет!)',
     get usageExample(): string {
       const mapIdStr = integerArg.usageExample;
@@ -896,6 +923,7 @@ export const BEATMAP_ID: CommandArgument<number> = (() => {
   const beatmapLinkArg = BEATMAP_LINK;
   return {
     displayName: '#ид_карты|ссылка',
+    entityName: 'ид карты или ссылка',
     description: 'ID карты или ссылка на карту (не мапсет!)',
     get usageExample(): string {
       const mapIdStr = integerArg.usageExample;
@@ -921,6 +949,7 @@ export const BEATMAP_ID: CommandArgument<number> = (() => {
 
 export const ALIAS_PATTERN: CommandArgument<string> = {
   displayName: 'свой_паттерн',
+  entityName: 'паттерн для алиаса',
   description:
     'ваша строка (до 40 символов), которая будет заменяться на команду бота; ' +
     'по умолчанию замена работает только при полном совпадении сообщения со строкой, ' +
@@ -942,6 +971,7 @@ export const ALIAS_PATTERN: CommandArgument<string> = {
 
 export const ALIAS_TARGET: CommandArgument<string> = {
   displayName: 'команда_бота',
+  entityName: 'замена для паттерна',
   description: 'строка (до 40 символов), которая будет заменять ваш шаблон',
   get usageExample(): string {
     return pickRandom(['l r', 'l personalbest', 'l u', 'osubot-help']);
@@ -963,8 +993,9 @@ export type VkMentionArg = {
   text: string;
 };
 export const VK_MENTION: CommandArgument<VkMentionArg> = {
-  displayName: 'команда_бота',
-  description: 'строка (до 40 символов), которая будет заменять ваш шаблон',
+  displayName: 'упомянание',
+  entityName: 'упомянание',
+  description: 'упомянание (тег/саммон) кого-либо',
   get usageExample(): string {
     return pickRandom(['l r', 'l personalbest', 'l u', 'osubot-help']);
   },
