@@ -125,7 +125,7 @@ export abstract class Whynot<TContext, TOutput> extends TextCommand<
       );
     }
     if (commandMatch.matchResult.isFullMatch) {
-      return this.createPartialMatchMessage(
+      return this.createFullMatchMessage(
         inputText,
         preprocessedText,
         commandMatch
