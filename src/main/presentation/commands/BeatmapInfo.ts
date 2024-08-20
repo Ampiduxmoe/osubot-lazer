@@ -145,7 +145,7 @@ export abstract class BeatmapInfo<TContext, TOutput> extends TextCommand<
         [...fiftycountRes, FIFTYCOUNT],
         [...hundredcountRes, HUNDREDCOUNT],
         [...speedRateRes, SPEED_RATE],
-        ...daSettingsRes,
+        ...daSettingsRes.map(r => [...r, DIFFICULTY_ADJUST_SETTING]),
       ];
       const mapping: Record<string, CommandArgument<unknown> | undefined> = {};
       for (const originalToken of tokens) {
