@@ -90,10 +90,6 @@ ${commandBriefs.join('\n')}
       );
       const toSeeDetailsString = `${prefixArg} ${targetPrefixArg} ${usageVariantsArg}`;
       const argGroupKeysString = argGroupKeys.join(', ');
-      const exampleUsage = this.unparse({
-        commandPrefix: targetCommandPrefix,
-        usageVariant: pickRandom(argGroupKeys),
-      });
       const description = command.longDescription;
       const synonymsString =
         command.prefixes.length > 1
@@ -114,7 +110,13 @@ ${argGroupKeysString}.
 Используйте «${toSeeDetailsString}» для получения подробностей по каждому варианту
         `.trim(),
         attachment: undefined,
-        buttons: [[{text: exampleUsage, command: exampleUsage}]],
+        buttons: argGroupKeys.map(groupKey => {
+          const argGroupHelp = this.unparse({
+            commandPrefix: targetCommandPrefix,
+            usageVariant: groupKey,
+          });
+          return [{text: argGroupHelp, command: argGroupHelp}];
+        }),
       });
     }
     const targetCommandStructure = (() => {
