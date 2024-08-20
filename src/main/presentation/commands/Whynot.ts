@@ -27,11 +27,15 @@ export abstract class Whynot<TContext, TOutput> extends TextCommand<
 
   private static COMMAND_PREFIX = OWN_COMMAND_PREFIX(this.prefixes);
   private COMMAND_PREFIX = Whynot.COMMAND_PREFIX;
-  private static TEXT = ANY_STRING('текст_команды', 'текст вашей команды');
+  private static TEXT = ANY_STRING(
+    'текст_команды',
+    'текст команды',
+    'текст вашей команды'
+  );
   private TEXT = Whynot.TEXT;
   private static commandStructure = [
     {argument: this.COMMAND_PREFIX, isOptional: false},
-    {argument: this.TEXT, isOptional: true},
+    {argument: this.TEXT, isOptional: false},
   ];
 
   textProcessor: TextProcessor = {

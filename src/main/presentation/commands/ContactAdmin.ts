@@ -36,7 +36,11 @@ export abstract class ContactAdmin<
     protected forwardToAdmin: (ctx: TContext) => Promise<void>,
     protected saveContactAdminMessage: SaveContactAdminMessageUseCase
   ) {
-    const USER_MESSAGE = ANY_STRING('сообщение', 'сообщение пользователя');
+    const USER_MESSAGE = ANY_STRING(
+      'сообщение',
+      'сообщение пользователя',
+      'сообщение пользователя'
+    );
     super([
       {argument: mentionArgument, isOptional: false},
       {argument: USER_MESSAGE, isOptional: false},

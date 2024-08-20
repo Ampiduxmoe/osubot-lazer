@@ -59,6 +59,7 @@ export abstract class Alias<TContext, TOutput> extends TextCommand<
   private WORD_LEGACY = Alias.WORD_LEGACY;
   private static ALIAS_NUMBER = INTEGER_OR_RANGE(
     'номер',
+    'номер шаблона',
     'номер шаблона или интервал в формате x-y',
     1,
     this.maximumAliases
@@ -66,6 +67,7 @@ export abstract class Alias<TContext, TOutput> extends TextCommand<
   private ALIAS_NUMBER = Alias.ALIAS_NUMBER;
   private static TEST_COMMAND = ANY_STRING(
     'тестовая_строка',
+    'тестовая строка',
     'строка, проверяющая работу вашего шаблона'
   );
   private TEST_COMMAND = Alias.TEST_COMMAND;
@@ -172,8 +174,8 @@ export abstract class Alias<TContext, TOutput> extends TextCommand<
       tokenMapping = {
         [tokens[0]]: this.COMMAND_PREFIX,
         [tokens[1]]: this.WORD_ADD,
-        [tokens[2]]: pattern !== undefined ? ALIAS_PATTERN : undefined,
-        [tokens[3]]: target !== undefined ? ALIAS_TARGET : undefined,
+        ...(pattern !== undefined ? {[tokens[2]]: ALIAS_PATTERN} : {}),
+        ...(target !== undefined ? {[tokens[3]]: ALIAS_TARGET} : {}),
         ...tokens
           .slice(4)
           .reduce((mapping, t) => ({...mapping, [t]: undefined}), {}),
@@ -197,7 +199,7 @@ export abstract class Alias<TContext, TOutput> extends TextCommand<
       tokenMapping = {
         [tokens[0]]: this.COMMAND_PREFIX,
         [tokens[1]]: this.WORD_DELETE,
-        [tokens[2]]: range !== undefined ? this.ALIAS_NUMBER : undefined,
+        ...(range !== undefined ? {[tokens[2]]: this.ALIAS_NUMBER} : {}),
         ...tokens
           .slice(3)
           .reduce((mapping, t) => ({...mapping, [t]: undefined}), {}),
@@ -213,7 +215,7 @@ export abstract class Alias<TContext, TOutput> extends TextCommand<
       tokenMapping = {
         [tokens[0]]: this.COMMAND_PREFIX,
         [tokens[1]]: this.WORD_DELETE,
-        [tokens[2]]: testString !== undefined ? this.TEST_COMMAND : undefined,
+        ...(testString !== undefined ? {[tokens[2]]: this.TEST_COMMAND} : {}),
         ...tokens
           .slice(3)
           .reduce((mapping, t) => ({...mapping, [t]: undefined}), {}),
@@ -233,19 +235,27 @@ export abstract class Alias<TContext, TOutput> extends TextCommand<
           .reduce((mapping, t) => ({...mapping, [t]: undefined}), {}),
       };
       executionArgs.legacy = {};
+    } else {
+      tokenMapping = {
+        [tokens[0]]: this.COMMAND_PREFIX,
+        ...tokens
+          .slice(1)
+          .reduce((mapping, t) => ({...mapping, [t]: undefined}), {}),
+      };
+      return CommandMatchResult.partial(tokenMapping);
     }
 
     if (argsProcessor.remainingTokens.length > 0) {
       return CommandMatchResult.partial(tokenMapping);
     }
     if (
-      (executionArgs.show ||
-        executionArgs.add ||
-        executionArgs.delete ||
-        executionArgs.test ||
+      (executionArgs.show ??
+        executionArgs.add ??
+        executionArgs.delete ??
+        executionArgs.test ??
         executionArgs.legacy) === undefined
     ) {
-      return fail;
+      return CommandMatchResult.partial(tokenMapping);
     }
     return CommandMatchResult.ok(executionArgs);
   }

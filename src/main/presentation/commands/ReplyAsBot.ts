@@ -36,6 +36,7 @@ export abstract class ReplyAsBot<
   protected COMMAND_PREFIX = ReplyAsBot.COMMAND_PREFIX;
   protected static ADMIN_MESSAGE = ANY_STRING(
     'сообщение',
+    'сообщение для пользователя',
     'сообщение для пользователя'
   );
   protected ADMIN_MESSAGE = ReplyAsBot.ADMIN_MESSAGE;

@@ -41,6 +41,7 @@ export abstract class Anouncements<TContext, TOutput> extends TextCommand<
   private WORD_ECHO = Anouncements.WORD_ECHO;
   private static ANOUNCEMENT_ID = INTEGER_OR_RANGE(
     'номер',
+    'номер объявления',
     'номер объявления или интервал в формате x-y',
     1,
     10
@@ -48,11 +49,13 @@ export abstract class Anouncements<TContext, TOutput> extends TextCommand<
   private ANOUNCEMENT_ID = Anouncements.ANOUNCEMENT_ID;
   private static ANOUNCEMENT_DESCRIPTION = ANY_STRING(
     'описание',
+    'описание объявления',
     'краткое описание объявления'
   );
   private ANOUNCEMENT_DESCRIPTION = Anouncements.ANOUNCEMENT_DESCRIPTION;
   private static ANOUNCEMENT_TEXT = ANY_STRING(
     'текст',
+    'текст объявления',
     'полный текст объявления'
   );
   private ANOUNCEMENT_TEXT = Anouncements.ANOUNCEMENT_TEXT;

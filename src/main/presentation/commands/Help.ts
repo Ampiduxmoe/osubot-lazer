@@ -40,7 +40,11 @@ export abstract class Help<TContext, TOutput> extends TextCommand<
         ...commands.map(c => c.prefixes).flat(1)
       )
     );
-    const USAGE_VARIANT = ANY_STRING('variant', 'вариант команды');
+    const USAGE_VARIANT = ANY_STRING(
+      'вариант',
+      'вариант команды',
+      'вариант использования команды'
+    );
     super([
       {argument: COMMAND_PREFIX, isOptional: false},
       {argument: FOREIGN_COMMAND_PREFIX, isOptional: true},

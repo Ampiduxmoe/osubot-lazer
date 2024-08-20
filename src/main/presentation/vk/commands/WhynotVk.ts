@@ -1,5 +1,4 @@
 import {APP_CODE_NAME} from '../../../App';
-import {maxBy} from '../../../primitives/Arrays';
 import {MaybeDeferred} from '../../../primitives/MaybeDeferred';
 import {TextCommand} from '../../commands/base/TextCommand';
 import {Whynot, WhynotExecutionArgs} from '../../commands/Whynot';
@@ -38,30 +37,33 @@ export class WhynotVk extends Whynot<VkMessageContext, VkOutputMessage> {
     }
   ): MaybeDeferred<VkOutputMessage> {
     const {matchResult, command} = match;
+    const competingGroups = Object.keys(command.argGroups).reduce(
+      (groups, key) => {
+        if (command.argGroups[key].isCompeting) {
+          return {...groups, [key]: command.argGroups[key]};
+        }
+        return groups;
+      },
+      {}
+    );
+    const competingGroupKeys = Object.keys(competingGroups);
+    const competingGroupsStructures = competingGroupKeys.map(key =>
+      command.argGroups[key].memberIndices.map(i => command.commandStructure[i])
+    );
     const commandStructure = (() => {
       const tokenMapping = matchResult.partialMapping;
       if (tokenMapping === undefined) {
         return command.commandStructure;
       }
-      const competingGroups = Object.keys(command.argGroups).reduce(
-        (groups, key) => {
-          if (!command.argGroups[key].isCompeting) {
-            return {...groups, [key]: command.argGroups[key]};
-          }
-          return groups;
-        },
-        {}
-      );
-      const competingGroupKeys = Object.keys(competingGroups);
       if (competingGroupKeys.length === 0) {
         return command.commandStructure;
       }
-      const bestStructureMatch = maxBy(
+      const matchedArgs = Object.values(tokenMapping);
+      const structureMatchCounts = competingGroupsStructures.map(
         groupCommandStructure => {
           const requiredArgs = groupCommandStructure
             .filter(e => !e.isOptional)
             .map(e => e.argument);
-          const matchedArgs = Object.values(tokenMapping);
           let requiredArgMatchCount = 0;
           for (const arg of matchedArgs) {
             if (arg === undefined) {
@@ -71,14 +73,28 @@ export class WhynotVk extends Whynot<VkMessageContext, VkOutputMessage> {
               requiredArgMatchCount += 1;
             }
           }
-          return requiredArgMatchCount;
-        },
-        competingGroupKeys.map(key =>
-          command.argGroups[key].memberIndices.map(
-            i => command.commandStructure[i]
-          )
-        )
+          return {
+            structure: groupCommandStructure,
+            count: requiredArgMatchCount,
+          };
+        }
       );
+      const bestMatch = structureMatchCounts.find(({structure, count}) => {
+        for (const entry of structureMatchCounts) {
+          const {structure: otherStructure, count: otherCount} = entry;
+          if (otherStructure === structure) {
+            continue;
+          }
+          if (otherCount >= count) {
+            return false;
+          }
+        }
+        return true;
+      });
+      if (bestMatch === undefined) {
+        return command.commandStructure;
+      }
+      const {structure: bestStructureMatch} = bestMatch;
       return bestStructureMatch;
     })();
     const missingRequiredArgs: CommandArgument<unknown>[] = (() => {
@@ -119,16 +135,42 @@ export class WhynotVk extends Whynot<VkMessageContext, VkOutputMessage> {
           .join('\n')
       );
     })();
-    const missingArgsStr =
-      missingRequiredArgs.length === 0
-        ? ''
-        : '\n\nНе указаны обязательные аргументы:\n' +
-          missingRequiredArgs
-            .map(
-              // eslint-disable-next-line no-irregular-whitespace
-              arg => `　❌ ${arg.displayName} — ${arg.entityName}`
+    const missingArgsStr = (() => {
+      if (missingRequiredArgs.length === 0) {
+        return '';
+      }
+      const hasCompetingGroups = competingGroupKeys.length > 0;
+      if (commandStructure === command.commandStructure && hasCompetingGroups) {
+        const competingGroupsMissingArgs = competingGroupsStructures
+          .map(s =>
+            s
+              .filter(e => !e.isOptional)
+              .map(e => e.argument)
+              .filter(arg => missingRequiredArgs.includes(arg))
+          )
+          .filter(s => s.length > 0);
+        return (
+          '\n\nНе указаны обязательные аргументы:\n' +
+          competingGroupsMissingArgs
+            .map(group =>
+              group
+                // eslint-disable-next-line no-irregular-whitespace
+                .map(arg => `　❌ ${arg.displayName} — ${arg.entityName}`)
+                .join('\n')
             )
-            .join('\n');
+            .join('\n　ИЛИ\n')
+        );
+      }
+      return (
+        '\n\nНе указаны обязательные аргументы:\n' +
+        missingRequiredArgs
+          .map(
+            // eslint-disable-next-line no-irregular-whitespace
+            arg => `　❌ ${arg.displayName} — ${arg.entityName}`
+          )
+          .join('\n')
+      );
+    })();
     return MaybeDeferred.fromValue({
       text:
         'Частичное совпадение ' +

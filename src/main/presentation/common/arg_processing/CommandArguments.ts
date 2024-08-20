@@ -10,7 +10,7 @@ import {CommandArgument} from './CommandArgument';
 
 export const SERVER_PREFIX: CommandArgument<OsuServer> = {
   displayName: 'сервер',
-  entityName: 'сервер',
+  entityName: 'префикс сервера',
   description: 'буква или название сервера',
   get usageExample(): string {
     const prefix = pickRandom(SERVERS).prefix;
@@ -74,7 +74,7 @@ export const VK_FOREIGN_COMMAND_PREFIX: (
 
 export const USERNAME: CommandArgument<string> = {
   displayName: 'ник',
-  entityName: 'ник',
+  entityName: 'ник игрока',
   description: 'ник игрока',
   get usageExample(): string {
     const someUsernames = [
@@ -592,10 +592,11 @@ export const WORD: (word: string) => CommandArgument<string> = word => ({
 
 export const ANY_WORD: (
   name: string,
+  entityName: string,
   description: string
-) => CommandArgument<string> = (name, description) => ({
+) => CommandArgument<string> = (name, entityName, description) => ({
   displayName: name,
-  entityName: name,
+  entityName: entityName,
   description: description,
   get usageExample(): string {
     return pickRandom(['любоеслово', 'другоеслово']);
@@ -613,10 +614,11 @@ export const ANY_WORD: (
 
 export const ANY_STRING: (
   name: string,
+  entityName: string,
   description: string
-) => CommandArgument<string> = (name, description) => ({
+) => CommandArgument<string> = (name, entityName, description) => ({
   displayName: name,
-  entityName: name,
+  entityName: entityName,
   description: description,
   get usageExample(): string {
     return pickRandom(['любаястрока', 'другаястрока']);
@@ -661,7 +663,7 @@ export const DAY_OFFSET: CommandArgument<number> = {
 
 export const DATE: CommandArgument<Date> = {
   displayName: 'дата|' + DAY_OFFSET.displayName,
-  entityName: 'дата',
+  entityName: 'дата или смещение относительно сегодня',
   description: 'дата в формате ISO8601 или номер дня относительно сегодня',
   get usageExample(): string {
     const date = new Date().toISOString().substring(0, 10);
@@ -688,11 +690,18 @@ export const DATE: CommandArgument<Date> = {
 export const INTEGER: (
   displayName: string,
   description: string,
+  entityName: string,
   min: number | undefined,
   max: number | undefined
-) => CommandArgument<number> = (displayName, description, min, max) => ({
+) => CommandArgument<number> = (
+  displayName,
+  entityName,
+  description,
+  min,
+  max
+) => ({
   displayName: displayName,
-  entityName: displayName,
+  entityName: entityName,
   description: description,
   get usageExample(): string {
     const exampleMin = min ?? -999999;
@@ -725,17 +734,19 @@ export const INTEGER: (
 
 export const INTEGER_RANGE: (
   displayName: string,
+  entityName: string,
   description: string,
   min: number | undefined,
   max: number | undefined
 ) => CommandArgument<[number, number]> = (
   displayName,
+  entityName,
   description,
   min,
   max
 ) => ({
   displayName: displayName,
-  entityName: displayName,
+  entityName: entityName,
   description: description,
   get usageExample(): string {
     const exampleMin = min ?? -999999;
@@ -790,20 +801,22 @@ export const INTEGER_RANGE: (
 
 export const INTEGER_OR_RANGE: (
   displayName: string,
+  entityName: string,
   description: string,
   min: number | undefined,
   max: number | undefined
 ) => CommandArgument<[number, number]> = (
   displayName,
+  entityName,
   description,
   min,
   max
 ) => {
-  const integerArg = INTEGER('', '', min, max);
-  const rangeArg = INTEGER_RANGE('', '', min, max);
+  const integerArg = INTEGER('', '', '', min, max);
+  const rangeArg = INTEGER_RANGE('', '', '', min, max);
   return {
     displayName: displayName,
-    entityName: displayName,
+    entityName: entityName,
     description: description,
     get usageExample(): string {
       return pickRandom([
@@ -832,9 +845,14 @@ export const INTEGER_OR_RANGE: (
 
 export const APP_USER_ID = ANY_STRING(
   'ид_польз_прил',
+  'ID пользователя приложения',
   'ID пользователя приложения'
 );
-export const MESSAGE_ID = ANY_STRING('ид_сообщения', 'ID сообщения');
+export const MESSAGE_ID = ANY_STRING(
+  'ид_сообщения',
+  'ID сообщения',
+  'ID сообщения'
+);
 export const CUSTOM_PAYLOAD: CommandArgument<string> = {
   displayName: 'payload=?',
   entityName: 'дополнительные данные',
@@ -853,12 +871,18 @@ export const CUSTOM_PAYLOAD: CommandArgument<string> = {
   },
 };
 
-export const VK_USER_ID = INTEGER('ид_вк', 'ID пользователя VK', 0, 99999999);
+export const VK_USER_ID = INTEGER(
+  'ид_вк',
+  'ID пользователя VK',
+  'ID пользователя VK',
+  0,
+  99999999
+);
 
 type BeatmapLinkArg = {server: OsuServer; id: number};
 
 export const BEATMAP_LINK: CommandArgument<BeatmapLinkArg> = (() => {
-  const integerArg = INTEGER('', '', 0, 1e9);
+  const integerArg = INTEGER('', '', '', 0, 1e9);
   const beatmapLinkRegexes: Record<keyof typeof OsuServer, RegExp[]> = {
     Bancho: [
       /^(https?:\/\/)?osu\.ppy\.sh\/b\/(?<ID>\d+)\/?$/i,
@@ -919,7 +943,7 @@ export const BEATMAP_LINK: CommandArgument<BeatmapLinkArg> = (() => {
 })();
 
 export const BEATMAP_ID: CommandArgument<number> = (() => {
-  const integerArg = INTEGER('', '', 0, 1e9);
+  const integerArg = INTEGER('', '', '', 0, 1e9);
   const beatmapLinkArg = BEATMAP_LINK;
   return {
     displayName: '#ид_карты|ссылка',
@@ -994,7 +1018,7 @@ export type VkMentionArg = {
 };
 export const VK_MENTION: CommandArgument<VkMentionArg> = {
   displayName: 'упомянание',
-  entityName: 'упомянание',
+  entityName: 'упомянание человека/группы',
   description: 'упомянание (тег/саммон) кого-либо',
   get usageExample(): string {
     return pickRandom(['l r', 'l personalbest', 'l u', 'osubot-help']);
