@@ -56,13 +56,18 @@ export class BanchoClient {
     }
   }
 
-  private async refreshToken() {
-    console.log(`Refreshing ${BanchoClient.name} OAuth token...`);
-    const refreshStart = Date.now();
-    const token = await this.fetchTokenAndSave();
-    const refreshTime = Date.now() - refreshStart;
-    console.log(`Refreshed OAuth token in ${refreshTime}ms`);
-    this.trySetToken(token);
+  private _tokenRefreshPromise: Promise<void> | undefined = undefined;
+  private async refreshToken(): Promise<void> {
+    this._tokenRefreshPromise ??= (async () => {
+      console.log(`Refreshing ${BanchoClient.name} OAuth token...`);
+      const refreshStart = Date.now();
+      const token = await this.fetchTokenAndSave();
+      const refreshTime = Date.now() - refreshStart;
+      console.log(`Refreshed OAuth token in ${refreshTime}ms`);
+      this.trySetToken(token);
+    })();
+    await this._tokenRefreshPromise;
+    this._tokenRefreshPromise = undefined;
   }
 
   private async fetchTokenAndSave(): Promise<OsuOauthAccessToken> {
@@ -79,7 +84,7 @@ export class BanchoClient {
     return token;
   }
 
-  private trySetToken(token: OsuOauthAccessToken) {
+  private trySetToken(token: OsuOauthAccessToken): void {
     if (!token.isValid(this.tokenSafetyMargin)) {
       console.log('Can not set OAuth token: potential expiration date reached');
       return;
