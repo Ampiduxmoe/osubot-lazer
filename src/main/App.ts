@@ -821,7 +821,7 @@ export class App {
         return;
       }
       const tokenMapping = matchResult.partialMapping!;
-      const tokens = Object.keys(tokenMapping);
+      const tokens = tokenMapping.map(e => e.token);
       const usedPrefix = tokens.find(t =>
         command.prefixes.matchIgnoringCase(t)
       );
