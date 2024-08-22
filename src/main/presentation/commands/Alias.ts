@@ -1,9 +1,11 @@
 import {MaybeDeferred} from '../../primitives/MaybeDeferred';
 import {ALL_OSU_SERVERS, OsuServer} from '../../primitives/OsuServer';
-import {CommandMatchResult} from '../common/CommandMatchResult';
+import {
+  CommandMatchResult,
+  TokenMatchEntry,
+} from '../common/CommandMatchResult';
 import {CommandPrefixes} from '../common/CommandPrefixes';
 import {AliasProcessor} from '../common/alias_processing/AliasProcessor';
-import {CommandArgument} from '../common/arg_processing/CommandArgument';
 import {
   ALIAS_PATTERN,
   ALIAS_TARGET,
@@ -157,29 +159,29 @@ export abstract class Alias<TContext, TOutput> extends TextCommand<
       return fail;
     }
     const executionArgs: AliasExecutionArgs = {};
-    let tokenMapping: Record<string, CommandArgument<unknown> | undefined> = {};
+    let tokenMapping: TokenMatchEntry[] = [];
 
     if (argsProcessor.use(this.WORD_SHOW).at(0).extract() !== undefined) {
-      tokenMapping = {
-        [tokens[0]]: this.COMMAND_PREFIX,
-        [tokens[1]]: this.WORD_SHOW,
-        ...tokens
-          .slice(2)
-          .reduce((mapping, t) => ({...mapping, [t]: undefined}), {}),
-      };
+      tokenMapping = [
+        {token: tokens[0], argument: this.COMMAND_PREFIX},
+        {token: tokens[1], argument: this.WORD_SHOW},
+        ...tokens.slice(2).map(token => ({token: token, argument: undefined})),
+      ];
       executionArgs.show = {};
     } else if (argsProcessor.use(this.WORD_ADD).at(0).extract() !== undefined) {
       const pattern = argsProcessor.use(ALIAS_PATTERN).at(0).extract();
       const target = argsProcessor.use(ALIAS_TARGET).at(0).extract();
-      tokenMapping = {
-        [tokens[0]]: this.COMMAND_PREFIX,
-        [tokens[1]]: this.WORD_ADD,
-        ...(pattern !== undefined ? {[tokens[2]]: ALIAS_PATTERN} : {}),
-        ...(target !== undefined ? {[tokens[3]]: ALIAS_TARGET} : {}),
-        ...tokens
-          .slice(4)
-          .reduce((mapping, t) => ({...mapping, [t]: undefined}), {}),
-      };
+      tokenMapping = [
+        {token: tokens[0], argument: this.COMMAND_PREFIX},
+        {token: tokens[1], argument: this.WORD_ADD},
+        ...(pattern !== undefined
+          ? [{token: tokens[2], argument: ALIAS_PATTERN}]
+          : []),
+        ...(target !== undefined
+          ? [{token: tokens[3], argument: ALIAS_TARGET}]
+          : []),
+        ...tokens.slice(4).map(token => ({token: token, argument: undefined})),
+      ];
       if (pattern === undefined || target === undefined) {
         return CommandMatchResult.partial(tokenMapping);
       }
@@ -196,14 +198,14 @@ export abstract class Alias<TContext, TOutput> extends TextCommand<
       argsProcessor.use(this.WORD_DELETE).at(0).extract() !== undefined
     ) {
       const range = argsProcessor.use(this.ALIAS_NUMBER).at(0).extract();
-      tokenMapping = {
-        [tokens[0]]: this.COMMAND_PREFIX,
-        [tokens[1]]: this.WORD_DELETE,
-        ...(range !== undefined ? {[tokens[2]]: this.ALIAS_NUMBER} : {}),
-        ...tokens
-          .slice(3)
-          .reduce((mapping, t) => ({...mapping, [t]: undefined}), {}),
-      };
+      tokenMapping = [
+        {token: tokens[0], argument: this.COMMAND_PREFIX},
+        {token: tokens[1], argument: this.WORD_DELETE},
+        ...(range !== undefined
+          ? [{token: tokens[2], argument: this.ALIAS_NUMBER}]
+          : []),
+        ...tokens.slice(3).map(token => ({token: token, argument: undefined})),
+      ];
       if (range === undefined) {
         return CommandMatchResult.partial(tokenMapping);
       }
@@ -212,14 +214,14 @@ export abstract class Alias<TContext, TOutput> extends TextCommand<
       argsProcessor.use(this.WORD_TEST).at(0).extract() !== undefined
     ) {
       const testString = argsProcessor.use(this.TEST_COMMAND).at(0).extract();
-      tokenMapping = {
-        [tokens[0]]: this.COMMAND_PREFIX,
-        [tokens[1]]: this.WORD_DELETE,
-        ...(testString !== undefined ? {[tokens[2]]: this.TEST_COMMAND} : {}),
-        ...tokens
-          .slice(3)
-          .reduce((mapping, t) => ({...mapping, [t]: undefined}), {}),
-      };
+      tokenMapping = [
+        {token: tokens[0], argument: this.COMMAND_PREFIX},
+        {token: tokens[1], argument: this.WORD_TEST},
+        ...(testString !== undefined
+          ? [{token: tokens[2], argument: this.TEST_COMMAND}]
+          : []),
+        ...tokens.slice(3).map(token => ({token: token, argument: undefined})),
+      ];
       if (testString === undefined) {
         return CommandMatchResult.partial(tokenMapping);
       }
@@ -227,21 +229,17 @@ export abstract class Alias<TContext, TOutput> extends TextCommand<
     } else if (
       argsProcessor.use(this.WORD_LEGACY).at(0).extract() !== undefined
     ) {
-      tokenMapping = {
-        [tokens[0]]: this.COMMAND_PREFIX,
-        [tokens[1]]: this.WORD_LEGACY,
-        ...tokens
-          .slice(2)
-          .reduce((mapping, t) => ({...mapping, [t]: undefined}), {}),
-      };
+      tokenMapping = [
+        {token: tokens[0], argument: this.COMMAND_PREFIX},
+        {token: tokens[1], argument: this.WORD_LEGACY},
+        ...tokens.slice(2).map(token => ({token: token, argument: undefined})),
+      ];
       executionArgs.legacy = {};
     } else {
-      tokenMapping = {
-        [tokens[0]]: this.COMMAND_PREFIX,
-        ...tokens
-          .slice(1)
-          .reduce((mapping, t) => ({...mapping, [t]: undefined}), {}),
-      };
+      tokenMapping = [
+        {token: tokens[0], argument: this.COMMAND_PREFIX},
+        ...tokens.slice(1).map(token => ({token: token, argument: undefined})),
+      ];
       return CommandMatchResult.partial(tokenMapping);
     }
 

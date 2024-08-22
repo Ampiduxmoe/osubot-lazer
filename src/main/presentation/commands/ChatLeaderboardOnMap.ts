@@ -19,7 +19,10 @@ import {
 } from '../common/arg_processing/CommandArguments';
 import {MainArgsProcessor} from '../common/arg_processing/MainArgsProcessor';
 import {TextProcessor} from '../common/arg_processing/TextProcessor';
-import {CommandMatchResult} from '../common/CommandMatchResult';
+import {
+  CommandMatchResult,
+  TokenMatchEntry,
+} from '../common/CommandMatchResult';
 import {CommandPrefixes} from '../common/CommandPrefixes';
 import {
   NOTICE_ABOUT_SPACES_IN_USERNAMES,
@@ -98,24 +101,29 @@ export abstract class ChatLeaderboardOnMap<
     const modPatternsRes = argsProcessor.use(MOD_PATTERNS).extractWithToken();
 
     if (argsProcessor.remainingTokens.length > 0) {
-      const extractionResults = [
+      let extractionResults = [
         [...serverRes, SERVER_PREFIX],
         [...ownPrefixRes, this.COMMAND_PREFIX],
         [...beatmapIdRes, BEATMAP_ID],
         [...usernameListRes, USERNAME_LIST],
         [...modPatternsRes, MOD_PATTERNS],
       ];
-      const mapping: Record<string, CommandArgument<unknown> | undefined> = {};
+      const mapping: TokenMatchEntry[] = [];
       for (const originalToken of tokens) {
         const extractionResult = extractionResults.find(
           r => r[1] === originalToken
         );
-        if (extractionResult === undefined) {
-          mapping[originalToken] = undefined;
-          continue;
+        if (extractionResult !== undefined) {
+          extractionResults = extractionResults.filter(
+            r => r !== extractionResult
+          );
         }
-        mapping[originalToken] =
-          extractionResult[2] as CommandArgument<unknown>;
+        mapping.push({
+          token: originalToken,
+          argument: extractionResult?.at(2) as
+            | CommandArgument<unknown>
+            | undefined,
+        });
       }
       return CommandMatchResult.partial(mapping);
     }

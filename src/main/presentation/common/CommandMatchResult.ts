@@ -4,19 +4,23 @@ export class CommandMatchResult<T> {
   readonly matchLevel: MatchLevel;
 
   /** Shorthand for `matchLevel === MatchLevel.FULL_MATCH` */
-  isFullMatch: boolean;
+  get isFullMatch(): boolean {
+    return this.matchLevel === MatchLevel.FULL_MATCH;
+  }
   /** Shorthand for `matchLevel === MatchLevel.PARTIAL_MATCH` */
-  isPartialMatch: boolean;
+  get isPartialMatch(): boolean {
+    return this.matchLevel === MatchLevel.PARTIAL_MATCH;
+  }
   /** Shorthand for `matchLevel === MatchLevel.NO_MATCH` */
-  doesNotMatch: boolean;
+  get doesNotMatch(): boolean {
+    return this.matchLevel === MatchLevel.NO_MATCH;
+  }
 
   /**
    * Mapping of tokens to CommandArgument.
    * Holds value only if {@link matchLevel} is {@link MatchLevel.PARTIAL_MATCH}
    */
-  readonly partialMapping:
-    | Readonly<Record<string, CommandArgument<unknown> | undefined>>
-    | undefined;
+  readonly partialMapping: TokenMatchEntry[] | undefined | undefined;
 
   /**
    * Arguments required to execute command.
@@ -26,18 +30,12 @@ export class CommandMatchResult<T> {
 
   private constructor(
     matchLevel: MatchLevel,
-    partialMapping:
-      | Record<string, CommandArgument<unknown> | undefined>
-      | undefined,
+    partialMapping: TokenMatchEntry[] | undefined,
     executionArgs: T | undefined
   ) {
     this.matchLevel = matchLevel;
     this.partialMapping = partialMapping;
     this.commandArgs = executionArgs;
-
-    this.isFullMatch = matchLevel === MatchLevel.FULL_MATCH;
-    this.isPartialMatch = matchLevel === MatchLevel.PARTIAL_MATCH;
-    this.doesNotMatch = matchLevel === MatchLevel.NO_MATCH;
   }
 
   static ok<R>(executionArgs: R): CommandMatchResult<R> {
@@ -48,9 +46,7 @@ export class CommandMatchResult<T> {
     );
   }
 
-  static partial<R>(
-    partialMapping: Record<string, CommandArgument<unknown> | undefined>
-  ): CommandMatchResult<R> {
+  static partial<R>(partialMapping: TokenMatchEntry[]): CommandMatchResult<R> {
     return new CommandMatchResult<R>(
       MatchLevel.PARTIAL_MATCH,
       partialMapping,
@@ -68,3 +64,8 @@ export enum MatchLevel {
   PARTIAL_MATCH,
   FULL_MATCH,
 }
+
+export type TokenMatchEntry = {
+  token: string;
+  argument: CommandArgument<unknown> | undefined;
+};

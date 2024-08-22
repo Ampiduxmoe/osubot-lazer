@@ -58,18 +58,17 @@ export class WhynotVk extends Whynot<VkMessageContext, VkOutputMessage> {
       if (competingGroupKeys.length === 0) {
         return command.commandStructure;
       }
-      const matchedArgs = Object.values(tokenMapping);
       const structureMatchCounts = competingGroupsStructures.map(
         groupCommandStructure => {
           const requiredArgs = groupCommandStructure
             .filter(e => !e.isOptional)
             .map(e => e.argument);
           let requiredArgMatchCount = 0;
-          for (const arg of matchedArgs) {
-            if (arg === undefined) {
+          for (const entry of tokenMapping) {
+            if (entry.argument === undefined) {
               continue;
             }
-            if (requiredArgs.includes(arg)) {
+            if (requiredArgs.includes(entry.argument)) {
               requiredArgMatchCount += 1;
             }
           }
@@ -102,7 +101,7 @@ export class WhynotVk extends Whynot<VkMessageContext, VkOutputMessage> {
       if (tokenMapping === undefined) {
         return [];
       }
-      const matchedArgs = Object.values(tokenMapping);
+      const matchedArgs = tokenMapping.map(entry => entry.argument);
       const requiredArgs = commandStructure
         .filter(e => !e.isOptional)
         .map(e => e.argument);
@@ -123,11 +122,11 @@ export class WhynotVk extends Whynot<VkMessageContext, VkOutputMessage> {
       }
       return (
         '\n\nВаши аргументы:\n' +
-        Object.entries(tokenMapping)
-          .map(([token, arg]) => {
-            if (arg !== undefined) {
+        tokenMapping
+          .map(({token, argument}) => {
+            if (argument !== undefined) {
               // eslint-disable-next-line no-irregular-whitespace
-              return `　✅ ${token} — ${arg.entityName}`;
+              return `　✅ ${token} — ${argument.entityName}`;
             }
             // eslint-disable-next-line no-irregular-whitespace
             return `　❌ ${token}`;
