@@ -1,7 +1,8 @@
+import {AppUserInfo} from '../../application/usecases/get_app_user_info/GetAppUserInfoResponse';
 import {GetAppUserInfoUseCase} from '../../application/usecases/get_app_user_info/GetAppUserInfoUseCase';
 import {OsuUserInfo} from '../../application/usecases/get_osu_user_info/GetOsuUserInfoResponse';
 import {GetOsuUserInfoUseCase} from '../../application/usecases/get_osu_user_info/GetOsuUserInfoUseCase';
-import {maxBy} from '../../primitives/Arrays';
+import {maxBy, uniquesFilter} from '../../primitives/Arrays';
 import {MaybeDeferred} from '../../primitives/MaybeDeferred';
 import {ALL_OSU_RULESETS, OsuRuleset} from '../../primitives/OsuRuleset';
 import {OsuServer} from '../../primitives/OsuServer';
@@ -109,108 +110,138 @@ export abstract class ChatLeaderboard<TContext, TOutput> extends TextCommand<
     ctx: TContext
   ): MaybeDeferred<ChatLeaderboardViewParams> {
     const valuePromise: Promise<ChatLeaderboardViewParams> = (async () => {
+      const includeLocalUsers =
+        args.usernameList === undefined || args.usernameList.isAdditive;
       const initiatorAppUserId = this.getInitiatorAppUserId(ctx);
-      let preferredModes: {
-        username: string;
-        mode: OsuRuleset | undefined;
-      }[] = await (async () => {
-        if (args.usernameList === undefined || args.usernameList.isAdditive) {
-          const localMembers = await this.getLocalAppUserIds(ctx);
-          const appUserInfoResponses = await Promise.all(
-            localMembers.map(appUserid =>
-              this.getAppUserInfo.execute({
-                id: appUserid,
-                server: args.server,
-              })
-            )
-          );
-          const localEntries = appUserInfoResponses
-            .filter(x => x.userInfo !== undefined)
-            .map(x => ({
-              username: x.userInfo!.username,
-              mode: x.userInfo!.ruleset,
-            }));
-          const selectedEntries =
-            args.usernameList?.usernames?.map(x => ({
-              username: x,
-              mode: undefined,
-            })) ?? [];
-          return [...localEntries, ...selectedEntries];
-        }
-        return args.usernameList.usernames.map(x => ({
-          username: x,
-          mode: undefined,
-        }));
+
+      /**
+       * Method for getting AppUserInfo
+       * for local app users (usually chat/conversation),
+       * optimized to minimize external calls count
+       */
+      const localAppUsers: () => Promise<AppUserInfo[]> = (() => {
+        let appUsersPromise: Promise<AppUserInfo[]> | undefined = undefined;
+        return async () => {
+          // Avoid fetching chat users multiple times
+          appUsersPromise ??= (async () => {
+            const appUserIds = await this.getLocalAppUserIds(ctx);
+            const appUserResults = await Promise.all(
+              appUserIds.map(id =>
+                this.getAppUserInfo.execute({id: id, server: args.server})
+              )
+            );
+            const appUsers = appUserResults
+              .map(r => r.userInfo)
+              .filter(info => info !== undefined);
+            return appUsers;
+          })();
+          return appUsersPromise;
+        };
       })();
-      const missingUsernames: string[] = [];
-      const selectedOsuUsers: (OsuUserInfo | undefined)[] = await Promise.all(
-        preferredModes
-          .filter(x => x.mode === undefined)
-          .map(async x => {
-            const osuUserInfoResponse = await this.getOsuUserInfo.execute({
-              initiatorAppUserId: initiatorAppUserId,
-              server: args.server,
-              username: x.username,
-              ruleset: args.mode,
-            });
-            const osuUserInfo = osuUserInfoResponse.userInfo;
-            if (osuUserInfo === undefined) {
-              missingUsernames.push(x.username);
-              return osuUserInfo;
+
+      /**
+       * Method for getting OsuUserInfo,
+       * optimized to minimize external calls count
+       */
+      const osuUserInfo: (
+        username: string,
+        mode: OsuRuleset | undefined
+      ) => Promise<OsuUserInfo | undefined> = (() => {
+        const userInfoPromises: Record<
+          string,
+          Promise<OsuUserInfo | undefined>
+        > = {};
+        return async (username, mode) => {
+          const usernameArgNormalized = username.toLowerCase();
+          const cacheKeyByArgs = usernameArgNormalized + mode;
+          // Avoid fetching osu users multiple times
+          userInfoPromises[cacheKeyByArgs] ??= (async () => {
+            const info = (
+              await this.getOsuUserInfo.execute({
+                initiatorAppUserId: initiatorAppUserId,
+                server: args.server,
+                username: username,
+                ruleset: mode,
+              })
+            ).userInfo;
+            if (info === undefined) {
+              return undefined;
             }
-            x.mode = osuUserInfo.preferredMode;
-            return osuUserInfo;
-          })
-      );
-      preferredModes = preferredModes.filter(
-        x => !missingUsernames.includes(x.username)
-      );
-      const mode: OsuRuleset = (() => {
+            const usernameNormalized = info.username.toLowerCase();
+            if (mode === undefined) {
+              // Request for a user info without specified mode
+              // is identicall to request with their preferred mode,
+              // so we save this result under additional key
+              userInfoPromises[usernameNormalized + info.preferredMode] ??=
+                Promise.resolve(info);
+            }
+            if (info.preferredMode === mode) {
+              // Request for a user info with their preferred mode
+              // is identicall to request without mode at all,
+              // so we save this result under additional key
+              userInfoPromises[usernameNormalized + undefined] ??=
+                Promise.resolve(info);
+            }
+            return info;
+          })();
+          return userInfoPromises[cacheKeyByArgs];
+        };
+      })();
+
+      const targetMode: OsuRuleset = await (async () => {
         if (args.mode !== undefined) {
           return args.mode;
         }
-        const allUserModes = preferredModes
-          .filter(x => x.mode !== undefined)
-          .map(x => x.mode!);
-        const prevalentMode = maxBy(
-          ruleset => allUserModes.filter(m => m === ruleset).length,
-          ALL_OSU_RULESETS.map(k => OsuRuleset[k])
+        const modesPopularity = ALL_OSU_RULESETS.reduce(
+          (dict, key) => ({...dict, [OsuRuleset[key]]: 0}),
+          {} as Record<OsuRuleset, number>
         );
-        return prevalentMode;
-      })();
-      const selectedOsuUsersFiltered = selectedOsuUsers.filter(
-        x => x !== undefined
-      ) as OsuUserInfo[];
-      const alreadyCheckedUsernames = [
-        ...selectedOsuUsersFiltered.map(x => x.username.toLowerCase()),
-        ...missingUsernames.map(x => x.toLowerCase()),
-      ];
-      const remainingUsers: (OsuUserInfo | undefined)[] = await Promise.all(
-        preferredModes
-          .filter(
-            x => !alreadyCheckedUsernames.includes(x.username.toLowerCase())
-          )
-          .map(async x => {
-            const osuUserInfoResponse = await this.getOsuUserInfo.execute({
-              initiatorAppUserId: initiatorAppUserId,
-              server: args.server,
-              username: x.username,
-              ruleset: mode,
-            });
-            const osuUserInfo = osuUserInfoResponse.userInfo;
-            if (osuUserInfo === undefined) {
-              missingUsernames.push(x.username);
+        if (includeLocalUsers) {
+          for (const appUser of await localAppUsers()) {
+            modesPopularity[appUser.ruleset] += 1;
+          }
+        }
+        if (args.usernameList !== undefined) {
+          const selectedOsuUsers = await Promise.all(
+            args.usernameList.usernames.map(username =>
+              osuUserInfo(username, undefined)
+            )
+          );
+          for (const osuUser of selectedOsuUsers) {
+            if (osuUser !== undefined) {
+              modesPopularity[osuUser.preferredMode] += 1;
             }
-            return osuUserInfo;
-          })
-      );
-      const remainingUsersFiltered = remainingUsers.filter(
-        x => x !== undefined
-      ) as OsuUserInfo[];
-      const allUsersSorted = [
-        ...selectedOsuUsersFiltered,
-        ...remainingUsersFiltered,
-      ].sort((a, b) => {
+          }
+        }
+        const mostPopularMode = maxBy(
+          ruleset => modesPopularity[ruleset],
+          ALL_OSU_RULESETS.map(key => OsuRuleset[key])
+        );
+        return mostPopularMode;
+      })();
+
+      const allTargetUsernamesNormalized: string[] = await (async () => {
+        const usernames: string[] = [];
+        if (includeLocalUsers) {
+          usernames.push(...(await localAppUsers()).map(u => u.username));
+        }
+        if (args.usernameList !== undefined) {
+          usernames.push(...args.usernameList.usernames);
+        }
+        return usernames
+          .map(username => username.toLowerCase())
+          .filter(uniquesFilter);
+      })();
+
+      const allTargetUsers: OsuUserInfo[] = await (async () => {
+        const allUserInfos = await Promise.all(
+          allTargetUsernamesNormalized.map(username =>
+            osuUserInfo(username, targetMode)
+          )
+        );
+        return allUserInfos.filter(info => info !== undefined);
+      })();
+      allTargetUsers.sort((a, b) => {
         const aPp = a.pp || 0;
         const bPp = b.pp || 0;
         if (aPp !== bPp) {
@@ -223,12 +254,22 @@ export abstract class ChatLeaderboard<TContext, TOutput> extends TextCommand<
         }
         return a.username > b.username ? 1 : -1;
       });
-      const isChatLb =
-        args.usernameList === undefined || args.usernameList.isAdditive;
-      if (allUsersSorted.length === 0) {
+
+      const missingUsernames: string[] = (() => {
+        const allFetchedUsernames = allTargetUsers.map(u =>
+          u.username.toLowerCase()
+        );
+        return allTargetUsernamesNormalized.filter(
+          username => !allFetchedUsernames.includes(username)
+        );
+      })();
+
+      const isChatLb = args.usernameList === undefined;
+
+      if (allTargetUsers.length === 0) {
         return {
           server: args.server,
-          mode: mode,
+          mode: targetMode,
           users: undefined,
           missingUsernames: missingUsernames,
           isOnlyLocalMembersLb: isChatLb,
@@ -236,8 +277,8 @@ export abstract class ChatLeaderboard<TContext, TOutput> extends TextCommand<
       }
       return {
         server: args.server,
-        mode: mode,
-        users: allUsersSorted,
+        mode: targetMode,
+        users: allTargetUsers,
         missingUsernames: missingUsernames,
         isOnlyLocalMembersLb: isChatLb,
       };

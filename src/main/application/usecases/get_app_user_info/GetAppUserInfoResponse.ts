@@ -4,7 +4,7 @@ export type GetAppUserInfoResponse = {
   userInfo: AppUserInfo | undefined;
 };
 
-type AppUserInfo = {
+export type AppUserInfo = {
   osuId: number;
   username: string;
   ruleset: OsuRuleset;
