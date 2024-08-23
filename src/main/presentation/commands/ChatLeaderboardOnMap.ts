@@ -4,6 +4,7 @@ import {
   OsuMapUserBestPlays,
 } from '../../application/usecases/get_beatmap_users_best_score/GetBeatmapUsersBestScoresResponse';
 import {GetBeatmapUsersBestScoresUseCase} from '../../application/usecases/get_beatmap_users_best_score/GetBeatmapUsersBestScoresUseCase';
+import {uniquesFilter} from '../../primitives/Arrays';
 import {MaybeDeferred} from '../../primitives/MaybeDeferred';
 import {ModPatternCollection} from '../../primitives/ModPatternCollection';
 import {OsuRuleset} from '../../primitives/OsuRuleset';
@@ -144,27 +145,34 @@ export abstract class ChatLeaderboardOnMap<
     ctx: TContext
   ): MaybeDeferred<ChatLeaderboardOnMapViewParams> {
     const valuePromise: Promise<ChatLeaderboardOnMapViewParams> = (async () => {
-      const usernames = await (async () => {
-        if (args.usernameList === undefined || args.usernameList.isAdditive) {
-          const localMembers = await this.getLocalAppUserIds(ctx);
-          const appUserInfoResponses = await Promise.all(
-            localMembers.map(appUserId =>
+      const allTargetUsernamesNormalized: string[] = await (async () => {
+        const usernames: string[] = [];
+        const includeLocalUsers =
+          args.usernameList === undefined || args.usernameList.isAdditive;
+        if (includeLocalUsers) {
+          const appUserIds = await this.getLocalAppUserIds(ctx);
+          const appUserInfoResults = await Promise.all(
+            appUserIds.map(id =>
               this.getAppUserInfo.execute({
-                id: appUserId,
+                id: id,
                 server: args.server,
               })
             )
           );
-          const localUsernames = appUserInfoResponses
-            .filter(x => x.userInfo !== undefined)
-            .map(x => x.userInfo!.username);
-          return [...localUsernames, ...(args.usernameList?.usernames ?? [])];
+          const localUsernames = appUserInfoResults
+            .map(x => x.userInfo?.username)
+            .filter(username => username !== undefined);
+          usernames.push(...localUsernames);
         }
-        return args.usernameList.usernames;
+        if (args.usernameList !== undefined) {
+          usernames.push(...args.usernameList.usernames);
+        }
+        return usernames
+          .map(username => username.toLowerCase())
+          .filter(uniquesFilter);
       })();
-      const isOnlyLocalMembersLb =
-        args.usernameList === undefined || args.usernameList.isAdditive;
-      if (usernames.length === 0) {
+      const isChatLb = args.usernameList === undefined;
+      if (allTargetUsernamesNormalized.length === 0) {
         return {
           server: args.server,
           usernames: [],
@@ -173,10 +181,10 @@ export abstract class ChatLeaderboardOnMap<
           map: undefined,
           plays: undefined,
           missingUsernames: undefined,
-          isOnlyLocalMembersLb: isOnlyLocalMembersLb,
+          isOnlyLocalMembersLb: isChatLb,
         };
       }
-      const beatmapId: number | undefined = await (async () => {
+      const targetBeatmapId: number | undefined = await (async () => {
         if (args.beatmapId !== undefined) {
           return args.beatmapId;
         }
@@ -186,16 +194,16 @@ export abstract class ChatLeaderboardOnMap<
         }
         return await this.getLastSeenBeatmapId(ctx, args.server);
       })();
-      if (beatmapId === undefined) {
+      if (targetBeatmapId === undefined) {
         return {
           server: args.server,
-          usernames: usernames,
+          usernames: allTargetUsernamesNormalized,
           beatmapIdInput: undefined,
           mode: undefined,
           map: undefined,
           plays: undefined,
           missingUsernames: undefined,
-          isOnlyLocalMembersLb: isOnlyLocalMembersLb,
+          isOnlyLocalMembersLb: isChatLb,
         };
       }
       const modPatterns: ModPatternCollection = (() => {
@@ -213,8 +221,8 @@ export abstract class ChatLeaderboardOnMap<
       const leaderboardResponse = await this.getBeatmapBestScores.execute({
         initiatorAppUserId: this.getInitiatorAppUserId(ctx),
         server: args.server,
-        beatmapId: beatmapId,
-        usernames: usernames,
+        beatmapId: targetBeatmapId,
+        usernames: allTargetUsernamesNormalized,
         startPosition: 1,
         quantityPerUser: 1,
         modPatterns: modPatterns,
@@ -224,28 +232,28 @@ export abstract class ChatLeaderboardOnMap<
           case 'beatmap not found':
             return {
               server: args.server,
-              usernames: usernames,
+              usernames: allTargetUsernamesNormalized,
               beatmapIdInput: args.beatmapId,
               mode: undefined,
               map: undefined,
               plays: undefined,
               missingUsernames: undefined,
-              isOnlyLocalMembersLb: isOnlyLocalMembersLb,
+              isOnlyLocalMembersLb: isChatLb,
             };
         }
       }
-      if (beatmapId !== undefined) {
-        await this.saveLastSeenBeatmapId(ctx, args.server, beatmapId);
+      if (targetBeatmapId !== undefined) {
+        await this.saveLastSeenBeatmapId(ctx, args.server, targetBeatmapId);
       }
       return {
         server: args.server,
-        usernames: usernames,
+        usernames: allTargetUsernamesNormalized,
         beatmapIdInput: args.beatmapId,
         mode: leaderboardResponse.ruleset!,
         map: leaderboardResponse.baseBeatmap!,
         plays: leaderboardResponse.mapPlays!,
         missingUsernames: leaderboardResponse.missingUsernames!,
-        isOnlyLocalMembersLb: isOnlyLocalMembersLb,
+        isOnlyLocalMembersLb: isChatLb,
       };
     })();
     return MaybeDeferred.fromFastPromise(valuePromise);
