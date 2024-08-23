@@ -48,7 +48,7 @@ import {ModAcronym} from '../../../../main/primitives/ModAcronym';
 import {ModCombinationPattern} from '../../../../main/primitives/ModCombinationPattern';
 import {ModPatternCollection} from '../../../../main/primitives/ModPatternCollection';
 import {
-  ALL_OSU_RULESETS,
+  ALL_OSU_RULESET_VALUES,
   OsuRuleset,
 } from '../../../../main/primitives/OsuRuleset';
 import {OsuServer} from '../../../../main/primitives/OsuServer';
@@ -522,7 +522,7 @@ describe('UserRecentPlaysVk', function () {
         if (osuUser === undefined) {
           throw Error('All osu user ids used in this test should be valid');
         }
-        const modes = ALL_OSU_RULESETS;
+        const modes = ALL_OSU_RULESET_VALUES;
         for (const mode of modes) {
           const whyTheHellCompilerGivesTS7022 = command.process(
             {
@@ -540,7 +540,7 @@ describe('UserRecentPlaysVk', function () {
                 ),
                 strictMatch: true,
               },
-              mode: OsuRuleset[mode],
+              mode: mode,
             },
             createWithOnlyText({
               senderId: -1,
@@ -549,7 +549,7 @@ describe('UserRecentPlaysVk', function () {
           );
           const viewParams = await whyTheHellCompilerGivesTS7022.resultValue;
           assert.strictEqual(viewParams.server, server);
-          assert.strictEqual(viewParams.mode, OsuRuleset[mode]);
+          assert.strictEqual(viewParams.mode, mode);
           assert.strictEqual(viewParams.passesOnly, passesOnly);
           assert.strictEqual(viewParams.usernameInput, osuUser.username);
           assert.strictEqual(

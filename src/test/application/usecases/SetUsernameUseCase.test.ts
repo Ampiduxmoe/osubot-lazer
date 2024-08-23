@@ -1,8 +1,11 @@
 /* eslint-disable prefer-arrow-callback */
 import assert from 'assert';
-import {ALL_OSU_SERVERS, OsuServer} from '../../../main/primitives/OsuServer';
 import {
-  ALL_OSU_RULESETS,
+  ALL_OSU_SERVER_VALUES,
+  OsuServer,
+} from '../../../main/primitives/OsuServer';
+import {
+  ALL_OSU_RULESET_VALUES,
   OsuRuleset,
 } from '../../../main/primitives/OsuRuleset';
 import {OsuUsersDaoImpl} from '../../../main/data/dao/OsuUsersDaoImpl';
@@ -52,8 +55,8 @@ describe('SetUsernameUseCase', function () {
     await Promise.all(tables.map(t => t.createTable()));
   });
 
-  const servers = ALL_OSU_SERVERS;
-  const rulesets = ALL_OSU_RULESETS;
+  const servers = ALL_OSU_SERVER_VALUES;
+  const rulesets = ALL_OSU_RULESET_VALUES;
   describe('#execute()', function () {
     it('should return username as undefined when user does not exist', async function () {
       const username = 'this username should not exist';
@@ -61,9 +64,9 @@ describe('SetUsernameUseCase', function () {
         for (const ruleset of rulesets) {
           const request: SetUsernameRequest = {
             appUserId: 'should be irrelevant',
-            server: OsuServer[server],
+            server: server,
             username: username,
-            mode: OsuRuleset[ruleset],
+            mode: ruleset,
           };
           const result = await usecase.execute(request);
           assert.strictEqual(result.username, undefined);
@@ -104,7 +107,7 @@ describe('SetUsernameUseCase', function () {
         return servers.flatMap(server => {
           return {
             username: userInfo.username,
-            server: OsuServer[server],
+            server: server,
             ruleset: userInfo.preferredMode,
           };
         });
@@ -112,7 +115,7 @@ describe('SetUsernameUseCase', function () {
       for (const user of usersThatShouldExist) {
         const request: SetUsernameRequest = {
           appUserId: 'should be irrelevant',
-          server: OsuServer.Bancho,
+          server: user.server,
           username: user.username,
           mode: undefined,
         };
@@ -130,8 +133,8 @@ describe('SetUsernameUseCase', function () {
         return servers.flatMap(server =>
           rulesets.map(ruleset => ({
             username: userInfo.username,
-            server: OsuServer[server],
-            ruleset: OsuRuleset[ruleset],
+            server: server,
+            ruleset: ruleset,
           }))
         );
       });

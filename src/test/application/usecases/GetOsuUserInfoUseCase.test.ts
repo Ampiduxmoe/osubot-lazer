@@ -2,10 +2,13 @@
 import assert from 'assert';
 import {GetOsuUserInfoUseCase} from '../../../main/application/usecases/get_osu_user_info/GetOsuUserInfoUseCase';
 import {GetOsuUserInfoRequest} from '../../../main/application/usecases/get_osu_user_info/GetOsuUserInfoRequest';
-import {ALL_OSU_SERVERS, OsuServer} from '../../../main/primitives/OsuServer';
+import {
+  ALL_OSU_SERVER_VALUES,
+  OsuServer,
+} from '../../../main/primitives/OsuServer';
 import {getFakeOsuUserUsername} from '../../mocks/Generators';
 import {
-  ALL_OSU_RULESETS,
+  ALL_OSU_RULESET_VALUES,
   OsuRuleset,
 } from '../../../main/primitives/OsuRuleset';
 import {OsuUsersDaoImpl} from '../../../main/data/dao/OsuUsersDaoImpl';
@@ -48,8 +51,8 @@ describe('GetOsuUserInfoUseCase', function () {
     await Promise.all(tables.map(t => t.createTable()));
   });
 
-  const servers = ALL_OSU_SERVERS;
-  const rulesets = ALL_OSU_RULESETS;
+  const servers = ALL_OSU_SERVER_VALUES;
+  const rulesets = ALL_OSU_RULESET_VALUES;
   describe('#execute()', function () {
     it('should return OsuUserInfo as undefined when user does not exist', async function () {
       const username = 'this username should not exist';
@@ -57,9 +60,9 @@ describe('GetOsuUserInfoUseCase', function () {
         for (const ruleset of rulesets) {
           const request: GetOsuUserInfoRequest = {
             initiatorAppUserId: 'should be irrelevant',
-            server: OsuServer[server],
+            server: server,
             username: username,
-            ruleset: OsuRuleset[ruleset],
+            ruleset: ruleset,
           };
           const result = await usecase.execute(request);
           assert.strictEqual(result.userInfo, undefined);
@@ -75,8 +78,8 @@ describe('GetOsuUserInfoUseCase', function () {
         return servers.flatMap(server =>
           rulesets.map(ruleset => ({
             username: username,
-            server: OsuServer[server],
-            ruleset: OsuRuleset[ruleset],
+            server: server,
+            ruleset: ruleset,
           }))
         );
       });

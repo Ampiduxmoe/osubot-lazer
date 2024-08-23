@@ -1,5 +1,5 @@
 import {MaybeDeferred} from '../../primitives/MaybeDeferred';
-import {ALL_OSU_SERVERS, OsuServer} from '../../primitives/OsuServer';
+import {ALL_OSU_SERVER_VALUES, OsuServer} from '../../primitives/OsuServer';
 import {
   CommandMatchResult,
   TokenMatchEntry,
@@ -380,8 +380,8 @@ export abstract class Alias<TContext, TOutput> extends TextCommand<
             const newPrefixArg = OWN_COMMAND_PREFIX(
               SetUsername.prefixes
             ).unparse(newPrefixes[0]);
-            for (const server of ALL_OSU_SERVERS) {
-              const serverArg = SERVER_PREFIX.unparse(OsuServer[server]);
+            for (const server of ALL_OSU_SERVER_VALUES) {
+              const serverArg = SERVER_PREFIX.unparse(server);
               const pattern = `${serverArg} ${oldPrefixArg}*`;
               const replacement = `${serverArg} ${newPrefixArg}`;
               newAliases.aliases.push({

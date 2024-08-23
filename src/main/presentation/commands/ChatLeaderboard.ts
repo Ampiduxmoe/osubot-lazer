@@ -4,7 +4,7 @@ import {OsuUserInfo} from '../../application/usecases/get_osu_user_info/GetOsuUs
 import {GetOsuUserInfoUseCase} from '../../application/usecases/get_osu_user_info/GetOsuUserInfoUseCase';
 import {maxBy, uniquesFilter} from '../../primitives/Arrays';
 import {MaybeDeferred} from '../../primitives/MaybeDeferred';
-import {ALL_OSU_RULESETS, OsuRuleset} from '../../primitives/OsuRuleset';
+import {ALL_OSU_RULESET_VALUES, OsuRuleset} from '../../primitives/OsuRuleset';
 import {OsuServer} from '../../primitives/OsuServer';
 import {CommandArgument} from '../common/arg_processing/CommandArgument';
 import {
@@ -204,8 +204,8 @@ export abstract class ChatLeaderboard<TContext, TOutput> extends TextCommand<
         if (args.mode !== undefined) {
           return args.mode;
         }
-        const modesPopularity = ALL_OSU_RULESETS.reduce(
-          (dict, key) => ({...dict, [OsuRuleset[key]]: 0}),
+        const modesPopularity = ALL_OSU_RULESET_VALUES.reduce(
+          (dict, mode) => ({...dict, [mode]: 0}),
           {} as Record<OsuRuleset, number>
         );
         if (includeLocalUsers) {
@@ -227,7 +227,7 @@ export abstract class ChatLeaderboard<TContext, TOutput> extends TextCommand<
         }
         const mostPopularMode = maxBy(
           ruleset => modesPopularity[ruleset],
-          ALL_OSU_RULESETS.map(key => OsuRuleset[key])
+          ALL_OSU_RULESET_VALUES
         );
         return mostPopularMode;
       })();

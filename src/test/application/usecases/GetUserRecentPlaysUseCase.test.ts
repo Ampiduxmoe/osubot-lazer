@@ -16,11 +16,8 @@ import {TimeWindowsTable} from '../../../main/data/persistence/db/tables/TimeWin
 import {ModAcronym} from '../../../main/primitives/ModAcronym';
 import {ModCombinationPattern} from '../../../main/primitives/ModCombinationPattern';
 import {ModPatternCollection} from '../../../main/primitives/ModPatternCollection';
-import {
-  ALL_OSU_RULESETS,
-  OsuRuleset,
-} from '../../../main/primitives/OsuRuleset';
-import {ALL_OSU_SERVERS, OsuServer} from '../../../main/primitives/OsuServer';
+import {ALL_OSU_RULESET_VALUES} from '../../../main/primitives/OsuRuleset';
+import {ALL_OSU_SERVER_VALUES} from '../../../main/primitives/OsuServer';
 import {FakeBanchoApi} from '../../mocks/data/http/BanchoApi';
 import {FakeScoreSimulationApi} from '../../mocks/data/http/ScoreSimulationApi';
 import {getFakeOsuUserInfo} from '../../mocks/Generators';
@@ -68,8 +65,8 @@ describe('GetUserRecentPlaysUseCase', function () {
     await Promise.all(tables.map(t => t.createTable()));
   });
 
-  const servers = ALL_OSU_SERVERS;
-  const rulesets = ALL_OSU_RULESETS;
+  const servers = ALL_OSU_SERVER_VALUES;
+  const rulesets = ALL_OSU_RULESET_VALUES;
   describe('#execute()', function () {
     it('should return OsuUserRecentPlays as undefined when user does not exist', async function () {
       const username = 'this username should not exist';
@@ -77,9 +74,9 @@ describe('GetUserRecentPlaysUseCase', function () {
         for (const ruleset of rulesets) {
           const request: GetUserRecentPlaysRequest = {
             initiatorAppUserId: 'should be irrelevant',
-            server: OsuServer[server],
+            server: server,
             username: username,
-            ruleset: OsuRuleset[ruleset],
+            ruleset: ruleset,
             includeFails: true,
             startPosition: 1,
             quantity: 1,
@@ -104,7 +101,7 @@ describe('GetUserRecentPlaysUseCase', function () {
         return servers.flatMap(server => {
           return {
             username: userInfo.username,
-            server: OsuServer[server],
+            server: server,
             ruleset: userInfo.preferredMode,
           };
         });
@@ -139,8 +136,8 @@ describe('GetUserRecentPlaysUseCase', function () {
         return servers.flatMap(server =>
           rulesets.map(ruleset => ({
             username: userInfo.username,
-            server: OsuServer[server],
-            ruleset: OsuRuleset[ruleset],
+            server: server,
+            ruleset: ruleset,
           }))
         );
       });

@@ -2,7 +2,7 @@ import {pickRandom, uniquesFilter} from '../../../primitives/Arrays';
 import {ModAcronym} from '../../../primitives/ModAcronym';
 import {ModCombinationPattern} from '../../../primitives/ModCombinationPattern';
 import {ModPatternCollection} from '../../../primitives/ModPatternCollection';
-import {ALL_OSU_RULESETS, OsuRuleset} from '../../../primitives/OsuRuleset';
+import {ALL_OSU_RULESET_KEYS, OsuRuleset} from '../../../primitives/OsuRuleset';
 import {OsuServer} from '../../../primitives/OsuServer';
 import {CommandPrefixes} from '../CommandPrefixes';
 import {SERVERS} from '../OsuServers';
@@ -408,21 +408,23 @@ export const MODE: CommandArgument<OsuRuleset> = {
   entityName: 'режим игры',
   description:
     'режим игры; возможные значения: ' +
-    ALL_OSU_RULESETS.map(x => `«${x}»`).join(', '),
+    ALL_OSU_RULESET_KEYS.map(x => `«${x}»`).join(', '),
   get usageExample(): string {
-    return '-' + pickRandom(ALL_OSU_RULESETS);
+    return '-' + pickRandom(ALL_OSU_RULESET_KEYS);
   },
   match: function (token: string): boolean {
-    const modeRegex = new RegExp(`^-(${ALL_OSU_RULESETS.join('|')})$`, 'i');
+    const modeRegex = new RegExp(`^-(${ALL_OSU_RULESET_KEYS.join('|')})$`, 'i');
     return modeRegex.test(token);
   },
   parse: function (token: string): OsuRuleset {
     const modeName = token.toLowerCase().replace('-', '');
-    const ruleset = ALL_OSU_RULESETS.find(x => x.toLowerCase() === modeName);
-    if (ruleset === undefined) {
+    const rulesetKey = ALL_OSU_RULESET_KEYS.find(
+      x => x.toLowerCase() === modeName
+    );
+    if (rulesetKey === undefined) {
       throw Error('Token should be a valid OsuRuleset key');
     }
-    return OsuRuleset[ruleset];
+    return OsuRuleset[rulesetKey];
   },
   unparse: function (value: OsuRuleset): string {
     return '-' + OsuRuleset[value];
