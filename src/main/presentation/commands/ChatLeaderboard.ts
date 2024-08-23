@@ -160,10 +160,15 @@ export abstract class ChatLeaderboard<TContext, TOutput> extends TextCommand<
           Promise<OsuUserInfo | undefined>
         > = {};
         return async (username, mode) => {
-          const usernameArgNormalized = username.toLowerCase();
-          const cacheKeyByArgs = usernameArgNormalized + mode;
+          const usernameNormalized = username.toLowerCase();
+          const getUserCacheKey = (mode: OsuRuleset | undefined): string => {
+            // Use ":" as a separator character
+            // since it is not a valid character for a username
+            // so this way we can't mess up an entry for another user
+            return `${usernameNormalized}:${mode}`;
+          };
           // Avoid fetching osu users multiple times
-          userInfoPromises[cacheKeyByArgs] ??= (async () => {
+          userInfoPromises[getUserCacheKey(mode)] ??= (async () => {
             const info = (
               await this.getOsuUserInfo.execute({
                 initiatorAppUserId: initiatorAppUserId,
@@ -175,24 +180,23 @@ export abstract class ChatLeaderboard<TContext, TOutput> extends TextCommand<
             if (info === undefined) {
               return undefined;
             }
-            const usernameNormalized = info.username.toLowerCase();
             if (mode === undefined) {
               // Request for a user info without specified mode
               // is identicall to request with their preferred mode,
               // so we save this result under additional key
-              userInfoPromises[usernameNormalized + info.preferredMode] ??=
+              userInfoPromises[getUserCacheKey(info.preferredMode)] ??=
                 Promise.resolve(info);
             }
             if (info.preferredMode === mode) {
               // Request for a user info with their preferred mode
               // is identicall to request without mode at all,
               // so we save this result under additional key
-              userInfoPromises[usernameNormalized + undefined] ??=
+              userInfoPromises[getUserCacheKey(undefined)] ??=
                 Promise.resolve(info);
             }
             return info;
           })();
-          return userInfoPromises[cacheKeyByArgs];
+          return userInfoPromises[getUserCacheKey(mode)];
         };
       })();
 
