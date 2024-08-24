@@ -19,8 +19,9 @@
   },
   "dependencies": {
     "@vk-io/authorization": "^1.4.1",
-    "axios": "^1.6.7",
+    "axios": "^1.7.5",
     "better-sqlite3": "^10.0.0",
+    "rosu-pp-js": "^1.1.0",
     "vk-io": "^4.9.1"
   }
 }
