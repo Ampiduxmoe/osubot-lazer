@@ -1,8 +1,5 @@
 import {ScoreSimulationApi} from '../http/ScoreSimulationApi';
-import {ScoreSimulationInfoCtb} from '../http/boundary/ScoreSimulationInfoCtb';
-import {ScoreSimulationInfoMania} from '../http/boundary/ScoreSimulationInfoMania';
 import {ScoreSimulationInfoOsu} from '../http/boundary/ScoreSimulationInfoOsu';
-import {ScoreSimulationInfoTaiko} from '../http/boundary/ScoreSimulationInfoTaiko';
 import {
   ScoreSimulationsDao,
   SimulatedScoreCtb,
@@ -98,55 +95,18 @@ export class ScoreSimulationsDaoImpl implements ScoreSimulationsDao {
     return scoreSimulation;
   }
 
-  async getForTaiko(
-    beatmapId: number,
-    mods: ModAcronym[]
-  ): Promise<SimulatedScoreTaiko | undefined> {
-    if (!this.isApiAvailable) {
-      return undefined;
-    }
-    let scoreSimulation: ScoreSimulationInfoTaiko;
-    try {
-      scoreSimulation = await this.api.simulateTaikoDefault(beatmapId, mods);
-    } catch {
-      this.isApiAvailable = false;
-      return undefined;
-    }
-    return scoreSimulation;
+  // All other modes are hardly supported by osutools
+  // so we just return undefined
+  async getForTaiko(): Promise<SimulatedScoreTaiko | undefined> {
+    return undefined;
   }
 
-  async getForCtb(
-    beatmapId: number,
-    mods: ModAcronym[]
-  ): Promise<SimulatedScoreCtb | undefined> {
-    if (!this.isApiAvailable) {
-      return undefined;
-    }
-    let scoreSimulation: ScoreSimulationInfoCtb;
-    try {
-      scoreSimulation = await this.api.simulateCtbDefault(beatmapId, mods);
-    } catch {
-      this.isApiAvailable = false;
-      return undefined;
-    }
-    return scoreSimulation;
+  async getForCtb(): Promise<SimulatedScoreCtb | undefined> {
+    return undefined;
   }
 
-  async getForMania(
-    beatmapId: number,
-    mods: ModAcronym[]
-  ): Promise<SimulatedScoreMania | undefined> {
-    if (!this.isApiAvailable) {
-      return undefined;
-    }
-    let scoreSimulation: ScoreSimulationInfoMania;
-    try {
-      scoreSimulation = await this.api.simulateManiaDefault(beatmapId, mods);
-    } catch {
-      this.isApiAvailable = false;
-      return undefined;
-    }
-    return scoreSimulation;
+  async getForMania(): Promise<SimulatedScoreMania | undefined> {
+    return undefined;
   }
 
   startApiHealthChecks(interval: number) {

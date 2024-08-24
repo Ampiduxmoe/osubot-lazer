@@ -22,12 +22,11 @@ import {OsuUserBestScoresDaoImpl} from './data/dao/OsuUserBestScoresDaoImpl';
 import {OsuUserRecentScoresDaoImpl} from './data/dao/OsuUserRecentScoresDaoImpl';
 import {OsuUsersDaoImpl} from './data/dao/OsuUsersDaoImpl';
 import {OsuUserStatsUpdatesDaoImpl} from './data/dao/OsuUserStatsUpdatesDaoImpl';
-import {ScoreSimulationsDaoImpl} from './data/dao/ScoreSimulationsDaoImpl';
+import {ScoreSimulationsDaoRosu} from './data/dao/ScoreSimulationsDaoRosu';
 import {UnreadMessagesDaoImpl} from './data/dao/UnreadMessagesDaoImpl';
 import {BanchoApi} from './data/http/bancho/BanchoApi';
 import {BanchoClient} from './data/http/bancho/client/BanchoClient';
 import {OsuOauthAccessToken} from './data/http/bancho/OsuOauthAccessToken';
-import {OsutoolsSimulationApi} from './data/http/score_simulation/OsutoolsSImulationApi';
 import {SqlDb} from './data/persistence/db/SqlDb';
 import {SqlDbTable} from './data/persistence/db/SqlDbTable';
 import {SqliteDb} from './data/persistence/db/SqliteDb';
@@ -139,11 +138,6 @@ export class App {
       unreadMessages,
     ];
 
-    const scoreSimulationApi = new OsutoolsSimulationApi(
-      config.bot.score_simulation.endpoint_url,
-      config.bot.score_simulation.default_timeout
-    );
-
     const ensureTableIsInitialized = (
       table: SqlDbTable,
       timeout: number
@@ -227,7 +221,9 @@ export class App {
       osuApiList,
       recentApiRequestsDao
     );
-    const scoreSimulationsDao = new ScoreSimulationsDaoImpl(scoreSimulationApi);
+    const scoreSimulationsDao = new ScoreSimulationsDaoRosu(
+      config.bot.score_simulation.default_timeout
+    );
     const cachedOsuUsersDao = new CachedOsuUsersDaoImpl(osuUserSnapshots);
     const osuUserStatsUpdateDao = new OsuUserStatsUpdatesDaoImpl(
       recentApiRequestsDao
@@ -309,13 +305,9 @@ export class App {
       recentApiRequestsDao.startRequestsCleanups(
         new Timespan().addMinutes(1).totalMiliseconds()
       );
-      scoreSimulationsDao.startApiHealthChecks(
-        config.bot.score_simulation.default_timeout
-      );
     });
     this.stopHandlers.push(async () => {
       recentApiRequestsDao.stopRequestsCleanups();
-      scoreSimulationsDao.stopApiHealthChecks();
       await recentApiRequestsDao.cleanUp();
     });
   }
