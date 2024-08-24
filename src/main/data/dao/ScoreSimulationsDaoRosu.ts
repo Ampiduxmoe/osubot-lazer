@@ -100,7 +100,7 @@ export class ScoreSimulationsDaoRosu implements ScoreSimulationsDao {
   }
 
   async downloadBeatmapIfNeeded(beatmapId: number): Promise<string> {
-    const filename = `./beatmap_cache/${beatmapId}`;
+    const filename = `./beatmap_cache/${beatmapId}.osu`;
     if (!fs.existsSync(filename)) {
       await this.downloadBeatmap(beatmapId, filename);
     }
