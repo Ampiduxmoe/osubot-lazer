@@ -87,8 +87,58 @@ export class ScoreSimulationsDaoRosu implements ScoreSimulationsDao {
     };
   }
 
-  async getForTaiko(): Promise<SimulatedScoreTaiko | undefined> {
-    return undefined;
+  async getForTaiko(
+    beatmapId: number,
+    mods: ModAcronym[],
+    combo: number | null,
+    misses: number,
+    goods: number,
+    simulationParams?: {
+      dtRate?: number;
+      htRate?: number;
+      difficultyAdjust?: {
+        od?: number;
+        hp?: number;
+      };
+    }
+  ): Promise<SimulatedScoreTaiko | undefined> {
+    const speedRate = simulationParams?.dtRate ?? simulationParams?.htRate;
+    const filename = await this.downloadBeatmapIfNeeded(beatmapId);
+    const beatmapContents = fs.readFileSync(filename, 'utf8');
+    const rosuMap = new Beatmap(beatmapContents);
+    const result = new Performance({
+      mods: mods.join(''),
+      combo: combo ?? undefined,
+      misses: misses,
+      n100: goods,
+      clockRate: speedRate,
+      ...(simulationParams?.difficultyAdjust !== undefined
+        ? {
+            ...simulationParams.difficultyAdjust,
+            odWithMods: false,
+            hpWithMods: false,
+          }
+        : {}),
+    }).calculate(rosuMap);
+    const state = result.state!;
+    const nTotal = state.n300! + state.n100! + state.misses!;
+    const accuracy = (2 * state.n300! + state.n100!) / (2 * nTotal);
+    return {
+      score: {
+        accuracy: accuracy * 100,
+        statistics: {
+          great: state.n300!,
+          ok: state.n100!,
+          miss: state.misses!,
+        },
+      },
+      performanceAttributes: {
+        pp: result.pp,
+      },
+      difficultyAttributes: {
+        starRating: result.difficulty.stars,
+      },
+    };
   }
 
   async getForCtb(): Promise<SimulatedScoreCtb | undefined> {

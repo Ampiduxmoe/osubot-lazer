@@ -18,4 +18,14 @@ export type GetBeatmapInfoRequest = {
     od?: number;
     hp?: number;
   };
+  mapScoreSimulationTaiko: {
+    mods?: ModAcronym[];
+    combo?: number;
+    misses?: number;
+    accuracy?: number;
+    goods?: number;
+    speed?: number;
+    od?: number;
+    hp?: number;
+  };
 };

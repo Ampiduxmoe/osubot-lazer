@@ -521,6 +521,24 @@ export const HUNDREDCOUNT: CommandArgument<number> = {
   },
 };
 
+export const HUNDREDFIFTYCOUNT: CommandArgument<number> = {
+  displayName: '?x150',
+  entityName: 'количество 150',
+  description: 'количество 150',
+  get usageExample(): string {
+    return pickRandom([1, 2, 3, 5, 8, 13, 21, 34]) + 'x150';
+  },
+  match: function (token: string): boolean {
+    return /^\d+?x150$/i.test(token);
+  },
+  parse: function (token: string): number {
+    return parseInt(token.toLowerCase().replace('x150', ''));
+  },
+  unparse: function (value: number): string {
+    return value + 'x150';
+  },
+};
+
 export const SPEED_RATE: CommandArgument<number> = {
   displayName: '?.?x',
   entityName: 'множитель HT/DT',
@@ -546,33 +564,43 @@ export type ArgDA = {
   hp?: number;
 };
 
-export const DIFFICULTY_ADJUST_SETTING: CommandArgument<ArgDA> = {
-  displayName: 'ar?|cs?|od?|hp?',
+export const DIFFICULTY_ADJUST_SETTING: (
+  ...keys: (keyof ArgDA)[]
+) => CommandArgument<ArgDA> = (...keys) => ({
+  displayName: keys.map(k => `${k}?`).join('|'),
   entityName: 'настройки для DA мода',
   description: 'настройки для DA мода',
   get usageExample(): string {
-    return pickRandom(['ar', 'cs', 'od', 'hp']) + pickRandom([6.7, 8, 9.5, 10]);
+    return pickRandom(keys) + pickRandom([6.7, 8, 9.5, 10]);
   },
   match: function (token: string): boolean {
-    return /^(ar|cs|od|hp)\d+(\.\d)?$/i.test(token);
+    const allEntries = token.split(' ');
+    const regex = new RegExp(`^(?:${keys.join('|')})\\d+(?:\\.\\d)?$`, 'i');
+    for (const entry of allEntries) {
+      if (!regex.test(entry)) {
+        return false;
+      }
+    }
+    return true;
   },
   parse: function (token: string): ArgDA {
-    const stats = token
-      .split(' ')
-      .map(x => x.toLowerCase().substring(0, 2)) as (keyof ArgDA)[];
+    const stats = token.split(' ').map(x => ({
+      key: x.toLowerCase().substring(0, 2) as keyof ArgDA,
+      valueStr: x.substring(2),
+    }));
     const output = {} as ArgDA;
     for (const stat of stats) {
-      output[stat] = parseFloat(token.substring(2, token.length));
+      output[stat.key] = parseFloat(stat.valueStr);
     }
     return output;
   },
   unparse: function (value: ArgDA): string {
-    return ['ar', 'cs', 'od', 'hp']
-      .filter(key => value[key as keyof ArgDA] !== undefined)
-      .map(key => key + value[key as keyof ArgDA])
+    return keys
+      .filter(key => value[key] !== undefined)
+      .map(key => key + value[key])
       .join(' ');
   },
-};
+});
 
 export const WORD: (word: string) => CommandArgument<string> = word => ({
   displayName: word,

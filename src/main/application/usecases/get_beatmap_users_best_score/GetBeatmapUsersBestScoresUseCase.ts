@@ -366,9 +366,30 @@ async function getTaikoFcAndSsEstimations(
   fc: number | undefined;
   ss: number | undefined;
 }> {
+  const totalHits =
+    score.hitcounts.great + score.hitcounts.ok + score.hitcounts.miss;
+  const fcScore = score.copy({
+    passed: true,
+    mapProgress: 1,
+    maxCombo: SCORE_FULL_COMBO,
+    hitcounts: new HitcountsTaiko({
+      great: Math.round(
+        (score.hitcounts.great + score.hitcounts.miss) / score.mapProgress
+      ),
+      ok: Math.round(score.hitcounts.ok / score.mapProgress),
+      miss: 0,
+    }),
+  });
+  const ssScore = fcScore.copy({
+    hitcounts: new HitcountsTaiko({
+      great: totalHits,
+      ok: 0,
+      miss: 0,
+    }),
+  });
   return {
-    fc: undefined,
-    ss: undefined,
+    fc: await fcScore.getEstimatedPp(),
+    ss: await ssScore.getEstimatedPp(),
   };
 }
 

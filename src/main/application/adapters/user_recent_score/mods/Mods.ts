@@ -1,8 +1,9 @@
-import {OsuRuleset} from '../../../../primitives/OsuRuleset';
 import {Mode} from '../../../../domain/entities/mode/Mode';
 import {Mod, UnremarkableMod} from '../../../../domain/entities/mods/Mod';
+import {OsuRuleset} from '../../../../primitives/OsuRuleset';
 import {OsuUserRecentScore} from '../../../requirements/dao/OsuUserRecentScoresDao';
 import {getModsOsu} from './ModsOsu';
+import {getModsTaiko} from './ModsTaiko';
 
 export function getMods(
   score: OsuUserRecentScore,
@@ -18,10 +19,6 @@ export function getMods(
     case OsuRuleset.mania:
       return getModsMania(score);
   }
-}
-
-function getModsTaiko(score: OsuUserRecentScore): Mod<Mode, object>[] {
-  return score.mods.map(m => new UnremarkableMod(m.acronym));
 }
 
 function getModsCtb(score: OsuUserRecentScore): Mod<Mode, object>[] {

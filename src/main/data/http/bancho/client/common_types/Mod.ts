@@ -11,8 +11,10 @@ export type Mod = {
     overall_difficulty?: number;
     // EZ:
     retries?: number;
-    // TP
+    // TP:
     seed?: number;
     metronome?: boolean;
+    // Taiko:
+    scroll_speed?: number;
   };
 };

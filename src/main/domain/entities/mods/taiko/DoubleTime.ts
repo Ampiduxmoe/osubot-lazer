@@ -1,30 +1,24 @@
 import {ModAcronym} from '../../../../primitives/ModAcronym';
 import {Beatmap} from '../../Beatmap';
 import {BeatmapStatsConversion} from '../../BeatmapStatsConversion';
-import {ModeOsu} from '../../mode/ModeOsu';
+import {ModeTaiko} from '../../mode/ModeTaiko';
 import {Mod} from '../Mod';
 
-export class DoubleTime extends Mod<ModeOsu, DoubleTimeSettings> {
+export class DoubleTime extends Mod<ModeTaiko, DoubleTimeSettings> {
   acronym = new ModAcronym('DT');
 
-  apply(map: Beatmap<ModeOsu>): Beatmap<ModeOsu> {
+  apply(map: Beatmap<ModeTaiko>): Beatmap<ModeTaiko> {
     const speedChange =
       this.settings.speedChange ?? DoubleTime.DefaultSettings.speedChange;
 
-    const oldAr = map.stats.ar;
-    const newApproachDuration =
-      BeatmapStatsConversion.osu.approachRateToMs(oldAr) / speedChange;
-    const newAr =
-      BeatmapStatsConversion.osu.msToApproachRate(newApproachDuration);
-
     const oldOd = map.stats.od;
     const newHitWindowMs =
-      BeatmapStatsConversion.osu.overallDifficultyToMs(oldOd) / speedChange;
+      BeatmapStatsConversion.taiko.overallDifficultyToMs(oldOd) / speedChange;
     const newOd =
-      BeatmapStatsConversion.osu.msToOverallDifficulty(newHitWindowMs);
+      BeatmapStatsConversion.taiko.msToOverallDifficulty(newHitWindowMs);
     return map.copy({
       stats: {
-        ar: newAr,
+        ar: map.stats.ar,
         cs: map.stats.cs,
         od: newOd,
         hp: map.stats.hp,

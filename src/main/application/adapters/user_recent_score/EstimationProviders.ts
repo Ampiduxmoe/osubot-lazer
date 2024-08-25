@@ -28,9 +28,10 @@ export function getEstimationProviders(
       ];
     }
     case OsuRuleset.taiko: {
-      const scoreSimProvider = new ScoreSimEstimationProviderTaiko(
-        scoreSimulations
-      );
+      const scoreSimProvider = new ScoreSimEstimationProviderTaiko({
+        scoreSimulations: scoreSimulations,
+        useAccuracy: false,
+      });
       return [
         scoreSimProvider.starRatingEstimationProvider,
         scoreSimProvider.ppEstimationProvider,

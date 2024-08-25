@@ -67,7 +67,6 @@ export class BeatmapMenuVk extends BeatmapMenu<
         command: mapInfoCommand.unparse({
           server: server,
           beatmapId: beatmapId,
-          mapScoreSimulationOsu: {},
         }),
       });
     }

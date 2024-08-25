@@ -172,7 +172,12 @@ URL: ${mapUrlShort}${couldNotAttachCoverMessage}
       const sr = mapInfo.starRating.toFixed(2);
       const acc = simulatedStats.accuracy.toFixed(2);
       const {misses, mehs} = simulatedStats;
-      const hitcountsString = `${misses}xMiss　${mehs}x50`;
+      const hitcountsString = (() => {
+        if (mapInfo.mode === OsuRuleset.taiko) {
+          return `${misses}xMiss`;
+        }
+        return `${misses}xMiss　${mehs}x50`;
+      })();
       const comboString = `${simulatedStats.combo}x/${mapInfo.maxCombo}x`;
       const ar = round(mapInfo.ar, 2);
       const cs = round(mapInfo.cs, 2);

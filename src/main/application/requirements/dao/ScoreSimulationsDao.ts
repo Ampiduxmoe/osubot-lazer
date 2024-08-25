@@ -22,7 +22,18 @@ export interface ScoreSimulationsDao {
 
   getForTaiko(
     beatmapId: number,
-    mods: ModAcronym[]
+    mods: ModAcronym[],
+    combo: number | null,
+    misses: number,
+    goods: number,
+    simulationParams?: {
+      dtRate?: number;
+      htRate?: number;
+      difficultyAdjust?: {
+        od?: number;
+        hp?: number;
+      };
+    }
   ): Promise<SimulatedScoreTaiko | undefined>;
 
   getForCtb(
@@ -55,6 +66,17 @@ export type SimulatedScoreOsu = {
 };
 
 export type SimulatedScoreTaiko = {
+  score: {
+    accuracy: number;
+    statistics: {
+      great: number;
+      ok: number;
+      miss: number;
+    };
+  };
+  performanceAttributes: {
+    pp: number;
+  };
   difficultyAttributes: {
     starRating: number;
   };
