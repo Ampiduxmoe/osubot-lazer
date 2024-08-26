@@ -350,6 +350,10 @@ export class App {
       ctx,
       options
     ) => {
+      if (ctx.replyMessage?.senderId === -group.id) {
+        // Ignore self as a target user
+        return VkIdConverter.vkUserIdToAppUserId(ctx.senderId);
+      }
       return VkIdConverter.vkUserIdToAppUserId(
         options.canTargetOthersAsNonAdmin || ctx.senderId === group.owner
           ? ctx.replyMessage?.senderId ?? ctx.senderId
