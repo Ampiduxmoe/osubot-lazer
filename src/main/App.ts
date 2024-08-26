@@ -584,14 +584,12 @@ export class App {
       (() => {
         const beatmapLinkRegexes: Record<keyof typeof OsuServer, RegExp[]> = {
           Bancho: [
-            /(https?:\/\/)?osu\.ppy\.sh\/b\/(?<ID>\d+)\/?/i,
-            /(https?:\/\/)?osu\.ppy\.sh\/beatmaps\/(?<ID>\d+)\/?/i,
-            /(https?:\/\/)?osu\.ppy\.sh\/beatmapsets\/(\d+)#(osu|taiko|fruits|mania)\/(?<ID>\d+)\/?/i,
+            /(https?:\/\/)?osu\.ppy\.sh\/b\/(?<ID>\d+)\/?/gi,
+            /(https?:\/\/)?osu\.ppy\.sh\/beatmaps\/(?<ID>\d+)\/?/gi,
+            /(https?:\/\/)?osu\.ppy\.sh\/beatmapsets\/(\d+)#(osu|taiko|fruits|mania)\/(?<ID>\d+)\/?/gi,
           ],
         };
         return ctx => {
-          const allMatches: {offset: number; server: OsuServer; id: number}[] =
-            [];
           const texts: string[] = [];
           for (const attachment of ctx.getAttachments(AttachmentType.LINK)) {
             texts.push(attachment.url);
@@ -607,23 +605,36 @@ export class App {
             }
           }
 
+          type MapRegexMatchInfo = {
+            offset: number;
+            server: OsuServer;
+            id: number;
+          };
+          const allMatches: MapRegexMatchInfo[] = [];
           for (const text of texts) {
-            const textMatches: {
-              offset: number;
-              server: OsuServer;
-              id: number;
-            }[] = [];
+            const textMatches: MapRegexMatchInfo[] = [];
             for (const server in beatmapLinkRegexes) {
               const serverAsKey = server as keyof typeof OsuServer;
               const serverRegexes = beatmapLinkRegexes[serverAsKey];
               for (const regex of serverRegexes) {
-                const matches = regex.exec(text);
-                const idString = matches?.groups?.ID;
-                if (idString !== undefined) {
+                const matches = text.matchAll(regex);
+                for (const match of matches) {
+                  const idString = match.groups?.ID;
+                  if (idString === undefined) {
+                    continue;
+                  }
+                  const server = OsuServer[serverAsKey];
+                  const mapId = parseInt(idString);
+                  const existingEntry = [...allMatches, ...textMatches].find(
+                    e => e.server === server && e.id === mapId
+                  );
+                  if (existingEntry !== undefined) {
+                    continue;
+                  }
                   textMatches.push({
-                    offset: matches!.index,
-                    server: OsuServer[serverAsKey],
-                    id: parseInt(idString),
+                    offset: match!.index,
+                    server: server,
+                    id: mapId,
                   });
                 }
               }
