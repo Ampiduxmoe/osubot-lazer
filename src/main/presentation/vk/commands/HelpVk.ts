@@ -137,7 +137,7 @@ ${argGroupKeysString}.
       const usageVariantsString =
         argGroupKeys.length === 0
           ? ''
-          : `Доступные значения: ${argGroupKeys.map(x => `«${x}»`).join(',')}.`;
+          : `Доступные значения: ${argGroupKeys.map(x => `«${x}»`).join(', ')}.`;
       return MaybeDeferred.fromValue({
         text: `
 Заданного варианта использования команды ${targetCommandPrefix} не существует
