@@ -43,9 +43,10 @@ export function getEstimationProviders({
       ];
     }
     case OsuRuleset.ctb: {
-      const scoreSimProvider = new ScoreSimEstimationProviderCtb(
-        scoreSimulations
-      );
+      const scoreSimProvider = new ScoreSimEstimationProviderCtb({
+        scoreSimulations: scoreSimulations,
+        useAccuracy: useAccuracy,
+      });
       return [
         scoreSimProvider.starRatingEstimationProvider,
         scoreSimProvider.ppEstimationProvider,

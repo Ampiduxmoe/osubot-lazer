@@ -17,6 +17,7 @@ import {
   OWN_COMMAND_PREFIX,
   SCORE_COMBO,
   SERVER_PREFIX,
+  SMALLMISSCOUNT,
   SPEED_RATE,
 } from '../common/arg_processing/CommandArguments';
 import {MainArgsProcessor} from '../common/arg_processing/MainArgsProcessor';
@@ -59,6 +60,8 @@ export abstract class BeatmapInfo<TContext, TOutput> extends TextCommand<
   private DA_SETTING_OSU = BeatmapInfo.DA_SETTING_OSU;
   private static DA_SETTING_TAIKO = DIFFICULTY_ADJUST_SETTING('hp', 'od');
   private DA_SETTING_TAIKO = BeatmapInfo.DA_SETTING_TAIKO;
+  private static DA_SETTING_CTB = DIFFICULTY_ADJUST_SETTING('ar', 'cs', 'hp');
+  private DA_SETTING_CTB = BeatmapInfo.DA_SETTING_CTB;
   private static commandStructure = [
     {argument: SERVER_PREFIX, isOptional: false}, // 0
     {argument: this.COMMAND_PREFIX, isOptional: false}, // 1
@@ -75,6 +78,9 @@ export abstract class BeatmapInfo<TContext, TOutput> extends TextCommand<
 
     {argument: HUNDREDFIFTYCOUNT, isOptional: true}, // 11
     {argument: this.DA_SETTING_TAIKO, isOptional: true}, // 12
+
+    {argument: SMALLMISSCOUNT, isOptional: true}, // 13
+    {argument: this.DA_SETTING_CTB, isOptional: true}, // 14
   ];
   argGroups = {
     osu: {
@@ -97,9 +103,12 @@ export abstract class BeatmapInfo<TContext, TOutput> extends TextCommand<
     },
     ctb: {
       isCompeting: false,
-      description: this.longDescription,
+      description:
+        this.longDescription +
+        ' и показывает результаты симуляции гипотетического скора, ' +
+        'если были выбраны дополнительные параметры',
       notices: [],
-      memberIndices: [0, 1, 2],
+      memberIndices: [0, 1, 2, 3, 4, 5, 6, 13, 9, 14],
     },
     mania: {
       isCompeting: false,
@@ -145,6 +154,9 @@ export abstract class BeatmapInfo<TContext, TOutput> extends TextCommand<
     const hundredfiftycountRes = argsProcessor
       .use(HUNDREDFIFTYCOUNT)
       .extractWithToken();
+    const smallmisscountRes = argsProcessor
+      .use(SMALLMISSCOUNT)
+      .extractWithToken();
     const speedRateRes = argsProcessor.use(SPEED_RATE).extractWithToken();
     const daSettingsExtractor = argsProcessor.use(this.DA_SETTING_OSU);
     const daSettingsRes: [ArgDA, string][] = [];
@@ -167,6 +179,7 @@ export abstract class BeatmapInfo<TContext, TOutput> extends TextCommand<
         [...fiftycountRes, FIFTYCOUNT],
         [...hundredcountRes, HUNDREDCOUNT],
         [...hundredfiftycountRes, HUNDREDFIFTYCOUNT],
+        [...smallmisscountRes, SMALLMISSCOUNT],
         [...speedRateRes, SPEED_RATE],
         ...daSettingsRes.map(r => [...r, this.DA_SETTING_OSU]),
       ];
@@ -198,6 +211,7 @@ export abstract class BeatmapInfo<TContext, TOutput> extends TextCommand<
     const fiftycount = fiftycountRes[0];
     const hundredcount = hundredcountRes[0];
     const hundredfiftycount = hundredfiftycountRes[0];
+    const smallmisscount = smallmisscountRes[0];
     const speedRate = speedRateRes[0];
     const osuSettings: MapScoreSimulationOsu = {
       mods: mods,
@@ -224,11 +238,24 @@ export abstract class BeatmapInfo<TContext, TOutput> extends TextCommand<
         {}
       ),
     };
+    const ctbSettings: MapScoreSimulationCtb = {
+      mods: mods,
+      combo: scoreCombo,
+      misses: misscount,
+      accuracy: accuracy,
+      smallMisses: smallmisscount,
+      speed: speedRate,
+      ...daSettingsRes.reduce(
+        (settings, oneRes) => ({...settings, ...oneRes[0]}),
+        {}
+      ),
+    };
     return CommandMatchResult.ok({
       server: server,
       beatmapId: beatmapId,
       mapScoreSimulationOsu: osuSettings,
       mapScoreSimulationTaiko: taikoSettings,
+      mapScoreSimulationCtb: ctbSettings,
     });
   }
 
@@ -260,6 +287,7 @@ export abstract class BeatmapInfo<TContext, TOutput> extends TextCommand<
         server: args.server,
         mapScoreSimulationOsu: args.mapScoreSimulationOsu ?? {},
         mapScoreSimulationTaiko: args.mapScoreSimulationTaiko ?? {},
+        mapScoreSimulationCtb: args.mapScoreSimulationCtb ?? {},
       });
       const beatmapInfo = beatmapInfoResponse.beatmapInfo;
       if (beatmapInfo === undefined) {
@@ -321,6 +349,7 @@ export abstract class BeatmapInfo<TContext, TOutput> extends TextCommand<
     }
     const simOsu = args.mapScoreSimulationOsu;
     const simTaiko = args.mapScoreSimulationTaiko;
+    const simCtb = args.mapScoreSimulationCtb;
     if (simOsu !== undefined) {
       if (simOsu.mods !== undefined) {
         tokens.push(MODS.unparse(simOsu.mods));
@@ -344,7 +373,7 @@ export abstract class BeatmapInfo<TContext, TOutput> extends TextCommand<
         tokens.push(SPEED_RATE.unparse(simOsu.speed));
       }
       const da = simOsu;
-      if ((da.ar || da.cs || da.od || da.hp) !== undefined) {
+      if ((da.ar ?? da.cs ?? da.od ?? da.hp) !== undefined) {
         tokens.push(...this.DA_SETTING_OSU.unparse(da).split(' '));
       }
     } else if (simTaiko !== undefined) {
@@ -361,14 +390,37 @@ export abstract class BeatmapInfo<TContext, TOutput> extends TextCommand<
         tokens.push(ACCURACY.unparse(simTaiko.accuracy));
       }
       if (simTaiko.goods !== undefined) {
-        tokens.push(HUNDREDCOUNT.unparse(simTaiko.goods));
+        tokens.push(HUNDREDFIFTYCOUNT.unparse(simTaiko.goods));
       }
       if (simTaiko.speed !== undefined) {
         tokens.push(SPEED_RATE.unparse(simTaiko.speed));
       }
       const da = simTaiko;
-      if ((da.od || da.hp) !== undefined) {
+      if ((da.od ?? da.hp) !== undefined) {
         tokens.push(...this.DA_SETTING_TAIKO.unparse(da).split(' '));
+      }
+    } else if (simCtb !== undefined) {
+      if (simCtb.mods !== undefined) {
+        tokens.push(MODS.unparse(simCtb.mods));
+      }
+      if (simCtb.combo !== undefined) {
+        tokens.push(SCORE_COMBO.unparse(simCtb.combo));
+      }
+      if (simCtb.misses !== undefined) {
+        tokens.push(MISSCOUNT.unparse(simCtb.misses));
+      }
+      if (simCtb.accuracy !== undefined) {
+        tokens.push(ACCURACY.unparse(simCtb.accuracy));
+      }
+      if (simCtb.smallMisses !== undefined) {
+        tokens.push(SMALLMISSCOUNT.unparse(simCtb.smallMisses));
+      }
+      if (simCtb.speed !== undefined) {
+        tokens.push(SPEED_RATE.unparse(simCtb.speed));
+      }
+      const da = simCtb;
+      if ((da.ar ?? da.cs ?? da.hp) !== undefined) {
+        tokens.push(...this.DA_SETTING_CTB.unparse(da).split(' '));
       }
     }
     return this.textProcessor.detokenize(tokens);
@@ -380,6 +432,7 @@ export type BeatmapInfoExecutionArgs = {
   beatmapId: number | undefined;
   mapScoreSimulationOsu?: MapScoreSimulationOsu;
   mapScoreSimulationTaiko?: MapScoreSimulationTaiko;
+  mapScoreSimulationCtb?: MapScoreSimulationCtb;
 };
 
 export type BeatmapInfoViewParams = {
@@ -410,5 +463,17 @@ type MapScoreSimulationTaiko = {
   goods?: number;
   speed?: number;
   od?: number;
+  hp?: number;
+};
+
+type MapScoreSimulationCtb = {
+  mods?: ModAcronym[];
+  combo?: number;
+  misses?: number;
+  accuracy?: number;
+  smallMisses?: number;
+  speed?: number;
+  ar?: number;
+  cs?: number;
   hp?: number;
 };

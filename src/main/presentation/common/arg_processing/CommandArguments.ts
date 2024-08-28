@@ -467,6 +467,24 @@ export const MISSCOUNT: CommandArgument<number> = {
   },
 };
 
+export const SMALLMISSCOUNT: CommandArgument<number> = {
+  displayName: '?xdm',
+  entityName: 'количество дроплет-миссов',
+  description: 'количество дроплет-миссов',
+  get usageExample(): string {
+    return pickRandom([1, 2, 5, 10, 25]) + 'xdm';
+  },
+  match: function (token: string): boolean {
+    return /^\d+?xdm$/i.test(token);
+  },
+  parse: function (token: string): number {
+    return parseInt(token.toLowerCase().replace('xdm', ''));
+  },
+  unparse: function (value: number): string {
+    return value + 'xdm';
+  },
+};
+
 export const ACCURACY: CommandArgument<number> = {
   displayName: '?%',
   entityName: 'точность',

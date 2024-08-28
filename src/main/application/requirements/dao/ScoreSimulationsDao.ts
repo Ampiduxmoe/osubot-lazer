@@ -38,7 +38,20 @@ export interface ScoreSimulationsDao {
 
   getForCtb(
     beatmapId: number,
-    mods: ModAcronym[]
+    mods: ModAcronym[],
+    combo: number | null,
+    allLargeMisses: number,
+    smallTickMisses: number,
+    largeTickHits: number | undefined,
+    simulationParams?: {
+      dtRate?: number;
+      htRate?: number;
+      difficultyAdjust?: {
+        ar?: number;
+        cs?: number;
+        hp?: number;
+      };
+    }
   ): Promise<SimulatedScoreCtb | undefined>;
 
   getForMania(
@@ -83,6 +96,19 @@ export type SimulatedScoreTaiko = {
 };
 
 export type SimulatedScoreCtb = {
+  score: {
+    accuracy: number;
+    statistics: {
+      great: number;
+      largeTickHit: number;
+      smallTickHit: number;
+      smallTickMiss: number;
+      miss: number;
+    };
+  };
+  performanceAttributes: {
+    pp: number;
+  };
   difficultyAttributes: {
     starRating: number;
   };

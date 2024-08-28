@@ -16,5 +16,7 @@ export type Mod = {
     metronome?: boolean;
     // Taiko:
     scroll_speed?: number;
+    // CtB:
+    hard_rock_offsets?: boolean;
   };
 };

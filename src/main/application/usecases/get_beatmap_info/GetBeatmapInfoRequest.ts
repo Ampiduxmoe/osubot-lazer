@@ -28,4 +28,15 @@ export type GetBeatmapInfoRequest = {
     od?: number;
     hp?: number;
   };
+  mapScoreSimulationCtb: {
+    mods?: ModAcronym[];
+    combo?: number;
+    misses?: number;
+    accuracy?: number;
+    smallMisses?: number;
+    speed?: number;
+    ar?: number;
+    cs?: number;
+    hp?: number;
+  };
 };

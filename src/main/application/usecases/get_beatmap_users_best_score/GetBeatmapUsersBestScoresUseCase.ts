@@ -360,7 +360,6 @@ async function getOsuFcAndSsEstimations(
 }
 
 async function getTaikoFcAndSsEstimations(
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   score: BeatmapScore<ModeTaiko, HitcountsTaiko>
 ): Promise<{
   fc: number | undefined;
@@ -394,15 +393,30 @@ async function getTaikoFcAndSsEstimations(
 }
 
 async function getCtbFcAndSsEstimations(
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   score: BeatmapScore<ModeCtb, HitcountsCtb>
 ): Promise<{
   fc: number | undefined;
   ss: number | undefined;
 }> {
+  const fcScore = score.copy({
+    passed: true,
+    mapProgress: 1,
+    maxCombo: SCORE_FULL_COMBO,
+    hitcounts: new HitcountsCtb({
+      miss: 0,
+      smallTickMiss: Math.round(
+        score.hitcounts.smallTickMiss / score.mapProgress
+      ),
+    }),
+  });
+  const ssScore = fcScore.copy({
+    hitcounts: new HitcountsCtb({
+      smallTickMiss: 0,
+    }),
+  });
   return {
-    fc: undefined,
-    ss: undefined,
+    fc: await fcScore.getEstimatedPp(),
+    ss: await ssScore.getEstimatedPp(),
   };
 }
 

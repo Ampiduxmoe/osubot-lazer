@@ -141,8 +141,65 @@ export class ScoreSimulationsDaoRosu implements ScoreSimulationsDao {
     };
   }
 
-  async getForCtb(): Promise<SimulatedScoreCtb | undefined> {
-    return undefined;
+  async getForCtb(
+    beatmapId: number,
+    mods: ModAcronym[],
+    combo: number | null,
+    allLargeMisses: number,
+    smallTickMisses: number,
+    largeTickHits: number | undefined,
+    simulationParams?: {
+      dtRate?: number;
+      htRate?: number;
+      difficultyAdjust?: {
+        ar?: number;
+        cs?: number;
+        hp?: number;
+      };
+    }
+  ): Promise<SimulatedScoreCtb | undefined> {
+    const speedRate = simulationParams?.dtRate ?? simulationParams?.htRate;
+    const filename = await this.downloadBeatmapIfNeeded(beatmapId);
+    const beatmapContents = fs.readFileSync(filename, 'utf8');
+    const rosuMap = new Beatmap(beatmapContents);
+    const result = new Performance({
+      mods: mods.join(''),
+      combo: combo ?? undefined,
+      misses: allLargeMisses,
+      nKatu: smallTickMisses,
+      n100: largeTickHits,
+      clockRate: speedRate,
+      ...(simulationParams?.difficultyAdjust !== undefined
+        ? {
+            ...simulationParams.difficultyAdjust,
+            arWithMods: false,
+            csWithMods: false,
+            hpWithMods: false,
+          }
+        : {}),
+    }).calculate(rosuMap);
+    const state = result.state!;
+    const nTotal =
+      state.n300! + state.n100! + state.n50! + state.misses! + state.nKatu!;
+    const accuracy = (state.n300! + state.n100! + state.n50!) / nTotal;
+    return {
+      score: {
+        accuracy: accuracy * 100,
+        statistics: {
+          great: state.n300!,
+          largeTickHit: state.n100!,
+          smallTickHit: state.n50!,
+          smallTickMiss: state.nKatu!,
+          miss: state.misses!,
+        },
+      },
+      performanceAttributes: {
+        pp: result.pp,
+      },
+      difficultyAttributes: {
+        starRating: result.difficulty.stars,
+      },
+    };
   }
 
   async getForMania(): Promise<SimulatedScoreMania | undefined> {

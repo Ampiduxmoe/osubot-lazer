@@ -186,7 +186,6 @@ function getOsuFcAndSsEstimations(
 }
 
 function getTaikoFcAndSsEstimations(
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   score: BeatmapScore<ModeTaiko, HitcountsTaiko>
 ): FcAndSsEstimation {
   const totalHits =
@@ -217,12 +216,27 @@ function getTaikoFcAndSsEstimations(
 }
 
 function getCtbFcAndSsEstimations(
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   score: BeatmapScore<ModeCtb, HitcountsCtb>
 ): FcAndSsEstimation {
+  const fcScore = score.copy({
+    passed: true,
+    mapProgress: 1,
+    maxCombo: SCORE_FULL_COMBO,
+    hitcounts: new HitcountsCtb({
+      miss: 0,
+      smallTickMiss: Math.round(
+        score.hitcounts.smallTickMiss / score.mapProgress
+      ),
+    }),
+  });
+  const ssScore = fcScore.copy({
+    hitcounts: new HitcountsCtb({
+      smallTickMiss: 0,
+    }),
+  });
   return {
-    fc: undefined,
-    ss: undefined,
+    fc: fcScore.getEstimatedPp(),
+    ss: ssScore.getEstimatedPp(),
   };
 }
 
