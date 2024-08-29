@@ -152,21 +152,17 @@ URL: ${mapUrlShort}${couldNotAttachCoverMessage}
       const mapperName = mapInfo.beatmapset.creator;
       const mapStatus = mapInfo.beatmapset.status;
       const [lengthString, drainString] = (() => {
-        const totalLength = new Timespan().addSeconds(
-          mapInfo.totalLength / speed
-        );
+        const totalLength = new Timespan().addSeconds(mapInfo.totalLength);
         const z0 = totalLength.minutes <= 9 ? '0' : '';
         const z1 = totalLength.seconds <= 9 ? '0' : '';
-        const drainLength = new Timespan().addSeconds(
-          mapInfo.hitLength / speed
-        );
+        const drainLength = new Timespan().addSeconds(mapInfo.hitLength);
         const z2 = drainLength.minutes <= 9 ? '0' : '';
         const z3 = drainLength.seconds <= 9 ? '0' : '';
         const lengthString = `${z0}${totalLength.minutes}:${z1}${totalLength.seconds}`;
         const drainString = `${z2}${drainLength.minutes}:${z3}${drainLength.seconds}`;
         return [lengthString, drainString];
       })();
-      const bpm = round(mapInfo.bpm * speed, 2);
+      const bpm = round(mapInfo.bpm, 2);
       const mods = simulatedStats.mods;
       const modsString = mods.length === 0 ? '' : '+' + mods.join('');
       const sr = mapInfo.starRating.toFixed(2);
