@@ -261,7 +261,7 @@ export const MOD_PATTERNS: CommandArgument<ModPatternsArg> = {
   match: function (token: string): boolean {
     const patternRegex =
       /^\^?(([a-zA-Z]{2})+|\(([a-zA-Z]{2})+?\)|\[([a-zA-Z]{2})+?\]|\{([a-zA-Z]{2})+?\})+$/;
-    if (!token.startsWith('+') && !token.startsWith('-')) {
+    if (!token.startsWith('+') && !token.startsWith('^')) {
       return false;
     }
     const patternsString = (() => {
@@ -366,7 +366,7 @@ export const MOD_PATTERNS: CommandArgument<ModPatternsArg> = {
       return modPattern;
     });
     const modPatternCollection = new ModPatternCollection(...modPatterns);
-    if (token.startsWith('-')) {
+    if (token.startsWith('^')) {
       modPatternCollection.isInverted = true;
     }
     return {
@@ -376,7 +376,7 @@ export const MOD_PATTERNS: CommandArgument<ModPatternsArg> = {
   },
   unparse: function (value: ModPatternsArg): string {
     return (
-      (value.collection.isInverted ? '-' : '+') +
+      (value.collection.isInverted ? '^' : '+') +
       value.collection
         .map(
           pattern =>
@@ -404,7 +404,7 @@ export const MOD_PATTERNS: CommandArgument<ModPatternsArg> = {
 };
 
 export const MODE: CommandArgument<OsuRuleset> = {
-  displayName: '-режим',
+  displayName: '(режим)',
   entityName: 'режим игры',
   description:
     'режим игры; возможные значения: ' +
@@ -413,11 +413,14 @@ export const MODE: CommandArgument<OsuRuleset> = {
     return '-' + pickRandom(ALL_OSU_RULESET_KEYS);
   },
   match: function (token: string): boolean {
-    const modeRegex = new RegExp(`^-(${ALL_OSU_RULESET_KEYS.join('|')})$`, 'i');
+    const modeRegex = new RegExp(
+      `^\\((${ALL_OSU_RULESET_KEYS.join('|')})\\)$`,
+      'i'
+    );
     return modeRegex.test(token);
   },
   parse: function (token: string): OsuRuleset {
-    const modeName = token.toLowerCase().replace('-', '');
+    const modeName = token.toLowerCase().substring(1, token.length - 1);
     const rulesetKey = ALL_OSU_RULESET_KEYS.find(
       x => x.toLowerCase() === modeName
     );
@@ -427,7 +430,7 @@ export const MODE: CommandArgument<OsuRuleset> = {
     return OsuRuleset[rulesetKey];
   },
   unparse: function (value: OsuRuleset): string {
-    return '-' + OsuRuleset[value];
+    return `(${OsuRuleset[value]})`;
   },
 };
 
