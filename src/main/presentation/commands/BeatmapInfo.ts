@@ -62,6 +62,8 @@ export abstract class BeatmapInfo<TContext, TOutput> extends TextCommand<
   private DA_SETTING_TAIKO = BeatmapInfo.DA_SETTING_TAIKO;
   private static DA_SETTING_CTB = DIFFICULTY_ADJUST_SETTING('ar', 'cs', 'hp');
   private DA_SETTING_CTB = BeatmapInfo.DA_SETTING_CTB;
+  private static DA_SETTING_MANIA = DIFFICULTY_ADJUST_SETTING('od', 'hp');
+  private DA_SETTING_MANIA = BeatmapInfo.DA_SETTING_MANIA;
   private static commandStructure = [
     {argument: SERVER_PREFIX, isOptional: false}, // 0
     {argument: this.COMMAND_PREFIX, isOptional: false}, // 1
@@ -81,6 +83,8 @@ export abstract class BeatmapInfo<TContext, TOutput> extends TextCommand<
 
     {argument: SMALLMISSCOUNT, isOptional: true}, // 13
     {argument: this.DA_SETTING_CTB, isOptional: true}, // 14
+
+    {argument: this.DA_SETTING_MANIA, isOptional: true}, // 14
   ];
   argGroups = {
     osu: {
@@ -112,9 +116,12 @@ export abstract class BeatmapInfo<TContext, TOutput> extends TextCommand<
     },
     mania: {
       isCompeting: false,
-      description: this.longDescription,
+      description:
+        this.longDescription +
+        ' и показывает результаты симуляции гипотетического скора, ' +
+        'если были выбраны дополнительные параметры',
       notices: [],
-      memberIndices: [0, 1, 2],
+      memberIndices: [0, 1, 2, 3, 5, 6, 9, 15],
     },
   };
 
@@ -250,12 +257,24 @@ export abstract class BeatmapInfo<TContext, TOutput> extends TextCommand<
         {}
       ),
     };
+    const maniaSettings: MapScoreSimulationMania = {
+      mods: mods,
+      combo: scoreCombo,
+      misses: misscount,
+      accuracy: accuracy,
+      speed: speedRate,
+      ...daSettingsRes.reduce(
+        (settings, oneRes) => ({...settings, ...oneRes[0]}),
+        {}
+      ),
+    };
     return CommandMatchResult.ok({
       server: server,
       beatmapId: beatmapId,
       mapScoreSimulationOsu: osuSettings,
       mapScoreSimulationTaiko: taikoSettings,
       mapScoreSimulationCtb: ctbSettings,
+      mapScoreSimulationMania: maniaSettings,
     });
   }
 
@@ -288,6 +307,7 @@ export abstract class BeatmapInfo<TContext, TOutput> extends TextCommand<
         mapScoreSimulationOsu: args.mapScoreSimulationOsu ?? {},
         mapScoreSimulationTaiko: args.mapScoreSimulationTaiko ?? {},
         mapScoreSimulationCtb: args.mapScoreSimulationCtb ?? {},
+        mapScoreSimulationMania: args.mapScoreSimulationMania ?? {},
       });
       const beatmapInfo = beatmapInfoResponse.beatmapInfo;
       if (beatmapInfo === undefined) {
@@ -350,6 +370,7 @@ export abstract class BeatmapInfo<TContext, TOutput> extends TextCommand<
     const simOsu = args.mapScoreSimulationOsu;
     const simTaiko = args.mapScoreSimulationTaiko;
     const simCtb = args.mapScoreSimulationCtb;
+    const simMania = args.mapScoreSimulationMania;
     if (simOsu !== undefined) {
       if (simOsu.mods !== undefined) {
         tokens.push(MODS.unparse(simOsu.mods));
@@ -422,6 +443,26 @@ export abstract class BeatmapInfo<TContext, TOutput> extends TextCommand<
       if ((da.ar ?? da.cs ?? da.hp) !== undefined) {
         tokens.push(...this.DA_SETTING_CTB.unparse(da).split(' '));
       }
+    } else if (simMania !== undefined) {
+      if (simMania.mods !== undefined) {
+        tokens.push(MODS.unparse(simMania.mods));
+      }
+      if (simMania.combo !== undefined) {
+        tokens.push(SCORE_COMBO.unparse(simMania.combo));
+      }
+      if (simMania.misses !== undefined) {
+        tokens.push(MISSCOUNT.unparse(simMania.misses));
+      }
+      if (simMania.accuracy !== undefined) {
+        tokens.push(ACCURACY.unparse(simMania.accuracy));
+      }
+      if (simMania.speed !== undefined) {
+        tokens.push(SPEED_RATE.unparse(simMania.speed));
+      }
+      const da = simMania;
+      if ((da.od ?? da.hp) !== undefined) {
+        tokens.push(...this.DA_SETTING_MANIA.unparse(da).split(' '));
+      }
     }
     return this.textProcessor.detokenize(tokens);
   }
@@ -433,6 +474,7 @@ export type BeatmapInfoExecutionArgs = {
   mapScoreSimulationOsu?: MapScoreSimulationOsu;
   mapScoreSimulationTaiko?: MapScoreSimulationTaiko;
   mapScoreSimulationCtb?: MapScoreSimulationCtb;
+  mapScoreSimulationMania?: MapScoreSimulationMania;
 };
 
 export type BeatmapInfoViewParams = {
@@ -475,5 +517,15 @@ type MapScoreSimulationCtb = {
   speed?: number;
   ar?: number;
   cs?: number;
+  hp?: number;
+};
+
+type MapScoreSimulationMania = {
+  mods?: ModAcronym[];
+  combo?: number;
+  misses?: number;
+  accuracy?: number;
+  speed?: number;
+  od?: number;
   hp?: number;
 };

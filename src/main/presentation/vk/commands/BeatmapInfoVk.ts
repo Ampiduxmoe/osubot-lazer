@@ -169,10 +169,7 @@ URL: ${mapUrlShort}${couldNotAttachCoverMessage}
       const acc = simulatedStats.accuracy.toFixed(2);
       const {misses, mehs} = simulatedStats;
       const hitcountsString = (() => {
-        if (
-          mapInfo.mode === OsuRuleset.taiko ||
-          mapInfo.mode === OsuRuleset.ctb
-        ) {
+        if (mapInfo.mode !== OsuRuleset.osu) {
           return `${misses}xMiss`;
         }
         return `${misses}xMiss　${mehs}x50`;

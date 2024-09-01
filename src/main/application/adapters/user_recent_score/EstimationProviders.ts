@@ -48,9 +48,10 @@ export function getEstimationProviders(
       ];
     }
     case OsuRuleset.mania: {
-      const scoreSimProvider = new ScoreSimEstimationProviderMania(
-        scoreSimulations
-      );
+      const scoreSimProvider = new ScoreSimEstimationProviderMania({
+        scoreSimulations: scoreSimulations,
+        useAccuracy: false,
+      });
       return [
         scoreSimProvider.starRatingEstimationProvider,
         scoreSimProvider.ppEstimationProvider,

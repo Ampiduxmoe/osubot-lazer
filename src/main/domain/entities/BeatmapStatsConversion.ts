@@ -49,4 +49,13 @@ export class BeatmapStatsConversion {
       }
     },
   };
+
+  static mania = {
+    overallDifficultyToMs(od: number) {
+      return 64 - 3 * od;
+    },
+    msToOverallDifficulty(ms: number) {
+      return (64 - ms) / 3;
+    },
+  };
 }

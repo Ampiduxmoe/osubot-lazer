@@ -1,3 +1,24 @@
+import {
+  BeatmapScore,
+  SCORE_FULL_COMBO,
+} from '../../../domain/entities/BeatmapScore';
+import {Hitcounts} from '../../../domain/entities/hitcounts/Hitcounts';
+import {HitcountsCtb} from '../../../domain/entities/hitcounts/HitcountsCtb';
+import {HitcountsMania} from '../../../domain/entities/hitcounts/HitcountsMania';
+import {HitcountsOsu} from '../../../domain/entities/hitcounts/HitcountsOsu';
+import {HitcountsTaiko} from '../../../domain/entities/hitcounts/HitcountsTaiko';
+import {Mode} from '../../../domain/entities/mode/Mode';
+import {ModeCtb} from '../../../domain/entities/mode/ModeCtb';
+import {ModeMania} from '../../../domain/entities/mode/ModeMania';
+import {ModeOsu} from '../../../domain/entities/mode/ModeOsu';
+import {ModeTaiko} from '../../../domain/entities/mode/ModeTaiko';
+import {sum, sumBy} from '../../../primitives/Arrays';
+import {BeatmapUserScoreAdapter} from '../../adapters/beatmap_user_score/BeatmapUserScoreAdapter';
+import {CachedOsuUsersDao} from '../../requirements/dao/CachedOsuUsersDao';
+import {OsuBeatmapUserScoresDao} from '../../requirements/dao/OsuBeatmapUserScoresDao';
+import {OsuBeatmapsDao} from '../../requirements/dao/OsuBeatmapsDao';
+import {OsuUsersDao} from '../../requirements/dao/OsuUsersDao';
+import {ScoreSimulationsDao} from '../../requirements/dao/ScoreSimulationsDao';
 import {UseCase} from '../UseCase';
 import {GetBeatmapUsersBestScoresRequest} from './GetBeatmapUsersBestScoresRequest';
 import {
@@ -6,27 +27,6 @@ import {
   OsuMapUserBestPlays,
   OsuMapUserPlay,
 } from './GetBeatmapUsersBestScoresResponse';
-import {CachedOsuUsersDao} from '../../requirements/dao/CachedOsuUsersDao';
-import {OsuUsersDao} from '../../requirements/dao/OsuUsersDao';
-import {ScoreSimulationsDao} from '../../requirements/dao/ScoreSimulationsDao';
-import {
-  BeatmapScore,
-  SCORE_FULL_COMBO,
-} from '../../../domain/entities/BeatmapScore';
-import {Hitcounts} from '../../../domain/entities/hitcounts/Hitcounts';
-import {Mode} from '../../../domain/entities/mode/Mode';
-import {HitcountsOsu} from '../../../domain/entities/hitcounts/HitcountsOsu';
-import {ModeOsu} from '../../../domain/entities/mode/ModeOsu';
-import {ModeTaiko} from '../../../domain/entities/mode/ModeTaiko';
-import {HitcountsTaiko} from '../../../domain/entities/hitcounts/HitcountsTaiko';
-import {ModeCtb} from '../../../domain/entities/mode/ModeCtb';
-import {HitcountsCtb} from '../../../domain/entities/hitcounts/HitcountsCtb';
-import {ModeMania} from '../../../domain/entities/mode/ModeMania';
-import {HitcountsMania} from '../../../domain/entities/hitcounts/HitcountsMania';
-import {OsuBeatmapUserScoresDao} from '../../requirements/dao/OsuBeatmapUserScoresDao';
-import {OsuBeatmapsDao} from '../../requirements/dao/OsuBeatmapsDao';
-import {BeatmapUserScoreAdapter} from '../../adapters/beatmap_user_score/BeatmapUserScoreAdapter';
-import {sumBy} from '../../../primitives/Arrays';
 
 export class GetBeatmapUsersBestScoresUseCase
   implements
@@ -421,14 +421,27 @@ async function getCtbFcAndSsEstimations(
 }
 
 async function getManiaFcAndSsEstimations(
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   score: BeatmapScore<ModeMania, HitcountsMania>
 ): Promise<{
   fc: number | undefined;
   ss: number | undefined;
 }> {
+  const fcScore = score.copy({
+    passed: true,
+    mapProgress: 1,
+    maxCombo: SCORE_FULL_COMBO,
+    hitcounts: score.hitcounts.copy({
+      miss: 0,
+    }),
+  });
+  const totalHitcounts = sum(score.hitcounts.orderedValues);
+  const ssScore = fcScore.copy({
+    hitcounts: new HitcountsMania({
+      perfect: totalHitcounts,
+    }),
+  });
   return {
-    fc: undefined,
-    ss: undefined,
+    fc: await fcScore.getEstimatedPp(),
+    ss: await ssScore.getEstimatedPp(),
   };
 }

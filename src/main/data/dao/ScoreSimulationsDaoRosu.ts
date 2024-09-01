@@ -1,6 +1,6 @@
 import axios, {AxiosInstance} from 'axios';
 import * as fs from 'fs';
-import {Beatmap, Performance} from 'rosu-pp-js';
+import {Beatmap, Performance, ScoreState} from 'rosu-pp-js';
 import {
   ScoreSimulationsDao,
   SimulatedScoreCtb,
@@ -202,8 +202,103 @@ export class ScoreSimulationsDaoRosu implements ScoreSimulationsDao {
     };
   }
 
-  async getForMania(): Promise<SimulatedScoreMania | undefined> {
-    return undefined;
+  async getForMania(
+    beatmapId: number,
+    mods: ModAcronym[],
+    /** This takes priority over byAccuracy */
+    byHitcounts?: {
+      perfect: number;
+      great: number;
+      good: number;
+      ok: number;
+      meh: number;
+      miss: number;
+    },
+    byAccuracy?: {
+      /** Accuracy in percents (0-100) */
+      accuracy: number;
+      miss: number;
+    },
+    simulationParams?: {
+      dtRate?: number;
+      htRate?: number;
+      difficultyAdjust?: {
+        od?: number;
+        hp?: number;
+      };
+    }
+  ): Promise<SimulatedScoreMania | undefined> {
+    const speedRate = simulationParams?.dtRate ?? simulationParams?.htRate;
+    const filename = await this.downloadBeatmapIfNeeded(beatmapId);
+    const beatmapContents = fs.readFileSync(filename, 'utf8');
+    const rosuMap = new Beatmap(beatmapContents);
+    const result = (() => {
+      if (byHitcounts === undefined) {
+        const acc = byAccuracy?.accuracy ?? 100;
+        return new Performance({
+          mods: mods.join(''),
+          misses: byAccuracy?.miss ?? 0,
+          accuracy: acc,
+          clockRate: speedRate,
+          ...(simulationParams?.difficultyAdjust !== undefined
+            ? {
+                ...simulationParams.difficultyAdjust,
+                odWithMods: false,
+                hpWithMods: false,
+              }
+            : {}),
+        }).calculate(rosuMap);
+      }
+      return new Performance({
+        mods: mods.join(''),
+        misses: byHitcounts.miss,
+        nGeki: byHitcounts.perfect,
+        n300: byHitcounts.great,
+        nKatu: byHitcounts.good,
+        n100: byHitcounts.ok,
+        n50: byHitcounts.meh,
+        clockRate: speedRate,
+        ...(simulationParams?.difficultyAdjust !== undefined
+          ? {
+              ...simulationParams.difficultyAdjust,
+              odWithMods: false,
+              hpWithMods: false,
+            }
+          : {}),
+      }).calculate(rosuMap);
+    })();
+    const state = result.state!;
+    const {
+      nGeki: c305,
+      n300: c300,
+      nKatu: c200,
+      n100: c100,
+      n50: c50,
+      misses: cm,
+    } = state as Required<ScoreState>;
+    const nTotal = c305 + c300 + c200 + c100 + c50 + cm;
+    const calculatedAcc =
+      (305 * c305 + 300 * c300 + 200 * c200 + 100 * c100 + 50 * c50) /
+      (305 * nTotal);
+    return {
+      score: {
+        accuracy: calculatedAcc * 100,
+        statistics: {
+          perfect: c305,
+          great: c300,
+          good: c200,
+          ok: c100,
+          meh: c50,
+          miss: cm,
+        },
+      },
+      performanceAttributes: {
+        pp: result.pp,
+      },
+      difficultyAttributes: {
+        starRating: result.difficulty.stars,
+      },
+    };
   }
 
   async downloadBeatmapIfNeeded(beatmapId: number): Promise<string> {

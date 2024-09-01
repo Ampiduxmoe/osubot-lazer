@@ -56,7 +56,27 @@ export interface ScoreSimulationsDao {
 
   getForMania(
     beatmapId: number,
-    mods: ModAcronym[]
+    mods: ModAcronym[],
+    byHitcounts?: {
+      perfect: number;
+      great: number;
+      good: number;
+      ok: number;
+      meh: number;
+      miss: number;
+    },
+    byAccuracy?: {
+      accuracy: number;
+      miss: number;
+    },
+    simulationParams?: {
+      dtRate?: number;
+      htRate?: number;
+      difficultyAdjust?: {
+        od?: number;
+        hp?: number;
+      };
+    }
   ): Promise<SimulatedScoreMania | undefined>;
 }
 
@@ -115,6 +135,20 @@ export type SimulatedScoreCtb = {
 };
 
 export type SimulatedScoreMania = {
+  score: {
+    accuracy: number;
+    statistics: {
+      perfect: number;
+      great: number;
+      good: number;
+      ok: number;
+      meh: number;
+      miss: number;
+    };
+  };
+  performanceAttributes: {
+    pp: number;
+  };
   difficultyAttributes: {
     starRating: number;
   };

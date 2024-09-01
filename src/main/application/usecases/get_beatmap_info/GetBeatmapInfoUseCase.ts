@@ -1,10 +1,26 @@
 import {BeatmapScore} from '../../../domain/entities/BeatmapScore';
 import {HitcountsCtb} from '../../../domain/entities/hitcounts/HitcountsCtb';
+import {HitcountsMania} from '../../../domain/entities/hitcounts/HitcountsMania';
 import {HitcountsOsu} from '../../../domain/entities/hitcounts/HitcountsOsu';
 import {HitcountsTaiko} from '../../../domain/entities/hitcounts/HitcountsTaiko';
 import {ModeCtb} from '../../../domain/entities/mode/ModeCtb';
+import {ModeMania} from '../../../domain/entities/mode/ModeMania';
 import {ModeOsu} from '../../../domain/entities/mode/ModeOsu';
 import {ModeTaiko} from '../../../domain/entities/mode/ModeTaiko';
+import {Daycore as DaycoreCtb} from '../../../domain/entities/mods/ctb/Daycore';
+import {DifficultyAdjust as DifficultyAdjustCtb} from '../../../domain/entities/mods/ctb/DifficultyAdjust';
+import {DoubleTime as DoubleTimeCtb} from '../../../domain/entities/mods/ctb/DoubleTime';
+import {Easy as EasyCtb} from '../../../domain/entities/mods/ctb/Easy';
+import {HalfTime as HalfTimeCtb} from '../../../domain/entities/mods/ctb/HalfTime';
+import {HardRock as HardRockCtb} from '../../../domain/entities/mods/ctb/HardRock';
+import {Nightcore as NightcoreCtb} from '../../../domain/entities/mods/ctb/Nighcore';
+import {Daycore as DaycoreMania} from '../../../domain/entities/mods/mania/Daycore';
+import {DifficultyAdjust as DifficultyAdjustMania} from '../../../domain/entities/mods/mania/DifficultyAdjust';
+import {DoubleTime as DoubleTimeMania} from '../../../domain/entities/mods/mania/DoubleTime';
+import {Easy as EasyMania} from '../../../domain/entities/mods/mania/Easy';
+import {HalfTime as HalfTimeMania} from '../../../domain/entities/mods/mania/HalfTime';
+import {HardRock as HardRockMania} from '../../../domain/entities/mods/mania/HardRock';
+import {Nightcore as NightcoreMania} from '../../../domain/entities/mods/mania/Nighcore';
 import {Mod, UnremarkableMod} from '../../../domain/entities/mods/Mod';
 import {Daycore as DaycoreOsu} from '../../../domain/entities/mods/osu/Daycore';
 import {DifficultyAdjust as DifficultyAdjustOsu} from '../../../domain/entities/mods/osu/DifficultyAdjust';
@@ -20,18 +36,12 @@ import {Easy as EasyTaiko} from '../../../domain/entities/mods/taiko/Easy';
 import {HalfTime as HalfTimeTaiko} from '../../../domain/entities/mods/taiko/HalfTime';
 import {HardRock as HardRockTaiko} from '../../../domain/entities/mods/taiko/HardRock';
 import {Nightcore as NightcoreTaiko} from '../../../domain/entities/mods/taiko/Nighcore';
-import {Daycore as DaycoreCtb} from '../../../domain/entities/mods/ctb/Daycore';
-import {DifficultyAdjust as DifficultyAdjustCtb} from '../../../domain/entities/mods/ctb/DifficultyAdjust';
-import {DoubleTime as DoubleTimeCtb} from '../../../domain/entities/mods/ctb/DoubleTime';
-import {Easy as EasyCtb} from '../../../domain/entities/mods/ctb/Easy';
-import {HalfTime as HalfTimeCtb} from '../../../domain/entities/mods/ctb/HalfTime';
-import {HardRock as HardRockCtb} from '../../../domain/entities/mods/ctb/HardRock';
-import {Nightcore as NightcoreCtb} from '../../../domain/entities/mods/ctb/Nighcore';
 import {OsuRuleset} from '../../../primitives/OsuRuleset';
 import {BeatmapInfoAdapter} from '../../adapters/beatmap_info/BeatmapInfoAdapter';
 import {OsuBeatmapsDao} from '../../requirements/dao/OsuBeatmapsDao';
 import {ScoreSimulationsDao} from '../../requirements/dao/ScoreSimulationsDao';
 import {ScoreSimEstimationProviderCtb} from '../../score_sim_estimation_provider/ScoreSimEstimationProviderCtb';
+import {ScoreSimEstimationProviderMania} from '../../score_sim_estimation_provider/ScoreSimEstimationProviderMania';
 import {ScoreSimEstimationProviderOsu} from '../../score_sim_estimation_provider/ScoreSimEstimationProviderOsu';
 import {ScoreSimEstimationProviderTaiko} from '../../score_sim_estimation_provider/ScoreSimEstimationProviderTaiko';
 import {UseCase} from '../UseCase';
@@ -611,6 +621,145 @@ export class GetBeatmapInfoUseCase
       // We use ScoreSimEstimationProviderCtb directly
       // because we want exact accuracy value for a given score.
       const scoreSimProvider = new ScoreSimEstimationProviderCtb({
+        scoreSimulations: this.scoreSimulations,
+        useAccuracy: finalAccuracy !== undefined,
+      });
+
+      await scoreSimProvider.ppEstimationProvider.getEstimation(finalScore);
+      const cachedSimulationEntry = scoreSimProvider.simulationCache.find(
+        x => x.score === finalScore
+      );
+      if (cachedSimulationEntry === undefined) {
+        throw Error('Cached entry of final score was undefined');
+      }
+      const simulation = await cachedSimulationEntry.result;
+      if (simulation === undefined) {
+        throw Error('Simulation of final score was undefined');
+      }
+      const finalScoreStarRating = simulation.difficultyAttributes.starRating;
+      const finalScorePp = simulation.performanceAttributes.pp;
+      const finalScoreAccuracy = simulation.score.accuracy;
+      return {
+        beatmapInfo: {
+          id: rawMap.id,
+          mode: rawMap.mode,
+          starRating: finalScoreStarRating,
+          totalLength: finalScore.moddedBeatmap.song.length,
+          hitLength: finalScore.moddedBeatmap.length,
+          maxCombo: rawMap.maxCombo,
+          version: rawMap.version,
+          ar: finalScore.moddedBeatmap.stats.ar,
+          cs: finalScore.moddedBeatmap.stats.cs,
+          od: finalScore.moddedBeatmap.stats.od,
+          hp: finalScore.moddedBeatmap.stats.hp,
+          bpm: finalScore.moddedBeatmap.song.bpm,
+          playcount: rawMap.playcount,
+          url: rawMap.url,
+          beatmapset: {
+            id: rawMap.beatmapset.id,
+            artist: rawMap.beatmapset.artist,
+            title: rawMap.beatmapset.title,
+            creator: rawMap.beatmapset.creator,
+            status: rawMap.beatmapset.status,
+            playcount: rawMap.beatmapset.playcount,
+            favouriteCount: rawMap.beatmapset.favouriteCount,
+            coverUrl: rawMap.beatmapset.coverUrl,
+            previewUrl: rawMap.beatmapset.previewUrl,
+          },
+          ppEstimations: [
+            {
+              accuracy: finalScoreAccuracy,
+              ppValue: finalScorePp,
+            },
+          ],
+          simulationParams: {
+            mods: finalScore.mods.map(m => m.acronym),
+            combo: finalScore.maxCombo,
+            accuracy: finalScoreAccuracy,
+            speed: params.mapScoreSimulationOsu.speed,
+            misses: finalScore.hitcounts.miss,
+            mehs: 0,
+          },
+        },
+      };
+    }
+    const hasManiaSimulationParams =
+      Object.values(params.mapScoreSimulationMania).find(
+        x => x !== undefined
+      ) !== undefined;
+    if (rawMap.mode === OsuRuleset.mania && hasManiaSimulationParams) {
+      let mods: (Mod<ModeMania, object> | UnremarkableMod)[] = [];
+      const requestedAcronyms = params.mapScoreSimulationOsu.mods ?? [];
+      for (const acronym of requestedAcronyms) {
+        if (acronym.is('HT')) {
+          mods.push(new HalfTimeMania({}));
+        } else if (acronym.is('DC')) {
+          mods.push(new DaycoreMania({}));
+        } else if (acronym.is('DT')) {
+          mods.push(new DoubleTimeMania({}));
+        } else if (acronym.is('NC')) {
+          mods.push(new NightcoreMania({}));
+        } else if (acronym.is('EZ')) {
+          mods.push(new EasyMania({}));
+        } else if (acronym.is('HR')) {
+          mods.push(new HardRockMania({}));
+        } else {
+          mods.push(new UnremarkableMod(acronym));
+        }
+      }
+      if (params.mapScoreSimulationOsu.speed !== undefined) {
+        const speed = params.mapScoreSimulationOsu.speed;
+        // speed parameter overrides mods that can't have that speed:
+        if (speed === 1) {
+          mods = mods.filter(m => !m.acronym.isAnyOf('HT', 'DC', 'DT', 'NC'));
+        } else if (speed < 1) {
+          mods = mods.filter(m => !m.acronym.isAnyOf('DT', 'NC'));
+          const hasHt = mods.find(m => m.acronym.is('HT'));
+          const hasDc = mods.find(m => m.acronym.is('DC'));
+          mods = mods.filter(m => !m.acronym.isAnyOf('HT', 'DC'));
+          if (!hasHt && !hasDc) {
+            mods.push(new HalfTimeMania({speedChange: speed}));
+          } else if (hasHt) {
+            mods.push(new HalfTimeMania({speedChange: speed}));
+          } else {
+            mods.push(new DaycoreMania({speedChange: speed}));
+          }
+        } else {
+          mods = mods.filter(m => !m.acronym.isAnyOf('HT', 'DC'));
+          const hasDt = mods.find(m => m.acronym.is('DT'));
+          const hasNc = mods.find(m => m.acronym.is('NC'));
+          mods = mods.filter(m => !m.acronym.isAnyOf('DT', 'NC'));
+          if (!hasDt && !hasNc) {
+            mods.push(new DoubleTimeMania({speedChange: speed}));
+          } else if (hasDt) {
+            mods.push(new DoubleTimeMania({speedChange: speed}));
+          } else {
+            mods.push(new NightcoreMania({speedChange: speed}));
+          }
+        }
+      }
+      const {od, hp} = params.mapScoreSimulationMania;
+      if ((od ?? hp) !== undefined) {
+        mods.push(new DifficultyAdjustMania({od, hp}));
+      }
+      const finalAccuracy = params.mapScoreSimulationMania.accuracy;
+      const baseScore = this.beatmapInfoAdapter.createBeatmapScore({
+        map: rawMap,
+        ruleset: rawMap.mode,
+        useAccuracyForPp: finalAccuracy !== undefined,
+      });
+      const finalScore = baseScore.copy({
+        mods: mods,
+        maxCombo: params.mapScoreSimulationMania.combo,
+        accuracy: finalAccuracy !== undefined ? finalAccuracy / 100 : undefined,
+        hitcounts: new HitcountsMania({
+          miss: params.mapScoreSimulationMania.misses,
+        }),
+      }) as BeatmapScore<ModeMania, HitcountsMania>;
+
+      // We use ScoreSimEstimationProviderTaiko directly
+      // because we want exact accuracy value for a given score.
+      const scoreSimProvider = new ScoreSimEstimationProviderMania({
         scoreSimulations: this.scoreSimulations,
         useAccuracy: finalAccuracy !== undefined,
       });

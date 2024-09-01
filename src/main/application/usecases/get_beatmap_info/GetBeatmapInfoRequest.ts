@@ -39,4 +39,13 @@ export type GetBeatmapInfoRequest = {
     cs?: number;
     hp?: number;
   };
+  mapScoreSimulationMania: {
+    mods?: ModAcronym[];
+    combo?: number;
+    misses?: number;
+    accuracy?: number;
+    speed?: number;
+    od?: number;
+    hp?: number;
+  };
 };
