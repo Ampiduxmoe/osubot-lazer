@@ -1,6 +1,6 @@
 import axios, {AxiosInstance} from 'axios';
 import * as fs from 'fs';
-import {Beatmap, Performance, ScoreState} from 'rosu-pp-js';
+import {Beatmap, GameMode, Performance, ScoreState} from 'rosu-pp-js';
 import {
   ScoreSimulationsDao,
   SimulatedScoreCtb,
@@ -106,6 +106,9 @@ export class ScoreSimulationsDaoRosu implements ScoreSimulationsDao {
     const filename = await this.downloadBeatmapIfNeeded(beatmapId);
     const beatmapContents = fs.readFileSync(filename, 'utf8');
     const rosuMap = new Beatmap(beatmapContents);
+    if (rosuMap.mode === GameMode.Osu) {
+      rosuMap.convert(GameMode.Taiko);
+    }
     const result = new Performance({
       mods: mods.join(''),
       combo: combo ?? undefined,
@@ -162,6 +165,9 @@ export class ScoreSimulationsDaoRosu implements ScoreSimulationsDao {
     const filename = await this.downloadBeatmapIfNeeded(beatmapId);
     const beatmapContents = fs.readFileSync(filename, 'utf8');
     const rosuMap = new Beatmap(beatmapContents);
+    if (rosuMap.mode === GameMode.Osu) {
+      rosuMap.convert(GameMode.Catch);
+    }
     const result = new Performance({
       mods: mods.join(''),
       combo: combo ?? undefined,
@@ -232,6 +238,9 @@ export class ScoreSimulationsDaoRosu implements ScoreSimulationsDao {
     const filename = await this.downloadBeatmapIfNeeded(beatmapId);
     const beatmapContents = fs.readFileSync(filename, 'utf8');
     const rosuMap = new Beatmap(beatmapContents);
+    if (rosuMap.mode === GameMode.Osu) {
+      rosuMap.convert(GameMode.Mania);
+    }
     const result = (() => {
       if (byHitcounts === undefined) {
         const acc = byAccuracy?.accuracy ?? 100;
