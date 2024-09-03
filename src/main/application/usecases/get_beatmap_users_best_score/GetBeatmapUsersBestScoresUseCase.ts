@@ -118,6 +118,7 @@ export class GetBeatmapUsersBestScoresUseCase
         ),
       usernamesScores
     );
+    const estimatePpForAllScores = true;
     const bestScoresOutput: OsuMapUserBestPlays[] = [];
     for (const usernameToScores of usernamesScores) {
       const username = usernameToScores.username;
@@ -184,7 +185,7 @@ export class GetBeatmapUsersBestScoresUseCase
                 accuracy: mapScore.accuracy,
                 pp: await (async () => {
                   const fcAndSs =
-                    scoreCount === 1
+                    scoreCount === 1 || estimatePpForAllScores
                       ? await getFcAndSsEstimations(mapScore)
                       : {fc: undefined, ss: undefined};
                   return {
