@@ -16,7 +16,7 @@ import {
 } from '../../commands/ChatLeaderboardOnMap';
 import {CommandMatchResult} from '../../common/CommandMatchResult';
 import {VkMessageContext} from '../VkMessageContext';
-import {VkOutputMessage} from '../VkOutputMessage';
+import {VkOutputMessage, VkOutputMessagePageContent} from '../VkOutputMessage';
 
 export class ChatLeaderboardOnMapVk extends ChatLeaderboardOnMap<
   VkMessageContext,
@@ -46,17 +46,121 @@ export class ChatLeaderboardOnMapVk extends ChatLeaderboardOnMap<
     missingUsernames: string[],
     isChatLb: boolean
   ): MaybeDeferred<VkOutputMessage> {
-    const firstMap = mapPlays[0].collection[0].mapInfo;
-    const areAllMapsSame: boolean = (() => {
-      for (let i = 1; i < mapPlays.length; i++) {
-        const compareMap = mapPlays[i].collection[0].mapInfo;
-        if (areMapsDifferentInStats(firstMap, compareMap)) {
-          return false;
+    const valuePromise: Promise<VkOutputMessage> = (async () => {
+      const sortedMapPlays = mapPlays
+        .sort((a, b) => {
+          const aPlayResult = a.collection[0].playResult;
+          const bPlayResult = b.collection[0].playResult;
+          const aPp = aPlayResult.pp.estimatedValue ?? 0;
+          const bPp = bPlayResult.pp.estimatedValue ?? 0;
+          if (aPp === bPp) {
+            return bPlayResult.totalScore - aPlayResult.totalScore;
+          }
+          return bPp - aPp;
+        })
+        .map((v, i) => ({position: i + 1, mapPlays: v}));
+      const areAllMapsSame: boolean = (() => {
+        for (let i = 1; i < mapPlays.length; i++) {
+          if (
+            areMapsDifferentInStats(
+              mapPlays[0].collection[0].mapInfo,
+              mapPlays[i].collection[0].mapInfo
+            )
+          ) {
+            return false;
+          }
         }
+        return true;
+      })();
+      const maxScoresPerPage = 5;
+      if (mapPlays.length <= maxScoresPerPage) {
+        const text = this.createMapPlaysText(
+          areAllMapsSame ? mapPlays[0].collection[0].mapInfo : map,
+          sortedMapPlays,
+          mapPlays.length,
+          server,
+          mode,
+          missingUsernames,
+          isChatLb
+        );
+        const fullText = `${text}`;
+        return {
+          text: fullText,
+          attachment: undefined,
+          buttons: [],
+        };
       }
-      return true;
+      const playsChunks: {position: number; mapPlays: OsuMapUserBestPlays}[][] =
+        [];
+      for (let i = 0; i < mapPlays.length; i += maxScoresPerPage) {
+        playsChunks.push(sortedMapPlays.slice(i, i + maxScoresPerPage));
+      }
+      const pageContents: VkOutputMessagePageContent[] = playsChunks.map(
+        chunk => {
+          const areAllMapsInChunkSame: boolean = (() => {
+            for (let i = 1; i < chunk.length; i++) {
+              if (
+                areMapsDifferentInStats(
+                  chunk[0].mapPlays.collection[0].mapInfo,
+                  chunk[i].mapPlays.collection[0].mapInfo
+                )
+              ) {
+                return false;
+              }
+            }
+            return true;
+          })();
+          const text = this.createMapPlaysText(
+            areAllMapsInChunkSame
+              ? chunk[0].mapPlays.collection[0].mapInfo
+              : map,
+            chunk,
+            maxScoresPerPage,
+            server,
+            mode,
+            missingUsernames,
+            isChatLb
+          );
+          const fullText = `${text}`;
+          return {
+            text: fullText,
+            attachment: undefined,
+            buttons: [],
+          };
+        }
+      );
+      return {
+        text: undefined,
+        attachment: undefined,
+        buttons: undefined,
+        pagination: {
+          contents: pageContents,
+          startingIndex: 0,
+          buttonText: (currentIndex: number, targetIndex: number) => {
+            if (targetIndex < 0 || targetIndex >= playsChunks.length) {
+              return undefined;
+            }
+            if (targetIndex > currentIndex) {
+              return `▶　(${targetIndex + 1}/${playsChunks.length})`;
+            }
+            return `(${targetIndex + 1}/${playsChunks.length})　◀`;
+          },
+        },
+      };
     })();
-    const displayedMap = areAllMapsSame ? firstMap : map;
+    return MaybeDeferred.fromFastPromise(valuePromise);
+  }
+
+  createMapPlaysText(
+    map: OsuMap,
+    mapPlaysData: {position: number; mapPlays: OsuMapUserBestPlays}[],
+    targetQuantity: number,
+    server: OsuServer,
+    mode: OsuRuleset,
+    missingUsernames: string[],
+    isChatLb: boolean
+  ): string {
+    const displayedMap = map;
     const serverString = OsuServer[server];
     const modeString = OsuRuleset[mode];
     const {artist, title} = displayedMap.beatmapset;
@@ -85,35 +189,26 @@ export class ChatLeaderboardOnMapVk extends ChatLeaderboardOnMap<
     const od = round(displayedMap.beatmap.od, 2);
     const hp = round(displayedMap.beatmap.hp, 2);
     const maxCombo = displayedMap.beatmap.maxCombo;
-    const fewScores = mapPlays.length <= 5;
-    const sortedMapPlays = mapPlays.sort((a, b) => {
-      const aPlayResult = a.collection[0].playResult;
-      const bPlayResult = b.collection[0].playResult;
-      const aPp = aPlayResult.pp.estimatedValue ?? 0;
-      const bPp = bPlayResult.pp.estimatedValue ?? 0;
-      if (aPp === bPp) {
-        return bPlayResult.totalScore - aPlayResult.totalScore;
-      }
-      return bPp - aPp;
-    });
-    const scoresText = sortedMapPlays
-      .map((p, i) =>
+    const fewScores = targetQuantity <= 5;
+    const scoresText = mapPlaysData
+      .map(({position, mapPlays}) =>
         fewScores
           ? this.verboseScoreDescription(
-              i + 1,
-              p.username,
-              p.collection[0].playResult
+              position,
+              mapPlays.username,
+              mapPlays.collection[0].playResult
             )
           : this.shortScoreDescription(
-              i + 1,
-              p.username,
-              p.collection[0].playResult
+              position,
+              mapPlays.username,
+              mapPlays.collection[0].playResult
             )
       )
       .join(fewScores ? '\n' : '\n');
     const couldNotGetSomeStatsMessage =
-      mapPlays.find(
-        play => play.collection[0].playResult.pp.estimatedValue === undefined
+      mapPlaysData.find(
+        ({mapPlays}) =>
+          mapPlays.collection[0].playResult.pp.estimatedValue === undefined
       ) !== undefined
         ? '\n(Не удалось получить часть статистики)'
         : '';
@@ -136,11 +231,7 @@ ${scoresText}
 ${couldNotGetSomeStatsMessage}
 ${missingUsernamesMessage}
     `.trim();
-    return MaybeDeferred.fromValue({
-      text: text,
-      attachment: undefined,
-      buttons: undefined,
-    });
+    return text;
   }
 
   verboseScoreDescription(
