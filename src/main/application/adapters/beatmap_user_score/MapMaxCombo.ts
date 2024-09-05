@@ -43,7 +43,7 @@ const MapMaxComboCalculatorOsu: MapMaxComboCalculator = {
   isLegacy: false,
   calculate(map: OsuBeatmap, score: OsuBeatmapUserScore): number {
     const sMax = score.maximumStatistics;
-    return getSum(sMax.great, sMax.sliderTailHit);
+    return getSum(sMax.great, sMax.sliderTailHit, sMax.largeTickHit);
   },
 };
 
