@@ -1,7 +1,11 @@
 import {APP_CODE_NAME} from '../../../App';
 import {pickRandom} from '../../../primitives/Arrays';
 import {MaybeDeferred} from '../../../primitives/MaybeDeferred';
-import {Help, HelpExecutionArgs} from '../../commands/Help';
+import {
+  Help,
+  HelpCommandCategories,
+  HelpExecutionArgs,
+} from '../../commands/Help';
 import {TextCommand} from '../../commands/base/TextCommand';
 import {CommandMatchResult} from '../../common/CommandMatchResult';
 import {OWN_COMMAND_PREFIX} from '../../common/arg_processing/CommandArguments';
@@ -44,31 +48,88 @@ export class HelpVk extends Help<VkMessageContext, VkOutputMessage> {
   }
 
   createCommandListMessage(
-    commandList: TextCommand<unknown, unknown, unknown, unknown>[]
+    commandList: TextCommand<
+      unknown,
+      unknown,
+      VkMessageContext,
+      VkOutputMessage
+    >[]
   ): MaybeDeferred<VkOutputMessage> {
-    const commandBriefs = commandList.map(command => {
-      const allPrefixes = command.prefixes.join(' | ');
-      const description = command.shortDescription;
-      // eslint-disable-next-line no-irregular-whitespace
-      return `　${allPrefixes} — ${description}`;
+    const noCategoryKey = 'nocategory';
+    const commandCategories: HelpCommandCategories<
+      VkMessageContext,
+      VkOutputMessage
+    > = {
+      ...this.commandCategories,
+      [noCategoryKey]: commandList
+        .filter(command => {
+          for (const category of Object.values(this.commandCategories)) {
+            if (category.find(c => c.command === command) !== undefined) {
+              return false;
+            }
+          }
+          return true;
+        })
+        .map(command => ({command})),
+    };
+    const categoriesText = Object.keys(commandCategories)
+      .filter(categoryName => commandCategories[categoryName].length !== 0)
+      .map(categoryName => {
+        const commandBriefs = commandCategories[categoryName].map(
+          ({command, selectedPrefixes, shortDescriptionOverride}) => {
+            const prefixesByLength = [
+              ...(selectedPrefixes ?? command.prefixes),
+            ].sort((a, b) => b.length - a.length);
+            const longestPrefix = prefixesByLength.shift()!;
+            const shorterPrefixes =
+              prefixesByLength.length === 0
+                ? ''
+                : ` (сокр. ${prefixesByLength.join(' или ')})`;
+            const prefixesText = `${longestPrefix}${shorterPrefixes}`;
+            const description =
+              shortDescriptionOverride ?? command.shortDescription;
+            // eslint-disable-next-line no-irregular-whitespace
+            return `　${prefixesText} — ${description}`;
+          }
+        );
+        const maybeCategoryTitle: string = (() => {
+          if (categoryName !== noCategoryKey) {
+            return `${categoryName}:\n`;
+          }
+          if (Object.keys(commandCategories).length > 1) {
+            return 'Без категории:\n';
+          }
+          return ''; // there are no categories
+        })();
+        return `${maybeCategoryTitle}${commandBriefs.join('\n')}`;
+      })
+      .join('\n\n');
+    const helpExample = this.unparse({
+      commandPrefix: pickRandom(
+        commandList.flatMap(command => command.prefixes)
+      ),
+      usageVariant: undefined,
     });
     const helpPrefix = this.prefixes[0];
     const text = `
-Список команд:
-${commandBriefs.join('\n')}
+Список команд [имя_команды — описание]
+
+${categoriesText}
 
 Используйте «${helpPrefix} имя_команды» для получения подробной информации о команде
+
+Пример: «${helpExample}»
     `.trim();
     return MaybeDeferred.fromValue({
       text: text,
       attachment: undefined,
-      buttons: undefined,
+      buttons: [[{text: helpExample, command: helpExample}]],
     });
   }
 
   createCommandDescriptionMessage(
     commandPrefixInput: string,
-    command: TextCommand<unknown, unknown, unknown, unknown>,
+    command: TextCommand<unknown, unknown, VkMessageContext, VkOutputMessage>,
     argGroup: string | undefined
   ): MaybeDeferred<VkOutputMessage> {
     const inputPrefixLowercase = commandPrefixInput.toLowerCase();

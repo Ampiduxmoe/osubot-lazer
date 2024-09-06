@@ -44,6 +44,7 @@ import {
   GetTargetAppUserId,
   SaveLastSeenBeatmapId,
 } from './presentation/commands/common/Signatures';
+import {UserRecentPlays} from './presentation/commands/UserRecentPlays';
 import {MainAliasProcessor} from './presentation/common/alias_processing/MainAliasProcessor';
 import {MainTextProcessor} from './presentation/common/arg_processing/MainTextProcessor';
 import {
@@ -645,88 +646,97 @@ export class App {
         };
       })();
     const aliasProcessor = new MainAliasProcessor();
-
+    const setUsername = new SetUsernameVk(
+      mainTextProcessor,
+      getTargetAppUserId,
+      setUsernameUseCase
+    );
+    const userInfo = new UserInfoVk(
+      mainTextProcessor,
+      getInitiatorAppUserId,
+      getTargetAppUserId,
+      getOsuUserInfoUseCase,
+      getAppUserInfoUseCase
+    );
+    const beatmapInfo = new BeatmapInfoVk(
+      vkBeatmapCovers,
+      mainTextProcessor,
+      getInitiatorAppUserId,
+      getContextualBeatmapIds,
+      getLastSeenBeatmapId,
+      saveLastSeenBeatmapId,
+      getBeatmapInfoUseCase
+    );
+    const userRecentPlays = new UserRecentPlaysVk(
+      vkBeatmapCovers,
+      mainTextProcessor,
+      getInitiatorAppUserId,
+      getTargetAppUserId,
+      saveLastSeenBeatmapId,
+      getRecentPlaysUseCase,
+      getAppUserInfoUseCase
+    );
+    const userBestPlays = new UserBestPlaysVk(
+      vkBeatmapCovers,
+      mainTextProcessor,
+      getInitiatorAppUserId,
+      getTargetAppUserId,
+      saveLastSeenBeatmapId,
+      getUserBestPlaysUseCase,
+      getAppUserInfoUseCase
+    );
+    const userBestPlaysOnMap = new UserBestPlaysOnMapVk(
+      vkBeatmapCovers,
+      mainTextProcessor,
+      getInitiatorAppUserId,
+      getTargetAppUserId,
+      getContextualBeatmapIds,
+      getLastSeenBeatmapId,
+      saveLastSeenBeatmapId,
+      getBeatmapUsersBestScoresUseCase,
+      getAppUserInfoUseCase
+    );
+    const chatLeaderboard = new ChatLeaderboardVk(
+      mainTextProcessor,
+      getInitiatorAppUserId,
+      getLocalAppUserIds,
+      getOsuUserInfoUseCase,
+      getAppUserInfoUseCase
+    );
+    const chatLeaderboardOnMap = new ChatLeaderboardOnMapVk(
+      mainTextProcessor,
+      getInitiatorAppUserId,
+      getLocalAppUserIds,
+      getContextualBeatmapIds,
+      getLastSeenBeatmapId,
+      saveLastSeenBeatmapId,
+      getBeatmapUsersBestScoresUseCase,
+      getAppUserInfoUseCase
+    );
+    const userUpdate = new UserUpdateVk(
+      mainTextProcessor,
+      getInitiatorAppUserId,
+      getTargetAppUserId,
+      getOsuUserUpdateUseCase,
+      getAppUserInfoUseCase
+    );
+    const alias = new AliasVk(
+      mainTextProcessor,
+      getTargetAppUserId,
+      appUserCommandAliasesRepository,
+      aliasProcessor
+    );
     const publicCommands = [
-      new SetUsernameVk(
-        mainTextProcessor,
-        getTargetAppUserId,
-        setUsernameUseCase
-      ),
-      new UserInfoVk(
-        mainTextProcessor,
-        getInitiatorAppUserId,
-        getTargetAppUserId,
-        getOsuUserInfoUseCase,
-        getAppUserInfoUseCase
-      ),
-      new BeatmapInfoVk(
-        vkBeatmapCovers,
-        mainTextProcessor,
-        getInitiatorAppUserId,
-        getContextualBeatmapIds,
-        getLastSeenBeatmapId,
-        saveLastSeenBeatmapId,
-        getBeatmapInfoUseCase
-      ),
-      new UserRecentPlaysVk(
-        vkBeatmapCovers,
-        mainTextProcessor,
-        getInitiatorAppUserId,
-        getTargetAppUserId,
-        saveLastSeenBeatmapId,
-        getRecentPlaysUseCase,
-        getAppUserInfoUseCase
-      ),
-      new UserBestPlaysVk(
-        vkBeatmapCovers,
-        mainTextProcessor,
-        getInitiatorAppUserId,
-        getTargetAppUserId,
-        saveLastSeenBeatmapId,
-        getUserBestPlaysUseCase,
-        getAppUserInfoUseCase
-      ),
-      new UserBestPlaysOnMapVk(
-        vkBeatmapCovers,
-        mainTextProcessor,
-        getInitiatorAppUserId,
-        getTargetAppUserId,
-        getContextualBeatmapIds,
-        getLastSeenBeatmapId,
-        saveLastSeenBeatmapId,
-        getBeatmapUsersBestScoresUseCase,
-        getAppUserInfoUseCase
-      ),
-      new ChatLeaderboardVk(
-        mainTextProcessor,
-        getInitiatorAppUserId,
-        getLocalAppUserIds,
-        getOsuUserInfoUseCase,
-        getAppUserInfoUseCase
-      ),
-      new ChatLeaderboardOnMapVk(
-        mainTextProcessor,
-        getInitiatorAppUserId,
-        getLocalAppUserIds,
-        getContextualBeatmapIds,
-        getLastSeenBeatmapId,
-        saveLastSeenBeatmapId,
-        getBeatmapUsersBestScoresUseCase,
-        getAppUserInfoUseCase
-      ),
-      new UserUpdateVk(
-        mainTextProcessor,
-        getInitiatorAppUserId,
-        getTargetAppUserId,
-        getOsuUserUpdateUseCase,
-        getAppUserInfoUseCase
-      ),
-      new AliasVk(
-        mainTextProcessor,
-        getTargetAppUserId,
-        appUserCommandAliasesRepository,
-        aliasProcessor
-      ),
+      setUsername,
+      userInfo,
+      beatmapInfo,
+      userRecentPlays,
+      userBestPlays,
+      userBestPlaysOnMap,
+      chatLeaderboard,
+      chatLeaderboardOnMap,
+      userUpdate,
+      alias,
     ];
     const beatmapMenuCommand = new BeatmapMenuVk(mainTextProcessor);
     const contactAdminCommand = new ContactAdminVk(
@@ -761,6 +771,35 @@ export class App {
       ...publicCommands,
       whynotCommand,
     ]);
+    helpCommand.commandCategories = {
+      'Связанные с игровым сервером (требуют указания префикса сервера)': [
+        ...[setUsername, userInfo, beatmapInfo].map(command => ({command})),
+        {
+          command: userRecentPlays,
+          selectedPrefixes: UserRecentPlays.recentPlaysPrefixes,
+          shortDescriptionOverride: 'последние скоры',
+        },
+        {
+          command: userRecentPlays,
+          selectedPrefixes: UserRecentPlays.recentPassesPrefixes,
+          shortDescriptionOverride: 'последние пассы',
+        },
+        ...[
+          userBestPlays,
+          userBestPlaysOnMap,
+          chatLeaderboard,
+          chatLeaderboardOnMap,
+        ].map(command => ({command})),
+        {
+          command: userUpdate,
+          shortDescriptionOverride: 'обновить стату на osu!track',
+        },
+      ],
+      Вспомогательные: [...[alias].map(command => ({command}))],
+      'Помощь по боту': [
+        ...[helpCommand, whynotCommand].map(command => ({command})),
+      ],
+    };
     vkClient.publicCommands.push(
       helpCommand,
       ...publicCommands,

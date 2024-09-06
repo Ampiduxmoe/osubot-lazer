@@ -13,7 +13,7 @@ import {TextCommand} from './base/TextCommand';
 
 export abstract class Help<TContext, TOutput> extends TextCommand<
   HelpExecutionArgs,
-  HelpViewParams,
+  HelpViewParams<TContext, TOutput>,
   TContext,
   TOutput
 > {
@@ -28,6 +28,8 @@ export abstract class Help<TContext, TOutput> extends TextCommand<
   protected COMMAND_PREFIX: CommandArgument<string>;
   protected FOREIGN_COMMAND_PREFIX: CommandArgument<string>;
   protected USAGE_VARIANT: CommandArgument<string>;
+
+  commandCategories: HelpCommandCategories<TContext, TOutput> = {};
 
   constructor(
     public textProcessor: TextProcessor,
@@ -87,8 +89,10 @@ export abstract class Help<TContext, TOutput> extends TextCommand<
     });
   }
 
-  process(args: HelpExecutionArgs): MaybeDeferred<HelpViewParams> {
-    const value: HelpViewParams = (() => {
+  process(
+    args: HelpExecutionArgs
+  ): MaybeDeferred<HelpViewParams<TContext, TOutput>> {
+    const value: HelpViewParams<TContext, TOutput> = (() => {
       if (args.commandPrefix === undefined) {
         return {
           commandList: [this, ...this.commands],
@@ -116,7 +120,9 @@ export abstract class Help<TContext, TOutput> extends TextCommand<
     return MaybeDeferred.fromValue(value);
   }
 
-  createOutputMessage(params: HelpViewParams): MaybeDeferred<TOutput> {
+  createOutputMessage(
+    params: HelpViewParams<TContext, TOutput>
+  ): MaybeDeferred<TOutput> {
     const {commandList, commandPrefixInput, command, usageVariant} = params;
     if (commandList !== undefined) {
       return this.createCommandListMessage(commandList);
@@ -135,12 +141,12 @@ export abstract class Help<TContext, TOutput> extends TextCommand<
     commandPrefixInput: string
   ): MaybeDeferred<TOutput>;
   abstract createCommandListMessage(
-    commandList: TextCommand<unknown, unknown, unknown, unknown>[]
+    commandList: TextCommand<unknown, unknown, TContext, TOutput>[]
   ): MaybeDeferred<TOutput>;
 
   abstract createCommandDescriptionMessage(
     commandPrefixInput: string,
-    command: TextCommand<unknown, unknown, unknown, unknown>,
+    command: TextCommand<unknown, unknown, TContext, TOutput>,
     argGroup: string | undefined
   ): MaybeDeferred<TOutput>;
 
@@ -161,9 +167,18 @@ export type HelpExecutionArgs = {
   usageVariant: string | undefined;
 };
 
-export type HelpViewParams = {
-  commandList?: TextCommand<unknown, unknown, unknown, unknown>[];
+export type HelpViewParams<TContext, TOutput> = {
+  commandList?: TextCommand<unknown, unknown, TContext, TOutput>[];
   commandPrefixInput?: string;
-  command?: TextCommand<unknown, unknown, unknown, unknown>;
+  command?: TextCommand<unknown, unknown, TContext, TOutput>;
   usageVariant?: string;
 };
+
+export type HelpCommandCategories<TContext, TOutput> = Record<
+  string,
+  readonly {
+    command: TextCommand<unknown, unknown, TContext, TOutput>;
+    selectedPrefixes?: CommandPrefixes;
+    shortDescriptionOverride?: string;
+  }[]
+>;
