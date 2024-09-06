@@ -72,12 +72,18 @@ export abstract class Whynot<TContext, TOutput> extends TextCommand<
     );
     const ownPrefix = argsProcessor.use(this.COMMAND_PREFIX).at(0).extract();
     const commandText = argsProcessor.use(this.TEXT).at(0).extract();
-    if (ownPrefix === undefined || commandText === undefined) {
+    if (ownPrefix === undefined) {
       return fail;
     }
 
-    if (argsProcessor.remainingTokens.length > 0) {
-      return fail;
+    if (argsProcessor.remainingTokens.length > 0 || commandText === undefined) {
+      return CommandMatchResult.partial([
+        {token: tokens[0], argument: this.COMMAND_PREFIX},
+        ...(commandText !== undefined
+          ? [{token: tokens[1], argument: this.TEXT}]
+          : []),
+        ...tokens.slice(2).map(token => ({token: token, argument: undefined})),
+      ]);
     }
     return CommandMatchResult.ok({
       commandText: commandText,
@@ -92,7 +98,7 @@ export abstract class Whynot<TContext, TOutput> extends TextCommand<
     ].filter(uniquesFilter);
     let bestMatchInfo: [CommandMatch, string] | undefined = undefined;
     for (const text of allTextVariants) {
-      for (const command of this.commands) {
+      for (const command of [this, ...this.commands]) {
         const matchResult = command.matchText(text);
         const bestMatchLevel =
           (bestMatchInfo?.at(0) as CommandMatch | undefined)?.matchResult
