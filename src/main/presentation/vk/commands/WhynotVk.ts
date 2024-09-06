@@ -8,6 +8,25 @@ import {VkMessageContext} from '../VkMessageContext';
 import {VkOutputMessage} from '../VkOutputMessage';
 
 export class WhynotVk extends Whynot<VkMessageContext, VkOutputMessage> {
+  getRepresentativeCommandPrefix: (
+    matchResult: CommandMatchResult<unknown>,
+    command: TextCommand<unknown, unknown, unknown, unknown>
+  ) => string = (matchResult, command) => {
+    const maxPrefixLength = Math.max(...command.prefixes.map(p => p.length));
+    const longestPrefix = command.prefixes.find(
+      p => p.length === maxPrefixLength
+    );
+    if (longestPrefix === undefined) {
+      throw Error('Could not find longest command prefix');
+    }
+    return longestPrefix;
+  };
+  getRepresentativeCommandShortDescription: (
+    matchResult: CommandMatchResult<unknown>,
+    command: TextCommand<unknown, unknown, unknown, unknown>
+  ) => string = (matchResult, command) => {
+    return command.shortDescription;
+  };
   matchMessage(ctx: VkMessageContext): CommandMatchResult<WhynotExecutionArgs> {
     const fail = CommandMatchResult.fail<WhynotExecutionArgs>();
     const command: string | undefined = (() => {
@@ -107,9 +126,9 @@ export class WhynotVk extends Whynot<VkMessageContext, VkOutputMessage> {
         .map(e => e.argument);
       return requiredArgs.filter(arg => !matchedArgs.includes(arg));
     })();
-    const maxPrefixLength = Math.max(...command.prefixes.map(p => p.length));
-    const longestCommandPrefix = command.prefixes.find(
-      p => p.length === maxPrefixLength
+    const representativePrefix = this.getRepresentativeCommandPrefix(
+      matchResult,
+      command
     );
     const preprocessNotice =
       inputText === preprocessedText
@@ -170,10 +189,12 @@ export class WhynotVk extends Whynot<VkMessageContext, VkOutputMessage> {
           .join('\n')
       );
     })();
+    const representativeDescription =
+      this.getRepresentativeCommandShortDescription(matchResult, command);
     return MaybeDeferred.fromValue({
       text:
         'Частичное совпадение ' +
-        `с командой ${longestCommandPrefix} (${command.shortDescription})` +
+        `с командой ${representativePrefix} (${representativeDescription})` +
         `${preprocessNotice}${argExplanationsStr}${missingArgsStr}`,
       attachment: undefined,
       buttons: undefined,
@@ -187,11 +208,13 @@ export class WhynotVk extends Whynot<VkMessageContext, VkOutputMessage> {
       command: TextCommand<unknown, unknown, unknown, unknown>;
     }
   ): MaybeDeferred<VkOutputMessage> {
-    const {command} = match;
-    const maxPrefixLength = Math.max(...command.prefixes.map(p => p.length));
-    const longestCommandPrefix = command.prefixes.find(
-      p => p.length === maxPrefixLength
+    const {matchResult, command} = match;
+    const representativePrefix = this.getRepresentativeCommandPrefix(
+      matchResult,
+      command
     );
+    const representativeDescription =
+      this.getRepresentativeCommandShortDescription(matchResult, command);
     const preprocessNotice =
       inputText === preprocessedText
         ? ''
@@ -199,7 +222,7 @@ export class WhynotVk extends Whynot<VkMessageContext, VkOutputMessage> {
     return MaybeDeferred.fromValue({
       text:
         'Ваш текст полностью соответствует ' +
-        `команде ${longestCommandPrefix} (${command.shortDescription})` +
+        `команде ${representativePrefix} (${representativeDescription})` +
         `${preprocessNotice}`,
       attachment: undefined,
       buttons: undefined,

@@ -44,7 +44,10 @@ import {
   GetTargetAppUserId,
   SaveLastSeenBeatmapId,
 } from './presentation/commands/common/Signatures';
-import {UserRecentPlays} from './presentation/commands/UserRecentPlays';
+import {
+  UserRecentPlays,
+  UserRecentPlaysExecutionArgs,
+} from './presentation/commands/UserRecentPlays';
 import {MainAliasProcessor} from './presentation/common/alias_processing/MainAliasProcessor';
 import {MainTextProcessor} from './presentation/common/arg_processing/MainTextProcessor';
 import {
@@ -748,6 +751,78 @@ export class App {
       saveContactAdminMessageUseCase
     );
     const whynotCommand = new WhynotVk(publicCommands, []);
+    whynotCommand.getRepresentativeCommandPrefix = (matchResult, command) => {
+      const getLongestPrefix = (prefixes: string[]): string => {
+        const maxPrefixLength = Math.max(...prefixes.map(p => p.length));
+        const longestPrefix = prefixes.find(p => p.length === maxPrefixLength);
+        if (longestPrefix === undefined) {
+          throw Error('Could not find longest command prefix');
+        }
+        return longestPrefix;
+      };
+      if (command instanceof UserRecentPlays) {
+        const onlyPasses: boolean = (() => {
+          if (matchResult.isFullMatch) {
+            const args = matchResult.commandArgs as
+              | UserRecentPlaysExecutionArgs
+              | undefined;
+            if (args !== undefined) {
+              return args.passesOnly;
+            }
+          }
+          if (matchResult.isPartialMatch) {
+            const mapping = matchResult.partialMapping;
+            const usedPrefix = mapping
+              ?.map(e => e.token)
+              .find(t => UserRecentPlays.prefixes.matchIgnoringCase(t));
+            if (usedPrefix !== undefined) {
+              return UserRecentPlays.recentPassesPrefixes.matchIgnoringCase(
+                usedPrefix
+              );
+            }
+          }
+          return false;
+        })();
+        if (onlyPasses) {
+          return getLongestPrefix(UserRecentPlays.recentPassesPrefixes);
+        }
+        return getLongestPrefix(UserRecentPlays.recentPlaysPrefixes);
+      }
+      return getLongestPrefix(command.prefixes);
+    };
+    whynotCommand.getRepresentativeCommandShortDescription = (
+      matchResult,
+      command
+    ) => {
+      if (command instanceof UserRecentPlays) {
+        const onlyPasses: boolean = (() => {
+          if (matchResult.isFullMatch) {
+            const args = matchResult.commandArgs as
+              | UserRecentPlaysExecutionArgs
+              | undefined;
+            if (args !== undefined) {
+              return args.passesOnly;
+            }
+          }
+          if (matchResult.isPartialMatch) {
+            const mapping = matchResult.partialMapping;
+            const usedPrefix = mapping
+              ?.map(e => e.token)
+              .find(t => UserRecentPlays.prefixes.matchIgnoringCase(t));
+            if (usedPrefix !== undefined) {
+              return UserRecentPlays.recentPassesPrefixes.matchIgnoringCase(
+                usedPrefix
+              );
+            }
+          }
+          return false;
+        })();
+        if (onlyPasses) {
+          return 'последние пассы';
+        }
+      }
+      return command.shortDescription;
+    };
     for (const command of [...publicCommands, beatmapMenuCommand]) {
       command.link(publicCommands);
     }
@@ -877,6 +952,10 @@ export class App {
         );
         return;
       }
+      const commandDescription =
+        UserRecentPlays.recentPassesPrefixes.matchIgnoringCase(usedPrefix)
+          ? 'последние пассы'
+          : command.shortDescription;
       const helpCommandStr = helpCommand.unparse({
         commandPrefix: usedPrefix,
         usageVariant: undefined,
@@ -889,7 +968,7 @@ export class App {
       });
       const replyText = `
 
-Вы хотели использовать команду ${usedPrefix} (${command.shortDescription})?
+Вы хотели использовать команду ${usedPrefix} (${commandDescription})?
 
 Помощь по команде: «${helpCommandStr}»
 Почему команда не сработала: «${whynotCommandStr}»
