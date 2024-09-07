@@ -36,11 +36,18 @@ export abstract class Help<TContext, TOutput> extends TextCommand<
     public commands: readonly TextCommand<unknown, unknown, TContext, TOutput>[]
   ) {
     const COMMAND_PREFIX = OWN_COMMAND_PREFIX(Help.prefixes);
-    const FOREIGN_COMMAND_PREFIX = VK_FOREIGN_COMMAND_PREFIX(
+    const REAL_FOREIGN_COMMAND_PREFIX_ARG = VK_FOREIGN_COMMAND_PREFIX(
       new CommandPrefixes(
         ...Help.prefixes,
         ...commands.map(c => c.prefixes).flat(1)
       )
+    );
+    // We want to accept any user input to better guide them
+    const FOREIGN_COMMAND_PREFIX = ANY_STRING(
+      REAL_FOREIGN_COMMAND_PREFIX_ARG.displayName,
+      REAL_FOREIGN_COMMAND_PREFIX_ARG.entityName,
+      REAL_FOREIGN_COMMAND_PREFIX_ARG.description!,
+      () => REAL_FOREIGN_COMMAND_PREFIX_ARG.usageExample
     );
     const USAGE_VARIANT = ANY_STRING(
       'вариант',

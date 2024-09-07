@@ -666,13 +666,20 @@ export const ANY_WORD: (
 export const ANY_STRING: (
   name: string,
   entityName: string,
-  description: string
-) => CommandArgument<string> = (name, entityName, description) => ({
+  description: string,
+  getUsageExample?: (this: CommandArgument<string>) => string
+) => CommandArgument<string> = (
+  name,
+  entityName,
+  description,
+  getUsageExample
+) => ({
   displayName: name,
   entityName: entityName,
   description: description,
   get usageExample(): string {
-    return pickRandom(['любаястрока', 'другаястрока']);
+    const providedExample = getUsageExample?.call(this);
+    return providedExample ?? pickRandom(['любаястрока', 'другаястрока']);
   },
   match: function (): boolean {
     return true;
