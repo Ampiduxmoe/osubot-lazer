@@ -1075,9 +1075,9 @@ export type VkMentionArg = {
   text: string;
 };
 export const VK_MENTION: CommandArgument<VkMentionArg> = {
-  displayName: 'упомянание',
-  entityName: 'упомянание человека/группы',
-  description: 'упомянание (тег/саммон) кого-либо',
+  displayName: 'упоминание',
+  entityName: 'упоминание человека/группы',
+  description: 'упоминание (тег/саммон) кого-либо',
   get usageExample(): string {
     return pickRandom(['l r', 'l personalbest', 'l u', 'osubot-help']);
   },
