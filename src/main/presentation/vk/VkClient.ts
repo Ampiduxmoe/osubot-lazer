@@ -65,12 +65,12 @@ export class VkClient {
         const paginatedMessage = this.paginatedMessages[messageKey];
         if (paginatedMessage !== undefined) {
           console.log(
-            `Executing pagination request in ${ctx.peerId} (payload=${JSON.stringify(ctx.eventPayload)})`
+            `Executing pagination request from ${ctx.userId} in ${ctx.peerId} (payload=${JSON.stringify(ctx.eventPayload)})`
           );
           paginatedMessage.goTo(targetIndex);
         } else {
           console.log(
-            `Invalid pagination request in ${ctx.peerId} (payload=${JSON.stringify(ctx.eventPayload)})`
+            `Invalid pagination request from ${ctx.userId} in ${ctx.peerId} (payload=${JSON.stringify(ctx.eventPayload)})`
           );
           // Bot probably crashed and can't switch pages on this message anymore
           // So we try to remove callback buttons

@@ -1,9 +1,10 @@
-export type VkOutputMessage = {
-  text: string | undefined;
-  attachment: string | undefined;
-  buttons: VkOutputMessageButton[][] | undefined;
+export type VkOutputMessage = VkOutputMessageContent & {
+  /**
+   * Paginated message description.
+   * If specified, overrides base {@link VkOutputMessageContent}
+   */
   pagination?: {
-    contents: VkOutputMessagePageContent[];
+    contents: VkOutputMessageContent[];
     startingIndex: number;
     buttonText: (
       currentIndex: number,
@@ -17,7 +18,7 @@ export type VkOutputMessageButton = {
   command: string;
 };
 
-export type VkOutputMessagePageContent = {
+export type VkOutputMessageContent = {
   text: string | undefined;
   attachment: string | undefined;
   buttons: VkOutputMessageButton[][] | undefined;

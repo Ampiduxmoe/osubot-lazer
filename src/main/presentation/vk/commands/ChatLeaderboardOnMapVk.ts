@@ -16,7 +16,7 @@ import {
 } from '../../commands/ChatLeaderboardOnMap';
 import {CommandMatchResult} from '../../common/CommandMatchResult';
 import {VkMessageContext} from '../VkMessageContext';
-import {VkOutputMessage, VkOutputMessagePageContent} from '../VkOutputMessage';
+import {VkOutputMessage, VkOutputMessageContent} from '../VkOutputMessage';
 
 export class ChatLeaderboardOnMapVk extends ChatLeaderboardOnMap<
   VkMessageContext,
@@ -95,40 +95,36 @@ export class ChatLeaderboardOnMapVk extends ChatLeaderboardOnMap<
       for (let i = 0; i < mapPlays.length; i += maxScoresPerPage) {
         playsChunks.push(sortedMapPlays.slice(i, i + maxScoresPerPage));
       }
-      const pageContents: VkOutputMessagePageContent[] = playsChunks.map(
-        chunk => {
-          const areAllMapsInChunkSame: boolean = (() => {
-            for (let i = 1; i < chunk.length; i++) {
-              if (
-                areMapsDifferentInStats(
-                  chunk[0].mapPlays.collection[0].mapInfo,
-                  chunk[i].mapPlays.collection[0].mapInfo
-                )
-              ) {
-                return false;
-              }
+      const pageContents: VkOutputMessageContent[] = playsChunks.map(chunk => {
+        const areAllMapsInChunkSame: boolean = (() => {
+          for (let i = 1; i < chunk.length; i++) {
+            if (
+              areMapsDifferentInStats(
+                chunk[0].mapPlays.collection[0].mapInfo,
+                chunk[i].mapPlays.collection[0].mapInfo
+              )
+            ) {
+              return false;
             }
-            return true;
-          })();
-          const text = this.createMapPlaysText(
-            areAllMapsInChunkSame
-              ? chunk[0].mapPlays.collection[0].mapInfo
-              : map,
-            chunk,
-            maxScoresPerPage,
-            server,
-            mode,
-            missingUsernames,
-            isChatLb
-          );
-          const fullText = `${text}`;
-          return {
-            text: fullText,
-            attachment: undefined,
-            buttons: [],
-          };
-        }
-      );
+          }
+          return true;
+        })();
+        const text = this.createMapPlaysText(
+          areAllMapsInChunkSame ? chunk[0].mapPlays.collection[0].mapInfo : map,
+          chunk,
+          maxScoresPerPage,
+          server,
+          mode,
+          missingUsernames,
+          isChatLb
+        );
+        const fullText = `${text}`;
+        return {
+          text: fullText,
+          attachment: undefined,
+          buttons: [],
+        };
+      });
       return {
         text: undefined,
         attachment: undefined,

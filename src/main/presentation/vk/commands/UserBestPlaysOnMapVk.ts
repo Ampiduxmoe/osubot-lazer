@@ -19,7 +19,7 @@ import {VkMessageContext} from '../VkMessageContext';
 import {
   VkOutputMessage,
   VkOutputMessageButton,
-  VkOutputMessagePageContent,
+  VkOutputMessageContent,
 } from '../VkOutputMessage';
 import {ChatLeaderboardOnMapVk} from './ChatLeaderboardOnMapVk';
 
@@ -102,32 +102,30 @@ export class UserBestPlaysOnMapVk extends UserBestPlaysOnMap<
       for (let i = 0; i < mapPlays.length; i += quantity) {
         playsChunks.push(mapPlays.slice(i, i + quantity));
       }
-      const pageContents: VkOutputMessagePageContent[] = playsChunks.map(
-        chunk => {
-          const areAllMapsInChunkSame: boolean = (() => {
-            for (let i = 1; i < chunk.length; i++) {
-              if (areMapsDifferentInStats(chunk[0].mapInfo, chunk[i].mapInfo)) {
-                return false;
-              }
+      const pageContents: VkOutputMessageContent[] = playsChunks.map(chunk => {
+        const areAllMapsInChunkSame: boolean = (() => {
+          for (let i = 1; i < chunk.length; i++) {
+            if (areMapsDifferentInStats(chunk[0].mapInfo, chunk[i].mapInfo)) {
+              return false;
             }
-            return true;
-          })();
-          const text = this.createMapPlaysText(
-            areAllMapsInChunkSame ? chunk[0].mapInfo : map,
-            chunk.map(c => c.playResult),
-            quantity,
-            server,
-            mode,
-            username
-          );
-          const fullText = `${text}${couldNotAttachCoverMessage}`;
-          return {
-            text: fullText,
-            attachment: attachment,
-            buttons: buttons,
-          };
-        }
-      );
+          }
+          return true;
+        })();
+        const text = this.createMapPlaysText(
+          areAllMapsInChunkSame ? chunk[0].mapInfo : map,
+          chunk.map(c => c.playResult),
+          quantity,
+          server,
+          mode,
+          username
+        );
+        const fullText = `${text}${couldNotAttachCoverMessage}`;
+        return {
+          text: fullText,
+          attachment: attachment,
+          buttons: buttons,
+        };
+      });
       return {
         text: undefined,
         attachment: undefined,
