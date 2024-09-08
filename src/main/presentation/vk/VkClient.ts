@@ -1,5 +1,5 @@
 import {randomUUID} from 'crypto';
-import {Keyboard, KeyboardBuilder, VK} from 'vk-io';
+import {ButtonColor, Keyboard, KeyboardBuilder, VK} from 'vk-io';
 import {APP_CODE_NAME} from '../../App';
 import {CalculationType} from '../../primitives/MaybeDeferred';
 import {Timespan} from '../../primitives/Timespan';
@@ -148,6 +148,103 @@ export class VkClient {
           });
         }
       }
+      if (isVkNavigationPayload(ctx.eventPayload)) {
+        const messageKey = ctx.eventPayload.navigate.messageKey;
+        const targetIndex = ctx.eventPayload.navigate.targetIndex;
+        const navigationMessage = this.navigationMessages[messageKey];
+        if (navigationMessage !== undefined) {
+          console.log(
+            `Executing navigation request from ${ctx.userId} in ${ctx.peerId} (payload=${JSON.stringify(ctx.eventPayload)})`
+          );
+          const owner = navigationMessage.ownerId;
+          if (owner !== undefined && ctx.userId !== owner) {
+            await ctx.answer({
+              type: 'show_snackbar',
+              text: 'Вы не можете управлять этим сообщением!',
+            });
+            return;
+          }
+          await navigationMessage.goTo(targetIndex);
+        } else {
+          console.log(
+            `Invalid navigation request from ${ctx.userId} in ${ctx.peerId} (payload=${JSON.stringify(ctx.eventPayload)})`
+          );
+          // Bot probably crashed and can't switch pages on this message anymore
+          // So we try to remove callback buttons
+          const messages =
+            await this.vk.api.messages.getByConversationMessageId({
+              group_id: this.groupId,
+              peer_id: ctx.peerId,
+              conversation_message_ids: [ctx.conversationMessageId],
+            });
+          const targetMessage = messages.items[0];
+          if (targetMessage === undefined) {
+            console.error('Could not get own message with callback buttons');
+            return;
+          }
+          const targetAttachment =
+            targetMessage.attachments.length > 0
+              ? targetMessage.attachments
+                  .map(a => {
+                    let type: string | undefined = undefined;
+                    let ownerId: number | undefined = undefined;
+                    let id: number | undefined = undefined;
+                    for (const key in a) {
+                      if (key === 'type') {
+                        type = a[key];
+                      } else {
+                        if (a[key].owner_id !== undefined) {
+                          ownerId = a[key].owner_id;
+                        }
+                        if (a[key].owner_id !== undefined) {
+                          id = a[key].id;
+                        }
+                      }
+                    }
+                    if ((type && ownerId && id) === undefined) {
+                      return undefined;
+                    }
+                    return `${type}${ownerId}_${id}`;
+                  })
+                  .filter(a => a !== undefined)
+                  .join(',')
+              : undefined;
+          const targetKeyboard = (() => {
+            const kb = Object.assign({}, targetMessage.keyboard);
+            kb.buttons = kb.buttons
+              ?.map((row: {action?: {type?: string; payload?: string}}[]) =>
+                row.filter(b => {
+                  if (b.action?.type !== 'callback') {
+                    return true;
+                  }
+                  if (typeof b.action?.payload !== 'string') {
+                    return true;
+                  }
+                  try {
+                    if (JSON.parse(b.action.payload).navigate !== undefined) {
+                      return false;
+                    }
+                  } catch {
+                    return true;
+                  }
+                  return true;
+                })
+              )
+              .filter((row: unknown[]) => row.length > 0);
+            delete kb.author_id;
+            return kb;
+          })();
+          await this.vk.api.messages.edit({
+            group_id: this.groupId,
+            peer_id: ctx.peerId,
+            conversation_message_id: ctx.conversationMessageId,
+            message:
+              'Меню стало недействительно из-за внезапной перезагрузки бота',
+            attachment: targetAttachment,
+            keyboard: JSON.stringify(targetKeyboard),
+          });
+        }
+      }
     });
   }
 
@@ -167,6 +264,12 @@ export class VkClient {
     });
     console.log('Pagination cleanups started');
 
+    this.startNavigationCleanups({
+      intervalMs: 15e3,
+      expireTime: new Timespan().addMinutes(5),
+    });
+    console.log('Navigation cleanups started');
+
     console.log('VK client started!');
   }
 
@@ -179,6 +282,9 @@ export class VkClient {
     this.stopPaginationCleanups();
     console.log('Pagination cleanups stopped');
 
+    this.stopNavigationCleanups();
+    console.log('Navigation cleanups stopped');
+
     const paginatedMessagesCount = Object.values(this.paginatedMessages).length;
     if (paginatedMessagesCount > 0) {
       this.cleanUpPaginatedMessages(0);
@@ -186,6 +292,18 @@ export class VkClient {
         paginatedMessagesCount - Object.values(this.paginatedMessages).length;
       console.log(
         `Successfull pagination cleanup count: ${cleanUpCount}/${paginatedMessagesCount}`
+      );
+    }
+
+    const navigationMessagesCount = Object.values(
+      this.navigationMessages
+    ).length;
+    if (navigationMessagesCount > 0) {
+      await this.cleanUpNavigationMessages(0, 'botStopped');
+      const cleanUpCount =
+        navigationMessagesCount - Object.values(this.navigationMessages).length;
+      console.log(
+        `Successfull navigation cleanup count: ${cleanUpCount}/${navigationMessagesCount}`
       );
     }
 
@@ -320,6 +438,10 @@ export class VkClient {
       );
       if (outputMessage.pagination !== undefined) {
         await this.replyWithPagination(ctx, replyMessagePromise, outputMessage);
+        return matchResult;
+      }
+      if (outputMessage.navigation !== undefined) {
+        await this.replyWithNavigation(ctx, replyMessagePromise, outputMessage);
         return matchResult;
       }
       if (!outputMessage.text && !outputMessage.attachment) {
@@ -562,6 +684,254 @@ export class VkClient {
       },
     };
   }
+
+  private navigationCleanupsJob: NodeJS.Timeout | undefined = undefined;
+  startNavigationCleanups({
+    intervalMs,
+    expireTime,
+  }: {
+    intervalMs: number;
+    expireTime: Timespan;
+  }): void {
+    const expireTimeMs = expireTime.totalMiliseconds();
+    this.navigationCleanupsJob ??= setInterval(() => {
+      this.cleanUpNavigationMessages(expireTimeMs, 'timeUp');
+    }, intervalMs);
+  }
+  async cleanUpNavigationMessages(
+    maxAgeMs: number,
+    reason: NavigationCleanupReason
+  ): Promise<void> {
+    const now = Date.now();
+    const onExpirePromises: Promise<void>[] = [];
+    for (const entry of Object.values(this.navigationMessages)) {
+      if (now >= entry.creationTime + maxAgeMs) {
+        onExpirePromises.push(entry.onExpire(reason));
+      }
+    }
+    await Promise.all(onExpirePromises);
+  }
+  stopNavigationCleanups(): void {
+    if (this.navigationCleanupsJob !== undefined) {
+      clearInterval(this.navigationCleanupsJob);
+    }
+  }
+
+  private navigationMessages: {
+    [key: string]: {
+      creationTime: number;
+      ownerId: number | undefined;
+      peerId: number;
+      goTo: (index: number) => Promise<void>;
+      onExpire: (reason: NavigationCleanupReason) => Promise<void>;
+    };
+  } = {};
+  private async replyWithNavigation(
+    ctx: VkMessageContext,
+    replyMessagePromise: Promise<VkMessageContext> | undefined,
+    outputMessage: VkOutputMessage
+  ): Promise<void> {
+    const [userInfo] = await this.vk.api.users.get({
+      user_ids: [ctx.senderId],
+    });
+    const allowedNavigationMessages = 3;
+    let foundNavigationMessages = 0;
+    const allNavigationMessages = [...Object.values(this.navigationMessages)];
+    for (const navigationMessage of allNavigationMessages.reverse()) {
+      if (navigationMessage.peerId === ctx.peerId) {
+        foundNavigationMessages += 1;
+        if (foundNavigationMessages >= allowedNavigationMessages) {
+          navigationMessage.onExpire('limitReached');
+        }
+      }
+    }
+    type DisplayMessage = {
+      text: string | undefined;
+      attachment: string | undefined;
+      keyboard: KeyboardBuilder | undefined;
+    };
+    let currentRootMessage = outputMessage;
+    const trySetNewRoot: (
+      targetIndex: number,
+      navigationEnabled: boolean,
+      messageKey: string
+    ) => Promise<DisplayMessage | undefined> = async (
+      i,
+      navigationEnabled,
+      messageKey
+    ) => {
+      try {
+        const oldNavigationPage = currentRootMessage.navigation!;
+        const targetPage = await (async () => {
+          if (i === -1) {
+            return oldNavigationPage;
+          }
+          const targetPageButton = (() => {
+            let currentNavButtonIndex = 0;
+            for (const row of oldNavigationPage.navigationButtons ?? []) {
+              for (const button of row) {
+                if (currentNavButtonIndex === i) {
+                  return button;
+                }
+                currentNavButtonIndex += 1;
+              }
+            }
+            return undefined;
+          })();
+          if (targetPageButton === undefined) {
+            return undefined;
+          }
+          const newMessage =
+            await targetPageButton.generateMessage().resultValue;
+          currentRootMessage = newMessage;
+          return newMessage.navigation;
+        })();
+        if (targetPage === undefined) {
+          return undefined;
+        }
+        const targetContent = targetPage.currentContent;
+        const text = targetContent?.text ?? '';
+        const attachment = targetContent?.attachment;
+        const buttons = targetContent?.buttons ?? [];
+        const keyboard = Keyboard.builder().inline(true);
+        // Add content-related buttons
+        for (const row of buttons) {
+          for (const button of row) {
+            keyboard.textButton({
+              label:
+                button.text.length > 40
+                  ? button.text.substring(0, 37) + '...'
+                  : button.text,
+              payload: {
+                target: APP_CODE_NAME,
+                command: button.command,
+              },
+            });
+          }
+          keyboard.row();
+        }
+        // Add navigation-related buttons if needed
+        const targetNavButtons = targetPage.navigationButtons ?? [];
+        if (navigationEnabled && targetNavButtons.length !== 0) {
+          let currentNavButtonIndex = 0;
+          for (const row of targetNavButtons) {
+            for (const button of row) {
+              keyboard.callbackButton({
+                color: ButtonColor.PRIMARY,
+                label:
+                  button.text.length > 40
+                    ? button.text.substring(0, 37) + '...'
+                    : button.text,
+                payload: {
+                  target: APP_CODE_NAME,
+                  navigate: {
+                    messageKey: messageKey,
+                    targetIndex: currentNavButtonIndex++,
+                  },
+                } as VkNavigationButtonPayload,
+              });
+            }
+            keyboard.row();
+          }
+        }
+        return {
+          text:
+            userInfo !== undefined &&
+            navigationEnabled &&
+            targetNavButtons.length !== 0 &&
+            ctx.peerId !== ctx.senderId
+              ? `Меню управляет: ${userInfo.first_name} ${userInfo.last_name}\n\n${text}`
+              : text,
+          attachment: attachment,
+          keyboard: keyboard,
+        };
+      } catch (e) {
+        console.error('Could not generate new navigation page');
+        console.error(e);
+        return undefined;
+      }
+    };
+    const messageKey = randomUUID();
+    const botMessageCtx = await (async () => {
+      const firstMessage = await trySetNewRoot(-1, true, messageKey);
+      if (firstMessage === undefined) {
+        throw Error('Could not create first page of the message');
+      }
+      const text = firstMessage.text ?? '';
+      const attachment = firstMessage.attachment;
+      const keyboard = firstMessage.keyboard;
+      if (replyMessagePromise !== undefined) {
+        const botMessage = await replyMessagePromise;
+        await botMessage.editMessage({
+          message: text,
+          attachment,
+          keyboard,
+        });
+        return botMessage;
+      } else {
+        return await ctx.reply(text, {attachment, keyboard});
+      }
+    })();
+    this.navigationMessages[messageKey] = {
+      creationTime: Date.now(),
+      ownerId: userInfo !== undefined ? ctx.senderId : undefined,
+      peerId: ctx.peerId,
+      goTo: async index => {
+        const targetMessage = await trySetNewRoot(index, true, messageKey);
+        if (targetMessage === undefined) {
+          await botMessageCtx.editMessage({
+            message: 'Произошла ошибка во время выполнения команды',
+            attachment: undefined,
+            keyboard: undefined,
+          });
+          delete this.navigationMessages[messageKey];
+          return;
+        }
+        const text = targetMessage.text ?? '';
+        const attachment = targetMessage.attachment;
+        const keyboard = targetMessage.keyboard;
+        await botMessageCtx.editMessage({message: text, attachment, keyboard});
+        // still in use, update time:
+        this.navigationMessages[messageKey].creationTime = Date.now();
+        if (
+          (currentRootMessage.navigation?.navigationButtons?.length ?? 0) === 0
+        ) {
+          // user can't navigate anymore
+          delete this.navigationMessages[messageKey];
+        }
+      },
+      onExpire: async reason => {
+        const targetMessage = await trySetNewRoot(-1, false, messageKey);
+        if (targetMessage === undefined) {
+          await botMessageCtx.editMessage({
+            message: 'Произошла ошибка во время завершения работы меню',
+            attachment: undefined,
+            keyboard: undefined,
+          });
+          return;
+        }
+        const text = targetMessage.text ?? '';
+        const attachment = targetMessage.attachment;
+        const keyboard = targetMessage.keyboard;
+        const reasonText = (() => {
+          switch (reason) {
+            case 'botStopped':
+              return 'плановая перезагрузка бота';
+            case 'timeUp':
+              return 'время бездействия превышено';
+            case 'limitReached':
+              return 'количество меню в чате превышено';
+          }
+        })();
+        await botMessageCtx.editMessage({
+          message: `Меню больше недействительно: ${reasonText}\n\n${text}`,
+          attachment,
+          keyboard,
+        });
+        delete this.navigationMessages[messageKey];
+      },
+    };
+  }
 }
 
 type VkPaginationButtonPayload = {
@@ -594,6 +964,36 @@ function isVkPaginationPayload(
   return true;
 }
 
+type VkNavigationButtonPayload = {
+  target: typeof APP_CODE_NAME;
+  navigate: {
+    messageKey: string;
+    targetIndex: number;
+  };
+};
+
+function isVkNavigationPayload(
+  payload: unknown
+): payload is VkNavigationButtonPayload {
+  if (typeof payload !== 'object') {
+    return false;
+  }
+  const navPayload = payload as Partial<VkNavigationButtonPayload>;
+  if (navPayload.target !== APP_CODE_NAME) {
+    return false;
+  }
+  if (navPayload.navigate === undefined) {
+    return false;
+  }
+  if (
+    typeof navPayload.navigate?.messageKey !== 'string' ||
+    typeof navPayload.navigate?.targetIndex !== 'number'
+  ) {
+    return false;
+  }
+  return true;
+}
+
 type BestCommandMatch = {
   matchResult: CommandMatchResult<UnknownExecutionParams>;
   command: TextCommand<
@@ -604,3 +1004,5 @@ type BestCommandMatch = {
   >;
   ctx: VkMessageContext;
 };
+
+type NavigationCleanupReason = 'timeUp' | 'limitReached' | 'botStopped';

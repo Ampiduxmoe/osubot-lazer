@@ -1,3 +1,5 @@
+import {MaybeDeferred} from '../../primitives/MaybeDeferred';
+
 export type VkOutputMessage = VkOutputMessageContent & {
   /**
    * Paginated message description.
@@ -10,6 +12,17 @@ export type VkOutputMessage = VkOutputMessageContent & {
       currentIndex: number,
       targetIndex: number
     ) => string | undefined;
+  };
+  /**
+   * Navigation message description.
+   * If specified, overrides base {@link VkOutputMessageContent}
+   */
+  navigation?: {
+    currentContent?: VkOutputMessageContent;
+    navigationButtons?: {
+      text: string;
+      generateMessage: () => MaybeDeferred<VkOutputMessage>;
+    }[][];
   };
 };
 

@@ -69,6 +69,7 @@ import {AnouncementsVk} from './presentation/vk/commands/AnouncementsVk';
 import {ApiUsageSummaryVk} from './presentation/vk/commands/ApiUsageSummaryVk';
 import {BeatmapInfoVk} from './presentation/vk/commands/BeatmapInfoVk';
 import {BeatmapMenuVk} from './presentation/vk/commands/BeatmapMenuVk';
+import {BotMenuVk} from './presentation/vk/commands/BotMenuVk';
 import {ChatLeaderboardOnMapVk} from './presentation/vk/commands/ChatLeaderboardOnMapVk';
 import {ChatLeaderboardVk} from './presentation/vk/commands/ChatLeaderboardVk';
 import {ContactAdminVk} from './presentation/vk/commands/ContactAdminVk';
@@ -729,7 +730,7 @@ export class App {
       appUserCommandAliasesRepository,
       aliasProcessor
     );
-    const publicCommands = [
+    const basicCommands = [
       setUsername,
       userInfo,
       beatmapInfo,
@@ -739,10 +740,9 @@ export class App {
       chatLeaderboard,
       chatLeaderboardOnMap,
       userUpdate,
-      alias,
     ];
-    const beatmapMenuCommand = new BeatmapMenuVk(mainTextProcessor);
-    const contactAdminCommand = new ContactAdminVk(
+    const beatmapMenu = new BeatmapMenuVk(mainTextProcessor);
+    const contactAdmin = new ContactAdminVk(
       group.id,
       mainTextProcessor,
       getInitiatorAppUserId,
@@ -750,8 +750,8 @@ export class App {
       forwardToAdmin,
       saveContactAdminMessageUseCase
     );
-    const whynotCommand = new WhynotVk(publicCommands, []);
-    whynotCommand.getRepresentativeCommandPrefix = (matchResult, command) => {
+    const whynot = new WhynotVk(basicCommands, []);
+    whynot.getRepresentativeCommandPrefix = (matchResult, command) => {
       const getLongestPrefix = (prefixes: string[]): string => {
         const maxPrefixLength = Math.max(...prefixes.map(p => p.length));
         const longestPrefix = prefixes.find(p => p.length === maxPrefixLength);
@@ -790,7 +790,7 @@ export class App {
       }
       return getLongestPrefix(command.prefixes);
     };
-    whynotCommand.getRepresentativeCommandShortDescription = (
+    whynot.getRepresentativeCommandShortDescription = (
       matchResult,
       command
     ) => {
@@ -823,8 +823,8 @@ export class App {
       }
       return command.shortDescription;
     };
-    for (const command of [...publicCommands, beatmapMenuCommand]) {
-      command.link(publicCommands);
+    for (const command of [...basicCommands, beatmapMenu]) {
+      command.link(basicCommands);
     }
     const adminCommands = [
       new ApiUsageSummaryVk(mainTextProcessor, getApiUsageSummaryUseCase),
@@ -842,11 +842,15 @@ export class App {
         deleteContactAdminMessageUseCase
       ),
     ];
-    const helpCommand = new HelpVk(mainTextProcessor, [
-      ...publicCommands,
-      whynotCommand,
+    const botMenu = new BotMenuVk(group.id, mainTextProcessor);
+    const help = new HelpVk(mainTextProcessor, [
+      ...basicCommands,
+      alias,
+      whynot,
+      botMenu,
     ]);
-    helpCommand.commandCategories = {
+    botMenu.link([...basicCommands, whynot, help]);
+    help.commandCategories = {
       'Связанные с игровым сервером (требуют указания префикса сервера)': [
         ...[setUsername, userInfo, beatmapInfo].map(command => ({command})),
         {
@@ -872,15 +876,17 @@ export class App {
       ],
       Вспомогательные: [...[alias].map(command => ({command}))],
       'Помощь по боту': [
-        ...[helpCommand, whynotCommand].map(command => ({command})),
+        ...[botMenu, help, whynot].map(command => ({command})),
       ],
     };
     vkClient.publicCommands.push(
-      helpCommand,
-      ...publicCommands,
-      beatmapMenuCommand,
-      whynotCommand,
-      contactAdminCommand
+      botMenu,
+      help,
+      ...basicCommands,
+      beatmapMenu,
+      alias,
+      whynot,
+      contactAdmin
     );
     vkClient.adminCommands.push(...adminCommands);
 
@@ -938,7 +944,7 @@ export class App {
       if (!matchResult.isPartialMatch) {
         return;
       }
-      if (![...helpCommand.commands, helpCommand].includes(command)) {
+      if (![...help.commands, help].includes(command)) {
         return;
       }
       const tokenMapping = matchResult.partialMapping!;
@@ -956,14 +962,14 @@ export class App {
         UserRecentPlays.recentPassesPrefixes.matchIgnoringCase(usedPrefix)
           ? 'последние пассы'
           : command.shortDescription;
-      const helpCommandStr = helpCommand.unparse({
+      const helpCommandStr = help.unparse({
         commandPrefix: usedPrefix,
         usageVariant: undefined,
       });
       if (ctx.text === undefined) {
         throw Error('Text should not be undefined on match');
       }
-      const whynotCommandStr = whynotCommand.unparse({
+      const whynotCommandStr = whynot.unparse({
         commandText: ctx.text,
       });
       const replyText = `
