@@ -47,28 +47,22 @@ export class BotMenuVk extends BotMenu<VkMessageContext, VkOutputMessage> {
   }
 
   createBotMenuMessage(): MaybeDeferred<VkOutputMessage> {
-    const valuePromise = (async () => {
-      const page = await this.mainPage();
-      const outputMessage: VkOutputMessage = {
-        text: undefined,
-        attachment: undefined,
-        buttons: undefined,
-        navigation: page,
-      };
-      return outputMessage;
-    })();
-    return MaybeDeferred.fromInstantPromise(valuePromise);
+    return toOutput(this.mainPage());
   }
 
   async mainPage(
+    parentPath?: string[],
     ...transformations: PageTransformation[]
   ): Promise<NavigationPage> {
     const withBackButton: PageTransformation = page => {
-      addBackButton(page, () => this.mainPage(...transformations));
+      addBackButton(page, () => this.mainPage(parentPath, ...transformations));
     };
+    const currentPageTitle = 'Меню';
+    const path = [...(parentPath ?? []), currentPageTitle];
+    const pathString = getPathString(path);
     const page: NavigationPage = {
       currentContent: {
-        text: 'Чем помочь?',
+        text: `${pathString}\n\nЧем помочь?`,
         attachment: undefined,
         buttons: undefined,
       },
@@ -77,28 +71,28 @@ export class BotMenuVk extends BotMenu<VkMessageContext, VkOutputMessage> {
           {
             text: 'Краткий гайд: быстрый старт',
             generateMessage: () =>
-              toOutput(this.quickStartMenuPage(withBackButton)),
+              toOutput(this.quickStartMenuPage(path, withBackButton)),
           },
         ],
         [
           {
             text: 'Популярные команды',
             generateMessage: () =>
-              toOutput(this.popularCommandsMenuPage(withBackButton)),
+              toOutput(this.popularCommandsMenuPage(path, withBackButton)),
           },
         ],
         [
           {
             text: 'Список команд',
             generateMessage: () =>
-              toOutput(this.commandListPage(withBackButton)),
+              toOutput(this.commandListPage(path, withBackButton)),
           },
         ],
         [
           {
             text: 'Помощь по конкретной команде',
             generateMessage: () =>
-              toOutput(this.commandHelpMenuPage(0, withBackButton)),
+              toOutput(this.commandHelpMenuPage(0, path, withBackButton)),
           },
         ],
         [
@@ -114,14 +108,20 @@ export class BotMenuVk extends BotMenu<VkMessageContext, VkOutputMessage> {
   }
 
   async quickStartMenuPage(
+    parentPath?: string[],
     ...transformations: PageTransformation[]
   ): Promise<NavigationPage> {
     const withBackButton: PageTransformation = page => {
-      addBackButton(page, () => this.quickStartMenuPage(...transformations));
+      addBackButton(page, () =>
+        this.quickStartMenuPage(parentPath, ...transformations)
+      );
     };
+    const currentPageTitle = 'Быстрый старт';
+    const path = [...(parentPath ?? []), currentPageTitle];
+    const pathString = getPathString(path);
     const page: NavigationPage = {
       currentContent: {
-        text: 'Выберите сервер',
+        text: `${pathString}\n\nВыберите сервер`,
         attachment: undefined,
         buttons: undefined,
       },
@@ -131,7 +131,11 @@ export class BotMenuVk extends BotMenu<VkMessageContext, VkOutputMessage> {
             text: serverName,
             generateMessage: () =>
               toOutput(
-                this.quickStartGuidePage(OsuServer[serverName], withBackButton)
+                this.quickStartGuidePage(
+                  OsuServer[serverName],
+                  path,
+                  withBackButton
+                )
               ),
           },
         ]),
@@ -142,8 +146,11 @@ export class BotMenuVk extends BotMenu<VkMessageContext, VkOutputMessage> {
 
   async quickStartGuidePage(
     server: OsuServer,
+    parentPath?: string[],
     ...transformations: PageTransformation[]
   ): Promise<NavigationPage> {
+    const currentPageTitle = OsuServer[server];
+    const path = [...(parentPath ?? []), currentPageTitle];
     const setUsernameCommandText: string | undefined = (() => {
       const setUsernameCommand = this.otherCommands.find(
         c => c instanceof SetUsername
@@ -180,7 +187,7 @@ export class BotMenuVk extends BotMenu<VkMessageContext, VkOutputMessage> {
       helpCommandText === undefined
     ) {
       console.error(`Could not generate ${Help.name} command text`);
-      return this.generatePageErrorPage(...transformations);
+      return this.generatePageErrorPage(path, ...transformations);
     }
     const userInfoCommandText: string | undefined = (() => {
       const userInfoCommand = this.otherCommands.find(
@@ -197,7 +204,7 @@ export class BotMenuVk extends BotMenu<VkMessageContext, VkOutputMessage> {
     })();
     if (userInfoCommandText === undefined) {
       console.error(`Could not generate ${UserInfo.name} command text`);
-      return this.generatePageErrorPage(...transformations);
+      return this.generatePageErrorPage(path, ...transformations);
     }
     const topPlaysCommandText: string | undefined = (() => {
       const topPlaysCommand = this.otherCommands.find(
@@ -217,7 +224,7 @@ export class BotMenuVk extends BotMenu<VkMessageContext, VkOutputMessage> {
     })();
     if (topPlaysCommandText === undefined) {
       console.error(`Could not generate ${UserBestPlays.name} command text`);
-      return this.generatePageErrorPage(...transformations);
+      return this.generatePageErrorPage(path, ...transformations);
     }
     const recentPlaysCommandText: string | undefined = (() => {
       const recentPlaysCommand = this.otherCommands.find(
@@ -238,11 +245,9 @@ export class BotMenuVk extends BotMenu<VkMessageContext, VkOutputMessage> {
     })();
     if (recentPlaysCommandText === undefined) {
       console.error(`Could not generate ${UserRecentPlays.name} command text`);
-      return this.generatePageErrorPage(...transformations);
+      return this.generatePageErrorPage(path, ...transformations);
     }
     const text = `
-
-Сервер: ${OsuServer[server]}
 
 1. Привяжите ник с помощью команды «${setUsernameCommandText}»
 Это позволит не указывать ник в других командах
@@ -264,20 +269,24 @@ export class BotMenuVk extends BotMenu<VkMessageContext, VkOutputMessage> {
 Если ваш вопрос связан с другими сообщениями, добавьте их к своему сообщению либо цитируя («Ответить») либо прикрепляя («Переслать»)
 
     `.trim();
-    return this.textPage(text, ...transformations);
+    return this.textPage(text, path, ...transformations);
   }
 
   async popularCommandsMenuPage(
+    parentPath?: string[],
     ...transformations: PageTransformation[]
   ): Promise<NavigationPage> {
     const withBackButton: PageTransformation = page => {
       addBackButton(page, () =>
-        this.popularCommandsMenuPage(...transformations)
+        this.popularCommandsMenuPage(parentPath, ...transformations)
       );
     };
+    const currentPageTitle = 'Популярные команды';
+    const path = [...(parentPath ?? []), currentPageTitle];
+    const pathString = getPathString(path);
     const page: NavigationPage = {
       currentContent: {
-        text: 'Выберите сервер',
+        text: `${pathString}\n\nВыберите сервер`,
         attachment: undefined,
         buttons: undefined,
       },
@@ -287,7 +296,11 @@ export class BotMenuVk extends BotMenu<VkMessageContext, VkOutputMessage> {
             text: serverName,
             generateMessage: () =>
               toOutput(
-                this.popularCommandsPage(OsuServer[serverName], withBackButton)
+                this.popularCommandsPage(
+                  OsuServer[serverName],
+                  path,
+                  withBackButton
+                )
               ),
           },
         ]),
@@ -298,18 +311,22 @@ export class BotMenuVk extends BotMenu<VkMessageContext, VkOutputMessage> {
 
   async popularCommandsPage(
     server: OsuServer,
+    parentPath?: string[],
     ...transformations: PageTransformation[]
   ): Promise<NavigationPage> {
+    const currentPageTitle = OsuServer[server];
+    const path = [...(parentPath ?? []), currentPageTitle];
+    const pathString = getPathString(path);
     const commandButtons = this.createCommandButtons(server);
     if (commandButtons === undefined) {
       console.error(
         `Could not generate buttons for commands on ${OsuServer[server]}`
       );
-      return this.generatePageErrorPage(...transformations);
+      return this.generatePageErrorPage(path, ...transformations);
     }
     const page: NavigationPage = {
       currentContent: {
-        text: `Сервер: ${OsuServer[server]}`,
+        text: pathString,
         attachment: undefined,
         buttons: commandButtons,
       },
@@ -318,12 +335,16 @@ export class BotMenuVk extends BotMenu<VkMessageContext, VkOutputMessage> {
   }
 
   async commandListPage(
+    parentPath?: string[],
     ...transformations: PageTransformation[]
   ): Promise<NavigationPage> {
+    const currentPageTitle = 'Список команд';
+    const path = [...(parentPath ?? []), currentPageTitle];
+    const pathString = getPathString(path);
     const helpCommand = this.otherCommands.find(c => c instanceof HelpVk);
     if (helpCommand === undefined) {
       console.error(`Could not find ${HelpVk.name} command`);
-      return this.generatePageErrorPage(...transformations);
+      return this.generatePageErrorPage(path, ...transformations);
     }
     const helpCommandOutput: VkOutputMessage = await (async () => {
       const processingResult = helpCommand.process({
@@ -337,7 +358,7 @@ export class BotMenuVk extends BotMenu<VkMessageContext, VkOutputMessage> {
     })();
     const page: NavigationPage = {
       currentContent: {
-        text: helpCommandOutput.text,
+        text: `${pathString}\n\n` + helpCommandOutput.text,
         attachment: helpCommandOutput.attachment,
         buttons: helpCommandOutput.buttons,
       },
@@ -347,17 +368,22 @@ export class BotMenuVk extends BotMenu<VkMessageContext, VkOutputMessage> {
 
   async commandHelpMenuPage(
     pageIndex: number,
+    parentPath?: string[],
     ...transformations: PageTransformation[]
   ): Promise<NavigationPage> {
     const withBackButton: PageTransformation = page => {
       addBackButton(page, () =>
-        this.commandHelpMenuPage(pageIndex, ...transformations)
+        this.commandHelpMenuPage(pageIndex, parentPath, ...transformations)
       );
     };
+    // since we don't yet know if it is a single-page menu
+    // or should we display page number
+    const earlyPageTitle = 'Помощь по командам';
+    const earlyPath = [...(parentPath ?? []), earlyPageTitle];
     const helpCommand = this.otherCommands.find(c => c instanceof HelpVk);
     if (helpCommand === undefined) {
       console.error(`Could not find ${HelpVk.name} command`);
-      return this.generatePageErrorPage(...transformations);
+      return this.generatePageErrorPage(earlyPath, ...transformations);
     }
     const getLongestPrefix = (prefixes: string[]): string => {
       const maxPrefixLength = Math.max(...prefixes.map(p => p.length));
@@ -408,6 +434,13 @@ export class BotMenuVk extends BotMenu<VkMessageContext, VkOutputMessage> {
     }
     const maxPrefixRows = 4;
     const maxPageIndex = Math.floor(prefixRows.length / maxPrefixRows);
+    // now we know if we should display page number
+    const currentPageTitle =
+      maxPageIndex === 0
+        ? earlyPageTitle
+        : earlyPageTitle + ` (${pageIndex + 1})`;
+    const path = [...(parentPath ?? []), currentPageTitle];
+    const pathString = getPathString(path);
     const prevPageButton = (() => {
       if (pageIndex < 1) {
         return undefined;
@@ -415,7 +448,13 @@ export class BotMenuVk extends BotMenu<VkMessageContext, VkOutputMessage> {
       return {
         text: '◀ Предыдущие',
         generateMessage: () =>
-          toOutput(this.commandHelpMenuPage(pageIndex - 1, ...transformations)),
+          toOutput(
+            this.commandHelpMenuPage(
+              pageIndex - 1,
+              parentPath,
+              ...transformations
+            )
+          ),
       };
     })();
     const nextPageButton = (() => {
@@ -425,7 +464,13 @@ export class BotMenuVk extends BotMenu<VkMessageContext, VkOutputMessage> {
       return {
         text: 'Следующие ▶',
         generateMessage: () =>
-          toOutput(this.commandHelpMenuPage(pageIndex + 1, ...transformations)),
+          toOutput(
+            this.commandHelpMenuPage(
+              pageIndex + 1,
+              parentPath,
+              ...transformations
+            )
+          ),
       };
     })();
     const paginationButtons = [prevPageButton, nextPageButton].filter(
@@ -433,7 +478,7 @@ export class BotMenuVk extends BotMenu<VkMessageContext, VkOutputMessage> {
     );
     const page: NavigationPage = {
       currentContent: {
-        text: 'Выберите команду',
+        text: `${pathString}\n\nВыберите команду`,
         attachment: undefined,
         buttons: undefined,
       },
@@ -444,7 +489,7 @@ export class BotMenuVk extends BotMenu<VkMessageContext, VkOutputMessage> {
             row.map(prefix => ({
               text: prefix,
               generateMessage: () =>
-                toOutput(this.commandHelpPage(prefix, withBackButton)),
+                toOutput(this.commandHelpPage(prefix, path, withBackButton)),
             }))
           ),
         ...(paginationButtons.length !== 0 ? [paginationButtons] : []),
@@ -455,40 +500,51 @@ export class BotMenuVk extends BotMenu<VkMessageContext, VkOutputMessage> {
 
   async commandHelpPage(
     prefix: string,
+    parentPath?: string[],
     ...transformations: PageTransformation[]
   ): Promise<NavigationPage> {
     const withBackButton: PageTransformation = page => {
       addBackButton(page, () =>
-        this.commandHelpPage(prefix, ...transformations)
+        this.commandHelpPage(prefix, parentPath, ...transformations)
       );
     };
+    const currentPageTitle = prefix;
+    const path = [...(parentPath ?? []), currentPageTitle];
+    const pathString = getPathString(path);
     const helpCommand = this.otherCommands.find(c => c instanceof HelpVk);
     if (helpCommand === undefined) {
       console.error(`Could not find ${HelpVk.name} command`);
-      return this.generatePageErrorPage(...transformations);
+      return this.generatePageErrorPage(path, ...transformations);
     }
     const usageVariants = Object.keys(
       helpCommand.commands.find(c => c.prefixes.matchIgnoringCase(prefix))
         ?.argGroups ?? {}
     );
     if (usageVariants.length > 0) {
+      const variantRows: string[][] = [];
+      for (let i = 0; i < usageVariants.length; i += 2) {
+        variantRows.push(usageVariants.slice(i, i + 2));
+      }
       const page: NavigationPage = {
         currentContent: {
-          text: `Команда: ${prefix}\n\nВыберите вариант команды`,
+          text: `${pathString}\n\nВыберите вариант команды`,
           attachment: undefined,
           buttons: undefined,
         },
-        navigationButtons: [
-          ...usageVariants.map(variant => [
-            {
-              text: variant,
-              generateMessage: () =>
-                toOutput(
-                  this.commandVariantHelpPage(prefix, variant, withBackButton)
-                ),
-            },
-          ]),
-        ],
+        navigationButtons: variantRows.map(row =>
+          row.map(variant => ({
+            text: variant,
+            generateMessage: () =>
+              toOutput(
+                this.commandVariantHelpPage(
+                  prefix,
+                  variant,
+                  path,
+                  withBackButton
+                )
+              ),
+          }))
+        ),
       };
       return transformed(page, ...transformations);
     }
@@ -504,7 +560,7 @@ export class BotMenuVk extends BotMenu<VkMessageContext, VkOutputMessage> {
     })();
     const page: NavigationPage = {
       currentContent: {
-        text: helpCommandOutput.text,
+        text: `${pathString}\n\n` + helpCommandOutput.text,
         attachment: helpCommandOutput.attachment,
         buttons: helpCommandOutput.buttons,
       },
@@ -515,12 +571,16 @@ export class BotMenuVk extends BotMenu<VkMessageContext, VkOutputMessage> {
   async commandVariantHelpPage(
     prefix: string,
     usageVariant: string,
+    parentPath?: string[],
     ...transformations: PageTransformation[]
   ): Promise<NavigationPage> {
+    const currentPageTitle = usageVariant;
+    const path = [...(parentPath ?? []), currentPageTitle];
+    const pathString = getPathString(path);
     const helpCommand = this.otherCommands.find(c => c instanceof HelpVk);
     if (helpCommand === undefined) {
       console.error(`Could not find ${HelpVk.name} command`);
-      return this.generatePageErrorPage(...transformations);
+      return this.generatePageErrorPage(path, ...transformations);
     }
     const helpCommandOutput: VkOutputMessage = await (async () => {
       const processingResult = helpCommand.process({
@@ -534,7 +594,7 @@ export class BotMenuVk extends BotMenu<VkMessageContext, VkOutputMessage> {
     })();
     const page: NavigationPage = {
       currentContent: {
-        text: helpCommandOutput.text,
+        text: `${pathString}\n\n` + helpCommandOutput.text,
         attachment: helpCommandOutput.attachment,
         buttons: helpCommandOutput.buttons,
       },
@@ -542,44 +602,16 @@ export class BotMenuVk extends BotMenu<VkMessageContext, VkOutputMessage> {
     return transformed(page, ...transformations);
   }
 
-  async advancedUsagePage(
-    ...transformations: PageTransformation[]
-  ): Promise<NavigationPage> {
-    const withBackButton: PageTransformation = page => {
-      addBackButton(page, () => this.advancedUsagePage(...transformations));
-    };
-    const page: NavigationPage = {
-      currentContent: {
-        text: 'WIP page',
-        attachment: undefined,
-        buttons: undefined,
-      },
-      navigationButtons: [
-        [
-          {
-            text: 'Deep link #1',
-            generateMessage: () =>
-              toOutput(this.textPage('Deep link #1 content', withBackButton)),
-          },
-        ],
-        [
-          {
-            text: 'Deep link #2 (to main page)',
-            generateMessage: () => toOutput(this.mainPage(withBackButton)),
-          },
-        ],
-      ],
-    };
-    return transformed(page, ...transformations);
-  }
-
   async textPage(
     text: string,
+    path?: string[],
     ...transformations: PageTransformation[]
   ): Promise<NavigationPage> {
+    const maybePathString =
+      path !== undefined ? `${getPathString(path)}\n\n` : '';
     const page: NavigationPage = {
       currentContent: {
-        text: text,
+        text: maybePathString + text,
         attachment: undefined,
         buttons: undefined,
       },
@@ -588,10 +620,12 @@ export class BotMenuVk extends BotMenu<VkMessageContext, VkOutputMessage> {
   }
 
   async generatePageErrorPage(
+    path?: string[],
     ...transformations: PageTransformation[]
   ): Promise<NavigationPage> {
     return this.textPage(
       'Произошла ошибка при генерации страницы',
+      path,
       ...transformations
     );
   }
@@ -742,6 +776,10 @@ function addBackButton(
       },
     ],
   ];
+}
+
+function getPathString(navigationPath: string[]): string {
+  return `[ ${navigationPath.join(' / ')} ]`;
 }
 
 type PageTransformation = (page: NavigationPage) => void | Promise<void>;
