@@ -417,13 +417,30 @@ export const MODE: CommandArgument<OsuRuleset> = {
       `^\\((${ALL_OSU_RULESET_KEYS.join('|')})\\)$`,
       'i'
     );
+    const modeAbbreviations = ALL_OSU_RULESET_KEYS.map(mode => mode[0]);
+    const uniqueAbbreviations = modeAbbreviations.filter(uniquesFilter);
+    if (uniqueAbbreviations.length === modeAbbreviations.length) {
+      const modeAbbreviationRegex = new RegExp(
+        `^\\((${modeAbbreviations.join('|')})\\)$`,
+        'i'
+      );
+      if (modeAbbreviationRegex.test(token)) {
+        return true;
+      }
+    }
     return modeRegex.test(token);
   },
   parse: function (token: string): OsuRuleset {
     const modeName = token.toLowerCase().substring(1, token.length - 1);
-    const rulesetKey = ALL_OSU_RULESET_KEYS.find(
-      x => x.toLowerCase() === modeName
-    );
+    const rulesetKey = (() => {
+      if (modeName.length === 1) {
+        // find by first letter
+        return ALL_OSU_RULESET_KEYS.find(
+          x => x.toLocaleLowerCase()[0] === modeName
+        );
+      }
+      return ALL_OSU_RULESET_KEYS.find(x => x.toLowerCase() === modeName);
+    })();
     if (rulesetKey === undefined) {
       throw Error('Token should be a valid OsuRuleset key');
     }
