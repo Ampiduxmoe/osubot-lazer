@@ -14,8 +14,8 @@ export class MainTextProcessor implements TextProcessor {
     let currentTokenPartStart: number | undefined = undefined;
     let currentQuotationChar: string | undefined = undefined;
     let isCurrentCharacterEscaped = false;
-    const isInsideQuotes = () => currentQuotationChar !== undefined;
-    const saveTokenPart = (part: string) => {
+    const isInsideQuotes = (): boolean => currentQuotationChar !== undefined;
+    const saveTokenPart = (part: string): void => {
       const currentTokenParts = tokenParts[currentTokenIndex];
       if (currentTokenParts === undefined) {
         tokenParts.push([part]);
@@ -23,12 +23,19 @@ export class MainTextProcessor implements TextProcessor {
         currentTokenParts.push(part);
       }
     };
+    const isEscapable = (char: string): boolean => {
+      if (currentQuotationChar !== undefined) {
+        return ['\\', currentQuotationChar].includes(char);
+      }
+      return ['\\'].includes(char);
+    };
     for (const [i, c] of text.split('').entries()) {
       if (c === escapeChar && isInsideQuotes()) {
         // We encountered escape character inside quotes
         // where it can be used to escape next character.
         // It has no special effect outside of quotes
-        if (!isCurrentCharacterEscaped) {
+        const nextChar = text[i + 1];
+        if (!isCurrentCharacterEscaped && isEscapable(nextChar)) {
           // This escape character was not escaped.
           // It means it escapes next character
           // and is not a part of an actual text,
@@ -123,10 +130,13 @@ export class MainTextProcessor implements TextProcessor {
       }
       return unusedQuoteChars;
     };
-    const transformString = (t: string, fn: (c: string) => string): string => {
+    const transformString = (
+      t: string,
+      fn: (c: string, i: number) => string
+    ): string => {
       return t
         .split('')
-        .map(c => fn(c))
+        .map((c, i) => fn(c, i))
         .join('');
     };
     return tokens
@@ -136,10 +146,14 @@ export class MainTextProcessor implements TextProcessor {
           : (() => {
               const selectedQuotationChar =
                 findUnusedQuotationChars(t)[0] ?? this.quoteChars[0];
-              const escapedToken = transformString(t, c =>
-                c !== selectedQuotationChar && c !== this.escapeChar
-                  ? c
-                  : this.escapeChar + c
+              const isEscapable = (char: string): boolean => {
+                return [this.escapeChar, selectedQuotationChar].includes(char);
+              };
+              const escapedToken = transformString(t, (c, i) =>
+                c === selectedQuotationChar ||
+                (c === this.escapeChar && isEscapable(t[i + 1]))
+                  ? this.escapeChar + c
+                  : c
               );
               return (
                 selectedQuotationChar + escapedToken + selectedQuotationChar
