@@ -2,6 +2,7 @@ export type AppConfig = {
   osu: {
     bancho: {
       oauth: BanchoOauthCredentials;
+      default_timeout: number;
     };
   };
   vk: {

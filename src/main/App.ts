@@ -170,6 +170,7 @@ export class App {
     const banchoClient = new BanchoClient({
       ouathClientId: banchoOuath.id,
       oauthClientSecret: banchoOuath.secret,
+      timeout: config.osu.bancho.default_timeout,
       saveOuathToken: async token => {
         await ensureTableIsInitialized(serializedObjects, 10e3);
         await serializedObjects.save(

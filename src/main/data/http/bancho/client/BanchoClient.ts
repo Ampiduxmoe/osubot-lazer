@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, {AxiosInstance} from 'axios';
 import {OsuOauthAccessToken} from '../OsuOauthAccessToken';
 import {Timespan} from '../../../../primitives/Timespan';
 import {BanchoUsers} from './users/BanchoUsers';
@@ -8,23 +8,7 @@ export class BanchoClient {
   private ouathClientId: number;
   private oauthClientSecret: string;
   private saveOuathToken: (t: OsuOauthAccessToken) => Promise<void>;
-  private httpClient = axios.create({
-    baseURL: 'https://osu.ppy.sh/api/v2',
-    timeout: 4e3,
-    validateStatus: (status: number) => {
-      if (status === 200) {
-        return true;
-      }
-      if (status === 404) {
-        return true;
-      }
-      if (status === 401) {
-        this.ouathToken = undefined;
-        return false;
-      }
-      return false;
-    },
-  });
+  private httpClient: AxiosInstance;
   private ouathToken: OsuOauthAccessToken | undefined = undefined;
   private tokenSafetyMargin = new Timespan().addHours(1);
 
@@ -38,6 +22,25 @@ export class BanchoClient {
   constructor(config: BanchoClientConfig) {
     this.ouathClientId = config.ouathClientId;
     this.oauthClientSecret = config.oauthClientSecret;
+
+    this.httpClient = axios.create({
+      baseURL: 'https://osu.ppy.sh/api/v2',
+      timeout: config.timeout,
+      validateStatus: (status: number) => {
+        if (status === 200) {
+          return true;
+        }
+        if (status === 404) {
+          return true;
+        }
+        if (status === 401) {
+          this.ouathToken = undefined;
+          return false;
+        }
+        return false;
+      },
+    });
+
     this.saveOuathToken = config.saveOuathToken;
     config.loadLatestOuathToken().then(token => {
       if (token === undefined) {
@@ -99,6 +102,7 @@ export class BanchoClient {
 type BanchoClientConfig = {
   ouathClientId: number;
   oauthClientSecret: string;
+  timeout: number;
   saveOuathToken: (t: OsuOauthAccessToken) => Promise<void>;
   loadLatestOuathToken: () => Promise<OsuOauthAccessToken | undefined>;
 };
