@@ -184,7 +184,7 @@ export abstract class SetUsername<TContext, TOutput> extends TextCommand<
 export type SetUsernameExecutionArgs = {
   server: OsuServer;
   username: string;
-  mode: OsuRuleset | undefined;
+  mode?: OsuRuleset;
 };
 
 export type SetUsernameViewParams = {

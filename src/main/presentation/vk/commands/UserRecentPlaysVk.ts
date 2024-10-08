@@ -322,9 +322,6 @@ ${ppEstimationMark}${pp}pp　 ${mapUrlShort}
                   server: server,
                   username: username,
                   mode: mode,
-                  startPosition: undefined,
-                  quantity: undefined,
-                  modPatterns: undefined,
                 }),
               },
             ],
@@ -347,10 +344,6 @@ ${ppEstimationMark}${pp}pp　 ${mapUrlShort}
         command: userBestPlaysOnMapCommand.unparse({
           server: server,
           beatmapId: beatmapId,
-          username: undefined,
-          startPosition: undefined,
-          quantity: undefined,
-          modPatterns: undefined,
         }),
       });
     }
@@ -363,8 +356,6 @@ ${ppEstimationMark}${pp}pp　 ${mapUrlShort}
         command: chatLeaderboardOnMapCommand.unparse({
           server: server,
           beatmapId: beatmapId,
-          usernameList: undefined,
-          modPatterns: undefined,
         }),
       });
     }

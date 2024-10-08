@@ -336,9 +336,9 @@ export abstract class ChatLeaderboardOnMap<
 
 export type ChatLeaderboardOnMapExecutionArgs = {
   server: OsuServer;
-  beatmapId: number | undefined;
-  usernameList: {usernames: string[]; isAdditive: boolean} | undefined;
-  modPatterns: ModPatternsArg | undefined;
+  beatmapId?: number;
+  usernameList?: {usernames: string[]; isAdditive: boolean};
+  modPatterns?: ModPatternsArg;
 };
 
 export type ChatLeaderboardOnMapViewParams = {

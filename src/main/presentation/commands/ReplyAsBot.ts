@@ -157,8 +157,8 @@ export type ReplyAsBotExecutionArgs<T> = {
   targetAppUserId: string;
   targetMessageId: string;
   text: string;
-  payloadFromText: string | undefined;
-  fullPayload: T | undefined;
+  payloadFromText?: string;
+  fullPayload?: T;
 };
 
 export type ReplyAsBotViewParams = {

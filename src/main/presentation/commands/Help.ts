@@ -170,8 +170,8 @@ export abstract class Help<TContext, TOutput> extends TextCommand<
 }
 
 export type HelpExecutionArgs = {
-  commandPrefix: string | undefined;
-  usageVariant: string | undefined;
+  commandPrefix?: string;
+  usageVariant?: string;
 };
 
 export type HelpViewParams<TContext, TOutput> = {

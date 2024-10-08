@@ -79,10 +79,6 @@ export class BeatmapMenuVk extends BeatmapMenu<
         command: userBestPlaysOnMapCommand.unparse({
           server: server,
           beatmapId: beatmapId,
-          username: undefined,
-          startPosition: undefined,
-          quantity: undefined,
-          modPatterns: undefined,
         }),
       });
     }
@@ -95,8 +91,6 @@ export class BeatmapMenuVk extends BeatmapMenu<
         command: chatLeaderboardOnMapCommand.unparse({
           server: server,
           beatmapId: beatmapId,
-          usernameList: undefined,
-          modPatterns: undefined,
         }),
       });
     }

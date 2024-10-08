@@ -423,10 +423,6 @@ ${pos}. ${modsString}
         command: userBestPlaysOnMapCommand.unparse({
           server: server,
           beatmapId: beatmapId,
-          username: undefined,
-          startPosition: undefined,
-          quantity: undefined,
-          modPatterns: undefined,
         }),
       });
     }
@@ -439,8 +435,6 @@ ${pos}. ${modsString}
         command: chatLeaderboardOnMapCommand.unparse({
           server: server,
           beatmapId: beatmapId,
-          usernameList: undefined,
-          modPatterns: undefined,
         }),
       });
     }

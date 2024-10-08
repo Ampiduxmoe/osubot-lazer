@@ -470,7 +470,7 @@ export abstract class BeatmapInfo<TContext, TOutput> extends TextCommand<
 
 export type BeatmapInfoExecutionArgs = {
   server: OsuServer;
-  beatmapId: number | undefined;
+  beatmapId?: number;
   mapScoreSimulationOsu?: MapScoreSimulationOsu;
   mapScoreSimulationTaiko?: MapScoreSimulationTaiko;
   mapScoreSimulationCtb?: MapScoreSimulationCtb;

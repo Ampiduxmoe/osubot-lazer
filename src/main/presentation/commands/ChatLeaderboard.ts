@@ -345,8 +345,8 @@ export abstract class ChatLeaderboard<TContext, TOutput> extends TextCommand<
 
 export type ChatLeaderboardExecutionArgs = {
   server: OsuServer;
-  mode: OsuRuleset | undefined;
-  usernameList: {usernames: string[]; isAdditive: boolean} | undefined;
+  mode?: OsuRuleset;
+  usernameList?: {usernames: string[]; isAdditive: boolean};
 };
 
 export type ChatLeaderboardViewParams = {

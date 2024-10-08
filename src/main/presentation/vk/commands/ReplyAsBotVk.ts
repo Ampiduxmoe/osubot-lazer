@@ -63,7 +63,6 @@ export class ReplyAsBotVk extends ReplyAsBot<
         targetAppUserId: appUserId,
         targetMessageId: messageId,
         text: command.substring('-> '.length),
-        payloadFromText: undefined,
         fullPayload: {
           attachment:
             attachments.length === 0 ? undefined : attachments.join(','),

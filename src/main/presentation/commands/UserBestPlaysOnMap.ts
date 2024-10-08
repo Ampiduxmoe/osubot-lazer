@@ -361,11 +361,11 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
 
 export type UserBestPlaysOnMapExecutionArgs = {
   server: OsuServer;
-  beatmapId: number | undefined;
-  username: string | undefined;
-  modPatterns: ModPatternsArg | undefined;
-  startPosition: number | undefined;
-  quantity: number | undefined;
+  beatmapId?: number;
+  username?: string;
+  modPatterns?: ModPatternsArg;
+  startPosition?: number;
+  quantity?: number;
 };
 
 export type UserBestPlaysOnMapViewParams = {

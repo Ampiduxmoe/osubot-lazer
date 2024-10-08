@@ -259,10 +259,6 @@ URL: ${mapUrlShort}${couldNotAttachCoverMessage}
         command: userBestPlaysOnMapCommand.unparse({
           server: server,
           beatmapId: beatmapId,
-          username: undefined,
-          startPosition: undefined,
-          quantity: undefined,
-          modPatterns: undefined,
         }),
       });
     }
@@ -275,8 +271,6 @@ URL: ${mapUrlShort}${couldNotAttachCoverMessage}
         command: chatLeaderboardOnMapCommand.unparse({
           server: server,
           beatmapId: beatmapId,
-          usernameList: undefined,
-          modPatterns: undefined,
         }),
       });
     }

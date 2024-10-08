@@ -233,8 +233,8 @@ export abstract class UserUpdate<TContext, TOutput> extends TextCommand<
 
 export type UserUpdateExecutionArgs = {
   server: OsuServer;
-  username: string | undefined;
-  mode: OsuRuleset | undefined;
+  username?: string;
+  mode?: OsuRuleset;
 };
 
 export type UserUpdateViewParams = {

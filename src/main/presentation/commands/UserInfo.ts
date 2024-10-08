@@ -237,8 +237,8 @@ export abstract class UserInfo<TContext, TOutput> extends TextCommand<
 
 export type UserInfoExecutionArgs = {
   server: OsuServer;
-  username: string | undefined;
-  mode: OsuRuleset | undefined;
+  username?: string;
+  mode?: OsuRuleset;
 };
 
 export type UserInfoViewParams = {

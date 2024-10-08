@@ -281,11 +281,11 @@ export abstract class UserBestPlays<TContext, TOutput> extends TextCommand<
 
 export type UserBestPlaysExecutionArgs = {
   server: OsuServer;
-  username: string | undefined;
-  startPosition: number | undefined;
-  quantity: number | undefined;
-  modPatterns: ModPatternsArg | undefined;
-  mode: OsuRuleset | undefined;
+  username?: string;
+  startPosition?: number;
+  quantity?: number;
+  modPatterns?: ModPatternsArg;
+  mode?: OsuRuleset;
 };
 
 export type UserBestPlaysViewParams = {

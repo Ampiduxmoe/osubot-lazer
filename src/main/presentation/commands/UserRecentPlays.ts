@@ -314,11 +314,11 @@ export abstract class UserRecentPlays<TContext, TOutput> extends TextCommand<
 export type UserRecentPlaysExecutionArgs = {
   server: OsuServer;
   passesOnly: boolean;
-  username: string | undefined;
-  startPosition: number | undefined;
-  quantity: number | undefined;
-  modPatterns: ModPatternsArg | undefined;
-  mode: OsuRuleset | undefined;
+  username?: string;
+  startPosition?: number;
+  quantity?: number;
+  modPatterns?: ModPatternsArg;
+  mode?: OsuRuleset;
 };
 
 export type UserRecentPlaysViewParams = {

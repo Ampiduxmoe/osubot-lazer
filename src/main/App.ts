@@ -965,7 +965,6 @@ export class App {
           : command.shortDescription;
       const helpCommandStr = help.unparse({
         commandPrefix: usedPrefix,
-        usageVariant: undefined,
       });
       if (ctx.text === undefined) {
         throw Error('Text should not be undefined on match');

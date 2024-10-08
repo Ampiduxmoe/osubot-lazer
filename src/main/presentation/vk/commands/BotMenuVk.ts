@@ -161,7 +161,6 @@ export class BotMenuVk extends BotMenu<VkMessageContext, VkOutputMessage> {
       return setUsernameCommand.unparse({
         server: server,
         username: 'ваш_ник',
-        mode: undefined,
       });
     })();
     const [setUsernameHelpCommandText, helpCommandText]: [
@@ -174,12 +173,8 @@ export class BotMenuVk extends BotMenu<VkMessageContext, VkOutputMessage> {
       }
       const setUsernameText = helpCommand.unparse({
         commandPrefix: SetUsername.prefixes[0],
-        usageVariant: undefined,
       });
-      const helpText = helpCommand.unparse({
-        commandPrefix: undefined,
-        usageVariant: undefined,
-      });
+      const helpText = helpCommand.unparse({});
       return [setUsernameText, helpText];
     })();
     if (
@@ -198,8 +193,6 @@ export class BotMenuVk extends BotMenu<VkMessageContext, VkOutputMessage> {
       }
       return userInfoCommand.unparse({
         server: server,
-        username: undefined,
-        mode: undefined,
       });
     })();
     if (userInfoCommandText === undefined) {
@@ -215,11 +208,6 @@ export class BotMenuVk extends BotMenu<VkMessageContext, VkOutputMessage> {
       }
       return topPlaysCommand.unparse({
         server: server,
-        username: undefined,
-        startPosition: undefined,
-        quantity: undefined,
-        modPatterns: undefined,
-        mode: undefined,
       });
     })();
     if (topPlaysCommandText === undefined) {
@@ -236,11 +224,6 @@ export class BotMenuVk extends BotMenu<VkMessageContext, VkOutputMessage> {
       return recentPlaysCommand.unparse({
         server: server,
         passesOnly: false,
-        username: undefined,
-        startPosition: undefined,
-        quantity: undefined,
-        modPatterns: undefined,
-        mode: undefined,
       });
     })();
     if (recentPlaysCommandText === undefined) {
@@ -347,10 +330,7 @@ export class BotMenuVk extends BotMenu<VkMessageContext, VkOutputMessage> {
       return this.generatePageErrorPage(path, ...transformations);
     }
     const helpCommandOutput: VkOutputMessage = await (async () => {
-      const processingResult = helpCommand.process({
-        commandPrefix: undefined,
-        usageVariant: undefined,
-      }).resultValue;
+      const processingResult = helpCommand.process({}).resultValue;
       const viewResult = helpCommand.createOutputMessage(
         await processingResult
       ).resultValue;
@@ -551,7 +531,6 @@ export class BotMenuVk extends BotMenu<VkMessageContext, VkOutputMessage> {
     const helpCommandOutput: VkOutputMessage = await (async () => {
       const processingResult = helpCommand.process({
         commandPrefix: prefix,
-        usageVariant: undefined,
       }).resultValue;
       const viewResult = helpCommand.createOutputMessage(
         await processingResult
@@ -643,8 +622,6 @@ export class BotMenuVk extends BotMenu<VkMessageContext, VkOutputMessage> {
       }
       const commandText = userInfoCommand.unparse({
         server: server,
-        username: undefined,
-        mode: undefined,
       });
       return {text: 'Моя статистика', command: commandText};
     })();
@@ -657,11 +634,6 @@ export class BotMenuVk extends BotMenu<VkMessageContext, VkOutputMessage> {
       }
       const commandText = bestPlaysCommand.unparse({
         server: server,
-        username: undefined,
-        startPosition: undefined,
-        quantity: undefined,
-        modPatterns: undefined,
-        mode: undefined,
       });
       return {text: 'Моя лучшие скоры', command: commandText};
     })();
@@ -675,11 +647,6 @@ export class BotMenuVk extends BotMenu<VkMessageContext, VkOutputMessage> {
       const commandText = recentPlaysCommand.unparse({
         server: server,
         passesOnly: false,
-        username: undefined,
-        startPosition: undefined,
-        quantity: undefined,
-        modPatterns: undefined,
-        mode: undefined,
       });
       return {text: 'Мой последний скор', command: commandText};
     })();
@@ -692,7 +659,6 @@ export class BotMenuVk extends BotMenu<VkMessageContext, VkOutputMessage> {
       }
       const commandText = mapInfoCommand.unparse({
         server: server,
-        beatmapId: undefined,
       });
       return {text: 'Информация о карте', command: commandText};
     })();
@@ -705,11 +671,6 @@ export class BotMenuVk extends BotMenu<VkMessageContext, VkOutputMessage> {
       }
       const commandText = bestPlaysOnMapCommand.unparse({
         server: server,
-        beatmapId: undefined,
-        username: undefined,
-        modPatterns: undefined,
-        startPosition: undefined,
-        quantity: undefined,
       });
       return {text: 'Мой скор на карте', command: commandText};
     })();
@@ -722,9 +683,6 @@ export class BotMenuVk extends BotMenu<VkMessageContext, VkOutputMessage> {
       }
       const commandText = chatLeaderboardOnMapCommand.unparse({
         server: server,
-        beatmapId: undefined,
-        usernameList: undefined,
-        modPatterns: undefined,
       });
       return {text: 'Топ чата на карте', command: commandText};
     })();
@@ -737,8 +695,6 @@ export class BotMenuVk extends BotMenu<VkMessageContext, VkOutputMessage> {
       }
       const commandText = chatLeaderboardCommand.unparse({
         server: server,
-        mode: undefined,
-        usernameList: undefined,
       });
       return {text: 'Топ игроков чата', command: commandText};
     })();

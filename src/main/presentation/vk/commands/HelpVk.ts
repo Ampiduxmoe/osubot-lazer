@@ -37,10 +37,7 @@ export class HelpVk extends Help<VkMessageContext, VkOutputMessage> {
         [
           {
             text: 'Список команд',
-            command: this.unparse({
-              commandPrefix: undefined,
-              usageVariant: undefined,
-            }),
+            command: this.unparse({}),
           },
         ],
       ],
@@ -108,7 +105,6 @@ export class HelpVk extends Help<VkMessageContext, VkOutputMessage> {
       commandPrefix: pickRandom(
         commandList.flatMap(command => command.prefixes)
       ),
-      usageVariant: undefined,
     });
     const helpPrefix = this.prefixes[0];
     const text = `

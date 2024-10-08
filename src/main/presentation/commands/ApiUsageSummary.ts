@@ -126,7 +126,7 @@ export abstract class ApiUsageSummary<TContext, TOutput> extends TextCommand<
 
 export type ApiUsageSummaryExecutionArgs = {
   date: Date;
-  appUserId: string | undefined;
+  appUserId?: string;
 };
 
 export type ApiUsageSummaryViewParams = {
