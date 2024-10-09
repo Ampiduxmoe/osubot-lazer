@@ -90,6 +90,7 @@ import {VkIdConverter} from './presentation/vk/VkIdConverter';
 import {VkMessageContext} from './presentation/vk/VkMessageContext';
 import {OsuServer} from './primitives/OsuServer';
 import {wait} from './primitives/Promises';
+import {VK_REPLY_PROCESSING} from './primitives/Strings';
 import {Timespan} from './primitives/Timespan';
 
 export const APP_CODE_NAME = 'osubot-lazer';
@@ -344,6 +345,8 @@ export class App {
       token: group.token,
     });
     const vkClient = new VkClient(vk, group.id, [group.owner]);
+
+    VK_REPLY_PROCESSING.mentionIdOverride = `club${group.id}`;
 
     const mainTextProcessor = new MainTextProcessor(' ', ["'", '"', '`'], '\\');
 
@@ -980,7 +983,7 @@ export class App {
 Почему команда не сработала: «${whynotCommandStr}»
 
       `.trim();
-      ctx.reply(replyText, {
+      ctx.reply(VK_REPLY_PROCESSING.sanitize(replyText), {
         keyboard: vkClient.createKeyboard([
           [{text: helpCommandStr, command: helpCommandStr}],
           [{text: whynotCommandStr, command: whynotCommandStr}],

@@ -1,5 +1,6 @@
 import {APP_CODE_NAME} from '../../../App';
 import {MaybeDeferred} from '../../../primitives/MaybeDeferred';
+import {VK_REPLY_PROCESSING} from '../../../primitives/Strings';
 import {TextCommand} from '../../commands/base/TextCommand';
 import {Whynot, WhynotExecutionArgs} from '../../commands/Whynot';
 import {CommandArgument} from '../../common/arg_processing/CommandArgument';
@@ -191,11 +192,12 @@ export class WhynotVk extends Whynot<VkMessageContext, VkOutputMessage> {
     })();
     const representativeDescription =
       this.getRepresentativeCommandShortDescription(matchResult, command);
+    const outputText =
+      'Частичное совпадение ' +
+      `с командой ${representativePrefix} (${representativeDescription})` +
+      `${preprocessNotice}${argExplanationsStr}${missingArgsStr}`;
     return MaybeDeferred.fromValue({
-      text:
-        'Частичное совпадение ' +
-        `с командой ${representativePrefix} (${representativeDescription})` +
-        `${preprocessNotice}${argExplanationsStr}${missingArgsStr}`,
+      text: VK_REPLY_PROCESSING.sanitize(outputText),
       attachment: undefined,
       buttons: undefined,
     });
@@ -219,11 +221,12 @@ export class WhynotVk extends Whynot<VkMessageContext, VkOutputMessage> {
       inputText === preprocessedText
         ? ''
         : `\n\nВаш текст: ${inputText}\nПреобразованный текст: ${preprocessedText}`;
+    const outputText =
+      'Ваш текст полностью соответствует ' +
+      `команде ${representativePrefix} (${representativeDescription})` +
+      `${preprocessNotice}`;
     return MaybeDeferred.fromValue({
-      text:
-        'Ваш текст полностью соответствует ' +
-        `команде ${representativePrefix} (${representativeDescription})` +
-        `${preprocessNotice}`,
+      text: VK_REPLY_PROCESSING.sanitize(outputText),
       attachment: undefined,
       buttons: undefined,
     });
