@@ -635,7 +635,7 @@ export class BotMenuVk extends BotMenu<VkMessageContext, VkOutputMessage> {
       const commandText = bestPlaysCommand.unparse({
         server: server,
       });
-      return {text: 'Моя лучшие скоры', command: commandText};
+      return {text: 'Мои лучшие скоры', command: commandText};
     })();
     const recentPlays: ButtonInfo | undefined = (() => {
       const recentPlaysCommand = this.otherCommands.find(
