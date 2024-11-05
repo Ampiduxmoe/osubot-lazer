@@ -12,6 +12,7 @@ import {GetUserBestPlaysUseCase} from './application/usecases/get_user_best_play
 import {GetUserRecentPlaysUseCase} from './application/usecases/get_user_recent_plays/GetUserRecentPlaysUseCase';
 import {SaveContactAdminMessageUseCase} from './application/usecases/save_contact_admin_message/SaveContactAdminMessageUseCase';
 import {SetUsernameUseCase} from './application/usecases/set_username/SetUsernameUseCase';
+import {UnlinkUsernameUseCase} from './application/usecases/unlink_username/UnlinkUsernameUseCase';
 import {AppUserApiRequestsSummariesDaoImpl} from './data/dao/AppUserApiRequestsSummariesDaoImpl';
 import {AppUserRecentApiRequestsDaoImpl} from './data/dao/AppUserRecentApiRequestsDaoImpl';
 import {AppUsersDaoImpl} from './data/dao/AppUsersDaoImpl';
@@ -239,6 +240,7 @@ export class App {
     const getOsuUserInfoUseCase = new GetOsuUserInfoUseCase(osuUsersDao);
     const getAppUserInfoUseCase = new GetAppUserInfoUseCase(appUsersDao);
     const setUsernameUseCase = new SetUsernameUseCase(appUsersDao, osuUsersDao);
+    const unlinkUsernameUseCase = new UnlinkUsernameUseCase(appUsersDao);
     const getRecentPlaysUseCase = new GetUserRecentPlaysUseCase(
       recentScoresDao,
       cachedOsuUsersDao,
@@ -287,6 +289,7 @@ export class App {
       getOsuUserInfoUseCase: getOsuUserInfoUseCase,
       getAppUserInfoUseCase: getAppUserInfoUseCase,
       setUsernameUseCase: setUsernameUseCase,
+      unlinkUsernameUseCase: unlinkUsernameUseCase,
       getRecentPlaysUseCase: getRecentPlaysUseCase,
       getUserBestPlaysUseCase: getUserBestPlaysUseCase,
       getApiUsageSummaryUseCase: getApiUsageSummaryUseCase,
@@ -326,6 +329,7 @@ export class App {
     const {getOsuUserInfoUseCase} = params;
     const {getAppUserInfoUseCase} = params;
     const {setUsernameUseCase} = params;
+    const {unlinkUsernameUseCase} = params;
     const {getRecentPlaysUseCase} = params;
     const {getUserBestPlaysUseCase} = params;
     const {getApiUsageSummaryUseCase} = params;
@@ -657,7 +661,9 @@ export class App {
     const setUsername = new SetUsernameVk(
       mainTextProcessor,
       getTargetAppUserId,
-      setUsernameUseCase
+      setUsernameUseCase,
+      unlinkUsernameUseCase,
+      getAppUserInfoUseCase
     );
     const userInfo = new UserInfoVk(
       mainTextProcessor,
@@ -1031,6 +1037,7 @@ type VkClientCreationParams = {
   getOsuUserInfoUseCase: GetOsuUserInfoUseCase;
   getAppUserInfoUseCase: GetAppUserInfoUseCase;
   setUsernameUseCase: SetUsernameUseCase;
+  unlinkUsernameUseCase: UnlinkUsernameUseCase;
   getRecentPlaysUseCase: GetUserRecentPlaysUseCase;
   getUserBestPlaysUseCase: GetUserBestPlaysUseCase;
   getApiUsageSummaryUseCase: GetApiUsageSummaryUseCase;

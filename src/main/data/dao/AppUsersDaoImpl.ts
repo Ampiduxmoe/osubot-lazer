@@ -41,4 +41,7 @@ export class AppUsersDaoImpl implements AppUsersDao {
       await this.appUsersRepository.update(appUser);
     }
   }
+  async delete(id: string, server: OsuServer): Promise<void> {
+    await this.appUsersRepository.delete({id, server});
+  }
 }

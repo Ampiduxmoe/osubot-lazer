@@ -30,18 +30,67 @@ export class SetUsernameVk extends SetUsername<
     return this.matchText(command);
   }
 
-  createUsernameNotSpecifiedMessage(
-    server: OsuServer
+  createNoArgsMessage(
+    server: OsuServer,
+    currentUsername: string | undefined,
+    unlinkUsername: () => Promise<boolean>
   ): MaybeDeferred<VkOutputMessage> {
     const serverString = OsuServer[server];
+    const currentUsernameText =
+      currentUsername === undefined
+        ? 'В данный момент ник не привязан\n\nЧтобы установить ник, повторите эту команду с указанием ника'
+        : `Текущий ник: ${currentUsername}`;
     const text = `
-[Server: ${serverString}]
-Не указан ник!
+  [Server: ${serverString}]
+  ${currentUsernameText}
     `.trim();
+    if (currentUsername === undefined) {
+      return MaybeDeferred.fromValue({
+        text: text,
+        attachment: undefined,
+        buttons: undefined,
+      });
+    }
     return MaybeDeferred.fromValue({
-      text: text,
+      text: undefined,
       attachment: undefined,
       buttons: undefined,
+      navigation: {
+        currentContent: {
+          text: text,
+          attachment: undefined,
+          buttons: undefined,
+        },
+        navigationButtons: [
+          [
+            {
+              text: 'Отвязать ник',
+              generateMessage: () => {
+                return MaybeDeferred.fromInstantPromise(
+                  (async () => {
+                    const success = await unlinkUsername();
+                    const successText = success
+                      ? 'Ник успешно отвязан'
+                      : 'Не удалось отвязать ник: произошла ошибка во время выполнения команды';
+                    return {
+                      text: undefined,
+                      attachment: undefined,
+                      buttons: undefined,
+                      navigation: {
+                        currentContent: {
+                          text: successText,
+                          attachment: undefined,
+                          buttons: undefined,
+                        },
+                      },
+                    };
+                  })()
+                );
+              },
+            },
+          ],
+        ],
+      },
     });
   }
 

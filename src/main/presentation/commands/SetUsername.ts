@@ -1,4 +1,6 @@
+import {GetAppUserInfoUseCase} from '../../application/usecases/get_app_user_info/GetAppUserInfoUseCase';
 import {SetUsernameUseCase} from '../../application/usecases/set_username/SetUsernameUseCase';
+import {UnlinkUsernameUseCase} from '../../application/usecases/unlink_username/UnlinkUsernameUseCase';
 import {MaybeDeferred} from '../../primitives/MaybeDeferred';
 import {OsuRuleset} from '../../primitives/OsuRuleset';
 import {OsuServer} from '../../primitives/OsuServer';
@@ -29,8 +31,9 @@ export abstract class SetUsername<TContext, TOutput> extends TextCommand<
   TOutput
 > {
   internalName = SetUsername.name;
-  shortDescription = 'установить ник';
-  longDescription = 'Привязывает игровой никнейм к вашему аккаунту ВК';
+  shortDescription = 'установить/сбросить ник';
+  longDescription =
+    'Позволяет привязать новый игровой никнейм к вашему аккаунту ВК или отвязать существующий';
   notices = [NOTICE_ABOUT_SPACES_IN_USERNAMES];
 
   static prefixes = new CommandPrefixes('n', 'Nickname');
@@ -41,14 +44,16 @@ export abstract class SetUsername<TContext, TOutput> extends TextCommand<
   private static commandStructure = [
     {argument: SERVER_PREFIX, isOptional: false},
     {argument: this.COMMAND_PREFIX, isOptional: false},
-    {argument: USERNAME, isOptional: false},
+    {argument: USERNAME, isOptional: true},
     {argument: MODE, isOptional: true},
   ];
 
   constructor(
     public textProcessor: TextProcessor,
     protected getTargetAppUserId: GetTargetAppUserId<TContext>,
-    protected setUsername: SetUsernameUseCase
+    protected setUsername: SetUsernameUseCase,
+    protected unlinkUsername: UnlinkUsernameUseCase,
+    protected getAppUserInfo: GetAppUserInfoUseCase
   ) {
     super(SetUsername.commandStructure);
   }
@@ -71,10 +76,7 @@ export abstract class SetUsername<TContext, TOutput> extends TextCommand<
     const modeRes = argsProcessor.use(MODE).extractWithToken();
     const usernameRes = argsProcessor.use(USERNAME).extractWithToken();
 
-    if (
-      usernameRes[0] === undefined ||
-      argsProcessor.remainingTokens.length > 0
-    ) {
+    if (argsProcessor.remainingTokens.length > 0) {
       let extractionResults = [
         [...serverRes, SERVER_PREFIX],
         [...ownPrefixRes, this.COMMAND_PREFIX],
@@ -115,21 +117,39 @@ export abstract class SetUsername<TContext, TOutput> extends TextCommand<
     ctx: TContext
   ): MaybeDeferred<SetUsernameViewParams> {
     const valuePromise: Promise<SetUsernameViewParams> = (async () => {
-      const result = await this.setUsername.execute({
-        appUserId: this.getTargetAppUserId(ctx, {
-          canTargetOthersAsNonAdmin: false,
-        }),
+      const targetAppUserId = this.getTargetAppUserId(ctx, {
+        canTargetOthersAsNonAdmin: false,
+      });
+      const appUserResult = await this.getAppUserInfo.execute({
+        id: targetAppUserId,
+        server: args.server,
+      });
+      const prevUsername = appUserResult.userInfo?.username;
+      if (args.username === undefined) {
+        return {
+          server: args.server,
+          usernameInput: undefined,
+          previousUsername: prevUsername,
+          appUserId: targetAppUserId,
+          username: undefined,
+          mode: undefined,
+        };
+      }
+      const commandResult = await this.setUsername.execute({
+        appUserId: targetAppUserId,
         server: args.server,
         username: args.username,
         mode: args.mode,
       });
-      if (result.isFailure) {
-        const internalFailureReason = result.failureReason!;
+      if (commandResult.isFailure) {
+        const internalFailureReason = commandResult.failureReason!;
         switch (internalFailureReason) {
           case 'user not found':
             return {
               server: args.server,
               usernameInput: args.username,
+              previousUsername: prevUsername,
+              appUserId: targetAppUserId,
               username: undefined,
               mode: args.mode,
             };
@@ -138,23 +158,35 @@ export abstract class SetUsername<TContext, TOutput> extends TextCommand<
       return {
         server: args.server,
         usernameInput: args.username,
-        username: result.username!,
-        mode: result.mode!,
+        previousUsername: prevUsername,
+        appUserId: targetAppUserId,
+        username: commandResult.username!,
+        mode: commandResult.mode!,
       };
     })();
     return MaybeDeferred.fromFastPromise(valuePromise);
   }
 
   createOutputMessage(params: SetUsernameViewParams): MaybeDeferred<TOutput> {
-    const {server, usernameInput, username, mode} = params;
+    const {server, usernameInput, previousUsername, appUserId, username, mode} =
+      params;
+    if (usernameInput === undefined) {
+      const unlinkUsername = () =>
+        this.unlinkUsername
+          .execute({appUserId: appUserId!, server: server})
+          .then(res => res.foundAndDeleted);
+      return this.createNoArgsMessage(server, previousUsername, unlinkUsername);
+    }
     if (username === undefined) {
       return this.createUserNotFoundMessage(server, usernameInput);
     }
     return this.createUsernameSetMessage(server, username, mode!);
   }
 
-  abstract createUsernameNotSpecifiedMessage(
-    server: OsuServer
+  abstract createNoArgsMessage(
+    server: OsuServer,
+    currentUsername: string | undefined,
+    unlinkUsername: () => Promise<boolean>
   ): MaybeDeferred<TOutput>;
   abstract createUserNotFoundMessage(
     server: OsuServer,
@@ -183,13 +215,15 @@ export abstract class SetUsername<TContext, TOutput> extends TextCommand<
 
 export type SetUsernameExecutionArgs = {
   server: OsuServer;
-  username: string;
+  username?: string;
   mode?: OsuRuleset;
 };
 
 export type SetUsernameViewParams = {
   server: OsuServer;
-  usernameInput: string;
+  usernameInput: string | undefined;
+  previousUsername: string | undefined;
+  appUserId: string | undefined;
   username: string | undefined;
   mode: OsuRuleset | undefined;
 };
