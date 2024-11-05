@@ -13,6 +13,7 @@ import {ModeMania} from '../../../domain/entities/mode/ModeMania';
 import {ModeOsu} from '../../../domain/entities/mode/ModeOsu';
 import {ModeTaiko} from '../../../domain/entities/mode/ModeTaiko';
 import {sum, sumBy} from '../../../primitives/Arrays';
+import {wait} from '../../../primitives/Promises';
 import {BeatmapUserScoreAdapter} from '../../adapters/beatmap_user_score/BeatmapUserScoreAdapter';
 import {CachedOsuUsersDao} from '../../requirements/dao/CachedOsuUsersDao';
 import {OsuBeatmapUserScoresDao} from '../../requirements/dao/OsuBeatmapUserScoresDao';
@@ -98,17 +99,23 @@ export class GetBeatmapUsersBestScoresUseCase
       });
     }
 
-    const usernameScoresPromises = targets.map(async t => ({
-      username: t.caseCorrectUsername,
-      rawScores: await this.mapUserScores.get(
-        initiatorAppUserId,
-        beatmapId,
-        t.osuId,
-        server,
-        modPatterns,
-        undefined
-      ),
-    }));
+    const batchSize = 5;
+    const batchDelayMs = 1000;
+    const calculateDelayFor = (index: number): number =>
+      Math.floor(index / batchSize) * batchDelayMs;
+    const usernameScoresPromises = targets.map((t, i) =>
+      wait(calculateDelayFor(i)).then(async () => ({
+        username: t.caseCorrectUsername,
+        rawScores: await this.mapUserScores.get(
+          initiatorAppUserId,
+          beatmapId,
+          t.osuId,
+          server,
+          modPatterns,
+          undefined
+        ),
+      }))
+    );
     const usernamesScores = await Promise.all(usernameScoresPromises);
     const scoreCount = sumBy(
       x =>
