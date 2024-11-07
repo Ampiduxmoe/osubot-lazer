@@ -2,7 +2,11 @@ import {pickRandom, uniquesFilter} from '../../../primitives/Arrays';
 import {ModAcronym} from '../../../primitives/ModAcronym';
 import {ModCombinationPattern} from '../../../primitives/ModCombinationPattern';
 import {ModPatternCollection} from '../../../primitives/ModPatternCollection';
-import {ALL_OSU_RULESET_KEYS, OsuRuleset} from '../../../primitives/OsuRuleset';
+import {
+  ALL_OSU_RULESET_KEYS,
+  ALL_OSU_RULESET_VALUES,
+  OsuRuleset,
+} from '../../../primitives/OsuRuleset';
 import {OsuServer} from '../../../primitives/OsuServer';
 import {CommandPrefixes} from '../CommandPrefixes';
 import {SERVERS} from '../OsuServers';
@@ -410,7 +414,7 @@ export const MODE: CommandArgument<OsuRuleset> = {
     'режим игры; возможные значения: ' +
     ALL_OSU_RULESET_KEYS.map(x => `«${x}»`).join(', '),
   get usageExample(): string {
-    return '-' + pickRandom(ALL_OSU_RULESET_KEYS);
+    return this.unparse(pickRandom(ALL_OSU_RULESET_VALUES));
   },
   match: function (token: string): boolean {
     const modeRegex = new RegExp(
