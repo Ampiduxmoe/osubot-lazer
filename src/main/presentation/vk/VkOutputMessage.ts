@@ -32,7 +32,7 @@ export type VkOutputMessageButton = {
 };
 
 export type VkOutputMessageContent = {
-  text: string | undefined;
-  attachment: string | undefined;
-  buttons: VkOutputMessageButton[][] | undefined;
+  text?: string;
+  attachment?: string;
+  buttons?: VkOutputMessageButton[][];
 };
