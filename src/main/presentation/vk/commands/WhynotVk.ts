@@ -44,8 +44,6 @@ export class WhynotVk extends Whynot<VkMessageContext, VkOutputMessage> {
   createNoMatchMessage(): MaybeDeferred<VkOutputMessage> {
     return MaybeDeferred.fromValue({
       text: 'Ваш текст не соответствует ни одной команде',
-      attachment: undefined,
-      buttons: undefined,
     });
   }
   createPartialMatchMessage(
@@ -198,8 +196,6 @@ export class WhynotVk extends Whynot<VkMessageContext, VkOutputMessage> {
       `${preprocessNotice}${argExplanationsStr}${missingArgsStr}`;
     return MaybeDeferred.fromValue({
       text: VK_REPLY_PROCESSING.sanitize(outputText),
-      attachment: undefined,
-      buttons: undefined,
     });
   }
   createFullMatchMessage(
@@ -227,8 +223,6 @@ export class WhynotVk extends Whynot<VkMessageContext, VkOutputMessage> {
       `${preprocessNotice}`;
     return MaybeDeferred.fromValue({
       text: VK_REPLY_PROCESSING.sanitize(outputText),
-      attachment: undefined,
-      buttons: undefined,
     });
   }
 }

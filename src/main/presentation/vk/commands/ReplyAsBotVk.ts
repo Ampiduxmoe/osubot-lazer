@@ -93,8 +93,6 @@ export class ReplyAsBotVk extends ReplyAsBot<
     const reasonString = isError ? 'Возникла непредвиденная ошибка' : '';
     return MaybeDeferred.fromValue({
       text: `${successString}${success ? '' : '\n' + reasonString}`,
-      attachment: undefined,
-      buttons: undefined,
     });
   }
 

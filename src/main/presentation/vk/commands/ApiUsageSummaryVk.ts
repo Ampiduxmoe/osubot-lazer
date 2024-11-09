@@ -115,8 +115,6 @@ ${userContributionRows.join('\n')}
 
     return MaybeDeferred.fromValue({
       text: text,
-      attachment: undefined,
-      buttons: undefined,
     });
   }
 
@@ -125,16 +123,12 @@ ${userContributionRows.join('\n')}
   ): MaybeDeferred<VkOutputMessage> {
     return MaybeDeferred.fromValue({
       text: `Статистика пользователя ${appUserId} не найдена`,
-      attachment: undefined,
-      buttons: undefined,
     });
   }
 
   createEmptySummaryMessage(): MaybeDeferred<VkOutputMessage> {
     return MaybeDeferred.fromValue({
       text: 'Статистика не найдена',
-      attachment: undefined,
-      buttons: undefined,
     });
   }
 }

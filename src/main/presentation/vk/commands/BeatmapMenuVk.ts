@@ -48,7 +48,6 @@ export class BeatmapMenuVk extends BeatmapMenu<
     const serverString = OsuServer[server];
     return MaybeDeferred.fromValue({
       text: `[Server: ${serverString}]`,
-      attachment: undefined,
       buttons: this.createBeatmapButtons(server, beatmapId),
     });
   }

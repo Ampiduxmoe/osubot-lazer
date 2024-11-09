@@ -127,9 +127,6 @@ export class UserBestPlaysOnMapVk extends UserBestPlaysOnMap<
         };
       });
       return {
-        text: undefined,
-        attachment: undefined,
-        buttons: undefined,
         pagination: {
           contents: pageContents,
           startingIndex: 0,
@@ -341,8 +338,6 @@ ${pos}. ${modsString}
     `.trim();
     return MaybeDeferred.fromValue({
       text: text,
-      attachment: undefined,
-      buttons: undefined,
     });
   }
 
@@ -357,8 +352,6 @@ ${pos}. ${modsString}
     `.trim();
     return MaybeDeferred.fromValue({
       text: text,
-      attachment: undefined,
-      buttons: undefined,
     });
   }
 
@@ -372,8 +365,6 @@ ${pos}. ${modsString}
     `.trim();
     return MaybeDeferred.fromValue({
       text: text,
-      attachment: undefined,
-      buttons: undefined,
     });
   }
 
@@ -387,8 +378,6 @@ ${pos}. ${modsString}
     `.trim();
     return MaybeDeferred.fromValue({
       text: text,
-      attachment: undefined,
-      buttons: undefined,
     });
   }
 
@@ -404,8 +393,6 @@ ${pos}. ${modsString}
     `.trim();
     return MaybeDeferred.fromValue({
       text: text,
-      attachment: undefined,
-      buttons: undefined,
     });
   }
 

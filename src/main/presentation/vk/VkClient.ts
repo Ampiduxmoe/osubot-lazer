@@ -881,8 +881,6 @@ export class VkClient {
         if (targetMessage === undefined) {
           await botMessageCtx.editMessage({
             message: 'Произошла ошибка во время выполнения команды',
-            attachment: undefined,
-            keyboard: undefined,
           });
           delete this.navigationMessages[messageKey];
           return;
@@ -905,8 +903,6 @@ export class VkClient {
         if (targetMessage === undefined) {
           await botMessageCtx.editMessage({
             message: 'Произошла ошибка во время завершения работы меню',
-            attachment: undefined,
-            keyboard: undefined,
           });
           return;
         }

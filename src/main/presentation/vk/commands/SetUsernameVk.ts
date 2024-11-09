@@ -47,19 +47,12 @@ export class SetUsernameVk extends SetUsername<
     if (currentUsername === undefined) {
       return MaybeDeferred.fromValue({
         text: text,
-        attachment: undefined,
-        buttons: undefined,
       });
     }
     return MaybeDeferred.fromValue({
-      text: undefined,
-      attachment: undefined,
-      buttons: undefined,
       navigation: {
         currentContent: {
           text: text,
-          attachment: undefined,
-          buttons: undefined,
         },
         navigationButtons: [
           [
@@ -73,14 +66,9 @@ export class SetUsernameVk extends SetUsername<
                       ? 'Ник успешно отвязан'
                       : 'Не удалось отвязать ник: произошла ошибка во время выполнения команды';
                     return {
-                      text: undefined,
-                      attachment: undefined,
-                      buttons: undefined,
                       navigation: {
                         currentContent: {
                           text: successText,
-                          attachment: undefined,
-                          buttons: undefined,
                         },
                       },
                     };
@@ -105,8 +93,6 @@ export class SetUsernameVk extends SetUsername<
     `.trim();
     return MaybeDeferred.fromValue({
       text: text,
-      attachment: undefined,
-      buttons: undefined,
     });
   }
 
@@ -123,8 +109,6 @@ export class SetUsernameVk extends SetUsername<
     `.trim();
     return MaybeDeferred.fromValue({
       text: text,
-      attachment: undefined,
-      buttons: undefined,
     });
   }
 }

@@ -106,7 +106,6 @@ https://osu.ppy.sh/u/${userId}
     }
     return MaybeDeferred.fromValue({
       text: text,
-      attachment: undefined,
       buttons: buttons.map(b => [b]),
     });
   }
@@ -122,8 +121,6 @@ https://osu.ppy.sh/u/${userId}
     `.trim();
     return MaybeDeferred.fromValue({
       text: text,
-      attachment: undefined,
-      buttons: undefined,
     });
   }
 
@@ -137,8 +134,6 @@ https://osu.ppy.sh/u/${userId}
     `.trim();
     return MaybeDeferred.fromValue({
       text: text,
-      attachment: undefined,
-      buttons: undefined,
     });
   }
 }

@@ -32,8 +32,6 @@ export class AliasVk extends Alias<VkMessageContext, VkOutputMessage> {
       .join('\n');
     return MaybeDeferred.fromValue({
       text: text,
-      attachment: undefined,
-      buttons: undefined,
     });
   }
 
@@ -41,8 +39,6 @@ export class AliasVk extends Alias<VkMessageContext, VkOutputMessage> {
     const text = 'Шаблоны отсутствуют!';
     return MaybeDeferred.fromValue({
       text: text,
-      attachment: undefined,
-      buttons: undefined,
     });
   }
 
@@ -55,8 +51,6 @@ export class AliasVk extends Alias<VkMessageContext, VkOutputMessage> {
         : 'Не удалось добавить шаблон\nДостигнуто максимальное количество шаблонов';
     return MaybeDeferred.fromValue({
       text: text,
-      attachment: undefined,
-      buttons: undefined,
     });
   }
 
@@ -69,8 +63,6 @@ export class AliasVk extends Alias<VkMessageContext, VkOutputMessage> {
         : 'Не удалось удалить шаблон\nШаблон с заданным номером не найден';
     return MaybeDeferred.fromValue({
       text: text,
-      attachment: undefined,
-      buttons: undefined,
     });
   }
 
@@ -78,8 +70,6 @@ export class AliasVk extends Alias<VkMessageContext, VkOutputMessage> {
     const text = result;
     return MaybeDeferred.fromValue({
       text: text,
-      attachment: undefined,
-      buttons: undefined,
     });
   }
 }

@@ -63,8 +63,6 @@ export class BotMenuVk extends BotMenu<VkMessageContext, VkOutputMessage> {
     const page: NavigationPage = {
       currentContent: {
         text: `${pathString}\n\nЧем помочь?`,
-        attachment: undefined,
-        buttons: undefined,
       },
       navigationButtons: [
         [
@@ -122,8 +120,6 @@ export class BotMenuVk extends BotMenu<VkMessageContext, VkOutputMessage> {
     const page: NavigationPage = {
       currentContent: {
         text: `${pathString}\n\nВыберите сервер`,
-        attachment: undefined,
-        buttons: undefined,
       },
       navigationButtons: [
         ...ALL_OSU_SERVER_KEYS.map(serverName => [
@@ -270,8 +266,6 @@ export class BotMenuVk extends BotMenu<VkMessageContext, VkOutputMessage> {
     const page: NavigationPage = {
       currentContent: {
         text: `${pathString}\n\nВыберите сервер`,
-        attachment: undefined,
-        buttons: undefined,
       },
       navigationButtons: [
         ...ALL_OSU_SERVER_KEYS.map(serverName => [
@@ -310,7 +304,6 @@ export class BotMenuVk extends BotMenu<VkMessageContext, VkOutputMessage> {
     const page: NavigationPage = {
       currentContent: {
         text: pathString,
-        attachment: undefined,
         buttons: commandButtons,
       },
     };
@@ -459,8 +452,6 @@ export class BotMenuVk extends BotMenu<VkMessageContext, VkOutputMessage> {
     const page: NavigationPage = {
       currentContent: {
         text: `${pathString}\n\nВыберите команду`,
-        attachment: undefined,
-        buttons: undefined,
       },
       navigationButtons: [
         ...prefixRows
@@ -508,8 +499,6 @@ export class BotMenuVk extends BotMenu<VkMessageContext, VkOutputMessage> {
       const page: NavigationPage = {
         currentContent: {
           text: `${pathString}\n\nВыберите вариант команды`,
-          attachment: undefined,
-          buttons: undefined,
         },
         navigationButtons: variantRows.map(row =>
           row.map(variant => ({
@@ -591,8 +580,6 @@ export class BotMenuVk extends BotMenu<VkMessageContext, VkOutputMessage> {
     const page: NavigationPage = {
       currentContent: {
         text: maybePathString + text,
-        attachment: undefined,
-        buttons: undefined,
       },
     };
     return transformed(page, ...transformations);
@@ -755,9 +742,6 @@ function toOutput(
 ): MaybeDeferred<VkOutputMessage> {
   const valuePromise = (async () => {
     const outputMessage: VkOutputMessage = {
-      text: undefined,
-      attachment: undefined,
-      buttons: undefined,
       navigation: await page,
     };
     return outputMessage;

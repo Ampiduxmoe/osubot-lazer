@@ -32,7 +32,6 @@ export class HelpVk extends Help<VkMessageContext, VkOutputMessage> {
   ): MaybeDeferred<VkOutputMessage> {
     return MaybeDeferred.fromValue({
       text: `Команда ${commandPrefixInput} не найдена`,
-      attachment: undefined,
       buttons: [
         [
           {
@@ -118,7 +117,6 @@ ${categoriesText}
     `.trim();
     return MaybeDeferred.fromValue({
       text: text,
-      attachment: undefined,
       buttons: [[{text: helpExample, command: helpExample}]],
     });
   }
@@ -166,7 +164,6 @@ ${argGroupKeysString}.
 
 Используйте «${toSeeDetailsString}» для получения подробностей по каждому варианту
         `.trim(),
-        attachment: undefined,
         buttons: argGroupKeys.map(groupKey => {
           const argGroupHelp = this.unparse({
             commandPrefix: targetCommandPrefix,
@@ -200,8 +197,6 @@ ${argGroupKeysString}.
 Заданного варианта использования команды ${targetCommandPrefix} не существует
 ${usageVariantsString}
         `.trim(),
-        attachment: undefined,
-        buttons: [],
       });
     }
     for (const structureElement of targetCommandStructure) {
@@ -278,7 +273,6 @@ ${argDescriptions.join('\n')}${variantNoticesString}${commmandNoticesString}${op
     `.trim();
     return MaybeDeferred.fromValue({
       text: text,
-      attachment: undefined,
       buttons: [
         [
           {

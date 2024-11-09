@@ -38,8 +38,6 @@ export class AnouncementsVk extends Anouncements<
     const text = anouncements.map(x => `${x.id}. ${x.description}`).join('\n');
     return MaybeDeferred.fromValue({
       text: text,
-      attachment: undefined,
-      buttons: undefined,
     });
   }
 
@@ -47,8 +45,6 @@ export class AnouncementsVk extends Anouncements<
     const text = 'Объявления отсутствуют!';
     return MaybeDeferred.fromValue({
       text: text,
-      attachment: undefined,
-      buttons: undefined,
     });
   }
 
@@ -61,8 +57,6 @@ export class AnouncementsVk extends Anouncements<
       : 'Не удалось создать объявление';
     return MaybeDeferred.fromValue({
       text: text,
-      attachment: undefined,
-      buttons: undefined,
     });
   }
 
@@ -75,8 +69,6 @@ export class AnouncementsVk extends Anouncements<
       : 'Объявление не найдено';
     return MaybeDeferred.fromValue({
       text: text,
-      attachment: undefined,
-      buttons: undefined,
     });
   }
 
@@ -84,8 +76,6 @@ export class AnouncementsVk extends Anouncements<
     const text = echo;
     return MaybeDeferred.fromValue({
       text: text,
-      attachment: undefined,
-      buttons: undefined,
     });
   }
 }

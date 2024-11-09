@@ -86,8 +86,6 @@ export class ChatLeaderboardOnMapVk extends ChatLeaderboardOnMap<
         const fullText = `${text}`;
         return {
           text: fullText,
-          attachment: undefined,
-          buttons: [],
         };
       }
       const playsChunks: {position: number; mapPlays: OsuMapUserBestPlays}[][] =
@@ -121,14 +119,9 @@ export class ChatLeaderboardOnMapVk extends ChatLeaderboardOnMap<
         const fullText = `${text}`;
         return {
           text: fullText,
-          attachment: undefined,
-          buttons: [],
         };
       });
       return {
-        text: undefined,
-        attachment: undefined,
-        buttons: undefined,
         pagination: {
           contents: pageContents,
           startingIndex: 0,
@@ -316,8 +309,6 @@ ${pos}. ${username}　${modsString}
     `.trim();
     return MaybeDeferred.fromValue({
       text: text,
-      attachment: undefined,
-      buttons: undefined,
     });
   }
 
@@ -330,8 +321,6 @@ ${pos}. ${username}　${modsString}
     `.trim();
     return MaybeDeferred.fromValue({
       text: text,
-      attachment: undefined,
-      buttons: undefined,
     });
   }
 
@@ -345,8 +334,6 @@ ${pos}. ${username}　${modsString}
     `.trim();
     return MaybeDeferred.fromValue({
       text: text,
-      attachment: undefined,
-      buttons: undefined,
     });
   }
 
@@ -369,8 +356,6 @@ ${missingUsernamesMessage}
     `.trim();
     return MaybeDeferred.fromValue({
       text: text,
-      attachment: undefined,
-      buttons: undefined,
     });
   }
 }

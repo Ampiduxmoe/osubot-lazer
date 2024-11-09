@@ -247,8 +247,6 @@ ${pp}pp　 ${mapUrlShort}
     `.trim();
     return MaybeDeferred.fromValue({
       text: text,
-      attachment: undefined,
-      buttons: undefined,
     });
   }
 
@@ -262,8 +260,6 @@ ${pp}pp　 ${mapUrlShort}
     `.trim();
     return MaybeDeferred.fromValue({
       text: text,
-      attachment: undefined,
-      buttons: undefined,
     });
   }
 
@@ -279,8 +275,6 @@ ${pp}pp　 ${mapUrlShort}
     `.trim();
     return MaybeDeferred.fromValue({
       text: text,
-      attachment: undefined,
-      buttons: undefined,
     });
   }
 

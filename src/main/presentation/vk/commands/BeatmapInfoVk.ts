@@ -225,8 +225,6 @@ URL: ${mapUrlShort}${couldNotAttachCoverMessage}
     `.trim();
     return MaybeDeferred.fromValue({
       text: text,
-      attachment: undefined,
-      buttons: undefined,
     });
   }
 
@@ -240,8 +238,6 @@ URL: ${mapUrlShort}${couldNotAttachCoverMessage}
     `.trim();
     return MaybeDeferred.fromValue({
       text: text,
-      attachment: undefined,
-      buttons: undefined,
     });
   }
 

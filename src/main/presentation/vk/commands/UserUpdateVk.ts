@@ -73,16 +73,12 @@ https://ameobea.me/osutrack/user/${username}${highscoresText}${maybeMoreScoresTe
     `.trim();
     return MaybeDeferred.fromValue({
       text: text,
-      attachment: undefined,
-      buttons: undefined,
     });
   }
 
   createUnsupportedServerMessage(): MaybeDeferred<VkOutputMessage> {
     return MaybeDeferred.fromValue({
       text: 'Команда недоступна для этого сервера',
-      attachment: undefined,
-      buttons: undefined,
     });
   }
 
@@ -97,8 +93,6 @@ https://ameobea.me/osutrack/user/${username}${highscoresText}${maybeMoreScoresTe
     `.trim();
     return MaybeDeferred.fromValue({
       text: text,
-      attachment: undefined,
-      buttons: undefined,
     });
   }
 
@@ -112,8 +106,6 @@ https://ameobea.me/osutrack/user/${username}${highscoresText}${maybeMoreScoresTe
     `.trim();
     return MaybeDeferred.fromValue({
       text: text,
-      attachment: undefined,
-      buttons: undefined,
     });
   }
 }

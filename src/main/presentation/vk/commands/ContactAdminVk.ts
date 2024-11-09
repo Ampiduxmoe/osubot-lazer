@@ -65,8 +65,6 @@ export class ContactAdminVk extends ContactAdmin<
       : 'Превышен лимит обращений';
     return MaybeDeferred.fromValue({
       text: `${successString}\n${success ? '' : reasonString}`,
-      attachment: undefined,
-      buttons: undefined,
     });
   }
 
