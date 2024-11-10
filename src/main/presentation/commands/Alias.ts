@@ -356,6 +356,9 @@ export abstract class Alias<TContext, TOutput> extends TextCommand<
         };
       }
       if (args.legacy !== undefined) {
+        const oldServerPrefixes = {
+          [OsuServer.Bancho]: 's',
+        };
         const oldPrefixes = {
           nickname: 'n',
           user: 'u',
@@ -374,16 +377,18 @@ export abstract class Alias<TContext, TOutput> extends TextCommand<
           newPrefixes: CommandPrefixes
         ): void => {
           if (!newPrefixes.matchIgnoringCase(oldPrefix)) {
-            const oldPrefixArg = OWN_COMMAND_PREFIX(
+            const legacyCommandPrefixArg = OWN_COMMAND_PREFIX(
               new CommandPrefixes(oldPrefix)
             ).unparse(oldPrefix);
-            const newPrefixArg = OWN_COMMAND_PREFIX(
+            const currentCommandPrefixArg = OWN_COMMAND_PREFIX(
               SetUsername.prefixes
             ).unparse(newPrefixes[0]);
             for (const server of ALL_OSU_SERVER_VALUES) {
-              const serverArg = SERVER_PREFIX.unparse(server);
-              const pattern = `${serverArg} ${oldPrefixArg}*`;
-              const replacement = `${serverArg} ${newPrefixArg}`;
+              const currentServerArg = SERVER_PREFIX.unparse(server);
+              const legacyServerArg =
+                oldServerPrefixes[server] ?? currentServerArg;
+              const pattern = `${legacyServerArg} ${legacyCommandPrefixArg}*`;
+              const replacement = `${currentServerArg} ${currentCommandPrefixArg}`;
               newAliases.aliases.push({
                 pattern: pattern,
                 replacement: replacement,
