@@ -1,7 +1,10 @@
 import {OsuApi} from '../../../../main/data/http/OsuApi';
+import {OsuBeatmapInfo} from '../../../../main/data/http/boundary/OsuBeatmapInfo';
+import {OsuBeatmapUserScoreInfo} from '../../../../main/data/http/boundary/OsuBeatmapUserScoreInfo';
+import {OsuBeatmapsetInfo} from '../../../../main/data/http/boundary/OsuBeatmapsetInfo';
+import {OsuUserBestScoreInfo} from '../../../../main/data/http/boundary/OsuUserBestScoreInfo';
 import {OsuUserInfo} from '../../../../main/data/http/boundary/OsuUserInfo';
 import {OsuUserRecentScoreInfo} from '../../../../main/data/http/boundary/OsuUserRecentScoreInfo';
-import {OsuUserBestScoreInfo} from '../../../../main/data/http/boundary/OsuUserBestScoreInfo';
 import {OsuRuleset} from '../../../../main/primitives/OsuRuleset';
 import {OsuServer} from '../../../../main/primitives/OsuServer';
 import {
@@ -10,8 +13,6 @@ import {
   getFakeRecentScoreInfos,
   getFakeUserBestScoreInfos,
 } from '../../Generators';
-import {OsuBeatmapInfo} from '../../../../main/data/http/boundary/OsuBeatmapInfo';
-import {OsuBeatmapUserScoreInfo} from '../../../../main/data/http/boundary/OsuBeatmapUserScoreInfo';
 
 export class FakeBanchoApi implements OsuApi {
   server = OsuServer.Bancho;
@@ -64,6 +65,10 @@ export class FakeBanchoApi implements OsuApi {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     ruleset: OsuRuleset | undefined
   ): Promise<OsuBeatmapUserScoreInfo[] | undefined> {
+    throw new Error('Method not implemented.');
+  }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  getBeatmapset(beatmapsetId: number): Promise<OsuBeatmapsetInfo | undefined> {
     throw new Error('Method not implemented.');
   }
 }

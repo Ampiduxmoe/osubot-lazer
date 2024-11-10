@@ -5,6 +5,7 @@ import {GetApiUsageSummaryUseCase} from './application/usecases/get_api_usage_su
 import {GetAppUserInfoUseCase} from './application/usecases/get_app_user_info/GetAppUserInfoUseCase';
 import {GetBeatmapInfoUseCase} from './application/usecases/get_beatmap_info/GetBeatmapInfoUseCase';
 import {GetBeatmapUsersBestScoresUseCase} from './application/usecases/get_beatmap_users_best_score/GetBeatmapUsersBestScoresUseCase';
+import {GetBeatmapsetDiffsUseCase} from './application/usecases/get_beatmapset_diffs/GetBeatmapsetDiffsUseCase';
 import {GetContactAdminMessageUseCase} from './application/usecases/get_contact_admin_message/GetContactAdminMessageUseCase';
 import {GetOsuUserInfoUseCase} from './application/usecases/get_osu_user_info/GetOsuUserInfoUseCase';
 import {GetOsuUserUpdateUseCase} from './application/usecases/get_osu_user_update/GetOsuUserUpdateUseCase';
@@ -18,6 +19,7 @@ import {AppUserRecentApiRequestsDaoImpl} from './data/dao/AppUserRecentApiReques
 import {AppUsersDaoImpl} from './data/dao/AppUsersDaoImpl';
 import {CachedOsuUsersDaoImpl} from './data/dao/CachedOsuUsersDaoImpl';
 import {OsuBeatmapsDaoImpl} from './data/dao/OsuBeatmapsDaoImpl';
+import {OsuBeatmapsetsDaoImpl} from './data/dao/OsuBeatmapsetsDaoImpl';
 import {OsuBeatmapUserScoresDaoImpl} from './data/dao/OsuBeatmapUserScoresDaoImpl';
 import {OsuUserBestScoresDaoImpl} from './data/dao/OsuUserBestScoresDaoImpl';
 import {OsuUserRecentScoresDaoImpl} from './data/dao/OsuUserRecentScoresDaoImpl';
@@ -229,6 +231,10 @@ export class App {
       osuApiList,
       recentApiRequestsDao
     );
+    const osuBeatmapsetsDao = new OsuBeatmapsetsDaoImpl(
+      osuApiList,
+      recentApiRequestsDao
+    );
     const scoreSimulationsDao = new ScoreSimulationsDaoRosu(
       config.bot.score_simulation.default_timeout
     );
@@ -268,6 +274,9 @@ export class App {
         osuUsersDao,
         scoreSimulationsDao
       );
+    const getBeatmapsetDiffsUseCase = new GetBeatmapsetDiffsUseCase(
+      osuBeatmapsetsDao
+    );
     const saveContactAdminMessageUseCase = new SaveContactAdminMessageUseCase(
       unreadMessagesDao
     );
@@ -295,6 +304,7 @@ export class App {
       getApiUsageSummaryUseCase: getApiUsageSummaryUseCase,
       getBeatmapInfoUseCase: getBeatmapInfoUseCase,
       getBeatmapUsersBestScoresUseCase: getBeatmapUsersBestScoresUseCase,
+      getBeatmapsetDiffsUseCase: getBeatmapsetDiffsUseCase,
       saveContactAdminMessageUseCase: saveContactAdminMessageUseCase,
       getContactAdminMessageUseCase: getContactAdminMessageUseCase,
       deleteContactAdminMessageUseCase: deleteContactAdminMessageUseCase,
@@ -335,6 +345,7 @@ export class App {
     const {getApiUsageSummaryUseCase} = params;
     const {getBeatmapInfoUseCase} = params;
     const {getBeatmapUsersBestScoresUseCase} = params;
+    const {getBeatmapsetDiffsUseCase} = params;
     const {saveContactAdminMessageUseCase} = params;
     const {getContactAdminMessageUseCase} = params;
     const {deleteContactAdminMessageUseCase} = params;
@@ -679,7 +690,8 @@ export class App {
       getContextualBeatmapIds,
       getLastSeenBeatmapId,
       saveLastSeenBeatmapId,
-      getBeatmapInfoUseCase
+      getBeatmapInfoUseCase,
+      getBeatmapsetDiffsUseCase
     );
     const userRecentPlays = new UserRecentPlaysVk(
       vkBeatmapCovers,
@@ -1043,6 +1055,7 @@ type VkClientCreationParams = {
   getApiUsageSummaryUseCase: GetApiUsageSummaryUseCase;
   getBeatmapInfoUseCase: GetBeatmapInfoUseCase;
   getBeatmapUsersBestScoresUseCase: GetBeatmapUsersBestScoresUseCase;
+  getBeatmapsetDiffsUseCase: GetBeatmapsetDiffsUseCase;
   saveContactAdminMessageUseCase: SaveContactAdminMessageUseCase;
   getContactAdminMessageUseCase: GetContactAdminMessageUseCase;
   deleteContactAdminMessageUseCase: DeleteContactAdminMessageUseCase;

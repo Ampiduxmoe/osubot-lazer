@@ -32,3 +32,7 @@ export function integerShortForm(value: number): string {
   })();
   return round(dividedNumber, decimalPlaces).toString() + postfix;
 }
+
+export function mod(n: number, m: number) {
+  return ((n % m) + m) % m;
+}

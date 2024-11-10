@@ -1,8 +1,9 @@
 import axios, {AxiosInstance} from 'axios';
-import {OsuOauthAccessToken} from '../OsuOauthAccessToken';
 import {Timespan} from '../../../../primitives/Timespan';
-import {BanchoUsers} from './users/BanchoUsers';
+import {OsuOauthAccessToken} from '../OsuOauthAccessToken';
 import {BanchoBeatmaps} from './beatmaps/BanchoBeatmaps';
+import {BanchoBeatmapsets} from './beatmapsets/BanchoBeatmapsets';
+import {BanchoUsers} from './users/BanchoUsers';
 
 export class BanchoClient {
   private ouathClientId: number;
@@ -18,6 +19,7 @@ export class BanchoClient {
   };
   users = new BanchoUsers(this.getHttpClient);
   beatmaps = new BanchoBeatmaps(this.getHttpClient);
+  beatmapsets = new BanchoBeatmapsets(this.getHttpClient);
 
   constructor(config: BanchoClientConfig) {
     this.ouathClientId = config.ouathClientId;

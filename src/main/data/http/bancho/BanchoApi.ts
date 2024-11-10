@@ -1,21 +1,23 @@
-import {OsuApi} from '../OsuApi';
-import {OsuServer} from '../../../primitives/OsuServer';
-import {BanchoClient} from './client/BanchoClient';
+import {ModAcronym} from '../../../primitives/ModAcronym';
 import {OsuRuleset} from '../../../primitives/OsuRuleset';
+import {OsuServer} from '../../../primitives/OsuServer';
+import {OsuBeatmapInfo} from '../boundary/OsuBeatmapInfo';
+import {OsuBeatmapsetInfo} from '../boundary/OsuBeatmapsetInfo';
+import {OsuBeatmapUserScoreInfo} from '../boundary/OsuBeatmapUserScoreInfo';
+import {OsuUserBestScoreInfo} from '../boundary/OsuUserBestScoreInfo';
 import {OsuUserInfo} from '../boundary/OsuUserInfo';
 import {OsuUserRecentScoreInfo} from '../boundary/OsuUserRecentScoreInfo';
-import {Playmode} from './client/common_types/Playmode';
-import {RawBanchoUserRecentScore} from './client/users/RawBanchoUserRecentScore';
-import {RawBanchoUserBestScore} from './client/users/RawBanchoUserBestScore';
-import {OsuUserBestScoreInfo} from '../boundary/OsuUserBestScoreInfo';
-import {ModAcronym} from '../../../primitives/ModAcronym';
-import {OsuBeatmapInfo} from '../boundary/OsuBeatmapInfo';
+import {OsuApi} from '../OsuApi';
+import {BanchoClient} from './client/BanchoClient';
 import {RawBanchoBeatmapExtended} from './client/beatmaps/RawBanchoBeatmapExtended';
-import {OsuBeatmapUserScoreInfo} from '../boundary/OsuBeatmapUserScoreInfo';
 import {RawBanchoBeatmapUserScore} from './client/beatmaps/RawBanchoBeatmapUserScore';
-import {Mod} from './client/common_types/Mod';
+import {RawBanchoBeatmapsetExtended} from './client/beatmapsets/RawBanchoBeatmapsetExtended';
 import {MaximumStatistics} from './client/common_types/MaximumStatistics';
+import {Mod} from './client/common_types/Mod';
+import {Playmode} from './client/common_types/Playmode';
 import {ScoreStatistics} from './client/common_types/ScoreStatistics';
+import {RawBanchoUserBestScore} from './client/users/RawBanchoUserBestScore';
+import {RawBanchoUserRecentScore} from './client/users/RawBanchoUserRecentScore';
 
 export class BanchoApi implements OsuApi {
   private client: BanchoClient;
@@ -113,6 +115,16 @@ export class BanchoApi implements OsuApi {
       return undefined;
     }
     return scores.map(s => beatmapUserScoreInternalToExternal(s));
+  }
+
+  async getBeatmapset(
+    beatmapsetId: number
+  ): Promise<OsuBeatmapsetInfo | undefined> {
+    const beatmapset = await this.client.beatmapsets.getById(beatmapsetId);
+    if (beatmapset === undefined) {
+      return undefined;
+    }
+    return beatmapsetInternalToExternal(beatmapset);
   }
 }
 
@@ -407,5 +419,73 @@ function scoreStatisticsInternalToExternal(statistics: ScoreStatistics): {
     smallTickMiss: statistics.small_tick_miss,
     perfect: statistics.perfect,
     good: statistics.good,
+  };
+}
+
+function beatmapsetInternalToExternal(
+  beatmapset: RawBanchoBeatmapsetExtended
+): OsuBeatmapsetInfo {
+  return {
+    artist: beatmapset.artist,
+    coverUrl: `https://assets.ppy.sh/beatmapsets/${beatmapset.id}/covers/raw.jpg`,
+    creator: beatmapset.creator,
+    favouriteCount: beatmapset.favourite_count,
+    hype: beatmapset.hype,
+    id: beatmapset.id,
+    nsfw: beatmapset.nsfw,
+    offset: beatmapset.offset,
+    playcount: beatmapset.play_count,
+    previewUrl: beatmapset.preview_url,
+    source: beatmapset.source,
+    spotlight: beatmapset.spotlight,
+    status: beatmapset.status,
+    title: beatmapset.title,
+    userId: beatmapset.user_id,
+    video: beatmapset.video,
+    bpm: beatmapset.bpm,
+    deletedAt:
+      beatmapset.deleted_at === null
+        ? null
+        : Date.parse(beatmapset.deleted_at as string),
+    lastUpdated: Date.parse(beatmapset.last_updated as string),
+    rankedDate: Date.parse(beatmapset.ranked_date as string),
+    storyboard: beatmapset.storyboard,
+    submittedDate: Date.parse(beatmapset.submitted_date as string),
+    tags: beatmapset.tags,
+    availability: {
+      downloadDisabled: beatmapset.availability.download_disabled,
+      moreInformation: beatmapset.availability.more_information,
+    },
+    ratings: beatmapset.ratings,
+    beatmaps: beatmapset.beatmaps.map(map => ({
+      beatmapsetId: map.beatmapset_id,
+      difficultyRating: map.difficulty_rating,
+      id: map.id,
+      mode: playmodeToRuleset(map.mode),
+      totalLength: map.total_length,
+      userId: map.user_id,
+      version: map.version,
+      ar: map.ar,
+      cs: map.cs,
+      od: map.accuracy,
+      hp: map.drain,
+      bpm: map.bpm,
+      convert: map.convert,
+      countCircles: map.count_circles,
+      countSliders: map.count_sliders,
+      countSpinners: map.count_spinners,
+      deletedAt:
+        map.deleted_at === null ? null : Date.parse(map.deleted_at as string),
+      hitLength: map.hit_length,
+      lastUpdated: Date.parse(map.last_updated as string),
+      passcount: map.passcount,
+      playcount: map.playcount,
+      url: map.url,
+      failtimes: {
+        fail: map.failtimes.fail,
+        exit: map.failtimes.exit,
+      },
+      maxCombo: map.max_combo,
+    })),
   };
 }

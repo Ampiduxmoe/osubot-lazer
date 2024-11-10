@@ -1,5 +1,6 @@
 import {MapInfo} from '../../application/usecases/get_beatmap_info/GetBeatmapInfoResponse';
 import {GetBeatmapInfoUseCase} from '../../application/usecases/get_beatmap_info/GetBeatmapInfoUseCase';
+import {GetBeatmapsetDiffsUseCase} from '../../application/usecases/get_beatmapset_diffs/GetBeatmapsetDiffsUseCase';
 import {MaybeDeferred} from '../../primitives/MaybeDeferred';
 import {ModAcronym} from '../../primitives/ModAcronym';
 import {OsuServer} from '../../primitives/OsuServer';
@@ -125,13 +126,54 @@ export abstract class BeatmapInfo<TContext, TOutput> extends TextCommand<
     },
   };
 
+  private getDiffBriefs: (
+    initiatorAppUserId: string,
+    server: OsuServer,
+    beatmapsetId: number
+  ) => Promise<DiffBrief[]> = (() => {
+    const cache: {
+      server: OsuServer;
+      beatmapsetId: number;
+      diffs: DiffBrief[];
+    }[] = [];
+    const maxCacheEntries = 50;
+    return async (initiatorAppUserId, server, beatmapsetId) => {
+      const cachedValue = cache.find(
+        x => x.server === server && x.beatmapsetId === beatmapsetId
+      );
+      if (cachedValue !== undefined) {
+        return cachedValue.diffs;
+      }
+      const diffsResult = await this.getBeatmapsetDiffs.execute({
+        initiatorAppUserId,
+        server,
+        beatmapsetId,
+      });
+      if (diffsResult.diffs === undefined) {
+        throw Error('Invalid beatmapset ID');
+      }
+      const briefs: DiffBrief[] = diffsResult.diffs.map(diff => ({
+        id: diff.id,
+        starRating: diff.starRating,
+        diffName: diff.version,
+      }));
+      briefs.sort((a, b) => a.starRating - b.starRating);
+      cache.push({server: server, beatmapsetId: beatmapsetId, diffs: briefs});
+      if (cache.length > maxCacheEntries) {
+        cache.splice(0, Math.floor(maxCacheEntries / 2));
+      }
+      return briefs;
+    };
+  })();
+
   constructor(
     public textProcessor: TextProcessor,
     protected getInitiatorAppUserId: GetInitiatorAppUserId<TContext>,
     protected getContextualBeatmapIds: GetContextualBeatmapIds<TContext>,
     protected getLastSeenBeatmapId: GetLastSeenBeatmapId<TContext>,
     protected saveLastSeenBeatmapId: SaveLastSeenBeatmapId<TContext>,
-    protected getBeatmapInfo: GetBeatmapInfoUseCase
+    protected getBeatmapInfo: GetBeatmapInfoUseCase,
+    protected getBeatmapsetDiffs: GetBeatmapsetDiffsUseCase
   ) {
     super(BeatmapInfo.commandStructure);
   }
@@ -298,6 +340,8 @@ export abstract class BeatmapInfo<TContext, TOutput> extends TextCommand<
           server: args.server,
           beatmapIdInput: undefined,
           beatmapInfo: undefined,
+          beatmapsetDiffs: undefined,
+          getViewParamsForMap: undefined,
         };
       }
       const beatmapInfoResponse = await this.getBeatmapInfo.execute({
@@ -315,6 +359,8 @@ export abstract class BeatmapInfo<TContext, TOutput> extends TextCommand<
           server: args.server,
           beatmapIdInput: args.beatmapId,
           beatmapInfo: undefined,
+          beatmapsetDiffs: undefined,
+          getViewParamsForMap: undefined,
         };
       }
       if (beatmapId !== undefined) {
@@ -324,13 +370,28 @@ export abstract class BeatmapInfo<TContext, TOutput> extends TextCommand<
         server: args.server,
         beatmapIdInput: args.beatmapId,
         beatmapInfo: beatmapInfo,
+        beatmapsetDiffs: await this.getDiffBriefs(
+          this.getInitiatorAppUserId(ctx),
+          args.server,
+          beatmapInfo.beatmapset.id
+        ),
+        getViewParamsForMap: async id => {
+          return await this.process({server: args.server, beatmapId: id}, ctx)
+            .resultValue;
+        },
       };
     })();
     return MaybeDeferred.fromFastPromise(valuePromise);
   }
 
   createOutputMessage(params: BeatmapInfoViewParams): MaybeDeferred<TOutput> {
-    const {server, beatmapIdInput, beatmapInfo} = params;
+    const {
+      server,
+      beatmapIdInput,
+      beatmapInfo,
+      beatmapsetDiffs,
+      getViewParamsForMap,
+    } = params;
     if (beatmapInfo === undefined) {
       if (beatmapIdInput === undefined) {
         return this.createMapIdNotSpecifiedMessage(server);
@@ -340,12 +401,19 @@ export abstract class BeatmapInfo<TContext, TOutput> extends TextCommand<
     if (beatmapInfo.simulationParams !== undefined) {
       return this.createSimulatedScoreInfoMessage(server, beatmapInfo);
     }
-    return this.createMapInfoMessage(server, beatmapInfo);
+    return this.createMapInfoMessage(
+      server,
+      beatmapInfo,
+      beatmapsetDiffs!,
+      getViewParamsForMap!
+    );
   }
 
   abstract createMapInfoMessage(
     server: OsuServer,
-    mapInfo: MapInfo
+    mapInfo: MapInfo,
+    beatmapsetDiffs: DiffBrief[],
+    getViewParamsForMap: (mapId: number) => Promise<BeatmapInfoViewParams>
   ): MaybeDeferred<TOutput>;
   abstract createSimulatedScoreInfoMessage(
     server: OsuServer,
@@ -481,6 +549,10 @@ export type BeatmapInfoViewParams = {
   server: OsuServer;
   beatmapIdInput: number | undefined;
   beatmapInfo: MapInfo | undefined;
+  beatmapsetDiffs: DiffBrief[] | undefined;
+  getViewParamsForMap:
+    | ((mapId: number) => Promise<BeatmapInfoViewParams>)
+    | undefined;
 };
 
 type MapScoreSimulationOsu = {
@@ -528,4 +600,10 @@ type MapScoreSimulationMania = {
   speed?: number;
   od?: number;
   hp?: number;
+};
+
+export type DiffBrief = {
+  id: number;
+  starRating: number;
+  diffName: string;
 };

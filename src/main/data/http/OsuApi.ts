@@ -1,10 +1,11 @@
 import {OsuRuleset} from '../../primitives/OsuRuleset';
 import {OsuServer} from '../../primitives/OsuServer';
-import {OsuUserInfo} from './boundary/OsuUserInfo';
-import {OsuUserRecentScoreInfo} from './boundary/OsuUserRecentScoreInfo';
-import {OsuUserBestScoreInfo} from './boundary/OsuUserBestScoreInfo';
 import {OsuBeatmapInfo} from './boundary/OsuBeatmapInfo';
 import {OsuBeatmapUserScoreInfo} from './boundary/OsuBeatmapUserScoreInfo';
+import {OsuBeatmapsetInfo} from './boundary/OsuBeatmapsetInfo';
+import {OsuUserBestScoreInfo} from './boundary/OsuUserBestScoreInfo';
+import {OsuUserInfo} from './boundary/OsuUserInfo';
+import {OsuUserRecentScoreInfo} from './boundary/OsuUserRecentScoreInfo';
 
 export interface OsuApi {
   readonly server: OsuServer;
@@ -36,4 +37,6 @@ export interface OsuApi {
     osuUserId: number,
     ruleset: OsuRuleset | undefined
   ): Promise<OsuBeatmapUserScoreInfo[] | undefined>;
+
+  getBeatmapset(beatmapsetId: number): Promise<OsuBeatmapsetInfo | undefined>;
 }

@@ -2,13 +2,15 @@
 import {APP_CODE_NAME} from '../../../App';
 import {MapInfo} from '../../../application/usecases/get_beatmap_info/GetBeatmapInfoResponse';
 import {MaybeDeferred} from '../../../primitives/MaybeDeferred';
-import {integerShortForm, round} from '../../../primitives/Numbers';
+import {integerShortForm, mod, round} from '../../../primitives/Numbers';
 import {OsuRuleset} from '../../../primitives/OsuRuleset';
 import {OsuServer} from '../../../primitives/OsuServer';
 import {Timespan} from '../../../primitives/Timespan';
 import {
   BeatmapInfo,
   BeatmapInfoExecutionArgs,
+  BeatmapInfoViewParams,
+  DiffBrief,
 } from '../../commands/BeatmapInfo';
 import {CommandMatchResult} from '../../common/CommandMatchResult';
 import {VkBeatmapCoversRepository} from '../../data/repositories/VkBeatmapCoversRepository';
@@ -47,7 +49,9 @@ export class BeatmapInfoVk extends BeatmapInfo<
 
   createMapInfoMessage(
     server: OsuServer,
-    mapInfo: MapInfo
+    mapInfo: MapInfo,
+    beatmapsetDiffs: DiffBrief[],
+    getViewParamsForMap: (mapId: number) => Promise<BeatmapInfoViewParams> // TODO: come up with a way to avoid this
   ): MaybeDeferred<VkOutputMessage> {
     const valuePromise: Promise<VkOutputMessage> = (async () => {
       const coverAttachment = await getOrDownloadCoverAttachment(
@@ -102,10 +106,78 @@ ${ppEstimations}
 
 URL: ${mapUrlShort}${couldNotAttachCoverMessage}
       `.trim();
+      const currentDiff = beatmapsetDiffs.find(x => x.id === mapInfo.id);
+      if (currentDiff === undefined) {
+        throw Error(
+          'Could not find current difficulty in a list of beatmapset difficulties'
+        );
+      }
+      const currentDiffIndex = beatmapsetDiffs.indexOf(currentDiff);
+      const prevDiff: DiffBrief | undefined = (() => {
+        if (beatmapsetDiffs.length === 1) {
+          return undefined;
+        }
+        if (beatmapsetDiffs.length === 2) {
+          if (currentDiffIndex === 0) {
+            return undefined;
+          }
+        }
+        return beatmapsetDiffs[
+          mod(currentDiffIndex - 1, beatmapsetDiffs.length)
+        ];
+      })();
+      const nextDiff: DiffBrief | undefined = (() => {
+        if (beatmapsetDiffs.length === 1) {
+          return undefined;
+        }
+        if (beatmapsetDiffs.length === 2) {
+          if (currentDiffIndex === 1) {
+            return undefined;
+          }
+        }
+        return beatmapsetDiffs[
+          mod(currentDiffIndex + 1, beatmapsetDiffs.length)
+        ];
+      })();
+      const commonDiffButtonText = (diff: DiffBrief): string =>
+        `${diff.diffName} (${diff.starRating}★)`;
+      const generateMessageForMap = (
+        mapId: number
+      ): MaybeDeferred<VkOutputMessage> =>
+        MaybeDeferred.fromFastPromise(
+          (async () => {
+            const viewParams = await getViewParamsForMap(mapId);
+            return await this.createOutputMessage(viewParams).resultValue;
+          })()
+        );
       return {
-        text: text,
-        attachment: coverAttachment ?? undefined,
-        buttons: this.createBeatmapButtons(server, mapInfo.id),
+        navigation: {
+          currentContent: {
+            text: text,
+            attachment: coverAttachment ?? undefined,
+            buttons: this.createBeatmapButtons(server, mapInfo.id),
+          },
+          navigationButtons: [
+            [
+              ...(prevDiff === undefined
+                ? []
+                : [
+                    {
+                      text: commonDiffButtonText(prevDiff) + ' ◀',
+                      generateMessage: () => generateMessageForMap(prevDiff.id),
+                    },
+                  ]),
+              ...(nextDiff === undefined
+                ? []
+                : [
+                    {
+                      text: '▶ ' + commonDiffButtonText(nextDiff),
+                      generateMessage: () => generateMessageForMap(nextDiff.id),
+                    },
+                  ]),
+            ],
+          ],
+        },
       };
     })();
     return MaybeDeferred.fromFastPromise(valuePromise);

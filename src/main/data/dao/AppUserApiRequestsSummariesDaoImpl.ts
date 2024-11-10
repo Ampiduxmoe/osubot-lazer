@@ -206,4 +206,5 @@ export const COMMON_REQUEST_SUBTARGETS = {
   userBestPlays: 'user_best_plays',
   beatmapInfo: 'beatmap_info',
   beatmapUserScores: 'beatmap_user_scores',
+  beatmapsetInfo: 'beatmapset_info',
 };
