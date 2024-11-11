@@ -2,7 +2,7 @@
 import {APP_CODE_NAME} from '../../../App';
 import {MapInfo} from '../../../application/usecases/get_beatmap_info/GetBeatmapInfoResponse';
 import {MaybeDeferred} from '../../../primitives/MaybeDeferred';
-import {integerShortForm, mod, round} from '../../../primitives/Numbers';
+import {integerShortForm, round} from '../../../primitives/Numbers';
 import {OsuRuleset} from '../../../primitives/OsuRuleset';
 import {OsuServer} from '../../../primitives/OsuServer';
 import {Timespan} from '../../../primitives/Timespan';
@@ -112,33 +112,6 @@ URL: ${mapUrlShort}${couldNotAttachCoverMessage}
           'Could not find current difficulty in a list of beatmapset difficulties'
         );
       }
-      const currentDiffIndex = beatmapsetDiffs.indexOf(currentDiff);
-      const prevDiff: DiffBrief | undefined = (() => {
-        if (beatmapsetDiffs.length === 1) {
-          return undefined;
-        }
-        if (beatmapsetDiffs.length === 2) {
-          if (currentDiffIndex === 0) {
-            return undefined;
-          }
-        }
-        return beatmapsetDiffs[
-          mod(currentDiffIndex - 1, beatmapsetDiffs.length)
-        ];
-      })();
-      const nextDiff: DiffBrief | undefined = (() => {
-        if (beatmapsetDiffs.length === 1) {
-          return undefined;
-        }
-        if (beatmapsetDiffs.length === 2) {
-          if (currentDiffIndex === 1) {
-            return undefined;
-          }
-        }
-        return beatmapsetDiffs[
-          mod(currentDiffIndex + 1, beatmapsetDiffs.length)
-        ];
-      })();
       const commonDiffButtonText = (diff: DiffBrief): string =>
         `${diff.diffName} (${diff.starRating}★)`;
       const generateMessageForMap = (
@@ -150,6 +123,35 @@ URL: ${mapUrlShort}${couldNotAttachCoverMessage}
             return await this.createOutputMessage(viewParams).resultValue;
           })()
         );
+      const generateMessageForAllDiffs = (): MaybeDeferred<VkOutputMessage> =>
+        MaybeDeferred.fromValue(
+          (() => {
+            const pageText = `${artist} - ${title} by ${mapperName}`;
+            return {
+              navigation: {
+                currentContent: {
+                  text: pageText,
+                },
+                navigationButtons: beatmapsetDiffs
+                  .map(diff => [
+                    {
+                      text: commonDiffButtonText(diff),
+                      generateMessage: () => generateMessageForMap(diff.id),
+                    },
+                  ])
+                  .concat([
+                    [
+                      {
+                        text: 'Назад',
+                        generateMessage: () =>
+                          generateMessageForMap(mapInfo.id),
+                      },
+                    ],
+                  ]),
+              },
+            };
+          })()
+        );
       return {
         navigation: {
           currentContent: {
@@ -157,26 +159,17 @@ URL: ${mapUrlShort}${couldNotAttachCoverMessage}
             attachment: coverAttachment ?? undefined,
             buttons: this.createBeatmapButtons(server, mapInfo.id),
           },
-          navigationButtons: [
-            [
-              ...(prevDiff === undefined
-                ? []
-                : [
+          navigationButtons:
+            beatmapsetDiffs.length === 1
+              ? undefined
+              : [
+                  [
                     {
-                      text: commonDiffButtonText(prevDiff) + ' ◀',
-                      generateMessage: () => generateMessageForMap(prevDiff.id),
+                      text: 'Выбрать другую диффу',
+                      generateMessage: generateMessageForAllDiffs,
                     },
-                  ]),
-              ...(nextDiff === undefined
-                ? []
-                : [
-                    {
-                      text: '▶ ' + commonDiffButtonText(nextDiff),
-                      generateMessage: () => generateMessageForMap(nextDiff.id),
-                    },
-                  ]),
-            ],
-          ],
+                  ],
+                ],
         },
       };
     })();
