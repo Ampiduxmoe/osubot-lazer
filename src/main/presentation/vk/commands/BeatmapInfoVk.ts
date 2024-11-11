@@ -123,16 +123,55 @@ URL: ${mapUrlShort}${couldNotAttachCoverMessage}
             return await this.createOutputMessage(viewParams).resultValue;
           })()
         );
-      const generateMessageForAllDiffs = (): MaybeDeferred<VkOutputMessage> =>
+      const generateMessageForAllDiffs = (
+        pageIndex: number
+      ): MaybeDeferred<VkOutputMessage> =>
         MaybeDeferred.fromValue(
           (() => {
+            const maxDiffsNoPagination = 5;
+            const maxDiffsOnPage = 4;
+            const maxPageIndex =
+              beatmapsetDiffs.length <= maxDiffsNoPagination
+                ? maxDiffsNoPagination
+                : Math.floor(beatmapsetDiffs.length / maxDiffsOnPage);
+            const paginationButtons = (() => {
+              if (beatmapsetDiffs.length <= maxDiffsNoPagination) {
+                return [];
+              }
+              const result: {
+                text: string;
+                generateMessage: () => MaybeDeferred<VkOutputMessage>;
+              }[] = [];
+              if (pageIndex > 0) {
+                result.push({
+                  text: '◀ Предыдущие',
+                  generateMessage: () =>
+                    generateMessageForAllDiffs(pageIndex - 1),
+                });
+              }
+              if (pageIndex < maxPageIndex) {
+                result.push({
+                  text: 'Следующие ▶',
+                  generateMessage: () =>
+                    generateMessageForAllDiffs(pageIndex + 1),
+                });
+              }
+              return [result];
+            })();
             const pageText = `${artist} - ${title} by ${mapperName}`;
+            const diffsToShow =
+              maxPageIndex === 1
+                ? beatmapsetDiffs
+                : beatmapsetDiffs.slice(
+                    pageIndex * maxDiffsOnPage,
+                    (pageIndex + 1) * maxDiffsOnPage
+                  );
             return {
               navigation: {
                 currentContent: {
                   text: pageText,
                 },
-                navigationButtons: beatmapsetDiffs
+                navigationButtons: diffsToShow
                   .map(diff => [
                     {
                       text: commonDiffButtonText(diff),
@@ -140,6 +179,7 @@ URL: ${mapUrlShort}${couldNotAttachCoverMessage}
                     },
                   ])
                   .concat([
+                    ...paginationButtons,
                     [
                       {
                         text: 'Назад',
@@ -166,7 +206,7 @@ URL: ${mapUrlShort}${couldNotAttachCoverMessage}
                   [
                     {
                       text: 'Выбрать другую диффу',
-                      generateMessage: generateMessageForAllDiffs,
+                      generateMessage: () => generateMessageForAllDiffs(0),
                     },
                   ],
                 ],
