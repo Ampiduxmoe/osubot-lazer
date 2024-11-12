@@ -113,7 +113,7 @@ URL: ${mapUrlShort}${couldNotAttachCoverMessage}
         );
       }
       const commonDiffButtonText = (diff: DiffBrief): string =>
-        `${diff.diffName} (${diff.starRating}★)`;
+        `(${diff.starRating}★) ${diff.diffName}`;
       const generateMessageForMap = (
         mapId: number
       ): MaybeDeferred<VkOutputMessage> =>
