@@ -160,7 +160,7 @@ URL: ${mapUrlShort}${couldNotAttachCoverMessage}
             })();
             const pageText = `${artist} - ${title} by ${mapperName}`;
             const diffsToShow =
-              maxPageIndex === 1
+              maxPageIndex === 0
                 ? beatmapsetDiffs
                 : beatmapsetDiffs.slice(
                     pageIndex * maxDiffsOnPage,
