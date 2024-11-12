@@ -10,8 +10,8 @@ import {
   BeatmapInfo,
   BeatmapInfoExecutionArgs,
   BeatmapInfoViewParams,
-  DiffBrief,
 } from '../../commands/BeatmapInfo';
+import {DiffBrief} from '../../commands/common/DiffBrief';
 import {CommandMatchResult} from '../../common/CommandMatchResult';
 import {VkBeatmapCoversRepository} from '../../data/repositories/VkBeatmapCoversRepository';
 import {VkMessageContext} from '../VkMessageContext';

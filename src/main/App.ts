@@ -39,6 +39,7 @@ import {OsuUserSnapshotsTable} from './data/persistence/db/tables/OsuUserSnapsho
 import {SerializedObjectsTable} from './data/persistence/db/tables/SerializedObjectsTable';
 import {TimeWindowsTable} from './data/persistence/db/tables/TimeWindowsTable';
 import {UnreadMessagesTable} from './data/persistence/db/tables/UnreadMessagesTable';
+import {BeatmapsetDiffBriefProvider} from './presentation/commands/common/DiffBriefProvider';
 import {
   GetContextualBeatmapIds,
   GetInitiatorAppUserId,
@@ -291,9 +292,16 @@ export class App {
       osuUsersDao
     );
 
+    const beatmapsetDiffBriefProvider = new BeatmapsetDiffBriefProvider(
+      getBeatmapsetDiffsUseCase,
+      50
+    );
+
     this.vkClient = this.createVkClient({
       vkDb: this.vkDb,
       group: this.currentVkGroup,
+
+      beatmapsetDiffBriefProvider: beatmapsetDiffBriefProvider,
 
       getOsuUserInfoUseCase: getOsuUserInfoUseCase,
       getAppUserInfoUseCase: getAppUserInfoUseCase,
@@ -304,7 +312,6 @@ export class App {
       getApiUsageSummaryUseCase: getApiUsageSummaryUseCase,
       getBeatmapInfoUseCase: getBeatmapInfoUseCase,
       getBeatmapUsersBestScoresUseCase: getBeatmapUsersBestScoresUseCase,
-      getBeatmapsetDiffsUseCase: getBeatmapsetDiffsUseCase,
       saveContactAdminMessageUseCase: saveContactAdminMessageUseCase,
       getContactAdminMessageUseCase: getContactAdminMessageUseCase,
       deleteContactAdminMessageUseCase: deleteContactAdminMessageUseCase,
@@ -336,6 +343,8 @@ export class App {
     const {vkDb} = params;
     const {group} = params;
 
+    const {beatmapsetDiffBriefProvider} = params;
+
     const {getOsuUserInfoUseCase} = params;
     const {getAppUserInfoUseCase} = params;
     const {setUsernameUseCase} = params;
@@ -345,7 +354,6 @@ export class App {
     const {getApiUsageSummaryUseCase} = params;
     const {getBeatmapInfoUseCase} = params;
     const {getBeatmapUsersBestScoresUseCase} = params;
-    const {getBeatmapsetDiffsUseCase} = params;
     const {saveContactAdminMessageUseCase} = params;
     const {getContactAdminMessageUseCase} = params;
     const {deleteContactAdminMessageUseCase} = params;
@@ -691,7 +699,7 @@ export class App {
       getLastSeenBeatmapId,
       saveLastSeenBeatmapId,
       getBeatmapInfoUseCase,
-      getBeatmapsetDiffsUseCase
+      beatmapsetDiffBriefProvider
     );
     const userRecentPlays = new UserRecentPlaysVk(
       vkBeatmapCovers,
@@ -1046,6 +1054,8 @@ type VkClientCreationParams = {
   vkDb: SqlDb;
   group: VkGroup;
 
+  beatmapsetDiffBriefProvider: BeatmapsetDiffBriefProvider;
+
   getOsuUserInfoUseCase: GetOsuUserInfoUseCase;
   getAppUserInfoUseCase: GetAppUserInfoUseCase;
   setUsernameUseCase: SetUsernameUseCase;
@@ -1055,7 +1065,6 @@ type VkClientCreationParams = {
   getApiUsageSummaryUseCase: GetApiUsageSummaryUseCase;
   getBeatmapInfoUseCase: GetBeatmapInfoUseCase;
   getBeatmapUsersBestScoresUseCase: GetBeatmapUsersBestScoresUseCase;
-  getBeatmapsetDiffsUseCase: GetBeatmapsetDiffsUseCase;
   saveContactAdminMessageUseCase: SaveContactAdminMessageUseCase;
   getContactAdminMessageUseCase: GetContactAdminMessageUseCase;
   deleteContactAdminMessageUseCase: DeleteContactAdminMessageUseCase;

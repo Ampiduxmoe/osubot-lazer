@@ -1,6 +1,5 @@
 import {MapInfo} from '../../application/usecases/get_beatmap_info/GetBeatmapInfoResponse';
 import {GetBeatmapInfoUseCase} from '../../application/usecases/get_beatmap_info/GetBeatmapInfoUseCase';
-import {GetBeatmapsetDiffsUseCase} from '../../application/usecases/get_beatmapset_diffs/GetBeatmapsetDiffsUseCase';
 import {MaybeDeferred} from '../../primitives/MaybeDeferred';
 import {ModAcronym} from '../../primitives/ModAcronym';
 import {OsuServer} from '../../primitives/OsuServer';
@@ -29,6 +28,8 @@ import {
 } from '../common/CommandMatchResult';
 import {CommandPrefixes} from '../common/CommandPrefixes';
 import {TextCommand} from './base/TextCommand';
+import {DiffBrief} from './common/DiffBrief';
+import {BeatmapsetDiffBriefProvider} from './common/DiffBriefProvider';
 import {
   GetContextualBeatmapIds,
   GetInitiatorAppUserId,
@@ -126,46 +127,6 @@ export abstract class BeatmapInfo<TContext, TOutput> extends TextCommand<
     },
   };
 
-  private getDiffBriefs: (
-    initiatorAppUserId: string,
-    server: OsuServer,
-    beatmapsetId: number
-  ) => Promise<DiffBrief[]> = (() => {
-    const cache: {
-      server: OsuServer;
-      beatmapsetId: number;
-      diffs: DiffBrief[];
-    }[] = [];
-    const maxCacheEntries = 50;
-    return async (initiatorAppUserId, server, beatmapsetId) => {
-      const cachedValue = cache.find(
-        x => x.server === server && x.beatmapsetId === beatmapsetId
-      );
-      if (cachedValue !== undefined) {
-        return cachedValue.diffs;
-      }
-      const diffsResult = await this.getBeatmapsetDiffs.execute({
-        initiatorAppUserId,
-        server,
-        beatmapsetId,
-      });
-      if (diffsResult.diffs === undefined) {
-        throw Error('Invalid beatmapset ID');
-      }
-      const briefs: DiffBrief[] = diffsResult.diffs.map(diff => ({
-        id: diff.id,
-        starRating: diff.starRating,
-        diffName: diff.version,
-      }));
-      briefs.sort((a, b) => a.starRating - b.starRating);
-      cache.push({server: server, beatmapsetId: beatmapsetId, diffs: briefs});
-      if (cache.length > maxCacheEntries) {
-        cache.splice(0, Math.floor(maxCacheEntries / 2));
-      }
-      return briefs;
-    };
-  })();
-
   constructor(
     public textProcessor: TextProcessor,
     protected getInitiatorAppUserId: GetInitiatorAppUserId<TContext>,
@@ -173,7 +134,7 @@ export abstract class BeatmapInfo<TContext, TOutput> extends TextCommand<
     protected getLastSeenBeatmapId: GetLastSeenBeatmapId<TContext>,
     protected saveLastSeenBeatmapId: SaveLastSeenBeatmapId<TContext>,
     protected getBeatmapInfo: GetBeatmapInfoUseCase,
-    protected getBeatmapsetDiffs: GetBeatmapsetDiffsUseCase
+    protected beatmapsetDiffsProvider: BeatmapsetDiffBriefProvider
   ) {
     super(BeatmapInfo.commandStructure);
   }
@@ -370,7 +331,7 @@ export abstract class BeatmapInfo<TContext, TOutput> extends TextCommand<
         server: args.server,
         beatmapIdInput: args.beatmapId,
         beatmapInfo: beatmapInfo,
-        beatmapsetDiffs: await this.getDiffBriefs(
+        beatmapsetDiffs: await this.beatmapsetDiffsProvider.get(
           this.getInitiatorAppUserId(ctx),
           args.server,
           beatmapInfo.beatmapset.id
@@ -600,10 +561,4 @@ type MapScoreSimulationMania = {
   speed?: number;
   od?: number;
   hp?: number;
-};
-
-export type DiffBrief = {
-  id: number;
-  starRating: number;
-  diffName: string;
 };
