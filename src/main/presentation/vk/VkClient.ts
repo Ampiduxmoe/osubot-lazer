@@ -784,6 +784,23 @@ export class VkClient {
           const newMessage =
             await targetPageButton.generateMessage().resultValue;
           currentRootMessage = newMessage;
+          if (newMessage.navigation === undefined) {
+            if (
+              [newMessage.text, newMessage.attachment, newMessage.buttons].find(
+                x => x !== undefined
+              ) === undefined // we don't have any text/attachment/buttons
+            ) {
+              return undefined;
+            }
+            // we got non-navigation message, so we convert it
+            return {
+              currentContent: {
+                text: newMessage.text,
+                attachment: newMessage.attachment,
+                buttons: newMessage.buttons,
+              },
+            };
+          }
           return newMessage.navigation;
         })();
         if (targetPage === undefined) {
