@@ -31,6 +31,8 @@ import {
   NOTICE_ABOUT_SPACES_IN_USERNAMES,
   TextCommand,
 } from './base/TextCommand';
+import {DiffBrief} from './common/DiffBrief';
+import {BeatmapsetDiffBriefProvider} from './common/DiffBriefProvider';
 import {
   GetContextualBeatmapIds,
   GetInitiatorAppUserId,
@@ -73,7 +75,8 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
     protected getLastSeenBeatmapId: GetLastSeenBeatmapId<TContext>,
     protected saveLastSeenBeatmapId: SaveLastSeenBeatmapId<TContext>,
     protected getBeatmapBestScores: GetBeatmapUsersBestScoresUseCase,
-    protected getAppUserInfo: GetAppUserInfoUseCase
+    protected getAppUserInfo: GetAppUserInfoUseCase,
+    protected beatmapsetDiffsProvider: BeatmapsetDiffBriefProvider
   ) {
     super(UserBestPlaysOnMap.commandStructure);
   }
@@ -171,6 +174,8 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
           map: undefined,
           plays: undefined,
           quantity: undefined,
+          beatmapsetDiffs: undefined,
+          getViewParamsForMap: undefined,
         };
       }
       const beatmapId: number | undefined = await (async () => {
@@ -193,6 +198,8 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
           map: undefined,
           plays: undefined,
           quantity: undefined,
+          beatmapsetDiffs: undefined,
+          getViewParamsForMap: undefined,
         };
       }
       const modPatterns: ModPatternCollection = (() => {
@@ -228,6 +235,8 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
               map: undefined,
               plays: undefined,
               quantity: undefined,
+              beatmapsetDiffs: undefined,
+              getViewParamsForMap: undefined,
             };
         }
       }
@@ -241,6 +250,8 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
           map: leaderboardResponse.baseBeatmap!,
           plays: undefined,
           quantity: undefined,
+          beatmapsetDiffs: undefined,
+          getViewParamsForMap: undefined,
         };
       }
       const mapPlays =
@@ -265,6 +276,24 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
         map: leaderboardResponse.baseBeatmap!,
         plays: mapPlays,
         quantity: args.quantity ?? 1,
+        beatmapsetDiffs: await this.beatmapsetDiffsProvider.get(
+          this.getInitiatorAppUserId(ctx),
+          args.server,
+          leaderboardResponse.mapPlays![0].collection[0].mapInfo.beatmapset.id
+        ),
+        getViewParamsForMap: async id => {
+          return await this.process(
+            {
+              server: args.server,
+              beatmapId: id,
+              username: args.username,
+              modPatterns: args.modPatterns,
+              startPosition: args.startPosition,
+              quantity: args.quantity,
+            },
+            ctx
+          ).resultValue;
+        },
       };
     })();
     return MaybeDeferred.fromFastPromise(valuePromise);
@@ -282,6 +311,8 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
       map,
       plays,
       quantity,
+      beatmapsetDiffs,
+      getViewParamsForMap,
     } = params;
     if (username === undefined) {
       if (usernameInput === undefined) {
@@ -304,7 +335,9 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
       quantity!,
       server,
       mode!,
-      username
+      username,
+      beatmapsetDiffs!,
+      getViewParamsForMap!
     );
   }
 
@@ -314,7 +347,11 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
     quantity: number,
     server: OsuServer,
     mode: OsuRuleset,
-    username: string
+    username: string,
+    beatmapsetDiffs: DiffBrief[],
+    getViewParamsForMap: (
+      mapId: number
+    ) => Promise<UserBestPlaysOnMapViewParams>
   ): MaybeDeferred<TOutput>;
   abstract createMapNotFoundMessage(
     server: OsuServer,
@@ -377,6 +414,10 @@ export type UserBestPlaysOnMapViewParams = {
   map: OsuMap | undefined;
   plays: UserPlayCollection | undefined;
   quantity: number | undefined;
+  beatmapsetDiffs: DiffBrief[] | undefined;
+  getViewParamsForMap:
+    | ((mapId: number) => Promise<UserBestPlaysOnMapViewParams>)
+    | undefined;
 };
 
 type UserPlayCollection = {playResult: OsuMapUserPlay; mapInfo: OsuMap}[];

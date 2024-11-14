@@ -9,9 +9,11 @@ import {round} from '../../../primitives/Numbers';
 import {OsuRuleset} from '../../../primitives/OsuRuleset';
 import {OsuServer} from '../../../primitives/OsuServer';
 import {Timespan} from '../../../primitives/Timespan';
+import {DiffBrief} from '../../commands/common/DiffBrief';
 import {
   UserBestPlaysOnMap,
   UserBestPlaysOnMapExecutionArgs,
+  UserBestPlaysOnMapViewParams,
 } from '../../commands/UserBestPlaysOnMap';
 import {CommandMatchResult} from '../../common/CommandMatchResult';
 import {VkBeatmapCoversRepository} from '../../data/repositories/VkBeatmapCoversRepository';
@@ -57,19 +59,13 @@ export class UserBestPlaysOnMapVk extends UserBestPlaysOnMap<
     quantity: number,
     server: OsuServer,
     mode: OsuRuleset,
-    username: string
+    username: string,
+    beatmapsetDiffs: DiffBrief[],
+    getViewParamsForMap: (
+      mapId: number
+    ) => Promise<UserBestPlaysOnMapViewParams>
   ): MaybeDeferred<VkOutputMessage> {
     const valuePromise: Promise<VkOutputMessage> = (async () => {
-      const areAllMapsSame: boolean = (() => {
-        for (let i = 1; i < mapPlays.length; i++) {
-          if (
-            areMapsDifferentInStats(mapPlays[0].mapInfo, mapPlays[i].mapInfo)
-          ) {
-            return false;
-          }
-        }
-        return true;
-      })();
       const oneScore = quantity === 1;
       const coverAttachment = oneScore
         ? await getOrDownloadCoverAttachment(server, map, this.vkBeatmapCovers)
@@ -82,22 +78,6 @@ export class UserBestPlaysOnMapVk extends UserBestPlaysOnMap<
         coverAttachment === undefined
           ? '\n\nБГ карты прикрепить не удалось 😭'
           : '';
-      if (quantity >= mapPlays.length) {
-        const text = this.createMapPlaysText(
-          areAllMapsSame ? mapPlays[0].mapInfo : map,
-          mapPlays.map(c => c.playResult),
-          mapPlays.length,
-          server,
-          mode,
-          username
-        );
-        const fullText = `${text}${couldNotAttachCoverMessage}`;
-        return {
-          text: fullText,
-          attachment: attachment,
-          buttons: buttons,
-        };
-      }
       const playsChunks: UserPlayCollection[] = [];
       for (let i = 0; i < mapPlays.length; i += quantity) {
         playsChunks.push(mapPlays.slice(i, i + quantity));
@@ -126,21 +106,133 @@ export class UserBestPlaysOnMapVk extends UserBestPlaysOnMap<
           buttons: buttons,
         };
       });
-      return {
-        pagination: {
-          contents: pageContents,
-          startingIndex: 0,
-          buttonText: (currentIndex: number, targetIndex: number) => {
-            if (targetIndex < 0 || targetIndex >= mapPlays.length) {
-              return undefined;
-            }
-            if (targetIndex > currentIndex) {
-              return `▶　(${targetIndex + 1}/${mapPlays.length})`;
-            }
-            return `(${targetIndex + 1}/${mapPlays.length})　◀`;
+      const commonDiffButtonText = (diff: DiffBrief): string =>
+        `(${diff.starRating}★) ${diff.diffName}`;
+      const generateMessageForMap = (
+        mapId: number
+      ): MaybeDeferred<VkOutputMessage> =>
+        MaybeDeferred.fromFastPromise(
+          (async () => {
+            const viewParams = await getViewParamsForMap(mapId);
+            return await this.createOutputMessage(viewParams).resultValue;
+          })()
+        );
+      const generateMessageForAllDiffs = (
+        pageIndex: number
+      ): MaybeDeferred<VkOutputMessage> =>
+        MaybeDeferred.fromValue(
+          (() => {
+            const maxDiffsNoPagination = 5;
+            const maxDiffsOnPage = 4;
+            const maxPageIndex =
+              beatmapsetDiffs.length <= maxDiffsNoPagination
+                ? maxDiffsNoPagination
+                : Math.floor(beatmapsetDiffs.length / maxDiffsOnPage);
+            const paginationButtons = (() => {
+              if (beatmapsetDiffs.length <= maxDiffsNoPagination) {
+                return [];
+              }
+              const result: {
+                text: string;
+                generateMessage: () => MaybeDeferred<VkOutputMessage>;
+              }[] = [];
+              if (pageIndex > 0) {
+                result.push({
+                  text: '◀ Предыдущие',
+                  generateMessage: () =>
+                    generateMessageForAllDiffs(pageIndex - 1),
+                });
+              }
+              if (pageIndex < maxPageIndex) {
+                result.push({
+                  text: 'Следующие ▶',
+                  generateMessage: () =>
+                    generateMessageForAllDiffs(pageIndex + 1),
+                });
+              }
+              return [result];
+            })();
+            const mapset = map.beatmapset;
+            const pageText = `${mapset.artist} - ${mapset.title} by ${mapset.creator}`;
+            const diffsToShow =
+              maxPageIndex === 1
+                ? beatmapsetDiffs
+                : beatmapsetDiffs.slice(
+                    pageIndex * maxDiffsOnPage,
+                    (pageIndex + 1) * maxDiffsOnPage
+                  );
+            return {
+              navigation: {
+                currentContent: {
+                  text: pageText,
+                },
+                navigationButtons: diffsToShow
+                  .map(diff => [
+                    {
+                      text: commonDiffButtonText(diff),
+                      generateMessage: () => generateMessageForMap(diff.id),
+                    },
+                  ])
+                  .concat([
+                    ...paginationButtons,
+                    [
+                      {
+                        text: 'Назад',
+                        generateMessage: () =>
+                          generateMessageForMap(map.beatmap.id),
+                      },
+                    ],
+                  ]),
+              },
+            };
+          })()
+        );
+      const generateMessageForPage = (pageIndex: number): VkOutputMessage => {
+        const content = pageContents[pageIndex];
+        const paginationButtons = (() => {
+          if (pageContents.length === 1) {
+            return [];
+          }
+          const result: {
+            text: string;
+            generateMessage: () => MaybeDeferred<VkOutputMessage>;
+          }[] = [];
+          if (pageIndex > 0) {
+            result.push({
+              text: '◀ Пред. стр.',
+              generateMessage: () =>
+                MaybeDeferred.fromValue(generateMessageForPage(pageIndex - 1)),
+            });
+          }
+          if (pageIndex < pageContents.length - 1) {
+            result.push({
+              text: 'След. стр. ▶',
+              generateMessage: () =>
+                MaybeDeferred.fromValue(generateMessageForPage(pageIndex + 1)),
+            });
+          }
+          return [result];
+        })();
+        return {
+          navigation: {
+            currentContent: content,
+            navigationButtons: [
+              ...paginationButtons,
+              ...(beatmapsetDiffs.length === 1
+                ? []
+                : [
+                    [
+                      {
+                        text: 'Выбрать другую диффу',
+                        generateMessage: () => generateMessageForAllDiffs(0),
+                      },
+                    ],
+                  ]),
+            ],
           },
-        },
+        };
       };
+      return generateMessageForPage(0);
     })();
     return MaybeDeferred.fromFastPromise(valuePromise);
   }

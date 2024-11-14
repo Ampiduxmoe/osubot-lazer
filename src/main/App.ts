@@ -728,7 +728,8 @@ export class App {
       getLastSeenBeatmapId,
       saveLastSeenBeatmapId,
       getBeatmapUsersBestScoresUseCase,
-      getAppUserInfoUseCase
+      getAppUserInfoUseCase,
+      beatmapsetDiffBriefProvider
     );
     const chatLeaderboard = new ChatLeaderboardVk(
       mainTextProcessor,
