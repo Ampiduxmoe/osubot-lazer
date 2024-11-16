@@ -294,6 +294,7 @@ export class App {
 
     const beatmapsetDiffBriefProvider = new BeatmapsetDiffBriefProvider(
       getBeatmapsetDiffsUseCase,
+      getBeatmapInfoUseCase,
       50
     );
 

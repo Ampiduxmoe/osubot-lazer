@@ -240,7 +240,28 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
             };
         }
       }
+      const getViewParamsForMap = async (
+        id: number
+      ): Promise<UserBestPlaysOnMapViewParams> => {
+        return await this.process(
+          {
+            server: args.server,
+            beatmapId: id,
+            username: args.username,
+            modPatterns: args.modPatterns,
+            startPosition: args.startPosition,
+            quantity: args.quantity,
+          },
+          ctx
+        ).resultValue;
+      };
       if (leaderboardResponse.mapPlays!.length === 0) {
+        const beatmapsetDiffs =
+          await this.beatmapsetDiffsProvider.getByBeatmapId(
+            this.getInitiatorAppUserId(ctx),
+            args.server,
+            beatmapId
+          );
         return {
           server: args.server,
           beatmapIdInput: args.beatmapId,
@@ -250,8 +271,8 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
           map: leaderboardResponse.baseBeatmap!,
           plays: undefined,
           quantity: undefined,
-          beatmapsetDiffs: undefined,
-          getViewParamsForMap: undefined,
+          beatmapsetDiffs: beatmapsetDiffs,
+          getViewParamsForMap: getViewParamsForMap,
         };
       }
       const mapPlays =
@@ -267,6 +288,12 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
       if (beatmapId !== undefined) {
         await this.saveLastSeenBeatmapId(ctx, args.server, beatmapId);
       }
+      // Get diffs by beatmapset ID to avoid unnecessary API requests to get it
+      const beatmapsetDiffs = await this.beatmapsetDiffsProvider.get(
+        this.getInitiatorAppUserId(ctx),
+        args.server,
+        leaderboardResponse.mapPlays![0].collection[0].mapInfo.beatmapset.id
+      );
       return {
         server: args.server,
         beatmapIdInput: args.beatmapId,
@@ -276,24 +303,8 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
         map: leaderboardResponse.baseBeatmap!,
         plays: mapPlays,
         quantity: args.quantity ?? 1,
-        beatmapsetDiffs: await this.beatmapsetDiffsProvider.get(
-          this.getInitiatorAppUserId(ctx),
-          args.server,
-          leaderboardResponse.mapPlays![0].collection[0].mapInfo.beatmapset.id
-        ),
-        getViewParamsForMap: async id => {
-          return await this.process(
-            {
-              server: args.server,
-              beatmapId: id,
-              username: args.username,
-              modPatterns: args.modPatterns,
-              startPosition: args.startPosition,
-              quantity: args.quantity,
-            },
-            ctx
-          ).resultValue;
-        },
+        beatmapsetDiffs: beatmapsetDiffs,
+        getViewParamsForMap: getViewParamsForMap,
       };
     })();
     return MaybeDeferred.fromFastPromise(valuePromise);
@@ -327,7 +338,13 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
       return this.createMapNotFoundMessage(server, beatmapIdInput);
     }
     if (plays === undefined) {
-      return this.createNoMapPlaysMessage(server, mode!);
+      return this.createNoMapPlaysMessage(
+        map,
+        server,
+        mode!,
+        beatmapsetDiffs!,
+        getViewParamsForMap!
+      );
     }
     return this.createMapPlaysMessage(
       map,
@@ -368,8 +385,13 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
     server: OsuServer
   ): MaybeDeferred<TOutput>;
   abstract createNoMapPlaysMessage(
+    map: OsuMap,
     server: OsuServer,
-    mode: OsuRuleset
+    mode: OsuRuleset,
+    beatmapsetDiffs: DiffBrief[],
+    getViewParamsForMap: (
+      mapId: number
+    ) => Promise<UserBestPlaysOnMapViewParams>
   ): MaybeDeferred<TOutput>;
 
   unparse(args: UserBestPlaysOnMapExecutionArgs): string {

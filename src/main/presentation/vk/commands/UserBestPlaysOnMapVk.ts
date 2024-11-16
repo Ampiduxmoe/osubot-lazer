@@ -106,8 +106,6 @@ export class UserBestPlaysOnMapVk extends UserBestPlaysOnMap<
           buttons: buttons,
         };
       });
-      const commonDiffButtonText = (diff: DiffBrief): string =>
-        `(${diff.starRating}★) ${diff.diffName}`;
       const generateMessageForMap = (
         mapId: number
       ): MaybeDeferred<VkOutputMessage> =>
@@ -117,122 +115,16 @@ export class UserBestPlaysOnMapVk extends UserBestPlaysOnMap<
             return await this.createOutputMessage(viewParams).resultValue;
           })()
         );
-      const generateMessageForAllDiffs = (
-        pageIndex: number
-      ): MaybeDeferred<VkOutputMessage> =>
-        MaybeDeferred.fromValue(
-          (() => {
-            const maxDiffsNoPagination = 5;
-            const maxDiffsOnPage = 4;
-            const maxPageIndex =
-              beatmapsetDiffs.length <= maxDiffsNoPagination
-                ? maxDiffsNoPagination
-                : Math.floor(beatmapsetDiffs.length / maxDiffsOnPage);
-            const paginationButtons = (() => {
-              if (beatmapsetDiffs.length <= maxDiffsNoPagination) {
-                return [];
-              }
-              const result: {
-                text: string;
-                generateMessage: () => MaybeDeferred<VkOutputMessage>;
-              }[] = [];
-              if (pageIndex > 0) {
-                result.push({
-                  text: '◀ Предыдущие',
-                  generateMessage: () =>
-                    generateMessageForAllDiffs(pageIndex - 1),
-                });
-              }
-              if (pageIndex < maxPageIndex) {
-                result.push({
-                  text: 'Следующие ▶',
-                  generateMessage: () =>
-                    generateMessageForAllDiffs(pageIndex + 1),
-                });
-              }
-              return [result];
-            })();
-            const mapset = map.beatmapset;
-            const pageText = `${mapset.artist} - ${mapset.title} by ${mapset.creator}`;
-            const diffsToShow =
-              maxPageIndex === 1
-                ? beatmapsetDiffs
-                : beatmapsetDiffs.slice(
-                    pageIndex * maxDiffsOnPage,
-                    (pageIndex + 1) * maxDiffsOnPage
-                  );
-            return {
-              navigation: {
-                currentContent: {
-                  text: pageText,
-                },
-                navigationButtons: diffsToShow
-                  .map(diff => [
-                    {
-                      text: commonDiffButtonText(diff),
-                      generateMessage: () => generateMessageForMap(diff.id),
-                    },
-                  ])
-                  .concat([
-                    ...paginationButtons,
-                    [
-                      {
-                        text: 'Назад',
-                        generateMessage: () =>
-                          generateMessageForMap(map.beatmap.id),
-                      },
-                    ],
-                  ]),
-              },
-            };
-          })()
-        );
-      const generateMessageForPage = (pageIndex: number): VkOutputMessage => {
-        const content = pageContents[pageIndex];
-        const paginationButtons = (() => {
-          if (pageContents.length === 1) {
-            return [];
-          }
-          const result: {
-            text: string;
-            generateMessage: () => MaybeDeferred<VkOutputMessage>;
-          }[] = [];
-          if (pageIndex > 0) {
-            result.push({
-              text: '◀ Пред. стр.',
-              generateMessage: () =>
-                MaybeDeferred.fromValue(generateMessageForPage(pageIndex - 1)),
-            });
-          }
-          if (pageIndex < pageContents.length - 1) {
-            result.push({
-              text: 'След. стр. ▶',
-              generateMessage: () =>
-                MaybeDeferred.fromValue(generateMessageForPage(pageIndex + 1)),
-            });
-          }
-          return [result];
-        })();
-        return {
-          navigation: {
-            currentContent: content,
-            navigationButtons: [
-              ...paginationButtons,
-              ...(beatmapsetDiffs.length === 1
-                ? []
-                : [
-                    [
-                      {
-                        text: 'Выбрать другую диффу',
-                        generateMessage: () => generateMessageForAllDiffs(0),
-                      },
-                    ],
-                  ]),
-            ],
-          },
-        };
-      };
-      return generateMessageForPage(0);
+      const mapset = map.beatmapset;
+      const diffsPageText = `${mapset.artist} - ${mapset.title} by ${mapset.creator}`;
+      const messageGenerator = createMessageGeneratorForDiffs(
+        pageContents,
+        beatmapsetDiffs,
+        diffsPageText,
+        map.beatmap.id,
+        generateMessageForMap
+      );
+      return messageGenerator.generateMessageForPage(0);
     })();
     return MaybeDeferred.fromFastPromise(valuePromise);
   }
@@ -474,8 +366,13 @@ ${pos}. ${modsString}
   }
 
   createNoMapPlaysMessage(
+    map: OsuMap,
     server: OsuServer,
-    mode: OsuRuleset
+    mode: OsuRuleset,
+    beatmapsetDiffs: DiffBrief[],
+    getViewParamsForMap: (
+      mapId: number
+    ) => Promise<UserBestPlaysOnMapViewParams>
   ): MaybeDeferred<VkOutputMessage> {
     const serverString = OsuServer[server];
     const modeString = OsuRuleset[mode];
@@ -483,9 +380,30 @@ ${pos}. ${modsString}
 [Server: ${serverString}, Mode: ${modeString}]
 Скоры на карте не найдены
     `.trim();
-    return MaybeDeferred.fromValue({
-      text: text,
-    });
+    const pageContents: VkOutputMessage[] = [
+      {
+        text: text,
+      },
+    ];
+    const generateMessageForMap = (
+      mapId: number
+    ): MaybeDeferred<VkOutputMessage> =>
+      MaybeDeferred.fromFastPromise(
+        (async () => {
+          const viewParams = await getViewParamsForMap(mapId);
+          return await this.createOutputMessage(viewParams).resultValue;
+        })()
+      );
+    const mapset = map.beatmapset;
+    const diffsPageText = `${mapset.artist} - ${mapset.title} by ${mapset.creator}`;
+    const messageGenerator = createMessageGeneratorForDiffs(
+      pageContents,
+      beatmapsetDiffs,
+      diffsPageText,
+      map.beatmap.id,
+      generateMessageForMap
+    );
+    return MaybeDeferred.fromValue(messageGenerator.generateMessageForPage(0));
   }
 
   createBeatmapButtons(
@@ -596,3 +514,134 @@ function areMapsDifferentInStats(a: OsuMap, b: OsuMap): boolean {
   }
   return false;
 }
+
+type MessageGeneratorForDiffs = {
+  generateMessageForPage: (pageIndex: number) => VkOutputMessage;
+};
+
+const createMessageGeneratorForDiffs = (
+  pageContents: VkOutputMessageContent[],
+  beatmapsetDiffs: DiffBrief[],
+  textForDiffsPage: string,
+  mapId: number,
+  generateMessageForMap: (mapId: number) => MaybeDeferred<VkOutputMessage>
+): MessageGeneratorForDiffs => {
+  const commonDiffButtonText = (diff: DiffBrief): string =>
+    `(${diff.starRating}★) ${diff.diffName}`;
+  const generateMessageForAllDiffs = (
+    pageIndex: number
+  ): MaybeDeferred<VkOutputMessage> =>
+    MaybeDeferred.fromValue(
+      (() => {
+        const maxDiffsNoPagination = 5;
+        const maxDiffsOnPage = 4;
+        const maxPageIndex =
+          beatmapsetDiffs.length <= maxDiffsNoPagination
+            ? maxDiffsNoPagination
+            : Math.floor(beatmapsetDiffs.length / maxDiffsOnPage);
+        const paginationButtons = (() => {
+          if (beatmapsetDiffs.length <= maxDiffsNoPagination) {
+            return [];
+          }
+          const result: {
+            text: string;
+            generateMessage: () => MaybeDeferred<VkOutputMessage>;
+          }[] = [];
+          if (pageIndex > 0) {
+            result.push({
+              text: '◀ Предыдущие',
+              generateMessage: () => generateMessageForAllDiffs(pageIndex - 1),
+            });
+          }
+          if (pageIndex < maxPageIndex) {
+            result.push({
+              text: 'Следующие ▶',
+              generateMessage: () => generateMessageForAllDiffs(pageIndex + 1),
+            });
+          }
+          return [result];
+        })();
+        const diffsToShow =
+          maxPageIndex === 1
+            ? beatmapsetDiffs
+            : beatmapsetDiffs.slice(
+                pageIndex * maxDiffsOnPage,
+                (pageIndex + 1) * maxDiffsOnPage
+              );
+        return {
+          navigation: {
+            currentContent: {
+              text: textForDiffsPage,
+            },
+            navigationButtons: diffsToShow
+              .map(diff => [
+                {
+                  text: commonDiffButtonText(diff),
+                  generateMessage: () => generateMessageForMap(diff.id),
+                },
+              ])
+              .concat([
+                ...paginationButtons,
+                [
+                  {
+                    text: 'Назад',
+                    generateMessage: () => generateMessageForMap(mapId),
+                  },
+                ],
+              ]),
+          },
+        };
+      })()
+    );
+  return {
+    generateMessageForPage(pageIndex) {
+      const content = pageContents[pageIndex];
+      const paginationButtons = (() => {
+        if (pageContents.length === 1) {
+          return [];
+        }
+        const result: {
+          text: string;
+          generateMessage: () => MaybeDeferred<VkOutputMessage>;
+        }[] = [];
+        if (pageIndex > 0) {
+          result.push({
+            text: '◀ Пред. стр.',
+            generateMessage: () =>
+              MaybeDeferred.fromValue(
+                this.generateMessageForPage(pageIndex - 1)
+              ),
+          });
+        }
+        if (pageIndex < pageContents.length - 1) {
+          result.push({
+            text: 'След. стр. ▶',
+            generateMessage: () =>
+              MaybeDeferred.fromValue(
+                this.generateMessageForPage(pageIndex + 1)
+              ),
+          });
+        }
+        return [result];
+      })();
+      return {
+        navigation: {
+          currentContent: content,
+          navigationButtons: [
+            ...paginationButtons,
+            ...(beatmapsetDiffs.length === 1
+              ? []
+              : [
+                  [
+                    {
+                      text: 'Выбрать другую диффу',
+                      generateMessage: () => generateMessageForAllDiffs(0),
+                    },
+                  ],
+                ]),
+          ],
+        },
+      };
+    },
+  };
+};
