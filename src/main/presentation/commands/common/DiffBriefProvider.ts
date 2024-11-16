@@ -78,7 +78,7 @@ export class BeatmapsetDiffBriefProvider {
     return await this.get(
       initiatorAppUserId,
       server,
-      beatmapInfoResult.beatmapInfo.id
+      beatmapInfoResult.beatmapInfo.beatmapset.id
     );
   }
 }
