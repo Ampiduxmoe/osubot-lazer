@@ -14,6 +14,7 @@ import {UserRecentPlays} from '../../commands/UserRecentPlays';
 import {CommandMatchResult} from '../../common/CommandMatchResult';
 import {VkMessageContext} from '../VkMessageContext';
 import {
+  NAVIGATION_ALL_CAPTIONS,
   VkOutputMessage,
   VkOutputMessageButton,
   VkOutputMessageContent,
@@ -742,7 +743,7 @@ function toOutput(
 ): MaybeDeferred<VkOutputMessage> {
   const valuePromise = (async () => {
     const outputMessage: VkOutputMessage = {
-      navigation: await page,
+      navigation: {...(await page), enabledCaptions: NAVIGATION_ALL_CAPTIONS},
     };
     return outputMessage;
   })();

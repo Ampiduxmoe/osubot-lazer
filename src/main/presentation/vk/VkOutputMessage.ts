@@ -18,6 +18,7 @@ export type VkOutputMessage = VkOutputMessageContent & {
    * If specified, overrides base {@link VkOutputMessageContent}
    */
   navigation?: {
+    enabledCaptions?: VkNavigationCaption[];
     currentContent?: VkOutputMessageContent;
     navigationButtons?: {
       text: string;
@@ -36,3 +37,13 @@ export type VkOutputMessageContent = {
   attachment?: string;
   buttons?: VkOutputMessageButton[][];
 };
+
+export enum VkNavigationCaption {
+  NAVIGATION_OWNER,
+  NAVIGATION_EXPIRE,
+}
+
+export const NAVIGATION_ALL_CAPTIONS: VkNavigationCaption[] = [
+  VkNavigationCaption.NAVIGATION_OWNER,
+  VkNavigationCaption.NAVIGATION_EXPIRE,
+];

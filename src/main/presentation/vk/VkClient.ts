@@ -6,7 +6,11 @@ import {Timespan} from '../../primitives/Timespan';
 import {TextCommand} from '../commands/base/TextCommand';
 import {CommandMatchResult, MatchLevel} from '../common/CommandMatchResult';
 import {VkMessageContext} from './VkMessageContext';
-import {VkOutputMessage, VkOutputMessageButton} from './VkOutputMessage';
+import {
+  VkNavigationCaption,
+  VkOutputMessage,
+  VkOutputMessageButton,
+} from './VkOutputMessage';
 
 type UnknownExecutionParams = unknown;
 type UnknownViewParams = unknown;
@@ -749,6 +753,7 @@ export class VkClient {
       text: string | undefined;
       attachment: string | undefined;
       keyboard: KeyboardBuilder | undefined;
+      enabledCaptions: VkNavigationCaption[] | undefined;
     };
     let currentRootMessage = outputMessage;
     const trySetNewRoot: (
@@ -856,11 +861,15 @@ export class VkClient {
             userInfo !== undefined &&
             navigationEnabled &&
             targetNavButtons.length !== 0 &&
-            ctx.peerId !== ctx.senderId
+            ctx.peerId !== ctx.senderId &&
+            targetPage.enabledCaptions?.includes(
+              VkNavigationCaption.NAVIGATION_OWNER
+            )
               ? `Меню управляет: ${userInfo.first_name} ${userInfo.last_name}\n\n${text}`
               : text,
           attachment: attachment,
           keyboard: keyboard,
+          enabledCaptions: targetPage.enabledCaptions,
         };
       } catch (e) {
         console.error('Could not generate new navigation page');
@@ -936,8 +945,18 @@ export class VkClient {
               return 'количество меню в чате превышено';
           }
         })();
+        const maybeCaption = (() => {
+          if (
+            targetMessage.enabledCaptions?.includes(
+              VkNavigationCaption.NAVIGATION_EXPIRE
+            )
+          ) {
+            return `Меню больше недействительно: ${reasonText}\n\n`;
+          }
+          return '';
+        })();
         await botMessageCtx.editMessage({
-          message: `Меню больше недействительно: ${reasonText}\n\n${text}`,
+          message: `${maybeCaption}${text}`,
           attachment,
           keyboard,
         });
