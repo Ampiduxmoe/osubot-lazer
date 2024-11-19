@@ -67,10 +67,6 @@ export class BeatmapsetDiffBriefProvider {
       initiatorAppUserId: initiatorAppUserId,
       server: server,
       beatmapId: beatmapId,
-      mapScoreSimulationOsu: {},
-      mapScoreSimulationTaiko: {},
-      mapScoreSimulationCtb: {},
-      mapScoreSimulationMania: {},
     });
     if (beatmapInfoResult.beatmapInfo === undefined) {
       throw Error('Invalid beatmap ID');

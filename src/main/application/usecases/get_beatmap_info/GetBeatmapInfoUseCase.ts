@@ -62,6 +62,11 @@ export class GetBeatmapInfoUseCase
   async execute(
     params: GetBeatmapInfoRequest
   ): Promise<GetBeatmapInfoResponse> {
+    const mapScoreSimulationOsu = params.mapScoreSimulationOsu ?? {};
+    const mapScoreSimulationTaiko = params.mapScoreSimulationTaiko ?? {};
+    const mapScoreSimulationCtb = params.mapScoreSimulationCtb ?? {};
+    const mapScoreSimulationMania = params.mapScoreSimulationMania ?? {};
+
     const rawMap = await this.beatmaps.get(
       params.initiatorAppUserId,
       params.beatmapId,
@@ -74,11 +79,11 @@ export class GetBeatmapInfoUseCase
     }
 
     const hasOsuSimulationParams =
-      Object.values(params.mapScoreSimulationOsu).find(x => x !== undefined) !==
+      Object.values(mapScoreSimulationOsu).find(x => x !== undefined) !==
       undefined;
     if (rawMap.mode === OsuRuleset.osu && hasOsuSimulationParams) {
       let mods: (Mod<ModeOsu, object> | UnremarkableMod)[] = [];
-      const requestedAcronyms = params.mapScoreSimulationOsu.mods ?? [];
+      const requestedAcronyms = mapScoreSimulationOsu.mods ?? [];
       for (const acronym of requestedAcronyms) {
         if (acronym.is('HT')) {
           mods.push(new HalfTimeOsu({}));
@@ -96,8 +101,8 @@ export class GetBeatmapInfoUseCase
           mods.push(new UnremarkableMod(acronym));
         }
       }
-      if (params.mapScoreSimulationOsu.speed !== undefined) {
-        const speed = params.mapScoreSimulationOsu.speed;
+      if (mapScoreSimulationOsu.speed !== undefined) {
+        const speed = mapScoreSimulationOsu.speed;
         // speed parameter overrides mods that can't have that speed:
         if (speed === 1) {
           mods = mods.filter(m => !m.acronym.isAnyOf('HT', 'DC', 'DT', 'NC'));
@@ -127,7 +132,7 @@ export class GetBeatmapInfoUseCase
           }
         }
       }
-      const {ar, cs, od, hp} = params.mapScoreSimulationOsu;
+      const {ar, cs, od, hp} = mapScoreSimulationOsu;
       if ((ar ?? cs ?? od ?? hp) !== undefined) {
         mods.push(new DifficultyAdjustOsu({ar, cs, od, hp}));
       }
@@ -142,7 +147,7 @@ export class GetBeatmapInfoUseCase
       let finalGoods: number | undefined;
       let finalMehs: number | undefined;
       (() => {
-        const {accuracy, goods, mehs} = params.mapScoreSimulationOsu;
+        const {accuracy, goods, mehs} = mapScoreSimulationOsu;
         // Each of the variables above can either be a number or undefined.
         // There are 8 possible combinations: 000, 001, 010, 011, 100, 101, 110, 111
         // (0 means user did not provide a value, 1 means number).
@@ -172,7 +177,7 @@ export class GetBeatmapInfoUseCase
           const totalHits =
             rawMap.countCircles + rawMap.countSliders + rawMap.countSpinners;
           const hitsAvailable =
-            totalHits - (params.mapScoreSimulationOsu.misses ?? 0) - goods;
+            totalHits - (mapScoreSimulationOsu.misses ?? 0) - goods;
           // accuracy = (6 * count300 + 2 * count100 + 1 * count50 + 0 * misses) / (6 * totalhits)
           // ... let count300 = x, then count50 = hitsAvailable - x:
           // accuracy = (6x + 2 * count100 + (hitsAvailable - x)) / (6 * totalHits)
@@ -202,13 +207,13 @@ export class GetBeatmapInfoUseCase
       });
       const finalScore = baseScore.copy({
         mods: mods,
-        maxCombo: params.mapScoreSimulationOsu.combo,
+        maxCombo: mapScoreSimulationOsu.combo,
         accuracy: finalAccuracy,
         hitcounts: new HitcountsOsu({
           great: undefined,
           ok: finalGoods,
           meh: finalMehs,
-          miss: params.mapScoreSimulationOsu.misses,
+          miss: mapScoreSimulationOsu.misses,
         }),
       }) as BeatmapScore<ModeOsu, HitcountsOsu>;
 
@@ -270,7 +275,7 @@ export class GetBeatmapInfoUseCase
             mods: finalScore.mods.map(m => m.acronym),
             combo: finalScore.maxCombo,
             accuracy: finalScoreAccuracy,
-            speed: params.mapScoreSimulationOsu.speed,
+            speed: mapScoreSimulationOsu.speed,
             misses: finalScore.hitcounts.miss,
             mehs: finalScore.hitcounts.meh,
           },
@@ -278,12 +283,11 @@ export class GetBeatmapInfoUseCase
       };
     }
     const hasTaikoSimulationParams =
-      Object.values(params.mapScoreSimulationTaiko).find(
-        x => x !== undefined
-      ) !== undefined;
+      Object.values(mapScoreSimulationTaiko).find(x => x !== undefined) !==
+      undefined;
     if (rawMap.mode === OsuRuleset.taiko && hasTaikoSimulationParams) {
       let mods: (Mod<ModeTaiko, object> | UnremarkableMod)[] = [];
-      const requestedAcronyms = params.mapScoreSimulationOsu.mods ?? [];
+      const requestedAcronyms = mapScoreSimulationOsu.mods ?? [];
       for (const acronym of requestedAcronyms) {
         if (acronym.is('HT')) {
           mods.push(new HalfTimeTaiko({}));
@@ -301,8 +305,8 @@ export class GetBeatmapInfoUseCase
           mods.push(new UnremarkableMod(acronym));
         }
       }
-      if (params.mapScoreSimulationOsu.speed !== undefined) {
-        const speed = params.mapScoreSimulationOsu.speed;
+      if (mapScoreSimulationOsu.speed !== undefined) {
+        const speed = mapScoreSimulationOsu.speed;
         // speed parameter overrides mods that can't have that speed:
         if (speed === 1) {
           mods = mods.filter(m => !m.acronym.isAnyOf('HT', 'DC', 'DT', 'NC'));
@@ -332,7 +336,7 @@ export class GetBeatmapInfoUseCase
           }
         }
       }
-      const {od, hp} = params.mapScoreSimulationTaiko;
+      const {od, hp} = mapScoreSimulationTaiko;
       if ((od ?? hp) !== undefined) {
         mods.push(new DifficultyAdjustTaiko({od, hp}));
       }
@@ -346,7 +350,7 @@ export class GetBeatmapInfoUseCase
       let finalAccuracy: number | undefined;
       let finalGoods: number | undefined;
       (() => {
-        const {accuracy, goods} = params.mapScoreSimulationTaiko;
+        const {accuracy, goods} = mapScoreSimulationTaiko;
         // Each of the variables above can either be a number or undefined.
         // There are 4 possible combinations: 00, 01, 10, 11
         // (0 means user did not provide a value, 1 means number).
@@ -371,12 +375,12 @@ export class GetBeatmapInfoUseCase
       });
       const finalScore = baseScore.copy({
         mods: mods,
-        maxCombo: params.mapScoreSimulationOsu.combo,
+        maxCombo: mapScoreSimulationOsu.combo,
         accuracy: finalAccuracy,
         hitcounts: new HitcountsTaiko({
           great: undefined,
           ok: finalGoods,
-          miss: params.mapScoreSimulationOsu.misses,
+          miss: mapScoreSimulationOsu.misses,
         }),
       }) as BeatmapScore<ModeTaiko, HitcountsTaiko>;
 
@@ -438,7 +442,7 @@ export class GetBeatmapInfoUseCase
             mods: finalScore.mods.map(m => m.acronym),
             combo: finalScore.maxCombo,
             accuracy: finalScoreAccuracy,
-            speed: params.mapScoreSimulationOsu.speed,
+            speed: mapScoreSimulationOsu.speed,
             misses: finalScore.hitcounts.miss,
             mehs: 0,
           },
@@ -446,11 +450,11 @@ export class GetBeatmapInfoUseCase
       };
     }
     const hasCtbSimulationParams =
-      Object.values(params.mapScoreSimulationCtb).find(x => x !== undefined) !==
+      Object.values(mapScoreSimulationCtb).find(x => x !== undefined) !==
       undefined;
     if (rawMap.mode === OsuRuleset.ctb && hasCtbSimulationParams) {
       let mods: (Mod<ModeCtb, object> | UnremarkableMod)[] = [];
-      const requestedAcronyms = params.mapScoreSimulationOsu.mods ?? [];
+      const requestedAcronyms = mapScoreSimulationOsu.mods ?? [];
       for (const acronym of requestedAcronyms) {
         if (acronym.is('HT')) {
           mods.push(new HalfTimeCtb({}));
@@ -468,8 +472,8 @@ export class GetBeatmapInfoUseCase
           mods.push(new UnremarkableMod(acronym));
         }
       }
-      if (params.mapScoreSimulationOsu.speed !== undefined) {
-        const speed = params.mapScoreSimulationOsu.speed;
+      if (mapScoreSimulationOsu.speed !== undefined) {
+        const speed = mapScoreSimulationOsu.speed;
         // speed parameter overrides mods that can't have that speed:
         if (speed === 1) {
           mods = mods.filter(m => !m.acronym.isAnyOf('HT', 'DC', 'DT', 'NC'));
@@ -499,7 +503,7 @@ export class GetBeatmapInfoUseCase
           }
         }
       }
-      const {ar, cs, hp} = params.mapScoreSimulationCtb;
+      const {ar, cs, hp} = mapScoreSimulationCtb;
       if ((ar ?? cs ?? hp) !== undefined) {
         mods.push(new DifficultyAdjustCtb({ar, cs, hp}));
       }
@@ -517,7 +521,7 @@ export class GetBeatmapInfoUseCase
       let finalSmallMisses: number | undefined;
       let finalMisses: number | undefined;
       await (async () => {
-        const {accuracy, smallMisses, misses} = params.mapScoreSimulationCtb;
+        const {accuracy, smallMisses, misses} = mapScoreSimulationCtb;
         // Each of the variables above can either be a number or undefined.
         // There are 8 possible combinations: 000, 001, 010, 011, 100, 101, 110, 111
         // (0 means user did not provide a value, 1 means number).
@@ -610,7 +614,7 @@ export class GetBeatmapInfoUseCase
       })();
       const finalScore = baseScore.copy({
         mods: mods,
-        maxCombo: params.mapScoreSimulationOsu.combo,
+        maxCombo: mapScoreSimulationOsu.combo,
         accuracy: finalAccuracy,
         hitcounts: new HitcountsCtb({
           miss: finalMisses,
@@ -676,7 +680,7 @@ export class GetBeatmapInfoUseCase
             mods: finalScore.mods.map(m => m.acronym),
             combo: finalScore.maxCombo,
             accuracy: finalScoreAccuracy,
-            speed: params.mapScoreSimulationOsu.speed,
+            speed: mapScoreSimulationOsu.speed,
             misses: finalScore.hitcounts.miss,
             mehs: 0,
           },
@@ -684,12 +688,11 @@ export class GetBeatmapInfoUseCase
       };
     }
     const hasManiaSimulationParams =
-      Object.values(params.mapScoreSimulationMania).find(
-        x => x !== undefined
-      ) !== undefined;
+      Object.values(mapScoreSimulationMania).find(x => x !== undefined) !==
+      undefined;
     if (rawMap.mode === OsuRuleset.mania && hasManiaSimulationParams) {
       let mods: (Mod<ModeMania, object> | UnremarkableMod)[] = [];
-      const requestedAcronyms = params.mapScoreSimulationOsu.mods ?? [];
+      const requestedAcronyms = mapScoreSimulationOsu.mods ?? [];
       for (const acronym of requestedAcronyms) {
         if (acronym.is('HT')) {
           mods.push(new HalfTimeMania({}));
@@ -707,8 +710,8 @@ export class GetBeatmapInfoUseCase
           mods.push(new UnremarkableMod(acronym));
         }
       }
-      if (params.mapScoreSimulationOsu.speed !== undefined) {
-        const speed = params.mapScoreSimulationOsu.speed;
+      if (mapScoreSimulationOsu.speed !== undefined) {
+        const speed = mapScoreSimulationOsu.speed;
         // speed parameter overrides mods that can't have that speed:
         if (speed === 1) {
           mods = mods.filter(m => !m.acronym.isAnyOf('HT', 'DC', 'DT', 'NC'));
@@ -738,11 +741,11 @@ export class GetBeatmapInfoUseCase
           }
         }
       }
-      const {od, hp} = params.mapScoreSimulationMania;
+      const {od, hp} = mapScoreSimulationMania;
       if ((od ?? hp) !== undefined) {
         mods.push(new DifficultyAdjustMania({od, hp}));
       }
-      const finalAccuracy = params.mapScoreSimulationMania.accuracy;
+      const finalAccuracy = mapScoreSimulationMania.accuracy;
       const baseScore = this.beatmapInfoAdapter.createBeatmapScore({
         map: rawMap,
         ruleset: rawMap.mode,
@@ -750,10 +753,10 @@ export class GetBeatmapInfoUseCase
       });
       const finalScore = baseScore.copy({
         mods: mods,
-        maxCombo: params.mapScoreSimulationMania.combo,
+        maxCombo: mapScoreSimulationMania.combo,
         accuracy: finalAccuracy !== undefined ? finalAccuracy / 100 : undefined,
         hitcounts: new HitcountsMania({
-          miss: params.mapScoreSimulationMania.misses,
+          miss: mapScoreSimulationMania.misses,
         }),
       }) as BeatmapScore<ModeMania, HitcountsMania>;
 
@@ -815,7 +818,7 @@ export class GetBeatmapInfoUseCase
             mods: finalScore.mods.map(m => m.acronym),
             combo: finalScore.maxCombo,
             accuracy: finalScoreAccuracy,
-            speed: params.mapScoreSimulationOsu.speed,
+            speed: mapScoreSimulationOsu.speed,
             misses: finalScore.hitcounts.miss,
             mehs: 0,
           },

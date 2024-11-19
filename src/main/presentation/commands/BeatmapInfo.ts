@@ -309,10 +309,10 @@ export abstract class BeatmapInfo<TContext, TOutput> extends TextCommand<
         initiatorAppUserId: this.getInitiatorAppUserId(ctx),
         beatmapId: beatmapId,
         server: args.server,
-        mapScoreSimulationOsu: args.mapScoreSimulationOsu ?? {},
-        mapScoreSimulationTaiko: args.mapScoreSimulationTaiko ?? {},
-        mapScoreSimulationCtb: args.mapScoreSimulationCtb ?? {},
-        mapScoreSimulationMania: args.mapScoreSimulationMania ?? {},
+        mapScoreSimulationOsu: args.mapScoreSimulationOsu,
+        mapScoreSimulationTaiko: args.mapScoreSimulationTaiko,
+        mapScoreSimulationCtb: args.mapScoreSimulationCtb,
+        mapScoreSimulationMania: args.mapScoreSimulationMania,
       });
       const beatmapInfo = beatmapInfoResponse.beatmapInfo;
       if (beatmapInfo === undefined) {

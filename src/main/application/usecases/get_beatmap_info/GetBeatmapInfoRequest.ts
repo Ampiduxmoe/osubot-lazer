@@ -5,7 +5,7 @@ export type GetBeatmapInfoRequest = {
   initiatorAppUserId: string;
   server: OsuServer;
   beatmapId: number;
-  mapScoreSimulationOsu: {
+  mapScoreSimulationOsu?: {
     mods?: ModAcronym[];
     combo?: number;
     misses?: number;
@@ -18,7 +18,7 @@ export type GetBeatmapInfoRequest = {
     od?: number;
     hp?: number;
   };
-  mapScoreSimulationTaiko: {
+  mapScoreSimulationTaiko?: {
     mods?: ModAcronym[];
     combo?: number;
     misses?: number;
@@ -28,7 +28,7 @@ export type GetBeatmapInfoRequest = {
     od?: number;
     hp?: number;
   };
-  mapScoreSimulationCtb: {
+  mapScoreSimulationCtb?: {
     mods?: ModAcronym[];
     combo?: number;
     misses?: number;
@@ -39,7 +39,7 @@ export type GetBeatmapInfoRequest = {
     cs?: number;
     hp?: number;
   };
-  mapScoreSimulationMania: {
+  mapScoreSimulationMania?: {
     mods?: ModAcronym[];
     combo?: number;
     misses?: number;
