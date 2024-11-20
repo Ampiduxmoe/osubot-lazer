@@ -13,7 +13,7 @@ import {ModeMania} from '../../../domain/entities/mode/ModeMania';
 import {ModeOsu} from '../../../domain/entities/mode/ModeOsu';
 import {ModeTaiko} from '../../../domain/entities/mode/ModeTaiko';
 import {sum, sumBy} from '../../../primitives/Arrays';
-import {wait} from '../../../primitives/Promises';
+import {delay, wait} from '../../../primitives/Promises';
 import {BeatmapUserScoreAdapter} from '../../adapters/beatmap_user_score/BeatmapUserScoreAdapter';
 import {CachedOsuUsersDao} from '../../requirements/dao/CachedOsuUsersDao';
 import {OsuBeatmapUserScoresDao} from '../../requirements/dao/OsuBeatmapUserScoresDao';
@@ -72,6 +72,12 @@ export class GetBeatmapUsersBestScoresUseCase
       };
     }
 
+    const batchSize = 5;
+    const batchDelayMs = 1000;
+    const calculateDelayFor = (index: number): number =>
+      Math.floor(index / batchSize) * batchDelayMs;
+    let totalRequestCount = 0;
+
     const targets: {osuId: number; caseCorrectUsername: string}[] = [];
     const missingUsernames: string[] = [];
     for (const username of usernames) {
@@ -83,12 +89,15 @@ export class GetBeatmapUsersBestScoresUseCase
         });
         continue;
       }
+      const requestDelay = calculateDelayFor(totalRequestCount);
+      await delay(requestDelay);
       const osuUser = await this.osuUsers.getByUsername(
         initiatorAppUserId,
         username,
         server,
         undefined
       );
+      totalRequestCount += 1;
       if (osuUser === undefined) {
         missingUsernames.push(username);
         continue;
@@ -99,12 +108,8 @@ export class GetBeatmapUsersBestScoresUseCase
       });
     }
 
-    const batchSize = 5;
-    const batchDelayMs = 1000;
-    const calculateDelayFor = (index: number): number =>
-      Math.floor(index / batchSize) * batchDelayMs;
     const usernameScoresPromises = targets.map((t, i) =>
-      wait(calculateDelayFor(i)).then(async () => ({
+      wait(calculateDelayFor(totalRequestCount + i)).then(async () => ({
         username: t.caseCorrectUsername,
         rawScores: await this.mapUserScores.get(
           initiatorAppUserId,
