@@ -1,6 +1,7 @@
 /* eslint-disable no-irregular-whitespace */
 import {APP_CODE_NAME} from '../../../App';
 import {
+  BeatmapsetRankStatus,
   BestPlay,
   OsuUserBestPlays,
 } from '../../../application/usecases/get_user_best_plays/GetUserBestPlaysResponse';
@@ -99,8 +100,12 @@ ${couldNotGetSomeStatsMessage}${couldNotAttachCoverMessage}
         text: text,
         attachment: coverAttachment ?? undefined,
         buttons: oneScore
-          ? this.createBeatmapButtons(server, bestPlays.plays[0].beatmap.id)
-          : [],
+          ? this.createBeatmapButtons(
+              server,
+              bestPlays.plays[0].beatmap.id,
+              hasLeaderboard(bestPlays.plays[0].beatmapset.status)
+            )
+          : undefined,
       };
     })();
     return MaybeDeferred.fromFastPromise(valuePromise);
@@ -280,8 +285,12 @@ ${pp}pp　 ${mapUrlShort}
 
   createBeatmapButtons(
     server: OsuServer,
-    beatmapId: number
-  ): VkOutputMessageButton[][] {
+    beatmapId: number,
+    hasLeaderboard: boolean
+  ): VkOutputMessageButton[][] | undefined {
+    if (!hasLeaderboard) {
+      return undefined;
+    }
     const buttons: VkOutputMessageButton[] = [];
     const userBestPlaysOnMapCommand = this.otherCommands.find(
       x => x instanceof UserBestPlaysOnMapVk
@@ -352,5 +361,24 @@ async function getOrDownloadCoverAttachment(
     return newAttachment;
   } catch (e) {
     return undefined;
+  }
+}
+
+function hasLeaderboard(mapStatus: BeatmapsetRankStatus) {
+  switch (mapStatus) {
+    case 'Graveyard':
+      return false;
+    case 'Wip':
+      return false;
+    case 'Pending':
+      return false;
+    case 'Ranked':
+      return true;
+    case 'Approved':
+      return true;
+    case 'Qualified':
+      return true;
+    case 'Loved':
+      return true;
   }
 }

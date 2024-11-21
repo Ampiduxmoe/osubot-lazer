@@ -1,6 +1,9 @@
 /* eslint-disable no-irregular-whitespace */
 import {APP_CODE_NAME} from '../../../App';
-import {MapInfo} from '../../../application/usecases/get_beatmap_info/GetBeatmapInfoResponse';
+import {
+  BeatmapsetRankStatus,
+  MapInfo,
+} from '../../../application/usecases/get_beatmap_info/GetBeatmapInfoResponse';
 import {MaybeDeferred} from '../../../primitives/MaybeDeferred';
 import {integerShortForm, round} from '../../../primitives/Numbers';
 import {OsuRuleset} from '../../../primitives/OsuRuleset';
@@ -197,7 +200,11 @@ URL: ${mapUrlShort}${couldNotAttachCoverMessage}
           currentContent: {
             text: text,
             attachment: coverAttachment ?? undefined,
-            buttons: this.createBeatmapButtons(server, mapInfo.id),
+            buttons: this.createBeatmapButtons(
+              server,
+              mapInfo.id,
+              hasLeaderboard(mapInfo.beatmapset.status)
+            ),
           },
           navigationButtons:
             beatmapsetDiffs.length === 1
@@ -313,7 +320,11 @@ URL: ${mapUrlShort}${couldNotAttachCoverMessage}
       return {
         text: text,
         attachment: coverAttachment ?? undefined,
-        buttons: this.createBeatmapButtons(server, mapInfo.id),
+        buttons: this.createBeatmapButtons(
+          server,
+          mapInfo.id,
+          hasLeaderboard(mapInfo.beatmapset.status)
+        ),
       };
     })();
     return MaybeDeferred.fromFastPromise(valuePromise);
@@ -348,8 +359,12 @@ URL: ${mapUrlShort}${couldNotAttachCoverMessage}
 
   createBeatmapButtons(
     server: OsuServer,
-    beatmapId: number
-  ): VkOutputMessageButton[][] {
+    beatmapId: number,
+    hasLeaderboard: boolean
+  ): VkOutputMessageButton[][] | undefined {
+    if (!hasLeaderboard) {
+      return undefined;
+    }
     const buttons: VkOutputMessageButton[] = [];
     const userBestPlaysOnMapCommand = this.otherCommands.find(
       x => x instanceof UserBestPlaysOnMapVk
@@ -405,5 +420,24 @@ async function getOrDownloadCoverAttachment(
     return newAttachment;
   } catch (e) {
     return undefined;
+  }
+}
+
+function hasLeaderboard(mapStatus: BeatmapsetRankStatus) {
+  switch (mapStatus) {
+    case 'Graveyard':
+      return false;
+    case 'Wip':
+      return false;
+    case 'Pending':
+      return false;
+    case 'Ranked':
+      return true;
+    case 'Approved':
+      return true;
+    case 'Qualified':
+      return true;
+    case 'Loved':
+      return true;
   }
 }

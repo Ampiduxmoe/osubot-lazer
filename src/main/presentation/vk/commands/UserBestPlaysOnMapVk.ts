@@ -1,6 +1,7 @@
 /* eslint-disable no-irregular-whitespace */
 import {APP_CODE_NAME} from '../../../App';
 import {
+  BeatmapsetRankStatus,
   OsuMap,
   OsuMapUserPlay,
 } from '../../../application/usecases/get_beatmap_users_best_score/GetBeatmapUsersBestScoresResponse';
@@ -72,8 +73,12 @@ export class UserBestPlaysOnMapVk extends UserBestPlaysOnMap<
         : null;
       const attachment = coverAttachment ?? undefined;
       const buttons = oneScore
-        ? this.createBeatmapButtons(server, map.beatmap.id)
-        : [];
+        ? this.createBeatmapButtons(
+            server,
+            map.beatmap.id,
+            hasLeaderboard(map.beatmapset.status)
+          )
+        : undefined;
       const couldNotAttachCoverMessage =
         coverAttachment === undefined
           ? '\n\nБГ карты прикрепить не удалось 😭'
@@ -408,8 +413,12 @@ ${pos}. ${modsString}
 
   createBeatmapButtons(
     server: OsuServer,
-    beatmapId: number
-  ): VkOutputMessageButton[][] {
+    beatmapId: number,
+    hasLeaderboard: boolean
+  ): VkOutputMessageButton[][] | undefined {
+    if (!hasLeaderboard) {
+      return undefined;
+    }
     const buttons: VkOutputMessageButton[] = [];
     const userBestPlaysOnMapCommand = this.otherCommands.find(
       x => x instanceof UserBestPlaysOnMapVk
@@ -645,3 +654,22 @@ const createMessageGeneratorForDiffs = (
     },
   };
 };
+
+function hasLeaderboard(mapStatus: BeatmapsetRankStatus) {
+  switch (mapStatus) {
+    case 'Graveyard':
+      return false;
+    case 'Wip':
+      return false;
+    case 'Pending':
+      return false;
+    case 'Ranked':
+      return true;
+    case 'Approved':
+      return true;
+    case 'Qualified':
+      return true;
+    case 'Loved':
+      return true;
+  }
+}
