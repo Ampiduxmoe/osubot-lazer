@@ -1,7 +1,12 @@
 /* eslint-disable no-irregular-whitespace */
 import {AttachmentType} from 'vk-io';
 import {APP_CODE_NAME} from '../../../App';
+import {
+  BeatmapsetRankStatus,
+  MapInfo,
+} from '../../../application/usecases/get_beatmap_info/GetBeatmapInfoResponse';
 import {MaybeDeferred} from '../../../primitives/MaybeDeferred';
+import {OsuRuleset} from '../../../primitives/OsuRuleset';
 import {OsuServer} from '../../../primitives/OsuServer';
 import {
   BeatmapMenu,
@@ -43,18 +48,46 @@ export class BeatmapMenuVk extends BeatmapMenu<
 
   createMapMenuMessage(
     server: OsuServer,
-    beatmapId: number
+    beatmapId: number,
+    getMapInfo: () => Promise<MapInfo | undefined>
   ): MaybeDeferred<VkOutputMessage> {
-    const serverString = OsuServer[server];
-    return MaybeDeferred.fromValue({
-      text: `[Server: ${serverString}]`,
-      buttons: this.createBeatmapButtons(server, beatmapId),
-    });
+    return MaybeDeferred.fromInstantPromise(
+      (async () => {
+        const mapInfo = await getMapInfo();
+        const serverString = OsuServer[server];
+        if (mapInfo === undefined) {
+          return {
+            text: `
+[Server: ${serverString}]
+Карта с ID ${beatmapId} не найдена
+            `,
+          };
+        }
+        const modeString = OsuRuleset[mapInfo.mode];
+        const artist = mapInfo.beatmapset.artist;
+        const title = mapInfo.beatmapset.title;
+        const diffname = mapInfo.version;
+        const mapperName = mapInfo.beatmapset.creator;
+        const mapStatus = mapInfo.beatmapset.status;
+        return {
+          text: `
+[Server: ${serverString}, Mode: ${modeString}]
+${artist} - ${title} [${diffname}] by ${mapperName} (${mapStatus})
+          `,
+          buttons: this.createBeatmapButtons(
+            server,
+            beatmapId,
+            hasLeaderboard(mapStatus)
+          ),
+        };
+      })()
+    );
   }
 
   createBeatmapButtons(
     server: OsuServer,
-    beatmapId: number
+    beatmapId: number,
+    hasLeaderboard: boolean
   ): VkOutputMessageButton[][] {
     const buttons: VkOutputMessageButton[] = [];
     const mapInfoCommand = this.otherCommands.find(
@@ -68,6 +101,9 @@ export class BeatmapMenuVk extends BeatmapMenu<
           beatmapId: beatmapId,
         }),
       });
+    }
+    if (!hasLeaderboard) {
+      return buttons.map(x => [x]);
     }
     const userBestPlaysOnMapCommand = this.otherCommands.find(
       x => x instanceof UserBestPlaysOnMapVk
@@ -94,5 +130,24 @@ export class BeatmapMenuVk extends BeatmapMenu<
       });
     }
     return buttons.map(x => [x]);
+  }
+}
+
+function hasLeaderboard(mapStatus: BeatmapsetRankStatus) {
+  switch (mapStatus) {
+    case 'Graveyard':
+      return false;
+    case 'Wip':
+      return false;
+    case 'Pending':
+      return false;
+    case 'Ranked':
+      return true;
+    case 'Approved':
+      return true;
+    case 'Qualified':
+      return true;
+    case 'Loved':
+      return true;
   }
 }

@@ -1,3 +1,5 @@
+import {MapInfo} from '../../application/usecases/get_beatmap_info/GetBeatmapInfoResponse';
+import {GetBeatmapInfoUseCase} from '../../application/usecases/get_beatmap_info/GetBeatmapInfoUseCase';
 import {MaybeDeferred} from '../../primitives/MaybeDeferred';
 import {OsuServer} from '../../primitives/OsuServer';
 import {BEATMAP_LINK} from '../common/arg_processing/CommandArguments';
@@ -6,6 +8,7 @@ import {TextProcessor} from '../common/arg_processing/TextProcessor';
 import {CommandMatchResult} from '../common/CommandMatchResult';
 import {CommandPrefixes} from '../common/CommandPrefixes';
 import {TextCommand} from './base/TextCommand';
+import {GetInitiatorAppUserId} from './common/Signatures';
 
 export abstract class BeatmapMenu<TContext, TOutput> extends TextCommand<
   BeatmapMenuExecutionArgs,
@@ -25,7 +28,11 @@ export abstract class BeatmapMenu<TContext, TOutput> extends TextCommand<
     {argument: BEATMAP_LINK, isOptional: false},
   ];
 
-  constructor(public textProcessor: TextProcessor) {
+  constructor(
+    public textProcessor: TextProcessor,
+    protected getInitiatorAppUserId: GetInitiatorAppUserId<TContext>,
+    protected getBeatmapInfo: GetBeatmapInfoUseCase
+  ) {
     super(BeatmapMenu.commandStructure);
   }
 
@@ -50,25 +57,35 @@ export abstract class BeatmapMenu<TContext, TOutput> extends TextCommand<
   }
 
   process(
-    args: BeatmapMenuExecutionArgs
+    args: BeatmapMenuExecutionArgs,
+    ctx: TContext
   ): MaybeDeferred<BeatmapMenuViewParams> {
     const value: BeatmapMenuViewParams = (() => {
       return {
         server: args.server,
         beatmapId: args.beatmapId,
+        getMapInfo: () =>
+          this.getBeatmapInfo
+            .execute({
+              initiatorAppUserId: this.getInitiatorAppUserId(ctx),
+              server: args.server,
+              beatmapId: args.beatmapId,
+            })
+            .then(res => res.beatmapInfo),
       };
     })();
     return MaybeDeferred.fromValue(value);
   }
 
   createOutputMessage(params: BeatmapMenuViewParams): MaybeDeferred<TOutput> {
-    const {server, beatmapId} = params;
-    return this.createMapMenuMessage(server, beatmapId);
+    const {server, beatmapId, getMapInfo} = params;
+    return this.createMapMenuMessage(server, beatmapId, getMapInfo);
   }
 
   abstract createMapMenuMessage(
     server: OsuServer,
-    beatmapId: number
+    beatmapId: number,
+    getMapInfo: () => Promise<MapInfo | undefined>
   ): MaybeDeferred<TOutput>;
 
   unparse(args: BeatmapMenuExecutionArgs): string {
@@ -87,4 +104,5 @@ export type BeatmapMenuExecutionArgs = {
 export type BeatmapMenuViewParams = {
   server: OsuServer;
   beatmapId: number;
+  getMapInfo: () => Promise<MapInfo | undefined>;
 };

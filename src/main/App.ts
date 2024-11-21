@@ -773,7 +773,11 @@ export class App {
       chatLeaderboardOnMap,
       userUpdate,
     ];
-    const beatmapMenu = new BeatmapMenuVk(mainTextProcessor);
+    const beatmapMenu = new BeatmapMenuVk(
+      mainTextProcessor,
+      getInitiatorAppUserId,
+      getBeatmapInfoUseCase
+    );
     const contactAdmin = new ContactAdminVk(
       group.id,
       mainTextProcessor,
