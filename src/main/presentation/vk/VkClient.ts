@@ -5,8 +5,10 @@ import {CalculationType} from '../../primitives/MaybeDeferred';
 import {Timespan} from '../../primitives/Timespan';
 import {TextCommand} from '../commands/base/TextCommand';
 import {CommandMatchResult, MatchLevel} from '../common/CommandMatchResult';
+import {VkIdConverter} from './VkIdConverter';
 import {VkMessageContext} from './VkMessageContext';
 import {
+  ReplySenderInfo,
   VkNavigationCaption,
   VkOutputMessage,
   VkOutputMessageButton,
@@ -315,6 +317,10 @@ export class VkClient {
   }
 
   private async process(ctx: VkMessageContext): Promise<void> {
+    const consumed = await this.handleNavigationByReply(ctx);
+    if (consumed) {
+      return;
+    }
     const allLayouts = [this.kbLayouts.en, this.kbLayouts.ru];
     let bestCommandMatch: BestCommandMatch | undefined = undefined;
     for (const layout of allLayouts) {
@@ -726,6 +732,14 @@ export class VkClient {
       creationTime: number;
       ownerId: number | undefined;
       peerId: number;
+      extraContext: {
+        userFullName: string | undefined;
+        output: VkOutputMessage & {
+          replyPayload?: {appUserId: string; text: string};
+        };
+        currentKeyboard: KeyboardBuilder | undefined;
+        ctx: VkMessageContext;
+      };
       goTo: (index: number) => Promise<void>;
       onExpire: (reason: NavigationCleanupReason) => Promise<void>;
     };
@@ -738,6 +752,10 @@ export class VkClient {
     const [userInfo] = await this.vk.api.users.get({
       user_ids: [ctx.senderId],
     });
+    const userFullName =
+      userInfo === undefined
+        ? undefined
+        : `${userInfo.first_name} ${userInfo.last_name}`;
     const allowedNavigationMessages = 3;
     let foundNavigationMessages = 0;
     const allNavigationMessages = [...Object.values(this.navigationMessages)];
@@ -755,7 +773,9 @@ export class VkClient {
       keyboard: KeyboardBuilder | undefined;
       enabledCaptions: VkNavigationCaption[] | undefined;
     };
-    let currentRootMessage = outputMessage;
+    let currentRootMessage: VkOutputMessage & {
+      replyPayload?: {appUserId: string; text: string};
+    } = outputMessage;
     const trySetNewRoot: (
       targetIndex: number,
       navigationEnabled: boolean,
@@ -768,7 +788,10 @@ export class VkClient {
       try {
         const oldNavigationPage = currentRootMessage.navigation!;
         const targetPage = await (async () => {
-          if (i === -1) {
+          if (
+            i === -1 ||
+            (i === -2 && oldNavigationPage.messageListener === undefined)
+          ) {
             return oldNavigationPage;
           }
           const targetPageButton = (() => {
@@ -783,18 +806,33 @@ export class VkClient {
             }
             return undefined;
           })();
-          if (targetPageButton === undefined) {
+          const newMessage = await (async () => {
+            if (i === -2 && currentRootMessage.replyPayload !== undefined) {
+              const {appUserId, text} = currentRootMessage.replyPayload; // it's hacky, redo it later
+              return oldNavigationPage.messageListener!.generateMessage(
+                appUserId,
+                text
+              ).resultValue;
+            }
+            if (targetPageButton === undefined) {
+              return undefined;
+            }
+            return targetPageButton.generateMessage().resultValue;
+          })();
+          if (newMessage === undefined) {
+            console.warn(`Could not find navigation button for i=${i}`);
             return undefined;
           }
-          const newMessage =
-            await targetPageButton.generateMessage().resultValue;
           currentRootMessage = newMessage;
           if (newMessage.navigation === undefined) {
             if (
               [newMessage.text, newMessage.attachment, newMessage.buttons].find(
                 x => x !== undefined
-              ) === undefined // we don't have any text/attachment/buttons
+              ) === undefined
             ) {
+              console.warn(
+                'No text/attachment/buttons were detected on new message'
+              );
               return undefined;
             }
             // we got non-navigation message, so we convert it
@@ -856,17 +894,24 @@ export class VkClient {
             keyboard.row();
           }
         }
+        const maybeOwner =
+          userInfo !== undefined &&
+          navigationEnabled &&
+          targetNavButtons.length !== 0 &&
+          ctx.peerId !== ctx.senderId &&
+          targetPage.enabledCaptions?.includes(
+            VkNavigationCaption.NAVIGATION_OWNER
+          )
+            ? `Меню управляет: ${userFullName}\n\n`
+            : '';
+        const maybeListening =
+          targetPage.enabledCaptions?.includes(
+            VkNavigationCaption.NAVIGATION_LISTENING
+          ) && targetPage.messageListener !== undefined
+            ? 'Бот ожидает вашего сообщения...\n\n'
+            : '';
         return {
-          text:
-            userInfo !== undefined &&
-            navigationEnabled &&
-            targetNavButtons.length !== 0 &&
-            ctx.peerId !== ctx.senderId &&
-            targetPage.enabledCaptions?.includes(
-              VkNavigationCaption.NAVIGATION_OWNER
-            )
-              ? `Меню управляет: ${userInfo.first_name} ${userInfo.last_name}\n\n${text}`
-              : text,
+          text: maybeOwner + maybeListening + text,
           attachment: attachment,
           keyboard: keyboard,
           enabledCaptions: targetPage.enabledCaptions,
@@ -878,6 +923,7 @@ export class VkClient {
       }
     };
     const messageKey = randomUUID();
+    let firstKeyboard: KeyboardBuilder | undefined;
     const botMessageCtx = await (async () => {
       const firstMessage = await trySetNewRoot(-1, true, messageKey);
       if (firstMessage === undefined) {
@@ -886,6 +932,7 @@ export class VkClient {
       const text = firstMessage.text ?? '';
       const attachment = firstMessage.attachment;
       const keyboard = firstMessage.keyboard;
+      firstKeyboard = keyboard;
       if (replyMessagePromise !== undefined) {
         const botMessage = await replyMessagePromise;
         await botMessage.editMessage({
@@ -900,8 +947,14 @@ export class VkClient {
     })();
     this.navigationMessages[messageKey] = {
       creationTime: Date.now(),
-      ownerId: userInfo !== undefined ? ctx.senderId : undefined,
+      ownerId: ctx.senderId,
       peerId: ctx.peerId,
+      extraContext: {
+        userFullName: userFullName,
+        output: outputMessage,
+        currentKeyboard: firstKeyboard,
+        ctx: botMessageCtx,
+      },
       goTo: async index => {
         const targetMessage = await trySetNewRoot(index, true, messageKey);
         if (targetMessage === undefined) {
@@ -917,8 +970,16 @@ export class VkClient {
         await botMessageCtx.editMessage({message: text, attachment, keyboard});
         // still in use, update time:
         this.navigationMessages[messageKey].creationTime = Date.now();
+        this.navigationMessages[messageKey].extraContext = {
+          userFullName: userFullName,
+          output: currentRootMessage,
+          currentKeyboard: keyboard,
+          ctx: botMessageCtx,
+        };
+        const rootNav = currentRootMessage.navigation;
         if (
-          (currentRootMessage.navigation?.navigationButtons?.length ?? 0) === 0
+          (rootNav?.navigationButtons?.length ?? 0) === 0 &&
+          rootNav?.messageListener === undefined
         ) {
           // user can't navigate anymore
           delete this.navigationMessages[messageKey];
@@ -963,6 +1024,71 @@ export class VkClient {
         delete this.navigationMessages[messageKey];
       },
     };
+  }
+
+  async handleNavigationByReply(ctx: VkMessageContext): Promise<boolean> {
+    if (!ctx.text) {
+      return false;
+    }
+    for (const key in this.navigationMessages) {
+      const navMessageInfo = this.navigationMessages[key];
+      if (navMessageInfo.peerId !== ctx.peerId) {
+        continue;
+      }
+      const navigation = navMessageInfo.extraContext.output.navigation;
+      if (navigation === undefined) {
+        return false;
+      }
+      const messageListener = navigation.messageListener;
+      if (messageListener === undefined) {
+        continue;
+      }
+      const senderInfo: ReplySenderInfo = {
+        appUserId: VkIdConverter.vkUserIdToAppUserId(ctx.senderId),
+        isDialogInitiator: navMessageInfo.ownerId === ctx.senderId,
+      };
+      const testResult = messageListener.test(ctx.text, senderInfo);
+      if (testResult === undefined) {
+        continue;
+      }
+      console.log('Detected valid reply to navigation message');
+      const keyboard = navMessageInfo.extraContext.currentKeyboard;
+      const attachment = navMessageInfo.extraContext.output.attachment;
+      if (testResult === 'edit') {
+        if (messageListener.getEdit === undefined) {
+          return false;
+        }
+        console.log(`Editing message ${key}...`);
+        const edit = messageListener.getEdit(ctx.text, senderInfo);
+        const maybeOwner =
+          navigation.enabledCaptions?.includes(
+            VkNavigationCaption.NAVIGATION_OWNER
+          ) && navMessageInfo.extraContext.userFullName !== undefined
+            ? `Меню управляет: ${navMessageInfo.extraContext.userFullName}\n\n`
+            : '';
+        const maybeListening = navigation.enabledCaptions?.includes(
+          VkNavigationCaption.NAVIGATION_LISTENING
+        )
+          ? 'Бот ожидает вашего сообщения...\n\n'
+          : '';
+        await navMessageInfo.extraContext.ctx.editMessage({
+          message: maybeOwner + maybeListening + edit,
+          attachment,
+          keyboard,
+        });
+        return true;
+      }
+      if (testResult === 'match') {
+        console.log(`Generating new message for ${key}...`);
+        navMessageInfo.extraContext.output.replyPayload = {
+          appUserId: senderInfo.appUserId,
+          text: ctx.text,
+        };
+        await navMessageInfo.goTo(-2);
+        return true;
+      }
+    }
+    return false;
   }
 }
 

@@ -130,6 +130,9 @@ export abstract class SetUsername<TContext, TOutput> extends TextCommand<
           server: args.server,
           usernameInput: undefined,
           previousUsername: prevUsername,
+          retryWithUsername: async username =>
+            this.process({server: args.server, username: username}, ctx)
+              .resultValue,
           appUserId: targetAppUserId,
           username: undefined,
           mode: undefined,
@@ -149,6 +152,7 @@ export abstract class SetUsername<TContext, TOutput> extends TextCommand<
               server: args.server,
               usernameInput: args.username,
               previousUsername: prevUsername,
+              retryWithUsername: undefined,
               appUserId: targetAppUserId,
               username: undefined,
               mode: args.mode,
@@ -159,6 +163,7 @@ export abstract class SetUsername<TContext, TOutput> extends TextCommand<
         server: args.server,
         usernameInput: args.username,
         previousUsername: prevUsername,
+        retryWithUsername: undefined,
         appUserId: targetAppUserId,
         username: commandResult.username!,
         mode: commandResult.mode!,
@@ -168,14 +173,26 @@ export abstract class SetUsername<TContext, TOutput> extends TextCommand<
   }
 
   createOutputMessage(params: SetUsernameViewParams): MaybeDeferred<TOutput> {
-    const {server, usernameInput, previousUsername, appUserId, username, mode} =
-      params;
+    const {
+      server,
+      usernameInput,
+      previousUsername,
+      retryWithUsername,
+      appUserId,
+      username,
+      mode,
+    } = params;
     if (usernameInput === undefined) {
       const unlinkUsername = () =>
         this.unlinkUsername
           .execute({appUserId: appUserId!, server: server})
           .then(res => res.foundAndDeleted);
-      return this.createNoArgsMessage(server, previousUsername, unlinkUsername);
+      return this.createNoArgsMessage(
+        server,
+        previousUsername,
+        retryWithUsername!,
+        unlinkUsername
+      );
     }
     if (username === undefined) {
       return this.createUserNotFoundMessage(server, usernameInput);
@@ -186,6 +203,7 @@ export abstract class SetUsername<TContext, TOutput> extends TextCommand<
   abstract createNoArgsMessage(
     server: OsuServer,
     currentUsername: string | undefined,
+    retryWithUsername: (username: string) => Promise<SetUsernameViewParams>,
     unlinkUsername: () => Promise<boolean>
   ): MaybeDeferred<TOutput>;
   abstract createUserNotFoundMessage(
@@ -223,6 +241,9 @@ export type SetUsernameViewParams = {
   server: OsuServer;
   usernameInput: string | undefined;
   previousUsername: string | undefined;
+  retryWithUsername:
+    | ((username: string) => Promise<SetUsernameViewParams>)
+    | undefined;
   appUserId: string | undefined;
   username: string | undefined;
   mode: OsuRuleset | undefined;

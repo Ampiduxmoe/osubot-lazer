@@ -24,6 +24,7 @@ export type VkOutputMessage = VkOutputMessageContent & {
       text: string;
       generateMessage: () => MaybeDeferred<VkOutputMessage>;
     }[][];
+    messageListener?: ReplyListener;
   };
 };
 
@@ -38,12 +39,31 @@ export type VkOutputMessageContent = {
   buttons?: VkOutputMessageButton[][];
 };
 
+export type ReplyListener = {
+  test: (
+    text: string,
+    senderInfo: ReplySenderInfo
+  ) => 'match' | 'edit' | undefined;
+  generateMessage: (
+    appUserId: string,
+    text: string
+  ) => MaybeDeferred<VkOutputMessage>;
+  getEdit?: (text: string, senderInfo: ReplySenderInfo) => string;
+};
+
+export type ReplySenderInfo = {
+  appUserId: string;
+  isDialogInitiator: boolean;
+};
+
 export enum VkNavigationCaption {
   NAVIGATION_OWNER,
+  NAVIGATION_LISTENING,
   NAVIGATION_EXPIRE,
 }
 
 export const NAVIGATION_ALL_CAPTIONS: VkNavigationCaption[] = [
   VkNavigationCaption.NAVIGATION_OWNER,
+  VkNavigationCaption.NAVIGATION_LISTENING,
   VkNavigationCaption.NAVIGATION_EXPIRE,
 ];
