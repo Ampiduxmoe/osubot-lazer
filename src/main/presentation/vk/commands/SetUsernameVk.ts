@@ -129,8 +129,8 @@ export class SetUsernameVk extends SetUsername<
                   (async () => {
                     const success = await unlinkUsername();
                     const successText = success
-                      ? 'Ник успешно отвязан'
-                      : 'Не удалось отвязать ник: произошла ошибка во время выполнения команды';
+                      ? `[Server: ${serverString}]\nНик успешно отвязан`
+                      : `[Server: ${serverString}]\nНе удалось отвязать ник: произошла ошибка во время выполнения команды`;
                     return {
                       navigation: {
                         currentContent: {
