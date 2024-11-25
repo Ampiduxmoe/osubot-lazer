@@ -54,7 +54,12 @@ export class ChatLeaderboardOnMapVk extends ChatLeaderboardOnMap<
           const aPp = aPlayResult.pp.estimatedValue ?? 0;
           const bPp = bPlayResult.pp.estimatedValue ?? 0;
           if (aPp === bPp) {
-            return bPlayResult.totalScore - aPlayResult.totalScore;
+            const aScore = aPlayResult.totalScore;
+            const bScore = bPlayResult.totalScore;
+            if (aScore === bScore) {
+              return aPlayResult.date - bPlayResult.date;
+            }
+            return bScore - aScore;
           }
           return bPp - aPp;
         })
