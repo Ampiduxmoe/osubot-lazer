@@ -1,21 +1,22 @@
 import axios, {AxiosInstance} from 'axios';
-import {ScoreSimulationApi} from '../ScoreSimulationApi';
-import {ScoreSimulationInfoOsu} from '../boundary/ScoreSimulationInfoOsu';
-import {RawScoreSimulationResultOsu} from './RawScoreSimulationResultOsu';
+import {withTimingLogs} from '../../../primitives/LoggingFunctions';
+import {ModAcronym} from '../../../primitives/ModAcronym';
 import {round} from '../../../primitives/Numbers';
+import {ScoreSimulationApi} from '../ScoreSimulationApi';
+import {ScoreSimulationInfoCtb} from '../boundary/ScoreSimulationInfoCtb';
+import {ScoreSimulationInfoMania} from '../boundary/ScoreSimulationInfoMania';
+import {ScoreSimulationInfoOsu} from '../boundary/ScoreSimulationInfoOsu';
+import {ScoreSimulationInfoTaiko} from '../boundary/ScoreSimulationInfoTaiko';
+import {RawScoreSimulationResultCompact} from './RawScoreSimulationResultCompact';
+import {RawScoreSimulationResultOsu} from './RawScoreSimulationResultOsu';
+import {RawScoreSimulationParamsCtb} from './RawSimulationParamsCtb';
+import {RawScoreSimulationParamsMania} from './RawSimulationParamsMania';
 import {
   RawScoreSimulationParamsOsu,
   RawScoreSimulationParamsOsuDt,
   RawScoreSimulationParamsOsuHt,
 } from './RawSimulationParamsOsu';
-import {ScoreSimulationInfoTaiko} from '../boundary/ScoreSimulationInfoTaiko';
-import {ScoreSimulationInfoCtb} from '../boundary/ScoreSimulationInfoCtb';
-import {ScoreSimulationInfoMania} from '../boundary/ScoreSimulationInfoMania';
 import {RawScoreSimulationParamsTaiko} from './RawSimulationParamsTaiko';
-import {RawScoreSimulationResultCompact} from './RawScoreSimulationResultCompact';
-import {RawScoreSimulationParamsCtb} from './RawSimulationParamsCtb';
-import {RawScoreSimulationParamsMania} from './RawSimulationParamsMania';
-import {ModAcronym} from '../../../primitives/ModAcronym';
 
 export class OsutoolsSimulationApi implements ScoreSimulationApi {
   private httpClient: AxiosInstance;
@@ -96,11 +97,11 @@ export class OsutoolsSimulationApi implements ScoreSimulationApi {
         body.da_settings.hp = round(da.hp, 1);
       }
     }
-    console.log(`Trying to get score simulation (${JSON.stringify(body)})`);
-    const fetchStart = Date.now();
-    const response = await this.httpClient.post(url, body);
-    const fetchTime = Date.now() - fetchStart;
-    console.log(`Fetched score simulation in ${fetchTime}ms`);
+    const response = await withTimingLogs(
+      () => this.httpClient.post(url, body),
+      () => `Trying to get score simulation (${JSON.stringify(body)})`,
+      (_, delta) => `Fetched score simulation in ${delta}ms`
+    );
     const simulationResult: RawScoreSimulationResultOsu = response.data;
     const {score, performance_attributes, difficulty_attributes} =
       simulationResult;

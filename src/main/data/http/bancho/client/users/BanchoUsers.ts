@@ -1,9 +1,10 @@
 import {AxiosInstance} from 'axios';
+import {withTimingLogs} from '../../../../../primitives/LoggingFunctions';
 import {OsuRuleset} from '../../../../../primitives/OsuRuleset';
-import {RawBanchoUserExtended} from './RawBanchoUserExtended';
 import {Playmode} from '../common_types/Playmode';
-import {RawBanchoUserRecentScore} from './RawBanchoUserRecentScore';
 import {RawBanchoUserBestScore} from './RawBanchoUserBestScore';
+import {RawBanchoUserExtended} from './RawBanchoUserExtended';
+import {RawBanchoUserRecentScore} from './RawBanchoUserRecentScore';
 
 export class BanchoUsers {
   private url = '/users';
@@ -17,19 +18,20 @@ export class BanchoUsers {
     ruleset: OsuRuleset | undefined
   ): Promise<RawBanchoUserExtended | undefined> {
     const rulesetName = ruleset === undefined ? 'default' : OsuRuleset[ruleset];
-    console.log(`Trying to get Bancho user ${username} (${rulesetName})`);
-    const httpClient = await this.getHttpClient();
     const playmode = ruleset === undefined ? '' : rulesetToPlaymode(ruleset);
     const url = `${this.url}/${username}/${playmode}`;
-    const fetchStart = Date.now();
-    const response = await httpClient.get(url, {
-      params: {
-        key: 'username',
-      },
-    });
-    const fetchTime = Date.now() - fetchStart;
-    console.log(
-      `Fetched Bancho user ${username} (${rulesetName}) in ${fetchTime}ms`
+    const response = await withTimingLogs(
+      () =>
+        this.getHttpClient().then(client =>
+          client.get(url, {
+            params: {
+              key: 'username',
+            },
+          })
+        ),
+      () => `Trying to get Bancho user ${username} (${rulesetName})`,
+      (_, delta) =>
+        `Got response for Bancho user ${username} (${rulesetName}) in ${delta}ms`
     );
     if (response.status === 404) {
       console.log(`Bancho user with username ${username} was not found`);
@@ -48,10 +50,6 @@ export class BanchoUsers {
   ): Promise<RawBanchoUserRecentScore[]> {
     const type: UserScoresType = 'recent';
     const rulesetName = ruleset === undefined ? 'default' : OsuRuleset[ruleset];
-    console.log(
-      `Trying to get Bancho '${type}' scores for ${userId} (${rulesetName})`
-    );
-    const httpClient = await this.getHttpClient();
     const url = `${this.url}/${userId}/scores/${type}`;
     const params: {
       legacy_only?: 0 | 1;
@@ -68,16 +66,20 @@ export class BanchoUsers {
     if (ruleset !== undefined) {
       params.mode = rulesetToPlaymode(ruleset);
     }
-    const fetchStart = Date.now();
-    const response = await httpClient.get(url, {
-      headers: {
-        'x-api-version': 20220705,
-      },
-      params: params,
-    });
-    const fetchTime = Date.now() - fetchStart;
-    console.log(
-      `Fetched Bancho '${type}' scores for ${userId} (${rulesetName}) in ${fetchTime}ms`
+    const response = await withTimingLogs(
+      () =>
+        this.getHttpClient().then(client =>
+          client.get(url, {
+            headers: {
+              'x-api-version': 20220705,
+            },
+            params: params,
+          })
+        ),
+      () =>
+        `Trying to get Bancho '${type}' scores for ${userId} (${rulesetName})`,
+      (_, delta) =>
+        `Got response for Bancho '${type}' scores for ${userId} (${rulesetName}) in ${delta}ms`
     );
     const scores: RawBanchoUserRecentScore[] = response.data;
     return scores;
@@ -91,10 +93,6 @@ export class BanchoUsers {
   ): Promise<RawBanchoUserBestScore[]> {
     const type: UserScoresType = 'best';
     const rulesetName = ruleset === undefined ? 'default' : OsuRuleset[ruleset];
-    console.log(
-      `Trying to get Bancho '${type}' scores for ${userId} (${rulesetName})`
-    );
-    const httpClient = await this.getHttpClient();
     const url = `${this.url}/${userId}/scores/${type}`;
     const params: {
       legacy_only?: 0 | 1;
@@ -109,16 +107,20 @@ export class BanchoUsers {
     if (ruleset !== undefined) {
       params.mode = rulesetToPlaymode(ruleset);
     }
-    const fetchStart = Date.now();
-    const response = await httpClient.get(url, {
-      headers: {
-        'x-api-version': 20220705,
-      },
-      params: params,
-    });
-    const fetchTime = Date.now() - fetchStart;
-    console.log(
-      `Fetched Bancho '${type}' scores for ${userId} (${rulesetName}) in ${fetchTime}ms`
+    const response = await withTimingLogs(
+      () =>
+        this.getHttpClient().then(client =>
+          client.get(url, {
+            headers: {
+              'x-api-version': 20220705,
+            },
+            params: params,
+          })
+        ),
+      () =>
+        `Trying to get Bancho '${type}' scores for ${userId} (${rulesetName})`,
+      (_, delta) =>
+        `Got response for Bancho '${type}' scores for ${userId} (${rulesetName}) in ${delta}ms`
     );
     const scores: RawBanchoUserBestScore[] = response.data;
     return scores;

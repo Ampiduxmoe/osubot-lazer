@@ -1,4 +1,5 @@
 import {AxiosInstance} from 'axios';
+import {withTimingLogs} from '../../../../../primitives/LoggingFunctions';
 import {RawBanchoBeatmapsetExtended} from './RawBanchoBeatmapsetExtended';
 
 export class BanchoBeatmapsets {
@@ -9,13 +10,12 @@ export class BanchoBeatmapsets {
   }
 
   async getById(id: number): Promise<RawBanchoBeatmapsetExtended | undefined> {
-    console.log(`Trying to get Bancho beatmapset ${id}`);
-    const httpClient = await this.getHttpClient();
     const url = `${this.url}/${id}`;
-    const fetchStart = Date.now();
-    const response = await httpClient.get(url);
-    const fetchTime = Date.now() - fetchStart;
-    console.log(`Fetched Bancho beatmapset ${id} in ${fetchTime}ms`);
+    const response = await withTimingLogs(
+      () => this.getHttpClient().then(client => client.get(url)),
+      () => `Trying to get Bancho beatmapset ${id}`,
+      (_, delta) => `Got response for Bancho beatmapset ${id} in ${delta}ms`
+    );
     if (response.status === 404) {
       console.log(`Bancho beatmapset ${id} was not found`);
       return undefined;

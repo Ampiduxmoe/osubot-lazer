@@ -1,8 +1,9 @@
 import {AxiosInstance} from 'axios';
-import {RawBanchoBeatmapExtended} from './RawBanchoBeatmapExtended';
-import {RawBanchoBeatmapUserScore} from './RawBanchoBeatmapUserScore';
+import {withTimingLogs} from '../../../../../primitives/LoggingFunctions';
 import {OsuRuleset} from '../../../../../primitives/OsuRuleset';
 import {Playmode} from '../common_types/Playmode';
+import {RawBanchoBeatmapExtended} from './RawBanchoBeatmapExtended';
+import {RawBanchoBeatmapUserScore} from './RawBanchoBeatmapUserScore';
 
 export class BanchoBeatmaps {
   private url = '/beatmaps';
@@ -12,13 +13,12 @@ export class BanchoBeatmaps {
   }
 
   async getById(id: number): Promise<RawBanchoBeatmapExtended | undefined> {
-    console.log(`Trying to get Bancho beatmap ${id}`);
-    const httpClient = await this.getHttpClient();
     const url = `${this.url}/${id}`;
-    const fetchStart = Date.now();
-    const response = await httpClient.get(url);
-    const fetchTime = Date.now() - fetchStart;
-    console.log(`Fetched Bancho beatmap ${id} in ${fetchTime}ms`);
+    const response = await withTimingLogs(
+      () => this.getHttpClient().then(client => client.get(url)),
+      () => `Trying to get Bancho beatmap ${id}`,
+      (_, delta) => `Got response for Bancho beatmap ${id} in ${delta}ms`
+    );
     if (response.status === 404) {
       console.log(`Bancho beatmap ${id} was not found`);
       return undefined;
@@ -33,10 +33,6 @@ export class BanchoBeatmaps {
     ruleset: OsuRuleset | undefined
   ): Promise<RawBanchoBeatmapUserScore[] | undefined> {
     const rulesetName = ruleset === undefined ? 'default' : OsuRuleset[ruleset];
-    console.log(
-      `Trying to get Bancho beatmap ${beatmapId} scores for user ${userId} (${rulesetName})`
-    );
-    const httpClient = await this.getHttpClient();
     const url = `${this.url}/${beatmapId}/scores/users/${userId}/all`;
     const params: {
       ruleset?: Playmode;
@@ -44,16 +40,20 @@ export class BanchoBeatmaps {
     if (ruleset !== undefined) {
       params.ruleset = rulesetToPlaymode(ruleset);
     }
-    const fetchStart = Date.now();
-    const response = await httpClient.get(url, {
-      headers: {
-        'x-api-version': 20220705,
-      },
-      params: params,
-    });
-    const fetchTime = Date.now() - fetchStart;
-    console.log(
-      `Fetched Bancho beatmap ${beatmapId} scores for user ${userId} (${rulesetName}) in ${fetchTime}ms`
+    const response = await withTimingLogs(
+      () =>
+        this.getHttpClient().then(client =>
+          client.get(url, {
+            headers: {
+              'x-api-version': 20220705,
+            },
+            params: params,
+          })
+        ),
+      () =>
+        `Trying to get Bancho beatmap ${beatmapId} scores for user ${userId} (${rulesetName})`,
+      (_, delta) =>
+        `Got response for Bancho beatmap ${beatmapId} scores for user ${userId} (${rulesetName}) in ${delta}ms`
     );
     if (response.status === 404) {
       console.log(`Bancho beatmap ${beatmapId} was not found`);

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import {withTimingLogs} from '../../../../primitives/LoggingFunctions';
 import {OsuRuleset} from '../../../../primitives/OsuRuleset';
 import {RawUpdateResponse} from './RawUpdateResponse';
 
@@ -21,15 +22,16 @@ export class OsuTrackClient {
     username: string,
     ruleset: OsuRuleset
   ): Promise<RawUpdateResponse | undefined> {
-    console.log(
-      `Trying to get osutrack changes for ${username} (${OsuRuleset[ruleset]})`
+    const response = await withTimingLogs(
+      () =>
+        this.directHttpClient.get('/get_changes.php', {
+          params: {userMode: 'username', user: username, mode: ruleset},
+        }),
+      () =>
+        `Trying to get osutrack changes for ${username} (${OsuRuleset[ruleset]})`,
+      (_, delta) =>
+        `Got response for osutrack changes for ${username} in ${delta}ms`
     );
-    const fetchStart = Date.now();
-    const response = await this.directHttpClient.get('/get_changes.php', {
-      params: {userMode: 'username', user: username, mode: ruleset},
-    });
-    const fetchTime = Date.now() - fetchStart;
-    console.log(`Fetched osutrack changes for ${username} in ${fetchTime}ms`);
     if (response.status === 400 || response.status === 404) {
       return undefined;
     }

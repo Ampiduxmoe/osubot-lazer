@@ -1,4 +1,5 @@
 import axios, {AxiosInstance} from 'axios';
+import {withTimingLogs} from '../../../../primitives/LoggingFunctions';
 import {Timespan} from '../../../../primitives/Timespan';
 import {OsuOauthAccessToken} from '../OsuOauthAccessToken';
 import {BanchoBeatmaps} from './beatmaps/BanchoBeatmaps';
@@ -63,14 +64,11 @@ export class BanchoClient {
 
   private _tokenRefreshPromise: Promise<void> | undefined = undefined;
   private async refreshToken(): Promise<void> {
-    this._tokenRefreshPromise ??= (async () => {
-      console.log(`Refreshing ${BanchoClient.name} OAuth token...`);
-      const refreshStart = Date.now();
-      const token = await this.fetchTokenAndSave();
-      const refreshTime = Date.now() - refreshStart;
-      console.log(`Refreshed OAuth token in ${refreshTime}ms`);
-      this.trySetToken(token);
-    })();
+    this._tokenRefreshPromise ??= withTimingLogs(
+      () => this.fetchTokenAndSave().then(t => this.trySetToken(t)),
+      () => `Refreshing ${BanchoClient.name} OAuth token...`,
+      (_, delta) => `Token refresh for ${BanchoClient.name} done in ${delta}ms`
+    );
     await this._tokenRefreshPromise;
     this._tokenRefreshPromise = undefined;
   }

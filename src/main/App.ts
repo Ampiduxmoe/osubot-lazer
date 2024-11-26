@@ -92,6 +92,7 @@ import {WhynotVk} from './presentation/vk/commands/WhynotVk';
 import {VkClient} from './presentation/vk/VkClient';
 import {VkIdConverter} from './presentation/vk/VkIdConverter';
 import {VkMessageContext} from './presentation/vk/VkMessageContext';
+import {withTimingLogs} from './primitives/LoggingFunctions';
 import {OsuServer} from './primitives/OsuServer';
 import {wait} from './primitives/Promises';
 import {VK_REPLY_PROCESSING} from './primitives/Strings';
@@ -564,22 +565,20 @@ export class App {
     ): Promise<string | undefined> {
       const serverString = OsuServer[server];
       try {
-        console.log(
-          `Trying to upload beatmap cover for ${beatmapsetId} (${serverString})`
+        const attachment = await withTimingLogs(
+          () =>
+            vk.upload
+              .messagePhoto({
+                source: {
+                  value: url,
+                },
+              })
+              .then(x => x.toString()),
+          () =>
+            `Trying to upload beatmap cover for ${beatmapsetId} (${serverString})`,
+          (_, delta) =>
+            `Uploaded cover for ${beatmapsetId} (${serverString}) to VK in ${delta}ms`
         );
-        const uploadStart = Date.now();
-        const attachment = (
-          await vk.upload.messagePhoto({
-            source: {
-              value: url,
-            },
-          })
-        ).toString();
-        const uploadTime = Date.now() - uploadStart;
-        console.log(
-          `Uploaded cover for ${beatmapsetId} (${serverString}) to VK in ${uploadTime}ms`
-        );
-
         await this.add({
           server: server,
           beatmapsetId: beatmapsetId,
