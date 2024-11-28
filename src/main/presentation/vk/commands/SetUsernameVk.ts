@@ -48,6 +48,53 @@ export class SetUsernameVk extends SetUsername<
   [Server: ${serverString}]
   ${currentUsernameText}
     `.trim();
+    const generateLinkUsernamePage = (): MaybeDeferred<VkOutputMessage> =>
+      MaybeDeferred.fromValue({
+        navigation: {
+          currentContent: {
+            text: 'Введите ник',
+          },
+          messageListener: {
+            test: (replyText, senderInfo) => {
+              if (!senderInfo.isDialogInitiator) {
+                return undefined;
+              }
+              if (!USERNAME.match(replyText)) {
+                return 'edit';
+              }
+              return 'match';
+            },
+            getEdit: replyText =>
+              VK_REPLY_PROCESSING.sanitize(
+                `«${replyText}» содержит недопустимые символы`
+              ),
+            generateMessage: (_, replyText) =>
+              MaybeDeferred.fromFastPromise(
+                retryWithUsername(replyText).then(
+                  viewParams => this.createOutputMessage(viewParams).resultValue
+                )
+              ),
+          },
+          navigationButtons: [
+            [
+              {
+                text: 'Отмена',
+                generateMessage: () =>
+                  this.createNoArgsMessage(
+                    server,
+                    currentUsername,
+                    retryWithUsername,
+                    unlinkUsername
+                  ),
+              },
+            ],
+          ],
+          enabledCaptions: [
+            VkNavigationCaption.NAVIGATION_LISTENING,
+            VkNavigationCaption.NAVIGATION_EXPIRE,
+          ],
+        },
+      });
     if (currentUsername === undefined) {
       return MaybeDeferred.fromValue({
         navigation: {
@@ -58,57 +105,7 @@ export class SetUsernameVk extends SetUsername<
             [
               {
                 text: 'Привязать ник',
-                generateMessage: () => {
-                  return MaybeDeferred.fromValue({
-                    navigation: {
-                      currentContent: {
-                        text: 'Введите ник',
-                      },
-                      messageListener: {
-                        test: (replyText, senderInfo) => {
-                          if (!senderInfo.isDialogInitiator) {
-                            return undefined;
-                          }
-                          if (!USERNAME.match(replyText)) {
-                            return 'edit';
-                          }
-                          return 'match';
-                        },
-                        getEdit: replyText =>
-                          VK_REPLY_PROCESSING.sanitize(
-                            `«${replyText}» содержит недопустимые символы`
-                          ),
-                        generateMessage: (_, replyText) =>
-                          MaybeDeferred.fromFastPromise(
-                            (async () => {
-                              const viewParams =
-                                await retryWithUsername(replyText);
-                              return await this.createOutputMessage(viewParams)
-                                .resultValue;
-                            })()
-                          ),
-                      },
-                      navigationButtons: [
-                        [
-                          {
-                            text: 'Назад',
-                            generateMessage: () =>
-                              this.createNoArgsMessage(
-                                server,
-                                currentUsername,
-                                retryWithUsername,
-                                unlinkUsername
-                              ),
-                          },
-                        ],
-                      ],
-                      enabledCaptions: [
-                        VkNavigationCaption.NAVIGATION_LISTENING,
-                        VkNavigationCaption.NAVIGATION_EXPIRE,
-                      ],
-                    },
-                  });
-                },
+                generateMessage: generateLinkUsernamePage,
               },
             ],
           ],
@@ -131,11 +128,22 @@ export class SetUsernameVk extends SetUsername<
                     const successText = success
                       ? `[Server: ${serverString}]\nНик успешно отвязан`
                       : `[Server: ${serverString}]\nНе удалось отвязать ник: произошла ошибка во время выполнения команды`;
+                    if (success) {
+                      currentUsername = undefined;
+                    }
                     return {
                       navigation: {
                         currentContent: {
                           text: successText,
                         },
+                        navigationButtons: [
+                          [
+                            {
+                              text: 'Привязать ник',
+                              generateMessage: generateLinkUsernamePage,
+                            },
+                          ],
+                        ],
                       },
                     };
                   })()
