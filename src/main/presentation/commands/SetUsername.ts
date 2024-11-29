@@ -22,6 +22,7 @@ import {
   NOTICE_ABOUT_SPACES_IN_USERNAMES,
   TextCommand,
 } from './base/TextCommand';
+import {LinkUsernameResult} from './common/LinkUsernameResult';
 import {GetTargetAppUserId} from './common/Signatures';
 
 export abstract class SetUsername<TContext, TOutput> extends TextCommand<
@@ -130,9 +131,19 @@ export abstract class SetUsername<TContext, TOutput> extends TextCommand<
           server: args.server,
           usernameInput: undefined,
           previousUsername: prevUsername,
-          retryWithUsername: async username =>
-            this.process({server: args.server, username: username}, ctx)
-              .resultValue,
+          setUsername: username =>
+            this.setUsername
+              .execute({
+                appUserId: targetAppUserId,
+                server: args.server,
+                username: username,
+                mode: undefined,
+              })
+              .then(result =>
+                result.isFailure
+                  ? undefined
+                  : {username: result.username!, mode: result.mode!}
+              ),
           appUserId: targetAppUserId,
           username: undefined,
           mode: undefined,
@@ -152,7 +163,7 @@ export abstract class SetUsername<TContext, TOutput> extends TextCommand<
               server: args.server,
               usernameInput: args.username,
               previousUsername: prevUsername,
-              retryWithUsername: undefined,
+              setUsername: undefined,
               appUserId: targetAppUserId,
               username: undefined,
               mode: args.mode,
@@ -163,7 +174,7 @@ export abstract class SetUsername<TContext, TOutput> extends TextCommand<
         server: args.server,
         usernameInput: args.username,
         previousUsername: prevUsername,
-        retryWithUsername: undefined,
+        setUsername: undefined,
         appUserId: targetAppUserId,
         username: commandResult.username!,
         mode: commandResult.mode!,
@@ -177,7 +188,7 @@ export abstract class SetUsername<TContext, TOutput> extends TextCommand<
       server,
       usernameInput,
       previousUsername,
-      retryWithUsername,
+      setUsername,
       appUserId,
       username,
       mode,
@@ -190,7 +201,7 @@ export abstract class SetUsername<TContext, TOutput> extends TextCommand<
       return this.createNoArgsMessage(
         server,
         previousUsername,
-        retryWithUsername!,
+        setUsername!,
         unlinkUsername
       );
     }
@@ -203,7 +214,7 @@ export abstract class SetUsername<TContext, TOutput> extends TextCommand<
   abstract createNoArgsMessage(
     server: OsuServer,
     currentUsername: string | undefined,
-    retryWithUsername: (username: string) => Promise<SetUsernameViewParams>,
+    setUsername: (username: string) => Promise<LinkUsernameResult | undefined>,
     unlinkUsername: () => Promise<boolean>
   ): MaybeDeferred<TOutput>;
   abstract createUserNotFoundMessage(
@@ -241,8 +252,8 @@ export type SetUsernameViewParams = {
   server: OsuServer;
   usernameInput: string | undefined;
   previousUsername: string | undefined;
-  retryWithUsername:
-    | ((username: string) => Promise<SetUsernameViewParams>)
+  setUsername:
+    | ((username: string) => Promise<LinkUsernameResult | undefined>)
     | undefined;
   appUserId: string | undefined;
   username: string | undefined;

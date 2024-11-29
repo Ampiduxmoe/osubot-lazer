@@ -2,16 +2,15 @@ import {APP_CODE_NAME} from '../../../App';
 import {MaybeDeferred} from '../../../primitives/MaybeDeferred';
 import {OsuRuleset} from '../../../primitives/OsuRuleset';
 import {OsuServer} from '../../../primitives/OsuServer';
-import {VK_REPLY_PROCESSING} from '../../../primitives/Strings';
+import {LinkUsernameResult} from '../../commands/common/LinkUsernameResult';
 import {
   SetUsername,
   SetUsernameExecutionArgs,
-  SetUsernameViewParams,
 } from '../../commands/SetUsername';
-import {USERNAME} from '../../common/arg_processing/CommandArguments';
 import {CommandMatchResult} from '../../common/CommandMatchResult';
 import {VkMessageContext} from '../VkMessageContext';
-import {VkNavigationCaption, VkOutputMessage} from '../VkOutputMessage';
+import {VkOutputMessage} from '../VkOutputMessage';
+import {DynamicLinkUsernamePageGeneratorVk} from './common/DynamicLinkUsernamePageGenerator';
 
 export class SetUsernameVk extends SetUsername<
   VkMessageContext,
@@ -36,7 +35,7 @@ export class SetUsernameVk extends SetUsername<
   createNoArgsMessage(
     server: OsuServer,
     currentUsername: string | undefined,
-    retryWithUsername: (username: string) => Promise<SetUsernameViewParams>,
+    setUsername: (username: string) => Promise<LinkUsernameResult | undefined>,
     unlinkUsername: () => Promise<boolean>
   ): MaybeDeferred<VkOutputMessage> {
     const serverString = OsuServer[server];
@@ -48,52 +47,22 @@ export class SetUsernameVk extends SetUsername<
   [Server: ${serverString}]
   ${currentUsernameText}
     `.trim();
-    const generateLinkUsernamePage = (): MaybeDeferred<VkOutputMessage> =>
-      MaybeDeferred.fromValue({
-        navigation: {
-          currentContent: {
-            text: 'Введите ник',
-          },
-          messageListener: {
-            test: (replyText, senderInfo) => {
-              if (!senderInfo.isDialogInitiator) {
-                return undefined;
-              }
-              if (!USERNAME.match(replyText)) {
-                return 'edit';
-              }
-              return 'match';
-            },
-            getEdit: replyText =>
-              VK_REPLY_PROCESSING.sanitize(
-                `«${replyText}» содержит недопустимые символы`
-              ),
-            generateMessage: (_, replyText) =>
-              MaybeDeferred.fromFastPromise(
-                retryWithUsername(replyText).then(
-                  viewParams => this.createOutputMessage(viewParams).resultValue
-                )
-              ),
-          },
-          navigationButtons: [
-            [
-              {
-                text: 'Отмена',
-                generateMessage: () =>
-                  this.createNoArgsMessage(
-                    server,
-                    currentUsername,
-                    retryWithUsername,
-                    unlinkUsername
-                  ),
-              },
-            ],
-          ],
-          enabledCaptions: [
-            VkNavigationCaption.NAVIGATION_LISTENING,
-            VkNavigationCaption.NAVIGATION_EXPIRE,
-          ],
-        },
+    const generateLinkUsernamePage = () =>
+      DynamicLinkUsernamePageGeneratorVk.createOutputMessage({
+        server: server,
+        getCancelPage: () =>
+          this.createNoArgsMessage(
+            server,
+            currentUsername,
+            setUsername,
+            unlinkUsername
+          ),
+        linkUsername: newUsername =>
+          setUsername(newUsername).then(result => {
+            currentUsername = result?.username;
+            return result;
+          }),
+        successPageButton: undefined,
       });
     if (currentUsername === undefined) {
       return MaybeDeferred.fromValue({
@@ -136,14 +105,16 @@ export class SetUsernameVk extends SetUsername<
                         currentContent: {
                           text: successText,
                         },
-                        navigationButtons: [
-                          [
-                            {
-                              text: 'Привязать ник',
-                              generateMessage: generateLinkUsernamePage,
-                            },
-                          ],
-                        ],
+                        navigationButtons: !success
+                          ? undefined
+                          : [
+                              [
+                                {
+                                  text: 'Привязать ник',
+                                  generateMessage: generateLinkUsernamePage,
+                                },
+                              ],
+                            ],
                       },
                     };
                   })()
