@@ -546,7 +546,7 @@ const createMessageGeneratorForDiffs = (
         const maxDiffsOnPage = 4;
         const maxPageIndex =
           beatmapsetDiffs.length <= maxDiffsNoPagination
-            ? maxDiffsNoPagination
+            ? 0
             : Math.floor(beatmapsetDiffs.length / maxDiffsOnPage);
         const paginationButtons = (() => {
           if (beatmapsetDiffs.length <= maxDiffsNoPagination) {
@@ -571,7 +571,7 @@ const createMessageGeneratorForDiffs = (
           return [result];
         })();
         const diffsToShow =
-          maxPageIndex === 1
+          maxPageIndex === 0
             ? beatmapsetDiffs
             : beatmapsetDiffs.slice(
                 pageIndex * maxDiffsOnPage,

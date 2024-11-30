@@ -135,7 +135,7 @@ URL: ${mapUrlShort}${couldNotAttachCoverMessage}
             const maxDiffsOnPage = 4;
             const maxPageIndex =
               beatmapsetDiffs.length <= maxDiffsNoPagination
-                ? maxDiffsNoPagination
+                ? 0
                 : Math.floor(beatmapsetDiffs.length / maxDiffsOnPage);
             const paginationButtons = (() => {
               if (beatmapsetDiffs.length <= maxDiffsNoPagination) {
