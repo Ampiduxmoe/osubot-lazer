@@ -1,6 +1,7 @@
 import {GetAppUserInfoUseCase} from '../../application/usecases/get_app_user_info/GetAppUserInfoUseCase';
 import {OsuUserRecentPlays} from '../../application/usecases/get_user_recent_plays/GetUserRecentPlaysResponse';
 import {GetUserRecentPlaysUseCase} from '../../application/usecases/get_user_recent_plays/GetUserRecentPlaysUseCase';
+import {SetUsernameUseCase} from '../../application/usecases/set_username/SetUsernameUseCase';
 import {MaybeDeferred} from '../../primitives/MaybeDeferred';
 import {ModPatternCollection} from '../../primitives/ModPatternCollection';
 import {clamp} from '../../primitives/Numbers';
@@ -28,6 +29,7 @@ import {
   NOTICE_ABOUT_SPACES_IN_USERNAMES,
   TextCommand,
 } from './base/TextCommand';
+import {LinkUsernameResult} from './common/LinkUsernameResult';
 import {
   GetInitiatorAppUserId,
   GetTargetAppUserId,
@@ -77,7 +79,8 @@ export abstract class UserRecentPlays<TContext, TOutput> extends TextCommand<
     protected getTargetAppUserId: GetTargetAppUserId<TContext>,
     protected saveLastSeenBeatmapId: SaveLastSeenBeatmapId<TContext>,
     protected getRecentPlays: GetUserRecentPlaysUseCase,
-    protected getAppUserInfo: GetAppUserInfoUseCase
+    protected getAppUserInfo: GetAppUserInfoUseCase,
+    protected setUsername: SetUsernameUseCase
   ) {
     super(UserRecentPlays.commandStructure);
   }
@@ -159,9 +162,13 @@ export abstract class UserRecentPlays<TContext, TOutput> extends TextCommand<
     const valuePromise: Promise<UserRecentPlaysViewParams> = (async () => {
       let username = args.username;
       let mode = args.mode;
+      const initiatorAppUserId = this.getInitiatorAppUserId(ctx);
       if (username === undefined) {
+        const targetAppUserId = this.getTargetAppUserId(ctx, {
+          canTargetOthersAsNonAdmin: true,
+        });
         const appUserInfoResponse = await this.getAppUserInfo.execute({
-          id: this.getTargetAppUserId(ctx, {canTargetOthersAsNonAdmin: true}),
+          id: targetAppUserId,
           server: args.server,
         });
         const boundUser = appUserInfoResponse.userInfo;
@@ -170,6 +177,23 @@ export abstract class UserRecentPlays<TContext, TOutput> extends TextCommand<
             server: args.server,
             mode: args.mode,
             passesOnly: args.passesOnly,
+            setUsername:
+              initiatorAppUserId !== targetAppUserId
+                ? undefined
+                : username =>
+                    this.setUsername
+                      .execute({
+                        appUserId: targetAppUserId,
+                        server: args.server,
+                        username: username,
+                        mode: undefined,
+                      })
+                      .then(result =>
+                        result.isFailure
+                          ? undefined
+                          : {username: result.username!, mode: result.mode!}
+                      ),
+            retryThisCommand: () => this.process(args, ctx),
             usernameInput: undefined,
             recentPlays: undefined,
           };
@@ -192,7 +216,7 @@ export abstract class UserRecentPlays<TContext, TOutput> extends TextCommand<
           .treatAsInterchangeable('HT', 'DC');
       })();
       const recentPlaysResult = await this.getRecentPlays.execute({
-        initiatorAppUserId: this.getInitiatorAppUserId(ctx),
+        initiatorAppUserId: initiatorAppUserId,
         server: args.server,
         username: username,
         ruleset: mode,
@@ -210,6 +234,8 @@ export abstract class UserRecentPlays<TContext, TOutput> extends TextCommand<
               mode: mode,
               passesOnly: args.passesOnly,
               usernameInput: args.username,
+              setUsername: undefined,
+              retryThisCommand: undefined,
               recentPlays: undefined,
             };
         }
@@ -227,6 +253,8 @@ export abstract class UserRecentPlays<TContext, TOutput> extends TextCommand<
         mode: recentPlaysResult.ruleset!,
         passesOnly: args.passesOnly,
         usernameInput: args.username,
+        setUsername: undefined,
+        retryThisCommand: undefined,
         recentPlays: recentPlays,
       };
     })();
@@ -236,15 +264,24 @@ export abstract class UserRecentPlays<TContext, TOutput> extends TextCommand<
   createOutputMessage(
     params: UserRecentPlaysViewParams
   ): MaybeDeferred<TOutput> {
-    const {server, mode, passesOnly, recentPlays} = params;
+    const {
+      server,
+      mode,
+      passesOnly,
+      usernameInput,
+      setUsername,
+      retryThisCommand,
+      recentPlays,
+    } = params;
     if (recentPlays === undefined) {
-      if (params.usernameInput === undefined) {
-        return this.createUsernameNotBoundMessage(params.server);
+      if (usernameInput === undefined) {
+        return this.createUsernameNotBoundMessage(
+          server,
+          setUsername,
+          retryThisCommand!
+        );
       }
-      return this.createUserNotFoundMessage(
-        params.server,
-        params.usernameInput
-      );
+      return this.createUserNotFoundMessage(server, usernameInput);
     }
     const {username} = recentPlays;
     if (recentPlays.plays.length === 0) {
@@ -274,7 +311,11 @@ export abstract class UserRecentPlays<TContext, TOutput> extends TextCommand<
     usernameInput: string
   ): MaybeDeferred<TOutput>;
   abstract createUsernameNotBoundMessage(
-    server: OsuServer
+    server: OsuServer,
+    setUsername:
+      | ((username: string) => Promise<LinkUsernameResult | undefined>)
+      | undefined,
+    retryThisCommand: () => MaybeDeferred<UserRecentPlaysViewParams>
   ): MaybeDeferred<TOutput>;
   abstract createNoRecentPlaysMessage(
     server: OsuServer,
@@ -326,5 +367,11 @@ export type UserRecentPlaysViewParams = {
   mode: OsuRuleset | undefined;
   passesOnly: boolean;
   usernameInput: string | undefined;
+  setUsername:
+    | ((username: string) => Promise<LinkUsernameResult | undefined>)
+    | undefined;
+  retryThisCommand:
+    | (() => MaybeDeferred<UserRecentPlaysViewParams>)
+    | undefined;
   recentPlays: OsuUserRecentPlays | undefined;
 };

@@ -10,6 +10,44 @@ export class MaybeDeferred<T> {
     this.calculationType = calculationType;
   }
 
+  transform<R>(fn: (result: T) => R): R | Promise<R> {
+    if (this.resultValue instanceof Promise) {
+      return this.resultValue.then(res => fn(res));
+    }
+    return fn(this.resultValue);
+  }
+
+  /**
+   * Creates new {@link MaybeDeferred} instance
+   * with current {@link calculationType} value
+   */
+  extend<R>(fn: (result: T) => R | Promise<R>): MaybeDeferred<R> {
+    if (this.resultValue instanceof Promise) {
+      return new MaybeDeferred(
+        this.resultValue.then(res => fn(res)),
+        this.calculationType
+      );
+    }
+    return new MaybeDeferred(fn(this.resultValue), this.calculationType);
+  }
+
+  /**
+   * Creates new {@link MaybeDeferred} instance
+   * with current {@link calculationType} value
+   */
+  chain<R>(fn: (result: T) => MaybeDeferred<R>): MaybeDeferred<R> {
+    if (this.resultValue instanceof Promise) {
+      return new MaybeDeferred(
+        this.resultValue.then(res => fn(res).resultValue),
+        this.calculationType
+      );
+    }
+    return new MaybeDeferred(
+      fn(this.resultValue).resultValue,
+      this.calculationType
+    );
+  }
+
   /**
    * Creates an instance with CalculationType.Immediate.
    *

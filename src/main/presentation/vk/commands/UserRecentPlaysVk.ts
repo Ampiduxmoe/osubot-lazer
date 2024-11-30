@@ -14,15 +14,18 @@ import {round} from '../../../primitives/Numbers';
 import {OsuRuleset} from '../../../primitives/OsuRuleset';
 import {OsuServer} from '../../../primitives/OsuServer';
 import {Timespan} from '../../../primitives/Timespan';
+import {LinkUsernameResult} from '../../commands/common/LinkUsernameResult';
 import {
   UserRecentPlays,
   UserRecentPlaysExecutionArgs,
+  UserRecentPlaysViewParams,
 } from '../../commands/UserRecentPlays';
 import {CommandMatchResult} from '../../common/CommandMatchResult';
 import {VkBeatmapCoversRepository} from '../../data/repositories/VkBeatmapCoversRepository';
 import {VkMessageContext} from '../VkMessageContext';
 import {VkOutputMessage, VkOutputMessageButton} from '../VkOutputMessage';
 import {ChatLeaderboardOnMapVk} from './ChatLeaderboardOnMapVk';
+import {DynamicLinkUsernamePageGeneratorVk} from './common/DynamicLinkUsernamePageGenerator';
 import {UserBestPlaysOnMapVk} from './UserBestPlaysOnMapVk';
 
 export class UserRecentPlaysVk extends UserRecentPlays<
@@ -286,15 +289,53 @@ ${ppEstimationMark}${pp}pp　 ${mapUrlShort}
   }
 
   createUsernameNotBoundMessage(
-    server: OsuServer
+    server: OsuServer,
+    setUsername:
+      | ((username: string) => Promise<LinkUsernameResult | undefined>)
+      | undefined,
+    retryThisCommand: () => MaybeDeferred<UserRecentPlaysViewParams>
   ): MaybeDeferred<VkOutputMessage> {
     const serverString = OsuServer[server];
     const text = `
 [Server: ${serverString}]
 Не установлен ник!
     `.trim();
+    const generateLinkUsernamePage =
+      setUsername === undefined
+        ? undefined
+        : () =>
+            DynamicLinkUsernamePageGeneratorVk.createOutputMessage({
+              server: server,
+              getCancelPage: () =>
+                this.createUsernameNotBoundMessage(
+                  server,
+                  setUsername,
+                  retryThisCommand
+                ),
+              linkUsername: setUsername,
+              successPageButton: {
+                text: 'Повторить с новым ником',
+                generateMessage: () =>
+                  retryThisCommand().chain(this.createOutputMessage.bind(this)),
+              },
+            });
+    if (generateLinkUsernamePage === undefined) {
+      return MaybeDeferred.fromValue({text});
+    }
     return MaybeDeferred.fromValue({
-      text: text,
+      navigation: {
+        currentContent: {
+          text: text,
+        },
+        navigationButtons: [
+          [
+            {
+              text: 'Привязать ник',
+              generateMessage: generateLinkUsernamePage,
+            },
+          ],
+        ],
+      },
     });
   }
 

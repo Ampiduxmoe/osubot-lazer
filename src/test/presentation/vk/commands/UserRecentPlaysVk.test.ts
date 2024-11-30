@@ -7,6 +7,7 @@ import {
   OsuUserRecentPlays,
 } from '../../../../main/application/usecases/get_user_recent_plays/GetUserRecentPlaysResponse';
 import {GetUserRecentPlaysUseCase} from '../../../../main/application/usecases/get_user_recent_plays/GetUserRecentPlaysUseCase';
+import {SetUsernameUseCase} from '../../../../main/application/usecases/set_username/SetUsernameUseCase';
 import {AppUserApiRequestsSummariesDaoImpl} from '../../../../main/data/dao/AppUserApiRequestsSummariesDaoImpl';
 import {AppUserRecentApiRequestsDaoImpl} from '../../../../main/data/dao/AppUserRecentApiRequestsDaoImpl';
 import {AppUsersDaoImpl} from '../../../../main/data/dao/AppUsersDaoImpl';
@@ -27,6 +28,7 @@ import {
   GetTargetAppUserId,
   SaveLastSeenBeatmapId,
 } from '../../../../main/presentation/commands/common/Signatures';
+import {UserRecentPlaysViewParams} from '../../../../main/presentation/commands/UserRecentPlays';
 import {
   MOD_PATTERNS,
   MODE,
@@ -44,6 +46,7 @@ import {VkChatLastBeatmapsTable} from '../../../../main/presentation/data/reposi
 import {UserRecentPlaysVk} from '../../../../main/presentation/vk/commands/UserRecentPlaysVk';
 import {VkIdConverter} from '../../../../main/presentation/vk/VkIdConverter';
 import {VkMessageContext} from '../../../../main/presentation/vk/VkMessageContext';
+import {MaybeDeferred} from '../../../../main/primitives/MaybeDeferred';
 import {ModAcronym} from '../../../../main/primitives/ModAcronym';
 import {ModCombinationPattern} from '../../../../main/primitives/ModCombinationPattern';
 import {ModPatternCollection} from '../../../../main/primitives/ModPatternCollection';
@@ -107,6 +110,7 @@ describe('UserRecentPlaysVk', function () {
       scoreSimulationsDao
     );
     const getAppUserInfoUseCase = new GetAppUserInfoUseCase(appUsersDao);
+    const setUsernameUseCase = new SetUsernameUseCase(appUsersDao, osuUsersDao);
 
     tables = [
       osuUserSnapshots,
@@ -147,7 +151,8 @@ describe('UserRecentPlaysVk', function () {
       getTargetAppUserId,
       saveLastSeenBeatmapId,
       getRecentPlaysUseCase,
-      getAppUserInfoUseCase
+      getAppUserInfoUseCase,
+      setUsernameUseCase
     );
   }
 
@@ -597,16 +602,27 @@ describe('UserRecentPlaysVk', function () {
     it('should return "username not bound" message if username is not specified and there is no username bound to this VK account', async function () {
       const server = OsuServer.Bancho;
       const passesOnly = true;
-      const outputMessage = await command.createOutputMessage({
+      const viewParams: UserRecentPlaysViewParams = {
         server: server,
         mode: undefined,
         passesOnly: passesOnly,
         usernameInput: undefined,
+        setUsername: undefined,
+        retryThisCommand: undefined,
         recentPlays: undefined,
-      }).resultValue;
+      };
+      viewParams.retryThisCommand = () => MaybeDeferred.fromValue(viewParams);
+      const outputMessage =
+        await command.createOutputMessage(viewParams).resultValue;
       assert.strictEqual(
         outputMessage.text,
-        (await command.createUsernameNotBoundMessage(server).resultValue).text
+        (
+          await command.createUsernameNotBoundMessage(
+            server,
+            viewParams.setUsername,
+            viewParams.retryThisCommand
+          ).resultValue
+        ).text
       );
     });
     it('should return "user not found" message if username is specified and there is no information about corresponding user', async function () {
@@ -618,6 +634,8 @@ describe('UserRecentPlaysVk', function () {
         mode: undefined,
         passesOnly: passesOnly,
         usernameInput: usernameInput,
+        setUsername: undefined,
+        retryThisCommand: undefined,
         recentPlays: undefined,
       }).resultValue;
       assert.strictEqual(
@@ -642,6 +660,8 @@ describe('UserRecentPlaysVk', function () {
         mode: mode,
         passesOnly: passesOnly,
         usernameInput: usernameInput,
+        setUsername: undefined,
+        retryThisCommand: undefined,
         recentPlays: recentPlays,
       }).resultValue;
       assert.strictEqual(
@@ -670,6 +690,8 @@ describe('UserRecentPlaysVk', function () {
         mode: mode,
         passesOnly: passesOnly,
         usernameInput: usernameInput,
+        setUsername: undefined,
+        retryThisCommand: undefined,
         recentPlays: recentPlays,
       }).resultValue;
       assert.strictEqual(
