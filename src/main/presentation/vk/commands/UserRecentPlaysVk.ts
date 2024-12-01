@@ -13,6 +13,7 @@ import {MaybeDeferred} from '../../../primitives/MaybeDeferred';
 import {round} from '../../../primitives/Numbers';
 import {OsuRuleset} from '../../../primitives/OsuRuleset';
 import {OsuServer} from '../../../primitives/OsuServer';
+import {VK_REPLY_PROCESSING} from '../../../primitives/Strings';
 import {Timespan} from '../../../primitives/Timespan';
 import {LinkUsernameResult} from '../../commands/common/LinkUsernameResult';
 import {
@@ -20,10 +21,15 @@ import {
   UserRecentPlaysExecutionArgs,
   UserRecentPlaysViewParams,
 } from '../../commands/UserRecentPlays';
+import {USERNAME} from '../../common/arg_processing/CommandArguments';
 import {CommandMatchResult} from '../../common/CommandMatchResult';
 import {VkBeatmapCoversRepository} from '../../data/repositories/VkBeatmapCoversRepository';
 import {VkMessageContext} from '../VkMessageContext';
-import {VkOutputMessage, VkOutputMessageButton} from '../VkOutputMessage';
+import {
+  VkNavigationCaption,
+  VkOutputMessage,
+  VkOutputMessageButton,
+} from '../VkOutputMessage';
 import {ChatLeaderboardOnMapVk} from './ChatLeaderboardOnMapVk';
 import {DynamicLinkUsernamePageGeneratorVk} from './common/DynamicLinkUsernamePageGenerator';
 import {UserBestPlaysOnMapVk} from './UserBestPlaysOnMapVk';
@@ -293,7 +299,9 @@ ${ppEstimationMark}${pp}pp　 ${mapUrlShort}
     setUsername:
       | ((username: string) => Promise<LinkUsernameResult | undefined>)
       | undefined,
-    retryThisCommand: () => MaybeDeferred<UserRecentPlaysViewParams>
+    retryWithUsername: (
+      username?: string
+    ) => MaybeDeferred<UserRecentPlaysViewParams>
   ): MaybeDeferred<VkOutputMessage> {
     const serverString = OsuServer[server];
     const text = `
@@ -310,18 +318,17 @@ ${ppEstimationMark}${pp}pp　 ${mapUrlShort}
                 this.createUsernameNotBoundMessage(
                   server,
                   setUsername,
-                  retryThisCommand
+                  retryWithUsername
                 ),
               linkUsername: setUsername,
               successPageButton: {
                 text: 'Повторить с новым ником',
                 generateMessage: () =>
-                  retryThisCommand().chain(this.createOutputMessage.bind(this)),
+                  retryWithUsername().chain(
+                    this.createOutputMessage.bind(this)
+                  ),
               },
             });
-    if (generateLinkUsernamePage === undefined) {
-      return MaybeDeferred.fromValue({text});
-    }
     return MaybeDeferred.fromValue({
       navigation: {
         currentContent: {
@@ -330,10 +337,31 @@ ${ppEstimationMark}${pp}pp　 ${mapUrlShort}
         navigationButtons: [
           [
             {
-              text: 'Привязать ник',
-              generateMessage: generateLinkUsernamePage,
+              text: 'Ввести ник для команды',
+              generateMessage: () =>
+                createRetryWithUsernameDynamicPage({
+                  server: server,
+                  getCancelPage: () =>
+                    this.createUsernameNotBoundMessage(
+                      server,
+                      setUsername,
+                      retryWithUsername
+                    ),
+                  retryWithUsername: retryWithUsername,
+                  onSuccess: viewParams => this.createOutputMessage(viewParams),
+                }),
             },
           ],
+          ...(generateLinkUsernamePage === undefined
+            ? []
+            : [
+                [
+                  {
+                    text: 'Привязать ник',
+                    generateMessage: generateLinkUsernamePage,
+                  },
+                ],
+              ]),
         ],
       },
     });
@@ -454,4 +482,82 @@ function hasLeaderboard(mapStatus: BeatmapsetRankStatus) {
     case 'Loved':
       return true;
   }
+}
+
+function createRetryWithUsernameDynamicPage({
+  server,
+  getCancelPage,
+  retryWithUsername,
+  onSuccess,
+}: {
+  server: OsuServer;
+  getCancelPage: () => MaybeDeferred<VkOutputMessage>;
+  retryWithUsername: (
+    username?: string
+  ) => MaybeDeferred<UserRecentPlaysViewParams>;
+  onSuccess: (
+    viewParams: UserRecentPlaysViewParams
+  ) => MaybeDeferred<VkOutputMessage>;
+}): MaybeDeferred<VkOutputMessage> {
+  const serverString = OsuServer[server];
+  return MaybeDeferred.fromValue<VkOutputMessage>({
+    navigation: {
+      currentContent: {
+        text: 'Введите ник',
+      },
+      messageListener: {
+        test: (replyText, senderInfo) => {
+          if (!senderInfo.isDialogInitiator) {
+            return undefined;
+          }
+          if (!USERNAME.match(replyText)) {
+            return 'edit';
+          }
+          return 'match';
+        },
+        getEdit: replyText =>
+          VK_REPLY_PROCESSING.sanitize(
+            `«${replyText}» содержит недопустимые символы`
+          ),
+        generateMessage: (_, replyText) =>
+          retryWithUsername(replyText).extend(result =>
+            result.recentPlays === undefined
+              ? {
+                  navigation: {
+                    currentContent: {
+                      text: `[Server: ${serverString}]\nПользователь с ником ${replyText} не найден`,
+                    },
+                    navigationButtons: [
+                      [
+                        {
+                          text: 'Ввести другой ник',
+                          generateMessage: () =>
+                            createRetryWithUsernameDynamicPage({
+                              server,
+                              getCancelPage,
+                              retryWithUsername,
+                              onSuccess,
+                            }),
+                        },
+                      ],
+                    ],
+                  },
+                }
+              : onSuccess(result).resultValue
+          ),
+      },
+      navigationButtons: [
+        [
+          {
+            text: 'Отмена',
+            generateMessage: getCancelPage,
+          },
+        ],
+      ],
+      enabledCaptions: [
+        VkNavigationCaption.NAVIGATION_LISTENING,
+        VkNavigationCaption.NAVIGATION_EXPIRE,
+      ],
+    },
+  });
 }

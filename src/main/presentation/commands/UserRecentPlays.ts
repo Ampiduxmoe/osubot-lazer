@@ -193,7 +193,8 @@ export abstract class UserRecentPlays<TContext, TOutput> extends TextCommand<
                           ? undefined
                           : {username: result.username!, mode: result.mode!}
                       ),
-            retryThisCommand: () => this.process(args, ctx),
+            retryWithUsername: username =>
+              this.process({...args, username}, ctx),
             usernameInput: undefined,
             recentPlays: undefined,
           };
@@ -235,7 +236,7 @@ export abstract class UserRecentPlays<TContext, TOutput> extends TextCommand<
               passesOnly: args.passesOnly,
               usernameInput: args.username,
               setUsername: undefined,
-              retryThisCommand: undefined,
+              retryWithUsername: undefined,
               recentPlays: undefined,
             };
         }
@@ -254,7 +255,7 @@ export abstract class UserRecentPlays<TContext, TOutput> extends TextCommand<
         passesOnly: args.passesOnly,
         usernameInput: args.username,
         setUsername: undefined,
-        retryThisCommand: undefined,
+        retryWithUsername: undefined,
         recentPlays: recentPlays,
       };
     })();
@@ -270,7 +271,7 @@ export abstract class UserRecentPlays<TContext, TOutput> extends TextCommand<
       passesOnly,
       usernameInput,
       setUsername,
-      retryThisCommand,
+      retryWithUsername,
       recentPlays,
     } = params;
     if (recentPlays === undefined) {
@@ -278,7 +279,7 @@ export abstract class UserRecentPlays<TContext, TOutput> extends TextCommand<
         return this.createUsernameNotBoundMessage(
           server,
           setUsername,
-          retryThisCommand!
+          retryWithUsername!
         );
       }
       return this.createUserNotFoundMessage(server, usernameInput);
@@ -315,7 +316,9 @@ export abstract class UserRecentPlays<TContext, TOutput> extends TextCommand<
     setUsername:
       | ((username: string) => Promise<LinkUsernameResult | undefined>)
       | undefined,
-    retryThisCommand: () => MaybeDeferred<UserRecentPlaysViewParams>
+    retryWithUsername: (
+      username?: string
+    ) => MaybeDeferred<UserRecentPlaysViewParams>
   ): MaybeDeferred<TOutput>;
   abstract createNoRecentPlaysMessage(
     server: OsuServer,
@@ -370,8 +373,8 @@ export type UserRecentPlaysViewParams = {
   setUsername:
     | ((username: string) => Promise<LinkUsernameResult | undefined>)
     | undefined;
-  retryThisCommand:
-    | (() => MaybeDeferred<UserRecentPlaysViewParams>)
+  retryWithUsername:
+    | ((username?: string) => MaybeDeferred<UserRecentPlaysViewParams>)
     | undefined;
   recentPlays: OsuUserRecentPlays | undefined;
 };

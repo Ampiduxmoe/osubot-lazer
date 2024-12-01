@@ -608,10 +608,10 @@ describe('UserRecentPlaysVk', function () {
         passesOnly: passesOnly,
         usernameInput: undefined,
         setUsername: undefined,
-        retryThisCommand: undefined,
+        retryWithUsername: undefined,
         recentPlays: undefined,
       };
-      viewParams.retryThisCommand = () => MaybeDeferred.fromValue(viewParams);
+      viewParams.retryWithUsername = () => MaybeDeferred.fromValue(viewParams);
       const outputMessage =
         await command.createOutputMessage(viewParams).resultValue;
       assert.strictEqual(
@@ -620,7 +620,7 @@ describe('UserRecentPlaysVk', function () {
           await command.createUsernameNotBoundMessage(
             server,
             viewParams.setUsername,
-            viewParams.retryThisCommand
+            viewParams.retryWithUsername
           ).resultValue
         ).text
       );
@@ -635,7 +635,7 @@ describe('UserRecentPlaysVk', function () {
         passesOnly: passesOnly,
         usernameInput: usernameInput,
         setUsername: undefined,
-        retryThisCommand: undefined,
+        retryWithUsername: undefined,
         recentPlays: undefined,
       }).resultValue;
       assert.strictEqual(
@@ -661,7 +661,7 @@ describe('UserRecentPlaysVk', function () {
         passesOnly: passesOnly,
         usernameInput: usernameInput,
         setUsername: undefined,
-        retryThisCommand: undefined,
+        retryWithUsername: undefined,
         recentPlays: recentPlays,
       }).resultValue;
       assert.strictEqual(
@@ -691,7 +691,7 @@ describe('UserRecentPlaysVk', function () {
         passesOnly: passesOnly,
         usernameInput: usernameInput,
         setUsername: undefined,
-        retryThisCommand: undefined,
+        retryWithUsername: undefined,
         recentPlays: recentPlays,
       }).resultValue;
       assert.strictEqual(
