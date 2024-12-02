@@ -306,7 +306,7 @@ ${ppEstimationMark}${pp}pp　 ${mapUrlShort}
     const serverString = OsuServer[server];
     const text = `
 [Server: ${serverString}]
-Не установлен ник!
+${setUsername === undefined ? 'У этого пользователя не' : 'Не'} установлен ник!
     `.trim();
     const generateLinkUsernamePage =
       setUsername === undefined
