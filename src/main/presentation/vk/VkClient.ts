@@ -420,8 +420,22 @@ export class VkClient {
       return matchResult;
     }
     let replyMessagePromise: Promise<VkMessageContext> | undefined = undefined;
-    const isLongCalculation = (type: CalculationType): boolean => {
-      return type >= CalculationType.RemoteNetworkCalls;
+    const sendExecutionNotificationIfNeeded = (
+      type: CalculationType
+    ): Promise<VkMessageContext> | undefined => {
+      if (replyMessagePromise !== undefined) {
+        return replyMessagePromise;
+      }
+      switch (type) {
+        case CalculationType.RemoteNetworkCalls:
+          return ctx.reply('Команда выполняется...');
+        case CalculationType.LongBackgroundWork:
+          return ctx.reply(
+            'Выполняется потенциально тяжелый запрос, составление ответа может занять некоторое время...'
+          );
+        default:
+          return replyMessagePromise;
+      }
     };
     const executionArgs = matchResult.commandArgs!;
     console.log(
@@ -431,16 +445,14 @@ export class VkClient {
     );
     try {
       const processingWork = command.process(executionArgs, ctx);
-      if (isLongCalculation(processingWork.calculationType)) {
-        replyMessagePromise = ctx.reply('Команда выполняется...');
-      }
+      replyMessagePromise = sendExecutionNotificationIfNeeded(
+        processingWork.calculationType
+      );
       const viewParams = await processingWork.resultValue;
       const outputCreationWork = command.createOutputMessage(viewParams);
-      if (isLongCalculation(outputCreationWork.calculationType)) {
-        if (replyMessagePromise === undefined) {
-          replyMessagePromise = ctx.reply('Команда выполняется...');
-        }
-      }
+      replyMessagePromise = sendExecutionNotificationIfNeeded(
+        outputCreationWork.calculationType
+      );
       const outputMessage = await outputCreationWork.resultValue;
       const commandExecutionTime = Date.now() - commandExecutionStart;
       console.log(
