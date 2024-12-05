@@ -245,7 +245,7 @@ export class VkClient {
             peer_id: ctx.peerId,
             conversation_message_id: ctx.conversationMessageId,
             message:
-              'Меню стало недействительно из-за внезапной перезагрузки бота',
+              'Навигация стала недействительна из-за внезапной перезагрузки бота',
             attachment: targetAttachment,
             keyboard: JSON.stringify(targetKeyboard),
           });
@@ -1024,7 +1024,7 @@ export class VkClient {
               VkNavigationCaption.NAVIGATION_EXPIRE
             )
           ) {
-            return `Меню больше недействительно: ${reasonText}\n\n`;
+            return `Навигация больше недействительна: ${reasonText}\n\n`;
           }
           return '';
         })();
