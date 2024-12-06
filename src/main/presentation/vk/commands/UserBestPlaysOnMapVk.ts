@@ -25,6 +25,7 @@ import {
   VkOutputMessageContent,
 } from '../VkOutputMessage';
 import {ChatLeaderboardOnMapVk} from './ChatLeaderboardOnMapVk';
+import {SwappableDiffMessageGenerator} from './common/SwappableDiffMessageGenerator';
 
 export class UserBestPlaysOnMapVk extends UserBestPlaysOnMap<
   VkMessageContext,
@@ -122,14 +123,14 @@ export class UserBestPlaysOnMapVk extends UserBestPlaysOnMap<
         );
       const mapset = map.beatmapset;
       const diffsPageText = `${mapset.artist} - ${mapset.title} by ${mapset.creator}`;
-      const messageGenerator = createMessageGeneratorForDiffs(
+      const messageGenerator = new SwappableDiffMessageGenerator(
         pageContents,
         beatmapsetDiffs,
         diffsPageText,
         map.beatmap.id,
         generateMessageForMap
       );
-      return messageGenerator.generateMessageForPage(0);
+      return messageGenerator.generateInitialMessage();
     })();
     return MaybeDeferred.fromFastPromise(valuePromise);
   }
@@ -401,14 +402,14 @@ ${pos}. ${modsString}
       );
     const mapset = map.beatmapset;
     const diffsPageText = `${mapset.artist} - ${mapset.title} by ${mapset.creator}`;
-    const messageGenerator = createMessageGeneratorForDiffs(
+    const messageGenerator = new SwappableDiffMessageGenerator(
       pageContents,
       beatmapsetDiffs,
       diffsPageText,
       map.beatmap.id,
       generateMessageForMap
     );
-    return MaybeDeferred.fromValue(messageGenerator.generateMessageForPage(0));
+    return MaybeDeferred.fromValue(messageGenerator.generateInitialMessage());
   }
 
   createBeatmapButtons(
@@ -523,137 +524,6 @@ function areMapsDifferentInStats(a: OsuMap, b: OsuMap): boolean {
   }
   return false;
 }
-
-type MessageGeneratorForDiffs = {
-  generateMessageForPage: (pageIndex: number) => VkOutputMessage;
-};
-
-const createMessageGeneratorForDiffs = (
-  pageContents: VkOutputMessageContent[],
-  beatmapsetDiffs: DiffBrief[],
-  textForDiffsPage: string,
-  mapId: number,
-  generateMessageForMap: (mapId: number) => MaybeDeferred<VkOutputMessage>
-): MessageGeneratorForDiffs => {
-  const commonDiffButtonText = (diff: DiffBrief): string =>
-    `(${diff.starRating}★) ${diff.diffName}`;
-  const generateMessageForAllDiffs = (
-    pageIndex: number
-  ): MaybeDeferred<VkOutputMessage> =>
-    MaybeDeferred.fromValue(
-      (() => {
-        const maxDiffsNoPagination = 5;
-        const maxDiffsOnPage = 4;
-        const maxPageIndex =
-          beatmapsetDiffs.length <= maxDiffsNoPagination
-            ? 0
-            : Math.floor(beatmapsetDiffs.length / maxDiffsOnPage);
-        const paginationButtons = (() => {
-          if (beatmapsetDiffs.length <= maxDiffsNoPagination) {
-            return [];
-          }
-          const result: {
-            text: string;
-            generateMessage: () => MaybeDeferred<VkOutputMessage>;
-          }[] = [];
-          if (pageIndex > 0) {
-            result.push({
-              text: '◀ Предыдущие',
-              generateMessage: () => generateMessageForAllDiffs(pageIndex - 1),
-            });
-          }
-          if (pageIndex < maxPageIndex) {
-            result.push({
-              text: 'Следующие ▶',
-              generateMessage: () => generateMessageForAllDiffs(pageIndex + 1),
-            });
-          }
-          return [result];
-        })();
-        const diffsToShow =
-          maxPageIndex === 0
-            ? beatmapsetDiffs
-            : beatmapsetDiffs.slice(
-                pageIndex * maxDiffsOnPage,
-                (pageIndex + 1) * maxDiffsOnPage
-              );
-        return {
-          navigation: {
-            currentContent: {
-              text: textForDiffsPage,
-            },
-            navigationButtons: diffsToShow
-              .map(diff => [
-                {
-                  text: commonDiffButtonText(diff),
-                  generateMessage: () => generateMessageForMap(diff.id),
-                },
-              ])
-              .concat([
-                ...paginationButtons,
-                [
-                  {
-                    text: 'Назад',
-                    generateMessage: () => generateMessageForMap(mapId),
-                  },
-                ],
-              ]),
-          },
-        };
-      })()
-    );
-  return {
-    generateMessageForPage(pageIndex) {
-      const content = pageContents[pageIndex];
-      const paginationButtons = (() => {
-        if (pageContents.length === 1) {
-          return [];
-        }
-        const result: {
-          text: string;
-          generateMessage: () => MaybeDeferred<VkOutputMessage>;
-        }[] = [];
-        if (pageIndex > 0) {
-          result.push({
-            text: '◀ Пред. стр.',
-            generateMessage: () =>
-              MaybeDeferred.fromValue(
-                this.generateMessageForPage(pageIndex - 1)
-              ),
-          });
-        }
-        if (pageIndex < pageContents.length - 1) {
-          result.push({
-            text: 'След. стр. ▶',
-            generateMessage: () =>
-              MaybeDeferred.fromValue(
-                this.generateMessageForPage(pageIndex + 1)
-              ),
-          });
-        }
-        return [result];
-      })();
-      return {
-        navigation: {
-          currentContent: content,
-          navigationButtons: [
-            ...paginationButtons,
-            ...(beatmapsetDiffs.length === 1
-              ? []
-              : [
-                  [
-                    {
-                      text: 'Выбрать другую диффу',
-                      generateMessage: () => generateMessageForAllDiffs(0),
-                    },
-                  ],
-                ]),
-          ],
-        },
-      };
-    },
-  };
-};
 
 function hasLeaderboard(mapStatus: BeatmapsetRankStatus) {
   switch (mapStatus) {
