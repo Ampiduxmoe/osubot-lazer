@@ -303,27 +303,24 @@ ${ppEstimationMark}${pp}pp　 ${mapUrlShort}
 [Server: ${serverString}]
 ${setUsername === undefined ? 'У этого пользователя не' : 'Не'} установлен ник!
     `.trim();
-    const generateLinkUsernamePage =
+    const linkUsernamePageGenerator =
       setUsername === undefined
         ? undefined
-        : () =>
-            DynamicLinkUsernamePageGeneratorVk.createOutputMessage({
-              server: server,
-              getCancelPage: () =>
-                this.createUsernameNotBoundMessage(
-                  server,
-                  setUsername,
-                  retryWithUsername
-                ),
-              linkUsername: setUsername,
-              successPageButton: {
-                text: 'Повторить с новым ником',
-                generateMessage: () =>
-                  retryWithUsername().chain(
-                    this.createOutputMessage.bind(this)
-                  ),
-              },
-            });
+        : DynamicLinkUsernamePageGeneratorVk.create({
+            server: server,
+            getCancelPage: () =>
+              this.createUsernameNotBoundMessage(
+                server,
+                setUsername,
+                retryWithUsername
+              ),
+            linkUsername: setUsername,
+            successPageButton: {
+              text: 'Повторить с новым ником',
+              generateMessage: () =>
+                retryWithUsername().chain(this.createOutputMessage.bind(this)),
+            },
+          });
     const retryWithUsernamePageGenerator =
       DynamicRetryWithUsernamePageGenerator.create({
         server: server,
@@ -349,13 +346,13 @@ ${setUsername === undefined ? 'У этого пользователя не' : '�
               generateMessage: () => retryWithUsernamePageGenerator.generate(),
             },
           ],
-          ...(generateLinkUsernamePage === undefined
+          ...(linkUsernamePageGenerator === undefined
             ? []
             : [
                 [
                   {
                     text: 'Привязать ник',
-                    generateMessage: generateLinkUsernamePage,
+                    generateMessage: () => linkUsernamePageGenerator.generate(),
                   },
                 ],
               ]),

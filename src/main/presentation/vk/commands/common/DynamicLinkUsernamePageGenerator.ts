@@ -7,12 +7,19 @@ import {USERNAME} from '../../../common/arg_processing/CommandArguments';
 import {VkNavigationCaption, VkOutputMessage} from '../../VkOutputMessage';
 
 export class DynamicLinkUsernamePageGeneratorVk {
-  static createOutputMessage({
-    server,
-    getCancelPage,
-    linkUsername,
-    successPageButton,
-  }: {
+  constructor(
+    private server: OsuServer,
+    private getCancelPage: () => MaybeDeferred<VkOutputMessage>,
+    private linkUsername: (
+      username: string
+    ) => Promise<LinkUsernameResult | undefined>,
+    private successPageButton?: {
+      text: string;
+      generateMessage: () => MaybeDeferred<VkOutputMessage>;
+    }
+  ) {}
+
+  static create(args: {
     server: OsuServer;
     getCancelPage: () => MaybeDeferred<VkOutputMessage>;
     linkUsername: (username: string) => Promise<LinkUsernameResult | undefined>;
@@ -20,7 +27,25 @@ export class DynamicLinkUsernamePageGeneratorVk {
       text: string;
       generateMessage: () => MaybeDeferred<VkOutputMessage>;
     };
-  }): MaybeDeferred<VkOutputMessage> {
+  }) {
+    return new DynamicLinkUsernamePageGeneratorVk(
+      args.server,
+      args.getCancelPage,
+      args.linkUsername,
+      args.successPageButton
+    );
+  }
+
+  generate = this.generateLinkUsernamePage;
+
+  generateLinkUsernamePage(): MaybeDeferred<VkOutputMessage> {
+    const {
+      server,
+      getCancelPage,
+      linkUsername,
+      successPageButton,
+      generateLinkUsernamePage,
+    } = this;
     const serverString = OsuServer[server];
     return MaybeDeferred.fromValue({
       navigation: {
@@ -54,13 +79,7 @@ export class DynamicLinkUsernamePageGeneratorVk {
                           [
                             {
                               text: 'Ввести другой ник',
-                              generateMessage: () =>
-                                this.createOutputMessage({
-                                  server,
-                                  getCancelPage: getCancelPage,
-                                  linkUsername: linkUsername,
-                                  successPageButton: successPageButton,
-                                }),
+                              generateMessage: () => generateLinkUsernamePage(),
                             },
                           ],
                         ],

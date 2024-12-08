@@ -13,6 +13,22 @@ export class SwappableDiffMessageGenerator {
     ) => MaybeDeferred<VkOutputMessage>
   ) {}
 
+  static create(args: {
+    pageContents: VkOutputMessageContent[];
+    beatmapsetDiffs: DiffBrief[];
+    textForDiffsPage: string;
+    mapId: number;
+    generateMessageForMap: (mapId: number) => MaybeDeferred<VkOutputMessage>;
+  }): SwappableDiffMessageGenerator {
+    return new SwappableDiffMessageGenerator(
+      args.pageContents,
+      args.beatmapsetDiffs,
+      args.textForDiffsPage,
+      args.mapId,
+      args.generateMessageForMap
+    );
+  }
+
   generateDiffButtonText(diff: DiffBrief): string {
     return `(${diff.starRating}★) ${diff.diffName}`;
   }
@@ -25,7 +41,7 @@ export class SwappableDiffMessageGenerator {
     const {
       pageContents,
       beatmapsetDiffs,
-      generateDifficultySelectMessage: generateMessageForAllDiffs,
+      generateDifficultySelectMessage,
       generateMessageForPage,
     } = this;
     const content = pageContents[pageIndex];
@@ -65,7 +81,9 @@ export class SwappableDiffMessageGenerator {
                   {
                     text: 'Выбрать другую диффу',
                     generateMessage: () =>
-                      MaybeDeferred.fromValue(generateMessageForAllDiffs(0)),
+                      MaybeDeferred.fromValue(
+                        generateDifficultySelectMessage(0)
+                      ),
                   },
                 ],
               ]),

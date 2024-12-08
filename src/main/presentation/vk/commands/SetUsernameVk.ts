@@ -47,8 +47,8 @@ export class SetUsernameVk extends SetUsername<
   [Server: ${serverString}]
   ${currentUsernameText}
     `.trim();
-    const generateLinkUsernamePage = () =>
-      DynamicLinkUsernamePageGeneratorVk.createOutputMessage({
+    const linkUsernamePageGenerator = DynamicLinkUsernamePageGeneratorVk.create(
+      {
         server: server,
         getCancelPage: () =>
           this.createNoArgsMessage(
@@ -63,7 +63,8 @@ export class SetUsernameVk extends SetUsername<
             return result;
           }),
         successPageButton: undefined,
-      });
+      }
+    );
     if (currentUsername === undefined) {
       return MaybeDeferred.fromValue({
         navigation: {
@@ -74,7 +75,7 @@ export class SetUsernameVk extends SetUsername<
             [
               {
                 text: 'Привязать ник',
-                generateMessage: generateLinkUsernamePage,
+                generateMessage: () => linkUsernamePageGenerator.generate(),
               },
             ],
           ],
@@ -111,7 +112,8 @@ export class SetUsernameVk extends SetUsername<
                               [
                                 {
                                   text: 'Привязать ник',
-                                  generateMessage: generateLinkUsernamePage,
+                                  generateMessage: () =>
+                                    linkUsernamePageGenerator.generate(),
                                 },
                               ],
                             ],
