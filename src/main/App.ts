@@ -1,3 +1,4 @@
+import axios from 'axios';
 import {APIError, AttachmentType, VK} from 'vk-io';
 import {AppConfig, VkGroup} from './AppConfig';
 import {DeleteContactAdminMessageUseCase} from './application/usecases/delete_contact_admin_message/DeleteContactAdminMessageUseCase';
@@ -565,6 +566,32 @@ export class App {
     ): Promise<string | undefined> {
       const serverString = OsuServer[server];
       try {
+        // Temporary workaround:
+        // if you try to upload a photo by a url that returns 404
+        // and then send/edit a message WITHOUT any attachments
+        // you will get a following error:
+        // APIError: Code №100 - One of the parameters specified was missing or invalid: photo is undefined
+        //     at SequentialWorker.execute (F:\Projects\osubot-lazer\node_modules\vk-io\lib\index.js:1803:44)
+        //     at process.processTicksAndRejections (node:internal/process/task_queues:95:5) {
+        //   code: 100,
+        //   params: [
+        //     { key: 'method', value: 'photos.saveMessagesPhoto' },
+        //     { key: 'oauth', value: '1' },
+        //     { key: 'v', value: '5.199' },
+        //     { key: 'server', value: '843329' },
+        //     { key: 'photo', value: '' },
+        //     { key: 'hash', value: '61c27840fe57c49c1805542e9286dc5e' }
+        //   ],
+        //   [cause]: undefined
+        // }
+        // It used to work fine before, without any URL checks
+        const beatmapsetBackgroundResponse = await axios.get(url, {
+          validateStatus: status => status === 200 || status === 404,
+        });
+        if (beatmapsetBackgroundResponse.status === 404) {
+          return undefined;
+        }
+        // Temporary workaround end
         const attachment = await withTimingLogs(
           () =>
             vk.upload
