@@ -15,7 +15,7 @@ export class BanchoBeatmaps {
   async getById(id: number): Promise<RawBanchoBeatmapExtended | undefined> {
     const url = `${this.url}/${id}`;
     const response = await withTimingLogs(
-      () => this.getHttpClient().then(client => client.get(url)),
+      async () => (await this.getHttpClient()).get(url),
       () => `Trying to get Bancho beatmap ${id}`,
       (_, delta) => `Got response for Bancho beatmap ${id} in ${delta}ms`
     );
@@ -41,15 +41,13 @@ export class BanchoBeatmaps {
       params.ruleset = rulesetToPlaymode(ruleset);
     }
     const response = await withTimingLogs(
-      () =>
-        this.getHttpClient().then(client =>
-          client.get(url, {
-            headers: {
-              'x-api-version': 20220705,
-            },
-            params: params,
-          })
-        ),
+      async () =>
+        (await this.getHttpClient()).get(url, {
+          headers: {
+            'x-api-version': 20220705,
+          },
+          params: params,
+        }),
       () =>
         `Trying to get Bancho beatmap ${beatmapId} scores for user ${userId} (${rulesetName})`,
       (_, delta) =>

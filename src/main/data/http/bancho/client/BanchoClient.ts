@@ -65,7 +65,7 @@ export class BanchoClient {
   private _tokenRefreshPromise: Promise<void> | undefined = undefined;
   private async refreshToken(): Promise<void> {
     this._tokenRefreshPromise ??= withTimingLogs(
-      () => this.fetchTokenAndSave().then(t => this.trySetToken(t)),
+      async () => this.trySetToken(await this.fetchTokenAndSave()),
       () => `Refreshing ${BanchoClient.name} OAuth token...`,
       (_, delta) => `Token refresh for ${BanchoClient.name} done in ${delta}ms`
     );

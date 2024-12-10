@@ -323,37 +323,33 @@ export class ScoreSimulationsDaoRosu implements ScoreSimulationsDao {
     beatmapId: number,
     outputLocationPath: string
   ): Promise<void> {
-    this._pendingDownloads[beatmapId] ??= (() => {
+    this._pendingDownloads[beatmapId] ??= (async () => {
       // https://stackoverflow.com/a/61269447
       const writer = fs.createWriteStream(outputLocationPath);
       console.log(`Downloading beatmap ${beatmapId}`);
       const downloadStart = Date.now();
-      const result = this.httpClient
-        .get(`/${beatmapId}`, {responseType: 'stream'})
-        .then(response => {
-          return new Promise<void>((resolve, reject) => {
-            response.data.pipe(writer);
-            let error: unknown = null;
-            writer.on('error', err => {
-              error = err;
-              writer.close();
-              reject(err);
-            });
-            writer.on('close', () => {
-              delete this._pendingDownloads[beatmapId];
-              if (!error) {
-                const downloadTime = Date.now() - downloadStart;
-                console.log(
-                  `Downloaded beatmap ${beatmapId} in ${downloadTime}ms`
-                );
-                resolve();
-              } else {
-                console.log(`Failed to download beatmap ${beatmapId}`);
-              }
-            });
-          });
+      const response = await this.httpClient.get(`/${beatmapId}`, {
+        responseType: 'stream',
+      });
+      return new Promise<void>((resolve, reject) => {
+        response.data.pipe(writer);
+        let error: unknown = null;
+        writer.on('error', err => {
+          error = err;
+          writer.close();
+          reject(err);
         });
-      return result;
+        writer.on('close', () => {
+          delete this._pendingDownloads[beatmapId];
+          if (!error) {
+            const downloadTime = Date.now() - downloadStart;
+            console.log(`Downloaded beatmap ${beatmapId} in ${downloadTime}ms`);
+            resolve();
+          } else {
+            console.log(`Failed to download beatmap ${beatmapId}`);
+          }
+        });
+      });
     })();
     return this._pendingDownloads[beatmapId];
   }

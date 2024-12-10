@@ -131,19 +131,17 @@ export abstract class SetUsername<TContext, TOutput> extends TextCommand<
           server: args.server,
           usernameInput: undefined,
           previousUsername: prevUsername,
-          setUsername: username =>
-            this.setUsername
-              .execute({
-                appUserId: targetAppUserId,
-                server: args.server,
-                username: username,
-                mode: undefined,
-              })
-              .then(result =>
-                result.isFailure
-                  ? undefined
-                  : {username: result.username!, mode: result.mode!}
-              ),
+          setUsername: async username => {
+            const result = await this.setUsername.execute({
+              appUserId: targetAppUserId,
+              server: args.server,
+              username: username,
+              mode: undefined,
+            });
+            return result.isFailure
+              ? undefined
+              : {username: result.username!, mode: result.mode!};
+          },
           appUserId: targetAppUserId,
           username: undefined,
           mode: undefined,
@@ -194,10 +192,13 @@ export abstract class SetUsername<TContext, TOutput> extends TextCommand<
       mode,
     } = params;
     if (usernameInput === undefined) {
-      const unlinkUsername = () =>
-        this.unlinkUsername
-          .execute({appUserId: appUserId!, server: server})
-          .then(res => res.foundAndDeleted);
+      const unlinkUsername = async () =>
+        (
+          await this.unlinkUsername.execute({
+            appUserId: appUserId!,
+            server: server,
+          })
+        ).foundAndDeleted;
       return this.createNoArgsMessage(
         server,
         previousUsername,

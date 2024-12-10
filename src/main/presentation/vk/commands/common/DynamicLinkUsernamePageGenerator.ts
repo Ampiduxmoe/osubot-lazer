@@ -68,35 +68,37 @@ export class DynamicLinkUsernamePageGeneratorVk {
             ),
           generateMessage: (_, replyText) =>
             MaybeDeferred.fromFastPromise(
-              linkUsername(replyText).then(result =>
-                result === undefined
-                  ? {
-                      navigation: {
-                        currentContent: {
-                          text: `[Server: ${serverString}]\nПользователь с ником ${replyText} не найден`,
-                        },
-                        navigationButtons: [
-                          [
-                            {
-                              text: 'Ввести другой ник',
-                              generateMessage: () => generateLinkUsernamePage(),
-                            },
-                          ],
+              (async () => {
+                const result = await linkUsername(replyText);
+                if (result === undefined) {
+                  return {
+                    navigation: {
+                      currentContent: {
+                        text: `[Server: ${serverString}]\nПользователь с ником ${replyText} не найден`,
+                      },
+                      navigationButtons: [
+                        [
+                          {
+                            text: 'Ввести другой ник',
+                            generateMessage: () => generateLinkUsernamePage(),
+                          },
                         ],
-                      },
-                    }
-                  : {
-                      navigation: {
-                        currentContent: {
-                          text: `[Server: ${serverString}]\nУстановлен ник ${result.username} (режим: ${OsuRuleset[result.mode]})`,
-                        },
-                        navigationButtons:
-                          successPageButton === undefined
-                            ? undefined
-                            : [[successPageButton]],
-                      },
-                    }
-              )
+                      ],
+                    },
+                  };
+                }
+                return {
+                  navigation: {
+                    currentContent: {
+                      text: `[Server: ${serverString}]\nУстановлен ник ${result.username} (режим: ${OsuRuleset[result.mode]})`,
+                    },
+                    navigationButtons:
+                      successPageButton === undefined
+                        ? undefined
+                        : [[successPageButton]],
+                  },
+                };
+              })()
             ),
         },
         navigationButtons: [

@@ -12,7 +12,7 @@ export class BanchoBeatmapsets {
   async getById(id: number): Promise<RawBanchoBeatmapsetExtended | undefined> {
     const url = `${this.url}/${id}`;
     const response = await withTimingLogs(
-      () => this.getHttpClient().then(client => client.get(url)),
+      async () => (await this.getHttpClient()).get(url),
       () => `Trying to get Bancho beatmapset ${id}`,
       (_, delta) => `Got response for Bancho beatmapset ${id} in ${delta}ms`
     );

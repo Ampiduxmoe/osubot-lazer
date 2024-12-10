@@ -593,14 +593,14 @@ export class App {
         }
         // Temporary workaround end
         const attachment = await withTimingLogs(
-          () =>
-            vk.upload
-              .messagePhoto({
+          async () =>
+            (
+              await vk.upload.messagePhoto({
                 source: {
                   value: url,
                 },
               })
-              .then(x => x.toString()),
+            ).toString(),
           () =>
             `Trying to upload beatmap cover for ${beatmapsetId} (${serverString})`,
           (_, delta) =>

@@ -64,14 +64,14 @@ export abstract class BeatmapMenu<TContext, TOutput> extends TextCommand<
       return {
         server: args.server,
         beatmapId: args.beatmapId,
-        getMapInfo: () =>
-          this.getBeatmapInfo
-            .execute({
+        getMapInfo: async () =>
+          (
+            await this.getBeatmapInfo.execute({
               initiatorAppUserId: this.getInitiatorAppUserId(ctx),
               server: args.server,
               beatmapId: args.beatmapId,
             })
-            .then(res => res.beatmapInfo),
+          ).beatmapInfo,
       };
     })();
     return MaybeDeferred.fromValue(value);

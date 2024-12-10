@@ -180,19 +180,17 @@ export abstract class UserRecentPlays<TContext, TOutput> extends TextCommand<
             setUsername:
               initiatorAppUserId !== targetAppUserId
                 ? undefined
-                : username =>
-                    this.setUsername
-                      .execute({
-                        appUserId: targetAppUserId,
-                        server: args.server,
-                        username: username,
-                        mode: undefined,
-                      })
-                      .then(result =>
-                        result.isFailure
-                          ? undefined
-                          : {username: result.username!, mode: result.mode!}
-                      ),
+                : async username => {
+                    const result = await this.setUsername.execute({
+                      appUserId: targetAppUserId,
+                      server: args.server,
+                      username: username,
+                      mode: undefined,
+                    });
+                    return result.isFailure
+                      ? undefined
+                      : {username: result.username!, mode: result.mode!};
+                  },
             retryWithUsername: username =>
               this.process({...args, username}, ctx),
             usernameInput: undefined,

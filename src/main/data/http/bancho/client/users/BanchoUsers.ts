@@ -21,14 +21,12 @@ export class BanchoUsers {
     const playmode = ruleset === undefined ? '' : rulesetToPlaymode(ruleset);
     const url = `${this.url}/${username}/${playmode}`;
     const response = await withTimingLogs(
-      () =>
-        this.getHttpClient().then(client =>
-          client.get(url, {
-            params: {
-              key: 'username',
-            },
-          })
-        ),
+      async () =>
+        (await this.getHttpClient()).get(url, {
+          params: {
+            key: 'username',
+          },
+        }),
       () => `Trying to get Bancho user ${username} (${rulesetName})`,
       (_, delta) =>
         `Got response for Bancho user ${username} (${rulesetName}) in ${delta}ms`
@@ -67,15 +65,13 @@ export class BanchoUsers {
       params.mode = rulesetToPlaymode(ruleset);
     }
     const response = await withTimingLogs(
-      () =>
-        this.getHttpClient().then(client =>
-          client.get(url, {
-            headers: {
-              'x-api-version': 20220705,
-            },
-            params: params,
-          })
-        ),
+      async () =>
+        (await this.getHttpClient()).get(url, {
+          headers: {
+            'x-api-version': 20220705,
+          },
+          params: params,
+        }),
       () =>
         `Trying to get Bancho '${type}' scores for ${userId} (${rulesetName})`,
       (_, delta) =>
@@ -108,15 +104,13 @@ export class BanchoUsers {
       params.mode = rulesetToPlaymode(ruleset);
     }
     const response = await withTimingLogs(
-      () =>
-        this.getHttpClient().then(client =>
-          client.get(url, {
-            headers: {
-              'x-api-version': 20220705,
-            },
-            params: params,
-          })
-        ),
+      async () =>
+        (await this.getHttpClient()).get(url, {
+          headers: {
+            'x-api-version': 20220705,
+          },
+          params: params,
+        }),
       () =>
         `Trying to get Bancho '${type}' scores for ${userId} (${rulesetName})`,
       (_, delta) =>

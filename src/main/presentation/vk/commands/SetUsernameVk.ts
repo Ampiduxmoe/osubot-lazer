@@ -57,11 +57,11 @@ export class SetUsernameVk extends SetUsername<
             setUsername,
             unlinkUsername
           ),
-        linkUsername: newUsername =>
-          setUsername(newUsername).then(result => {
-            currentUsername = result?.username;
-            return result;
-          }),
+        linkUsername: async newUsername => {
+          const result = await setUsername(newUsername);
+          currentUsername = result?.username;
+          return result;
+        },
         successPageButton: undefined,
       }
     );

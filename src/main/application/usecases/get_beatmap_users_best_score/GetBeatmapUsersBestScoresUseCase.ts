@@ -108,8 +108,9 @@ export class GetBeatmapUsersBestScoresUseCase
       });
     }
 
-    const usernameScoresPromises = targets.map((t, i) =>
-      wait(calculateDelayFor(totalRequestCount + i)).then(async () => ({
+    const usernameScoresPromises = targets.map(async (t, i) => {
+      await delay(calculateDelayFor(totalRequestCount + i));
+      return {
         username: t.caseCorrectUsername,
         rawScores: await this.mapUserScores.get(
           initiatorAppUserId,
@@ -119,8 +120,8 @@ export class GetBeatmapUsersBestScoresUseCase
           modPatterns,
           undefined
         ),
-      }))
-    );
+      };
+    });
     const usernamesScores = await Promise.all(usernameScoresPromises);
     const scoreCount = sumBy(
       x =>
