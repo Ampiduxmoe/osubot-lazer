@@ -3,6 +3,7 @@ import assert from 'assert';
 import {APP_CODE_NAME} from '../../../../main/App';
 import {GetAppUserInfoUseCase} from '../../../../main/application/usecases/get_app_user_info/GetAppUserInfoUseCase';
 import {GetOsuUserInfoUseCase} from '../../../../main/application/usecases/get_osu_user_info/GetOsuUserInfoUseCase';
+import {SetUsernameUseCase} from '../../../../main/application/usecases/set_username/SetUsernameUseCase';
 import {AppUserApiRequestsSummariesDaoImpl} from '../../../../main/data/dao/AppUserApiRequestsSummariesDaoImpl';
 import {AppUserRecentApiRequestsDaoImpl} from '../../../../main/data/dao/AppUserRecentApiRequestsDaoImpl';
 import {AppUsersDaoImpl} from '../../../../main/data/dao/AppUsersDaoImpl';
@@ -18,6 +19,7 @@ import {
   GetInitiatorAppUserId,
   GetTargetAppUserId,
 } from '../../../../main/presentation/commands/common/Signatures';
+import {UserInfoViewParams} from '../../../../main/presentation/commands/UserInfo';
 import {
   MODE,
   OWN_COMMAND_PREFIX,
@@ -29,6 +31,7 @@ import {SERVERS} from '../../../../main/presentation/common/OsuServers';
 import {UserInfoVk} from '../../../../main/presentation/vk/commands/UserInfoVk';
 import {VkIdConverter} from '../../../../main/presentation/vk/VkIdConverter';
 import {VkMessageContext} from '../../../../main/presentation/vk/VkMessageContext';
+import {MaybeDeferred} from '../../../../main/primitives/MaybeDeferred';
 import {OsuRuleset} from '../../../../main/primitives/OsuRuleset';
 import {OsuServer} from '../../../../main/primitives/OsuServer';
 import {FakeBanchoApi} from '../../../mocks/data/http/BanchoApi';
@@ -68,6 +71,7 @@ describe('UserInfoVk', function () {
 
     const getOsuUserInfoUseCase = new GetOsuUserInfoUseCase(osuUsersDao);
     const getAppUserInfoUseCase = new GetAppUserInfoUseCase(appUsersDao);
+    const setUsernameUseCase = new SetUsernameUseCase(appUsersDao, osuUsersDao);
 
     tables = [
       osuUserSnapshots,
@@ -98,6 +102,7 @@ describe('UserInfoVk', function () {
       getTargetAppUserId,
       getOsuUserInfoUseCase,
       getAppUserInfoUseCase,
+      setUsernameUseCase
     );
   }
 
@@ -428,15 +433,26 @@ describe('UserInfoVk', function () {
   describe('#createOutputMessage()', function () {
     it('should return "username not bound" message if username is not specified and there is no username bound to this VK account', async function () {
       const server = OsuServer.Bancho;
-      const outputMessage = await command.createOutputMessage({
+      const viewParams: UserInfoViewParams = {
         server: server,
         mode: undefined,
         usernameInput: undefined,
+        setUsername: undefined,
+        retryWithUsername: undefined,
         userInfo: undefined,
-      }).resultValue;
+      };
+      viewParams.retryWithUsername = () => MaybeDeferred.fromValue(viewParams);
+      const outputMessage =
+        await command.createOutputMessage(viewParams).resultValue;
       assert.strictEqual(
         outputMessage.text,
-        (await command.createUsernameNotBoundMessage(server).resultValue).text
+        (
+          await command.createUsernameNotBoundMessage(
+            server,
+            viewParams.setUsername,
+            viewParams.retryWithUsername
+          ).resultValue
+        ).text
       );
     });
     it('should return "user not found" message if username is specified and there is no information about corresponding user', async function () {
@@ -446,6 +462,8 @@ describe('UserInfoVk', function () {
         server: server,
         mode: undefined,
         usernameInput: usernameInput,
+        setUsername: undefined,
+        retryWithUsername: undefined,
         userInfo: undefined,
       }).resultValue;
       assert.strictEqual(
@@ -480,6 +498,8 @@ describe('UserInfoVk', function () {
         server: server,
         mode: mode,
         usernameInput: usernameInput,
+        setUsername: undefined,
+        retryWithUsername: undefined,
         userInfo: userInfo,
       }).resultValue;
       assert.strictEqual(
@@ -514,6 +534,8 @@ describe('UserInfoVk', function () {
         server: server,
         mode: mode,
         usernameInput: usernameInput,
+        setUsername: undefined,
+        retryWithUsername: undefined,
         userInfo: userInfo,
       }).resultValue;
       assert.strictEqual(

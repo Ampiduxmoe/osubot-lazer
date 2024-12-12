@@ -716,7 +716,8 @@ export class App {
       getInitiatorAppUserId,
       getTargetAppUserId,
       getOsuUserInfoUseCase,
-      getAppUserInfoUseCase
+      getAppUserInfoUseCase,
+      setUsernameUseCase
     );
     const beatmapInfo = new BeatmapInfoVk(
       vkBeatmapCovers,

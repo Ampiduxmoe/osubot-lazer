@@ -1,5 +1,6 @@
 import {GetAppUserInfoUseCase} from '../../application/usecases/get_app_user_info/GetAppUserInfoUseCase';
 import {GetOsuUserInfoUseCase} from '../../application/usecases/get_osu_user_info/GetOsuUserInfoUseCase';
+import {SetUsernameUseCase} from '../../application/usecases/set_username/SetUsernameUseCase';
 import {MaybeDeferred} from '../../primitives/MaybeDeferred';
 import {OsuRuleset} from '../../primitives/OsuRuleset';
 import {OsuServer} from '../../primitives/OsuServer';
@@ -22,6 +23,7 @@ import {
   NOTICE_ABOUT_SPACES_IN_USERNAMES,
   TextCommand,
 } from './base/TextCommand';
+import {LinkUsernameResult} from './common/LinkUsernameResult';
 import {GetInitiatorAppUserId, GetTargetAppUserId} from './common/Signatures';
 
 export abstract class UserInfo<TContext, TOutput> extends TextCommand<
@@ -52,7 +54,8 @@ export abstract class UserInfo<TContext, TOutput> extends TextCommand<
     protected getInitiatorAppUserId: GetInitiatorAppUserId<TContext>,
     protected getTargetAppUserId: GetTargetAppUserId<TContext>,
     protected getOsuUserInfo: GetOsuUserInfoUseCase,
-    protected getAppUserInfo: GetAppUserInfoUseCase
+    protected getAppUserInfo: GetAppUserInfoUseCase,
+    protected setUsername: SetUsernameUseCase
   ) {
     super(UserInfo.commandStructure);
   }
@@ -118,9 +121,13 @@ export abstract class UserInfo<TContext, TOutput> extends TextCommand<
     const valuePromise: Promise<UserInfoViewParams> = (async () => {
       let username = args.username;
       let mode = args.mode;
+      const initiatorAppUserId = this.getInitiatorAppUserId(ctx);
       if (username === undefined) {
+        const targetAppUserId = this.getTargetAppUserId(ctx, {
+          canTargetOthersAsNonAdmin: true,
+        });
         const appUserInfoResponse = await this.getAppUserInfo.execute({
-          id: this.getTargetAppUserId(ctx, {canTargetOthersAsNonAdmin: true}),
+          id: targetAppUserId,
           server: args.server,
         });
         const boundUser = appUserInfoResponse.userInfo;
@@ -129,6 +136,22 @@ export abstract class UserInfo<TContext, TOutput> extends TextCommand<
             server: args.server,
             mode: args.mode,
             usernameInput: undefined,
+            setUsername:
+              initiatorAppUserId !== targetAppUserId
+                ? undefined
+                : async username => {
+                    const result = await this.setUsername.execute({
+                      appUserId: targetAppUserId,
+                      server: args.server,
+                      username: username,
+                      mode: undefined,
+                    });
+                    return result.isFailure
+                      ? undefined
+                      : {username: result.username!, mode: result.mode!};
+                  },
+            retryWithUsername: username =>
+              this.process({...args, username}, ctx),
             userInfo: undefined,
           };
         }
@@ -136,7 +159,7 @@ export abstract class UserInfo<TContext, TOutput> extends TextCommand<
         mode ??= boundUser.ruleset;
       }
       const userInfoResponse = await this.getOsuUserInfo.execute({
-        initiatorAppUserId: this.getInitiatorAppUserId(ctx),
+        initiatorAppUserId: initiatorAppUserId,
         server: args.server,
         username: username,
         ruleset: mode,
@@ -147,6 +170,8 @@ export abstract class UserInfo<TContext, TOutput> extends TextCommand<
           server: args.server,
           mode: args.mode,
           usernameInput: args.username,
+          setUsername: undefined,
+          retryWithUsername: undefined,
           userInfo: undefined,
         };
       }
@@ -175,6 +200,8 @@ export abstract class UserInfo<TContext, TOutput> extends TextCommand<
         server: args.server,
         mode: mode ?? userInfo.preferredMode,
         usernameInput: args.username,
+        setUsername: undefined,
+        retryWithUsername: undefined,
         userInfo: {
           username: userInfo.username,
           rankGlobal: userInfo.rankGlobal,
@@ -197,10 +224,21 @@ export abstract class UserInfo<TContext, TOutput> extends TextCommand<
   }
 
   createOutputMessage(params: UserInfoViewParams): MaybeDeferred<TOutput> {
-    const {server, mode, usernameInput, userInfo} = params;
+    const {
+      server,
+      mode,
+      usernameInput,
+      setUsername,
+      retryWithUsername,
+      userInfo,
+    } = params;
     if (userInfo === undefined) {
       if (usernameInput === undefined) {
-        return this.createUsernameNotBoundMessage(server);
+        return this.createUsernameNotBoundMessage(
+          server,
+          setUsername,
+          retryWithUsername!
+        );
       }
       return this.createUserNotFoundMessage(server, usernameInput);
     }
@@ -217,7 +255,11 @@ export abstract class UserInfo<TContext, TOutput> extends TextCommand<
     usernameInput: string
   ): MaybeDeferred<TOutput>;
   abstract createUsernameNotBoundMessage(
-    server: OsuServer
+    server: OsuServer,
+    setUsername:
+      | ((username: string) => Promise<LinkUsernameResult | undefined>)
+      | undefined,
+    retryWithUsername: (username?: string) => MaybeDeferred<UserInfoViewParams>
   ): MaybeDeferred<TOutput>;
 
   unparse(args: UserInfoExecutionArgs): string {
@@ -245,6 +287,12 @@ export type UserInfoViewParams = {
   server: OsuServer;
   mode: OsuRuleset | undefined;
   usernameInput: string | undefined;
+  setUsername:
+    | ((username: string) => Promise<LinkUsernameResult | undefined>)
+    | undefined;
+  retryWithUsername:
+    | ((username?: string) => MaybeDeferred<UserInfoViewParams>)
+    | undefined;
   userInfo: OsuUserInfo | undefined;
 };
 
