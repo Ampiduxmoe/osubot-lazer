@@ -66,8 +66,8 @@ describe('UserInfoVk', function () {
     );
     const appUsersDao = new AppUsersDaoImpl(appUsers);
 
-    const getOsuUserInfo = new GetOsuUserInfoUseCase(osuUsersDao);
-    const getAppUserInfo = new GetAppUserInfoUseCase(appUsersDao);
+    const getOsuUserInfoUseCase = new GetOsuUserInfoUseCase(osuUsersDao);
+    const getAppUserInfoUseCase = new GetAppUserInfoUseCase(appUsersDao);
 
     tables = [
       osuUserSnapshots,
@@ -96,8 +96,8 @@ describe('UserInfoVk', function () {
       mainTextProcessor,
       getInitiatorAppUserId,
       getTargetAppUserId,
-      getOsuUserInfo,
-      getAppUserInfo
+      getOsuUserInfoUseCase,
+      getAppUserInfoUseCase,
     );
   }
 

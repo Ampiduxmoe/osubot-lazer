@@ -13,7 +13,7 @@ import {ModeMania} from '../../../domain/entities/mode/ModeMania';
 import {ModeOsu} from '../../../domain/entities/mode/ModeOsu';
 import {ModeTaiko} from '../../../domain/entities/mode/ModeTaiko';
 import {sum, sumBy} from '../../../primitives/Arrays';
-import {delay, wait} from '../../../primitives/Promises';
+import {delay} from '../../../primitives/Promises';
 import {BeatmapUserScoreAdapter} from '../../adapters/beatmap_user_score/BeatmapUserScoreAdapter';
 import {CachedOsuUsersDao} from '../../requirements/dao/CachedOsuUsersDao';
 import {OsuBeatmapUserScoresDao} from '../../requirements/dao/OsuBeatmapUserScoresDao';

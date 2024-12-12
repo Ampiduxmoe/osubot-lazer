@@ -95,7 +95,7 @@ import {VkIdConverter} from './presentation/vk/VkIdConverter';
 import {VkMessageContext} from './presentation/vk/VkMessageContext';
 import {withTimingLogs} from './primitives/LoggingFunctions';
 import {OsuServer} from './primitives/OsuServer';
-import {wait} from './primitives/Promises';
+import {delay} from './primitives/Promises';
 import {VK_REPLY_PROCESSING} from './primitives/Strings';
 import {Timespan} from './primitives/Timespan';
 
@@ -485,7 +485,7 @@ export class App {
           fetchedAll = true;
         } else {
           offset += 200;
-          await wait(200);
+          await delay(200);
         }
       }
       const getNextPeerIdBatch = (() => {
@@ -530,7 +530,7 @@ export class App {
             .filter(peerId => peerId !== undefined)
         );
         if (!sentToAll) {
-          await wait(500);
+          await delay(500);
           const lastSentId = sentIds[sentIds.length - 1];
           const chatIdWarningThreshold = 5e3;
           if (lastSentId > 2e9 + chatIdWarningThreshold) {
