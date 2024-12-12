@@ -77,8 +77,8 @@ export class DynamicRetryWithUsernamePageGenerator<TViewParams> {
                         [
                           {
                             text: 'Ввести другой ник',
-                            generateMessage: () =>
-                              generateRetryWithUsernameDynamicPage(),
+                            generateMessage:
+                              generateRetryWithUsernameDynamicPage.bind(this),
                           },
                         ],
                       ],

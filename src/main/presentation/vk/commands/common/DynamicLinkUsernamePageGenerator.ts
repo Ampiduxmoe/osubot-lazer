@@ -80,7 +80,8 @@ export class DynamicLinkUsernamePageGeneratorVk {
                         [
                           {
                             text: 'Ввести другой ник',
-                            generateMessage: () => generateLinkUsernamePage(),
+                            generateMessage:
+                              generateLinkUsernamePage.bind(this),
                           },
                         ],
                       ],
