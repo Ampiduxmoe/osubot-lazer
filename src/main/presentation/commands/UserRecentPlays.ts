@@ -177,6 +177,7 @@ export abstract class UserRecentPlays<TContext, TOutput> extends TextCommand<
             server: args.server,
             mode: args.mode,
             passesOnly: args.passesOnly,
+            usernameInput: undefined,
             setUsername:
               initiatorAppUserId !== targetAppUserId
                 ? undefined
@@ -193,7 +194,6 @@ export abstract class UserRecentPlays<TContext, TOutput> extends TextCommand<
                   },
             retryWithUsername: username =>
               this.process({...args, username}, ctx),
-            usernameInput: undefined,
             recentPlays: undefined,
           };
         }
