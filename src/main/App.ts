@@ -746,7 +746,8 @@ export class App {
       getTargetAppUserId,
       saveLastSeenBeatmapId,
       getUserBestPlaysUseCase,
-      getAppUserInfoUseCase
+      getAppUserInfoUseCase,
+      setUsernameUseCase
     );
     const userBestPlaysOnMap = new UserBestPlaysOnMapVk(
       vkBeatmapCovers,

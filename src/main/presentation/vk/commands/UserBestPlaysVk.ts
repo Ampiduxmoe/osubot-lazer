@@ -10,15 +10,19 @@ import {round} from '../../../primitives/Numbers';
 import {OsuRuleset} from '../../../primitives/OsuRuleset';
 import {OsuServer} from '../../../primitives/OsuServer';
 import {Timespan} from '../../../primitives/Timespan';
+import {LinkUsernameResult} from '../../commands/common/LinkUsernameResult';
 import {
   UserBestPlays,
   UserBestPlaysExecutionArgs,
+  UserBestPlaysViewParams,
 } from '../../commands/UserBestPlays';
 import {CommandMatchResult} from '../../common/CommandMatchResult';
 import {VkBeatmapCoversRepository} from '../../data/repositories/VkBeatmapCoversRepository';
 import {VkMessageContext} from '../VkMessageContext';
 import {VkOutputMessage, VkOutputMessageButton} from '../VkOutputMessage';
 import {ChatLeaderboardOnMapVk} from './ChatLeaderboardOnMapVk';
+import {DynamicLinkUsernamePageGeneratorVk} from './common/DynamicLinkUsernamePageGenerator';
+import {DynamicRetryWithUsernamePageGenerator} from './common/DynamicRetryWithUsernamePageGenerator';
 import {UserBestPlaysOnMapVk} from './UserBestPlaysOnMapVk';
 
 export class UserBestPlaysVk extends UserBestPlays<
@@ -256,15 +260,74 @@ ${pp}pp　 ${mapUrlShort}
   }
 
   createUsernameNotBoundMessage(
-    server: OsuServer
+    server: OsuServer,
+    setUsername:
+      | ((username: string) => Promise<LinkUsernameResult | undefined>)
+      | undefined,
+    retryWithUsername: (
+      username?: string
+    ) => MaybeDeferred<UserBestPlaysViewParams>
   ): MaybeDeferred<VkOutputMessage> {
     const serverString = OsuServer[server];
     const text = `
 [Server: ${serverString}]
 Не установлен ник!
     `.trim();
+    const linkUsernamePageGenerator =
+      setUsername === undefined
+        ? undefined
+        : DynamicLinkUsernamePageGeneratorVk.create({
+            server: server,
+            getCancelPage: () =>
+              this.createUsernameNotBoundMessage(
+                server,
+                setUsername,
+                retryWithUsername
+              ),
+            linkUsername: setUsername,
+            successPageButton: {
+              text: 'Повторить с новым ником',
+              generateMessage: () =>
+                retryWithUsername().chain(this.createOutputMessage.bind(this)),
+            },
+          });
+    const retryWithUsernamePageGenerator =
+      DynamicRetryWithUsernamePageGenerator.create({
+        server: server,
+        getCancelPage: () =>
+          this.createUsernameNotBoundMessage(
+            server,
+            setUsername,
+            retryWithUsername
+          ),
+        retryWithUsername: retryWithUsername,
+        isUserFound: viewParams => viewParams.bestPlays !== undefined,
+        onSuccess: viewParams => this.createOutputMessage(viewParams),
+      });
     return MaybeDeferred.fromValue({
-      text: text,
+      navigation: {
+        currentContent: {
+          text: text,
+        },
+        navigationButtons: [
+          [
+            {
+              text: 'Ввести ник для команды',
+              generateMessage: () => retryWithUsernamePageGenerator.generate(),
+            },
+          ],
+          ...(linkUsernamePageGenerator === undefined
+            ? []
+            : [
+                [
+                  {
+                    text: 'Привязать ник',
+                    generateMessage: () => linkUsernamePageGenerator.generate(),
+                  },
+                ],
+              ]),
+        ],
+      },
     });
   }
 

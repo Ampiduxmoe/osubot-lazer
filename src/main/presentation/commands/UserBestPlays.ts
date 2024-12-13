@@ -1,6 +1,7 @@
 import {GetAppUserInfoUseCase} from '../../application/usecases/get_app_user_info/GetAppUserInfoUseCase';
 import {OsuUserBestPlays} from '../../application/usecases/get_user_best_plays/GetUserBestPlaysResponse';
 import {GetUserBestPlaysUseCase} from '../../application/usecases/get_user_best_plays/GetUserBestPlaysUseCase';
+import {SetUsernameUseCase} from '../../application/usecases/set_username/SetUsernameUseCase';
 import {MaybeDeferred} from '../../primitives/MaybeDeferred';
 import {ModPatternCollection} from '../../primitives/ModPatternCollection';
 import {clamp} from '../../primitives/Numbers';
@@ -28,6 +29,7 @@ import {
   NOTICE_ABOUT_SPACES_IN_USERNAMES,
   TextCommand,
 } from './base/TextCommand';
+import {LinkUsernameResult} from './common/LinkUsernameResult';
 import {
   GetInitiatorAppUserId,
   GetTargetAppUserId,
@@ -66,7 +68,8 @@ export abstract class UserBestPlays<TContext, TOutput> extends TextCommand<
     protected getTargetAppUserId: GetTargetAppUserId<TContext>,
     protected saveLastSeenBeatmapId: SaveLastSeenBeatmapId<TContext>,
     protected getUserBestPlays: GetUserBestPlaysUseCase,
-    protected getAppUserInfo: GetAppUserInfoUseCase
+    protected getAppUserInfo: GetAppUserInfoUseCase,
+    protected setUsername: SetUsernameUseCase
   ) {
     super(UserBestPlays.commandStructure);
   }
@@ -146,9 +149,13 @@ export abstract class UserBestPlays<TContext, TOutput> extends TextCommand<
     const valuePromise: Promise<UserBestPlaysViewParams> = (async () => {
       let username = args.username;
       let mode = args.mode;
+      const initiatorAppUserId = this.getInitiatorAppUserId(ctx);
       if (username === undefined) {
+        const targetAppUserId = this.getTargetAppUserId(ctx, {
+          canTargetOthersAsNonAdmin: true,
+        });
         const appUserInfoResponse = await this.getAppUserInfo.execute({
-          id: this.getTargetAppUserId(ctx, {canTargetOthersAsNonAdmin: true}),
+          id: targetAppUserId,
           server: args.server,
         });
         const boundUser = appUserInfoResponse.userInfo;
@@ -157,6 +164,22 @@ export abstract class UserBestPlays<TContext, TOutput> extends TextCommand<
             server: args.server,
             mode: args.mode,
             usernameInput: undefined,
+            setUsername:
+              initiatorAppUserId !== targetAppUserId
+                ? undefined
+                : async username => {
+                    const result = await this.setUsername.execute({
+                      appUserId: targetAppUserId,
+                      server: args.server,
+                      username: username,
+                      mode: undefined,
+                    });
+                    return result.isFailure
+                      ? undefined
+                      : {username: result.username!, mode: result.mode!};
+                  },
+            retryWithUsername: username =>
+              this.process({...args, username}, ctx),
             bestPlays: undefined,
           };
         }
@@ -183,7 +206,7 @@ export abstract class UserBestPlays<TContext, TOutput> extends TextCommand<
           .treatAsInterchangeable('HT', 'DC');
       })();
       const bestPlaysResult = await this.getUserBestPlays.execute({
-        initiatorAppUserId: this.getInitiatorAppUserId(ctx),
+        initiatorAppUserId: initiatorAppUserId,
         server: args.server,
         username: username,
         ruleset: mode,
@@ -199,6 +222,8 @@ export abstract class UserBestPlays<TContext, TOutput> extends TextCommand<
               server: args.server,
               mode: mode,
               usernameInput: args.username,
+              setUsername: undefined,
+              retryWithUsername: undefined,
               bestPlays: undefined,
             };
         }
@@ -215,6 +240,8 @@ export abstract class UserBestPlays<TContext, TOutput> extends TextCommand<
         server: args.server,
         mode: bestPlaysResult.ruleset!,
         usernameInput: args.username,
+        setUsername: undefined,
+        retryWithUsername: undefined,
         bestPlays: bestPlays,
       };
     })();
@@ -222,15 +249,23 @@ export abstract class UserBestPlays<TContext, TOutput> extends TextCommand<
   }
 
   createOutputMessage(params: UserBestPlaysViewParams): MaybeDeferred<TOutput> {
-    const {server, mode, bestPlays} = params;
+    const {
+      server,
+      mode,
+      usernameInput,
+      setUsername,
+      retryWithUsername,
+      bestPlays,
+    } = params;
     if (bestPlays === undefined) {
-      if (params.usernameInput === undefined) {
-        return this.createUsernameNotBoundMessage(params.server);
+      if (usernameInput === undefined) {
+        return this.createUsernameNotBoundMessage(
+          server,
+          setUsername,
+          retryWithUsername!
+        );
       }
-      return this.createUserNotFoundMessage(
-        params.server,
-        params.usernameInput
-      );
+      return this.createUserNotFoundMessage(server, usernameInput);
     }
     if (bestPlays.plays.length === 0) {
       return this.createNoBestPlaysMessage(server, mode!);
@@ -248,7 +283,13 @@ export abstract class UserBestPlays<TContext, TOutput> extends TextCommand<
     usernameInput: string
   ): MaybeDeferred<TOutput>;
   abstract createUsernameNotBoundMessage(
-    server: OsuServer
+    server: OsuServer,
+    setUsername:
+      | ((username: string) => Promise<LinkUsernameResult | undefined>)
+      | undefined,
+    retryWithUsername: (
+      username?: string
+    ) => MaybeDeferred<UserBestPlaysViewParams>
   ): MaybeDeferred<TOutput>;
   abstract createNoBestPlaysMessage(
     server: OsuServer,
@@ -292,5 +333,11 @@ export type UserBestPlaysViewParams = {
   server: OsuServer;
   mode: OsuRuleset | undefined;
   usernameInput: string | undefined;
+  setUsername:
+    | ((username: string) => Promise<LinkUsernameResult | undefined>)
+    | undefined;
+  retryWithUsername:
+    | ((username?: string) => MaybeDeferred<UserBestPlaysViewParams>)
+    | undefined;
   bestPlays: OsuUserBestPlays | undefined;
 };
