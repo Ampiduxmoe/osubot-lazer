@@ -390,7 +390,7 @@ ${pos}. ${modsString}
             retryWithUsername
           ),
         retryWithUsername: retryWithUsername,
-        isUserFound: viewParams => viewParams.plays !== undefined,
+        isUserFound: viewParams => viewParams.username !== undefined,
         onSuccess: viewParams => this.createOutputMessage(viewParams),
       });
     return MaybeDeferred.fromValue({

@@ -294,7 +294,9 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
           usernameInput: args.username,
           setUsername: undefined,
           retryWithUsername: undefined,
-          username: username,
+          username: leaderboardResponse.missingUsernames!.includes(username)
+            ? undefined
+            : username,
           mode: leaderboardResponse.ruleset!,
           map: leaderboardResponse.baseBeatmap!,
           plays: undefined,
