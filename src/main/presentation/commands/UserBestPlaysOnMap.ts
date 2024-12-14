@@ -4,6 +4,7 @@ import {
   OsuMapUserPlay,
 } from '../../application/usecases/get_beatmap_users_best_score/GetBeatmapUsersBestScoresResponse';
 import {GetBeatmapUsersBestScoresUseCase} from '../../application/usecases/get_beatmap_users_best_score/GetBeatmapUsersBestScoresUseCase';
+import {SetUsernameUseCase} from '../../application/usecases/set_username/SetUsernameUseCase';
 import {MaybeDeferred} from '../../primitives/MaybeDeferred';
 import {ModPatternCollection} from '../../primitives/ModPatternCollection';
 import {clamp} from '../../primitives/Numbers';
@@ -33,6 +34,7 @@ import {
 } from './base/TextCommand';
 import {DiffBrief} from './common/DiffBrief';
 import {BeatmapsetDiffBriefProvider} from './common/DiffBriefProvider';
+import {LinkUsernameResult} from './common/LinkUsernameResult';
 import {
   GetContextualBeatmapIds,
   GetInitiatorAppUserId,
@@ -76,7 +78,8 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
     protected saveLastSeenBeatmapId: SaveLastSeenBeatmapId<TContext>,
     protected getBeatmapBestScores: GetBeatmapUsersBestScoresUseCase,
     protected getAppUserInfo: GetAppUserInfoUseCase,
-    protected beatmapsetDiffsProvider: BeatmapsetDiffBriefProvider
+    protected beatmapsetDiffsProvider: BeatmapsetDiffBriefProvider,
+    protected setUsername: SetUsernameUseCase
   ) {
     super(UserBestPlaysOnMap.commandStructure);
   }
@@ -154,12 +157,16 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
     ctx: TContext
   ): MaybeDeferred<UserBestPlaysOnMapViewParams> {
     const valuePromise: Promise<UserBestPlaysOnMapViewParams> = (async () => {
+      const initiatorAppUserId = this.getInitiatorAppUserId(ctx);
+      const targetAppUserId = this.getTargetAppUserId(ctx, {
+        canTargetOthersAsNonAdmin: true,
+      });
       const username = await (async () => {
         if (args.username !== undefined) {
           return args.username;
         }
         const appUserInfoResponse = await this.getAppUserInfo.execute({
-          id: this.getTargetAppUserId(ctx, {canTargetOthersAsNonAdmin: true}),
+          id: targetAppUserId,
           server: args.server,
         });
         return appUserInfoResponse.userInfo?.username;
@@ -169,6 +176,21 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
           server: args.server,
           beatmapIdInput: args.beatmapId,
           usernameInput: undefined,
+          setUsername:
+            initiatorAppUserId !== targetAppUserId
+              ? undefined
+              : async username => {
+                  const result = await this.setUsername.execute({
+                    appUserId: targetAppUserId,
+                    server: args.server,
+                    username: username,
+                    mode: undefined,
+                  });
+                  return result.isFailure
+                    ? undefined
+                    : {username: result.username!, mode: result.mode!};
+                },
+          retryWithUsername: username => this.process({...args, username}, ctx),
           username: undefined,
           mode: undefined,
           map: undefined,
@@ -193,6 +215,8 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
           server: args.server,
           beatmapIdInput: undefined,
           usernameInput: args.username,
+          setUsername: undefined,
+          retryWithUsername: undefined,
           username: username,
           mode: undefined,
           map: undefined,
@@ -215,7 +239,7 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
           .treatAsInterchangeable('HT', 'DC');
       })();
       const leaderboardResponse = await this.getBeatmapBestScores.execute({
-        initiatorAppUserId: this.getInitiatorAppUserId(ctx),
+        initiatorAppUserId: initiatorAppUserId,
         server: args.server,
         beatmapId: beatmapId,
         usernames: [username],
@@ -230,6 +254,8 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
               server: args.server,
               beatmapIdInput: args.beatmapId,
               usernameInput: args.username,
+              setUsername: undefined,
+              retryWithUsername: undefined,
               username: username,
               mode: undefined,
               map: undefined,
@@ -258,7 +284,7 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
       if (leaderboardResponse.mapPlays!.length === 0) {
         const beatmapsetDiffs =
           await this.beatmapsetDiffsProvider.getByBeatmapId(
-            this.getInitiatorAppUserId(ctx),
+            initiatorAppUserId,
             args.server,
             beatmapId
           );
@@ -266,6 +292,8 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
           server: args.server,
           beatmapIdInput: args.beatmapId,
           usernameInput: args.username,
+          setUsername: undefined,
+          retryWithUsername: undefined,
           username: username,
           mode: leaderboardResponse.ruleset!,
           map: leaderboardResponse.baseBeatmap!,
@@ -298,6 +326,8 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
         server: args.server,
         beatmapIdInput: args.beatmapId,
         usernameInput: args.username,
+        setUsername: undefined,
+        retryWithUsername: undefined,
         username: leaderboardResponse.mapPlays![0].username,
         mode: leaderboardResponse.ruleset!,
         map: leaderboardResponse.baseBeatmap!,
@@ -317,6 +347,8 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
       server,
       beatmapIdInput,
       usernameInput,
+      setUsername,
+      retryWithUsername,
       username,
       mode,
       map,
@@ -327,7 +359,11 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
     } = params;
     if (username === undefined) {
       if (usernameInput === undefined) {
-        return this.createUsernameNotBoundMessage(server);
+        return this.createUsernameNotBoundMessage(
+          server,
+          setUsername,
+          retryWithUsername!
+        );
       }
       return this.createUserNotFoundMessage(server, usernameInput);
     }
@@ -379,7 +415,13 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
     usernameInput: string
   ): MaybeDeferred<TOutput>;
   abstract createUsernameNotBoundMessage(
-    server: OsuServer
+    server: OsuServer,
+    setUsername:
+      | ((username: string) => Promise<LinkUsernameResult | undefined>)
+      | undefined,
+    retryWithUsername: (
+      username?: string
+    ) => MaybeDeferred<UserBestPlaysOnMapViewParams>
   ): MaybeDeferred<TOutput>;
   abstract createBeatmapIdNotSpecifiedMessage(
     server: OsuServer
@@ -431,6 +473,12 @@ export type UserBestPlaysOnMapViewParams = {
   server: OsuServer;
   beatmapIdInput: number | undefined;
   usernameInput: string | undefined;
+  setUsername:
+    | ((username: string) => Promise<LinkUsernameResult | undefined>)
+    | undefined;
+  retryWithUsername:
+    | ((username?: string) => MaybeDeferred<UserBestPlaysOnMapViewParams>)
+    | undefined;
   username: string | undefined;
   mode: OsuRuleset | undefined;
   map: OsuMap | undefined;
