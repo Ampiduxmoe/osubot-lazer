@@ -22,11 +22,11 @@ export function withTimingLogs<T>(
   };
   const executionResult = fn();
   if (executionResult instanceof Promise) {
-    executionResult.then(res => {
+    return executionResult.then(res => {
       logFinalMessageIfNeeded(res);
-    });
-  } else {
-    logFinalMessageIfNeeded(executionResult);
+      return res;
+    }) as T;
   }
+  logFinalMessageIfNeeded(executionResult);
   return executionResult;
 }
