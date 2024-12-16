@@ -251,7 +251,9 @@ export abstract class ChatLeaderboardOnMap<
         beatmapIdInput: args.beatmapId,
         mode: leaderboardResponse.ruleset!,
         map: leaderboardResponse.baseBeatmap!,
-        plays: leaderboardResponse.mapPlays!,
+        plays: leaderboardResponse.mapPlays!.filter(
+          x => x.collection.length > 0
+        ),
         missingUsernames: leaderboardResponse.missingUsernames!,
         isOnlyLocalMembersLb: isChatLb,
       };

@@ -371,7 +371,7 @@ ${setUsername === undefined ? 'У этого пользователя не' : '�
     const modeString = OsuRuleset[mode];
     const text = `
 [Server: ${serverString}, Mode: ${modeString}]
-Нет последних ${passesOnly ? 'пассов' : 'скоров'}
+У ${username} нет недавних ${passesOnly ? 'пассов' : 'скоров'}
     `.trim();
     return MaybeDeferred.fromValue({
       text: text,

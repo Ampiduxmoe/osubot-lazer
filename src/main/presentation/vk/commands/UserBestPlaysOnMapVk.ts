@@ -436,6 +436,7 @@ ${pos}. ${modsString}
   createNoMapPlaysMessage(
     map: OsuMap,
     server: OsuServer,
+    username: string,
     mode: OsuRuleset,
     beatmapsetDiffs: DiffBrief[],
     getViewParamsForMap: (
@@ -446,7 +447,7 @@ ${pos}. ${modsString}
     const modeString = OsuRuleset[mode];
     const text = `
 [Server: ${serverString}, Mode: ${modeString}]
-Скоры на карте не найдены
+Скоры ${username} на карте не найдены
     `.trim();
     const pageContents: VkOutputMessage[] = [
       {

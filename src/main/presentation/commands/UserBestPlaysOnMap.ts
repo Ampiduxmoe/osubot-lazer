@@ -281,7 +281,11 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
           ctx
         ).resultValue;
       };
-      if (leaderboardResponse.mapPlays!.length === 0) {
+      if (
+        leaderboardResponse.missingUsernames!.includes(username) ||
+        (leaderboardResponse.mapPlays !== undefined &&
+          leaderboardResponse.mapPlays[0].collection.length === 0)
+      ) {
         const beatmapsetDiffs =
           await this.beatmapsetDiffsProvider.getByBeatmapId(
             initiatorAppUserId,
@@ -296,7 +300,7 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
           retryWithUsername: undefined,
           username: leaderboardResponse.missingUsernames!.includes(username)
             ? undefined
-            : username,
+            : leaderboardResponse.mapPlays![0].username,
           mode: leaderboardResponse.ruleset!,
           map: leaderboardResponse.baseBeatmap!,
           plays: undefined,
@@ -379,6 +383,7 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
       return this.createNoMapPlaysMessage(
         map,
         server,
+        username,
         mode!,
         beatmapsetDiffs!,
         getViewParamsForMap!
@@ -431,6 +436,7 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
   abstract createNoMapPlaysMessage(
     map: OsuMap,
     server: OsuServer,
+    username: string,
     mode: OsuRuleset,
     beatmapsetDiffs: DiffBrief[],
     getViewParamsForMap: (

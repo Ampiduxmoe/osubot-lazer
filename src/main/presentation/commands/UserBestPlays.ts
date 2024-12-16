@@ -268,7 +268,7 @@ export abstract class UserBestPlays<TContext, TOutput> extends TextCommand<
       return this.createUserNotFoundMessage(server, usernameInput);
     }
     if (bestPlays.plays.length === 0) {
-      return this.createNoBestPlaysMessage(server, mode!);
+      return this.createNoBestPlaysMessage(server, mode!, bestPlays.username);
     }
     return this.createBestPlaysMessage(bestPlays, server, mode!);
   }
@@ -293,7 +293,8 @@ export abstract class UserBestPlays<TContext, TOutput> extends TextCommand<
   ): MaybeDeferred<TOutput>;
   abstract createNoBestPlaysMessage(
     server: OsuServer,
-    mode: OsuRuleset
+    mode: OsuRuleset,
+    username: string
   ): MaybeDeferred<TOutput>;
 
   unparse(args: UserBestPlaysExecutionArgs): string {

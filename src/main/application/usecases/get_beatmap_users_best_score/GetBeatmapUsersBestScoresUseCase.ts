@@ -146,9 +146,6 @@ export class GetBeatmapUsersBestScoresUseCase
           failureReason: 'beatmap not found',
         };
       }
-      if (rawMapUserScores.length === 0) {
-        continue;
-      }
       const beatmapScores = rawMapUserScores.map(s =>
         this.beatmapUserScoresAdapter.createBeatmapScore(
           s,
@@ -249,12 +246,10 @@ export class GetBeatmapUsersBestScoresUseCase
             return collection;
           })
       );
-      if (playerScoresCollection.length > 0) {
-        bestScoresOutput.push({
-          username: username,
-          collection: playerScoresCollection,
-        });
-      }
+      bestScoresOutput.push({
+        username: username,
+        collection: playerScoresCollection,
+      });
     }
     return {
       isFailure: false,

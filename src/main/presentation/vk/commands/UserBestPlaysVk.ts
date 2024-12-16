@@ -333,13 +333,14 @@ ${pp}pp　 ${mapUrlShort}
 
   createNoBestPlaysMessage(
     server: OsuServer,
-    mode: OsuRuleset
+    mode: OsuRuleset,
+    username: string
   ): MaybeDeferred<VkOutputMessage> {
     const serverString = OsuServer[server];
     const modeString = OsuRuleset[mode];
     const text = `
 [Server: ${serverString}, Mode: ${modeString}]
-Нет лучших скоров
+У ${username} нет лучших скоров
     `.trim();
     return MaybeDeferred.fromValue({
       text: text,
