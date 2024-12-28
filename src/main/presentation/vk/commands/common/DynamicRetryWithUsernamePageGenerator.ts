@@ -36,14 +36,7 @@ export class DynamicRetryWithUsernamePageGenerator<TViewParams> {
   generate = this.generateRetryWithUsernameDynamicPage;
 
   generateRetryWithUsernameDynamicPage(): MaybeDeferred<VkOutputMessage> {
-    const {
-      server,
-      getCancelPage,
-      retryWithUsername,
-      isUserFound,
-      onSuccess,
-      generateRetryWithUsernameDynamicPage,
-    } = this;
+    const {server} = this;
     const serverString = OsuServer[server];
     return MaybeDeferred.fromValue<VkOutputMessage>({
       navigation: {
@@ -65,9 +58,9 @@ export class DynamicRetryWithUsernamePageGenerator<TViewParams> {
               `«${replyText}» содержит недопустимые символы`
             ),
           generateMessage: (_, replyText) =>
-            retryWithUsername(replyText).extend(result =>
-              isUserFound(result)
-                ? onSuccess(result).resultValue
+            this.retryWithUsername(replyText).extend(result =>
+              this.isUserFound(result)
+                ? this.onSuccess(result).resultValue
                 : {
                     navigation: {
                       currentContent: {
@@ -77,8 +70,8 @@ export class DynamicRetryWithUsernamePageGenerator<TViewParams> {
                         [
                           {
                             text: 'Ввести другой ник',
-                            generateMessage:
-                              generateRetryWithUsernameDynamicPage.bind(this),
+                            generateMessage: () =>
+                              this.generateRetryWithUsernameDynamicPage(),
                           },
                         ],
                       ],
@@ -90,7 +83,7 @@ export class DynamicRetryWithUsernamePageGenerator<TViewParams> {
           [
             {
               text: 'Отмена',
-              generateMessage: getCancelPage,
+              generateMessage: () => this.getCancelPage(),
             },
           ],
         ],

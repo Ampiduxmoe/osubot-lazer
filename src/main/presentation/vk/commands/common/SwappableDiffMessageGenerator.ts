@@ -38,12 +38,7 @@ export class SwappableDiffMessageGenerator {
   }
 
   generateMessageForPage(pageIndex: number): VkOutputMessage {
-    const {
-      pageContents,
-      beatmapsetDiffs,
-      generateDifficultySelectMessage,
-      generateMessageForPage,
-    } = this;
+    const {pageContents, beatmapsetDiffs} = this;
     const content = pageContents[pageIndex];
     const paginationButtons = (() => {
       if (pageContents.length === 1) {
@@ -57,14 +52,14 @@ export class SwappableDiffMessageGenerator {
         result.push({
           text: '◀ Пред. стр.',
           generateMessage: () =>
-            MaybeDeferred.fromValue(generateMessageForPage(pageIndex - 1)),
+            MaybeDeferred.fromValue(this.generateMessageForPage(pageIndex - 1)),
         });
       }
       if (pageIndex < pageContents.length - 1) {
         result.push({
           text: 'След. стр. ▶',
           generateMessage: () =>
-            MaybeDeferred.fromValue(generateMessageForPage(pageIndex + 1)),
+            MaybeDeferred.fromValue(this.generateMessageForPage(pageIndex + 1)),
         });
       }
       return [result];
@@ -82,7 +77,7 @@ export class SwappableDiffMessageGenerator {
                     text: 'Выбрать другую диффу',
                     generateMessage: () =>
                       MaybeDeferred.fromValue(
-                        generateDifficultySelectMessage(0)
+                        this.generateDifficultySelectMessage(0)
                       ),
                   },
                 ],
@@ -94,14 +89,7 @@ export class SwappableDiffMessageGenerator {
   }
 
   generateDifficultySelectMessage(diffsPageIndex: number): VkOutputMessage {
-    const {
-      beatmapsetDiffs,
-      textForDiffsPage,
-      mapId,
-      generateMessageForMap,
-      generateDifficultySelectMessage,
-      generateDiffButtonText,
-    } = this;
+    const {beatmapsetDiffs, textForDiffsPage, mapId} = this;
     const maxDiffsNoPagination = 5;
     const maxDiffsOnPage = 4;
     const maxPageIndex =
@@ -121,7 +109,7 @@ export class SwappableDiffMessageGenerator {
           text: '◀ Предыдущие',
           generateMessage: () =>
             MaybeDeferred.fromValue(
-              generateDifficultySelectMessage(diffsPageIndex - 1)
+              this.generateDifficultySelectMessage(diffsPageIndex - 1)
             ),
         });
       }
@@ -130,7 +118,7 @@ export class SwappableDiffMessageGenerator {
           text: 'Следующие ▶',
           generateMessage: () =>
             MaybeDeferred.fromValue(
-              generateDifficultySelectMessage(diffsPageIndex + 1)
+              this.generateDifficultySelectMessage(diffsPageIndex + 1)
             ),
         });
       }
@@ -151,8 +139,8 @@ export class SwappableDiffMessageGenerator {
         navigationButtons: diffsToShow
           .map(diff => [
             {
-              text: generateDiffButtonText(diff),
-              generateMessage: () => generateMessageForMap(diff.id),
+              text: this.generateDiffButtonText(diff),
+              generateMessage: () => this.generateMessageForMap(diff.id),
             },
           ])
           .concat([
@@ -160,7 +148,7 @@ export class SwappableDiffMessageGenerator {
             [
               {
                 text: 'Назад',
-                generateMessage: () => generateMessageForMap(mapId),
+                generateMessage: () => this.generateMessageForMap(mapId),
               },
             ],
           ]),

@@ -39,13 +39,7 @@ export class DynamicLinkUsernamePageGeneratorVk {
   generate = this.generateLinkUsernamePage;
 
   generateLinkUsernamePage(): MaybeDeferred<VkOutputMessage> {
-    const {
-      server,
-      getCancelPage,
-      linkUsername,
-      successPageButton,
-      generateLinkUsernamePage,
-    } = this;
+    const {server, successPageButton} = this;
     const serverString = OsuServer[server];
     return MaybeDeferred.fromValue({
       navigation: {
@@ -69,7 +63,7 @@ export class DynamicLinkUsernamePageGeneratorVk {
           generateMessage: (_, replyText) =>
             MaybeDeferred.fromFastPromise(
               (async () => {
-                const result = await linkUsername(replyText);
+                const result = await this.linkUsername(replyText);
                 if (result === undefined) {
                   return {
                     navigation: {
@@ -80,8 +74,8 @@ export class DynamicLinkUsernamePageGeneratorVk {
                         [
                           {
                             text: 'Ввести другой ник',
-                            generateMessage:
-                              generateLinkUsernamePage.bind(this),
+                            generateMessage: () =>
+                              this.generateLinkUsernamePage(),
                           },
                         ],
                       ],
@@ -106,7 +100,7 @@ export class DynamicLinkUsernamePageGeneratorVk {
           [
             {
               text: 'Отмена',
-              generateMessage: getCancelPage,
+              generateMessage: () => this.getCancelPage(),
             },
           ],
         ],
