@@ -6,6 +6,7 @@ import {
   OsuMapUserPlay,
 } from '../../../application/usecases/get_beatmap_users_best_score/GetBeatmapUsersBestScoresResponse';
 import {MaybeDeferred} from '../../../primitives/MaybeDeferred';
+import {ModAcronym} from '../../../primitives/ModAcronym';
 import {round} from '../../../primitives/Numbers';
 import {OsuRuleset} from '../../../primitives/OsuRuleset';
 import {OsuServer} from '../../../primitives/OsuServer';
@@ -46,7 +47,9 @@ export class ChatLeaderboardOnMapVk extends ChatLeaderboardOnMap<
     missingUsernames: string[],
     isChatLb: boolean
   ): MaybeDeferred<VkOutputMessage> {
-    const valuePromise: Promise<VkOutputMessage> = (async () => {
+    let currentFilterMods: ModAcronym[] = [];
+    let currentPageIndex = 0;
+    const computeOutput = (): VkOutputMessage => {
       const sortedMapPlays = mapPlays
         .sort((a, b) => {
           const aPlayResult = a.collection[0].playResult;
@@ -63,39 +66,19 @@ export class ChatLeaderboardOnMapVk extends ChatLeaderboardOnMap<
           }
           return bPp - aPp;
         })
+        .filter(v =>
+          ModAcronym.listContainsAll(
+            currentFilterMods,
+            v.collection[0].playResult.mods.map(m => m.acronym)
+          )
+        )
         .map((v, i) => ({position: i + 1, mapPlays: v}));
-      const areAllMapsSame: boolean = (() => {
-        for (let i = 1; i < mapPlays.length; i++) {
-          if (
-            areMapsDifferentInStats(
-              mapPlays[0].collection[0].mapInfo,
-              mapPlays[i].collection[0].mapInfo
-            )
-          ) {
-            return false;
-          }
-        }
-        return true;
-      })();
       const maxScoresPerPage = 5;
-      if (mapPlays.length <= maxScoresPerPage) {
-        const text = this.createMapPlaysText(
-          areAllMapsSame ? mapPlays[0].collection[0].mapInfo : map,
-          sortedMapPlays,
-          mapPlays.length,
-          server,
-          mode,
-          missingUsernames,
-          isChatLb
-        );
-        const fullText = `${text}`;
-        return {
-          text: fullText,
-        };
-      }
-      const playsChunks: {position: number; mapPlays: OsuMapUserBestPlays}[][] =
-        [];
-      for (let i = 0; i < mapPlays.length; i += maxScoresPerPage) {
+      const playsChunks: {
+        position: number;
+        mapPlays: OsuMapUserBestPlays;
+      }[][] = [];
+      for (let i = 0; i < sortedMapPlays.length; i += maxScoresPerPage) {
         playsChunks.push(sortedMapPlays.slice(i, i + maxScoresPerPage));
       }
       const pageContents: VkOutputMessageContent[] = playsChunks.map(chunk => {
@@ -119,30 +102,111 @@ export class ChatLeaderboardOnMapVk extends ChatLeaderboardOnMap<
           server,
           mode,
           missingUsernames,
-          isChatLb
+          isChatLb,
+          currentFilterMods
         );
         const fullText = `${text}`;
         return {
           text: fullText,
         };
       });
+      const availableFilterMods: ModAcronym[] = (() => {
+        const allPlaysModCombos = sortedMapPlays.map(v =>
+          v.mapPlays.collection[0].playResult.mods.map(m => m.acronym)
+        );
+        const modFrequencies: {[key: string]: number} = {};
+        for (const modCombo of allPlaysModCombos) {
+          for (const mod of modCombo) {
+            const modKey = mod.toString();
+            if (modFrequencies[modKey] === undefined) {
+              modFrequencies[modKey] = 0;
+            }
+            modFrequencies[modKey] += 1;
+          }
+        }
+        const modsByPopularity = Object.entries(modFrequencies).sort(
+          (a, b) => b[1] - a[1]
+        );
+        return modsByPopularity
+          .filter(entry => entry[1] < allPlaysModCombos.length)
+          .map(entry => new ModAcronym(entry[0]))
+          .filter(m => !m.isAnyOf(...currentFilterMods));
+      })();
+      // Max 10 buttons per message, so we only have 8 or 7 slots for
+      // mod filter buttons (10 minus pagination buttons minus clear filter button)
+      const modFilterRows = (() => {
+        if (availableFilterMods.length < 5) {
+          return [availableFilterMods];
+        }
+        if (availableFilterMods.length < 7) {
+          return [
+            availableFilterMods.slice(0, 3),
+            availableFilterMods.slice(3),
+          ];
+        }
+        const availableSlotsForMods = currentFilterMods.length > 0 ? 7 : 8;
+        return [
+          availableFilterMods.slice(0, 4),
+          availableFilterMods.slice(4, availableSlotsForMods),
+        ];
+      })();
       return {
-        pagination: {
-          contents: pageContents,
-          startingIndex: 0,
-          buttonText: (currentIndex: number, targetIndex: number) => {
-            if (targetIndex < 0 || targetIndex >= playsChunks.length) {
-              return undefined;
-            }
-            if (targetIndex > currentIndex) {
-              return `▶　(${targetIndex + 1}/${playsChunks.length})`;
-            }
-            return `(${targetIndex + 1}/${playsChunks.length})　◀`;
-          },
+        navigation: {
+          currentContent: pageContents[currentPageIndex],
+          navigationButtons: [
+            [
+              ...(currentPageIndex <= 0
+                ? []
+                : [
+                    {
+                      text: `(${currentPageIndex}/${playsChunks.length})　◀`,
+                      generateMessage: () => {
+                        currentPageIndex -= 1;
+                        return MaybeDeferred.fromValue(computeOutput());
+                      },
+                    },
+                  ]),
+              ...(currentPageIndex >= pageContents.length - 1
+                ? []
+                : [
+                    {
+                      text: `▶　(${currentPageIndex + 2}/${playsChunks.length})`,
+                      generateMessage: () => {
+                        currentPageIndex += 1;
+                        return MaybeDeferred.fromValue(computeOutput());
+                      },
+                    },
+                  ]),
+            ],
+            ...modFilterRows.map(modRow =>
+              modRow.map(mod => ({
+                text: `+${mod}`,
+                generateMessage: () => {
+                  currentPageIndex = 0;
+                  currentFilterMods.push(mod);
+                  return MaybeDeferred.fromValue(computeOutput());
+                },
+              }))
+            ),
+            ...(currentFilterMods.length === 0
+              ? []
+              : [
+                  [
+                    {
+                      text: 'Очистить фильтр',
+                      generateMessage: () => {
+                        currentPageIndex = 0;
+                        currentFilterMods = [];
+                        return MaybeDeferred.fromValue(computeOutput());
+                      },
+                    },
+                  ],
+                ]),
+          ],
         },
       };
-    })();
-    return MaybeDeferred.fromFastPromise(valuePromise);
+    };
+    return MaybeDeferred.fromValue(computeOutput());
   }
 
   createMapPlaysText(
@@ -152,7 +216,8 @@ export class ChatLeaderboardOnMapVk extends ChatLeaderboardOnMap<
     server: OsuServer,
     mode: OsuRuleset,
     missingUsernames: string[],
-    isChatLb: boolean
+    isChatLb: boolean,
+    modFilter: ModAcronym[]
   ): string {
     const displayedMap = map;
     const serverString = OsuServer[server];
@@ -211,9 +276,11 @@ export class ChatLeaderboardOnMapVk extends ChatLeaderboardOnMap<
         ? '\nНе удалось найти игроков с никами:\n' + missingUsernames.join(', ')
         : '';
     const mapUrlShort = displayedMap.beatmap.url.replace('beatmaps', 'b');
+    const modFilterString =
+      modFilter.length === 0 ? '' : ` (фильтр: ${modFilter.join(', ')})`;
     const text = `
 [Server: ${serverString}, Mode: ${modeString}]
-Топ ${isChatLb ? 'чата' : 'выбранных игроков'} на карте
+Топ ${isChatLb ? 'чата' : 'выбранных игроков'} на карте${modFilterString}
 
 ${artist} - ${title} [${diffname}] by ${mapperName} (${mapStatus})
 ${lengthString} (${drainString})　${bpm} BPM　${sr}★

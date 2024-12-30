@@ -18,6 +18,15 @@ export class ModAcronym extends String {
     return new ModAcronym(acronym).isAnyOf(...list);
   }
 
+  static listContainsAll(targetAcronyms: ModAcronym[], list: ModAcronym[]) {
+    for (const requiredMod of targetAcronyms) {
+      if (!requiredMod.isAnyOf(...list)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   static createMany(...acronyms: string[]): ModAcronym[] {
     return acronyms.map(s => new ModAcronym(s));
   }
