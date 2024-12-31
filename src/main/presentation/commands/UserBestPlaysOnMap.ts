@@ -238,13 +238,18 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
           .treatAsInterchangeable('DT', 'NC')
           .treatAsInterchangeable('HT', 'DC');
       })();
+      const maxScoreCount = 99;
       const leaderboardResponse = await this.getBeatmapBestScores.execute({
         initiatorAppUserId: initiatorAppUserId,
         server: args.server,
         beatmapId: beatmapId,
         usernames: [username],
         startPosition: Math.max(args.startPosition ?? 1, 1),
-        quantityPerUser: clamp(args.quantity ?? 10, 1, 10),
+        quantityPerUser: clamp(
+          args.quantity ?? maxScoreCount,
+          1,
+          maxScoreCount
+        ),
         modPatterns: modPatterns,
       });
       if (leaderboardResponse.failureReason !== undefined) {
@@ -317,7 +322,7 @@ export abstract class UserBestPlaysOnMap<TContext, TOutput> extends TextCommand<
             )
           : leaderboardResponse.mapPlays![0].collection.slice(
               0,
-              (args.startPosition ?? 1) + (args.quantity ?? 10) - 1
+              (args.startPosition ?? 1) + (args.quantity ?? maxScoreCount) - 1
             );
       if (beatmapId !== undefined) {
         await this.saveLastSeenBeatmapId(ctx, args.server, beatmapId);

@@ -224,7 +224,7 @@ export abstract class ChatLeaderboardOnMap<
         beatmapId: targetBeatmapId,
         usernames: allTargetUsernamesNormalized,
         startPosition: 1,
-        quantityPerUser: 1,
+        quantityPerUser: 99,
         modPatterns: modPatterns,
       });
       if (leaderboardResponse.failureReason !== undefined) {
