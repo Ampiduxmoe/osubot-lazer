@@ -66,12 +66,29 @@ export class ChatLeaderboardOnMapVk extends ChatLeaderboardOnMap<
           }
           return bPp - aPp;
         })
-        .filter(v =>
-          ModAcronym.listContainsAll(
-            currentFilterMods,
-            v.collection[0].playResult.mods.map(m => m.acronym)
-          )
-        )
+        .map(v => {
+          const filteredPlays: {
+            playResult: OsuMapUserPlay;
+            mapInfo: OsuMap;
+          }[] = [];
+          for (const play of v.collection) {
+            const satisfiesFilter = ModAcronym.listContainsAll(
+              currentFilterMods,
+              play.playResult.mods.map(m => m.acronym)
+            );
+            if (satisfiesFilter) {
+              filteredPlays.push(play);
+            }
+          }
+          if (filteredPlays.length === 0) {
+            return undefined;
+          }
+          return {
+            ...v,
+            collection: filteredPlays,
+          };
+        })
+        .filter(v => v !== undefined)
         .map((v, i) => ({position: i + 1, mapPlays: v}));
       const maxScoresPerPage = 5;
       const playsChunks: {
@@ -111,8 +128,10 @@ export class ChatLeaderboardOnMapVk extends ChatLeaderboardOnMap<
         };
       });
       const availableFilterMods: ModAcronym[] = (() => {
-        const allPlaysModCombos = sortedMapPlays.map(v =>
-          v.mapPlays.collection[0].playResult.mods.map(m => m.acronym)
+        const allPlaysModCombos = sortedMapPlays.flatMap(v =>
+          v.mapPlays.collection.map(collection =>
+            collection.playResult.mods.map(m => m.acronym)
+          )
         );
         const modFrequencies: {[key: string]: number} = {};
         for (const modCombo of allPlaysModCombos) {
