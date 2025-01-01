@@ -2,6 +2,7 @@ import {randomUUID} from 'crypto';
 import {ButtonColor, Keyboard, KeyboardBuilder, VK} from 'vk-io';
 import {APP_CODE_NAME} from '../../App';
 import {CalculationType} from '../../primitives/MaybeDeferred';
+import {delay} from '../../primitives/Promises';
 import {Timespan} from '../../primitives/Timespan';
 import {TextCommand} from '../commands/base/TextCommand';
 import {CommandMatchResult, MatchLevel} from '../common/CommandMatchResult';
@@ -471,7 +472,7 @@ export class VkClient {
           const botMessage = await replyMessagePromise;
           await botMessage.editMessage({message: 'Команда выполнена'});
         } else {
-          ctx.reply('Команда выполнена');
+          replyMessagePromise = ctx.reply('Команда выполнена');
         }
         return matchResult;
       }
@@ -483,7 +484,26 @@ export class VkClient {
         const botMessage = await replyMessagePromise;
         await botMessage.editMessage({message: text, attachment, keyboard});
       } else {
-        ctx.reply(text, {attachment, keyboard});
+        replyMessagePromise = ctx.reply(text, {attachment, keyboard});
+      }
+      if (outputMessage.lateEdit !== undefined) {
+        const lateEdit = await outputMessage.lateEdit;
+        const editText = lateEdit.text ?? '';
+        const editAttachment = lateEdit.attachment;
+        const editButtons = lateEdit.buttons;
+        const keyboard = editButtons && this.createKeyboard(editButtons);
+        const botMessage = await replyMessagePromise;
+        if (!editText && !editAttachment) {
+          return matchResult;
+        }
+        if (lateEdit.delayMs !== undefined && lateEdit.delayMs > 0) {
+          await delay(lateEdit.delayMs);
+        }
+        await botMessage.editMessage({
+          message: editText,
+          attachment: editAttachment,
+          keyboard,
+        });
       }
     } catch (e) {
       console.error(e);

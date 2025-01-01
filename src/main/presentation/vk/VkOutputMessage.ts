@@ -26,6 +26,12 @@ export type VkOutputMessage = VkOutputMessageContent & {
     }[][];
     messageListener?: ReplyListener;
   };
+  /**
+   * Final contents of the message.
+   * Useful for situations when some initial contents
+   * should be displayed immediately and enriched after that
+   */
+  lateEdit?: Promise<VkOutputMessageContent & {delayMs?: number}>;
 };
 
 export type VkOutputMessageButton = {
