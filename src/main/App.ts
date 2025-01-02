@@ -12,6 +12,7 @@ import {GetOsuUserInfoUseCase} from './application/usecases/get_osu_user_info/Ge
 import {GetOsuUserUpdateUseCase} from './application/usecases/get_osu_user_update/GetOsuUserUpdateUseCase';
 import {GetUserBestPlaysUseCase} from './application/usecases/get_user_best_plays/GetUserBestPlaysUseCase';
 import {GetUserRecentPlaysUseCase} from './application/usecases/get_user_recent_plays/GetUserRecentPlaysUseCase';
+import {ParseReplayUseCase} from './application/usecases/parse_replay/ParseReplayUseCase';
 import {SaveContactAdminMessageUseCase} from './application/usecases/save_contact_admin_message/SaveContactAdminMessageUseCase';
 import {SetUsernameUseCase} from './application/usecases/set_username/SetUsernameUseCase';
 import {UnlinkUsernameUseCase} from './application/usecases/unlink_username/UnlinkUsernameUseCase';
@@ -79,6 +80,7 @@ import {ChatLeaderboardOnMapVk} from './presentation/vk/commands/ChatLeaderboard
 import {ChatLeaderboardVk} from './presentation/vk/commands/ChatLeaderboardVk';
 import {ContactAdminVk} from './presentation/vk/commands/ContactAdminVk';
 import {HelpVk} from './presentation/vk/commands/HelpVk';
+import {ReplayDetailsVk} from './presentation/vk/commands/ReplayDetailsVk';
 import {
   ReplyAsBotVk,
   VkCustomPayload,
@@ -280,6 +282,7 @@ export class App {
     const getBeatmapsetDiffsUseCase = new GetBeatmapsetDiffsUseCase(
       osuBeatmapsetsDao
     );
+    const parseReplayUseCase = new ParseReplayUseCase();
     const saveContactAdminMessageUseCase = new SaveContactAdminMessageUseCase(
       unreadMessagesDao
     );
@@ -315,6 +318,7 @@ export class App {
       getApiUsageSummaryUseCase: getApiUsageSummaryUseCase,
       getBeatmapInfoUseCase: getBeatmapInfoUseCase,
       getBeatmapUsersBestScoresUseCase: getBeatmapUsersBestScoresUseCase,
+      parseReplayUseCase: parseReplayUseCase,
       saveContactAdminMessageUseCase: saveContactAdminMessageUseCase,
       getContactAdminMessageUseCase: getContactAdminMessageUseCase,
       deleteContactAdminMessageUseCase: deleteContactAdminMessageUseCase,
@@ -357,6 +361,7 @@ export class App {
     const {getApiUsageSummaryUseCase} = params;
     const {getBeatmapInfoUseCase} = params;
     const {getBeatmapUsersBestScoresUseCase} = params;
+    const {parseReplayUseCase} = params;
     const {saveContactAdminMessageUseCase} = params;
     const {getContactAdminMessageUseCase} = params;
     const {deleteContactAdminMessageUseCase} = params;
@@ -808,6 +813,11 @@ export class App {
       getInitiatorAppUserId,
       getBeatmapInfoUseCase
     );
+    const replayDetails = new ReplayDetailsVk(
+      parseReplayUseCase,
+      getInitiatorAppUserId,
+      getBeatmapInfoUseCase
+    );
     const contactAdmin = new ContactAdminVk(
       group.id,
       mainTextProcessor,
@@ -889,7 +899,7 @@ export class App {
       }
       return command.shortDescription;
     };
-    for (const command of [...basicCommands, beatmapMenu]) {
+    for (const command of [...basicCommands, beatmapMenu, replayDetails]) {
       command.link(basicCommands);
     }
     const adminCommands = [
@@ -950,6 +960,7 @@ export class App {
       help,
       ...basicCommands,
       beatmapMenu,
+      replayDetails,
       alias,
       whynot,
       contactAdmin
@@ -1101,6 +1112,7 @@ type VkClientCreationParams = {
   getApiUsageSummaryUseCase: GetApiUsageSummaryUseCase;
   getBeatmapInfoUseCase: GetBeatmapInfoUseCase;
   getBeatmapUsersBestScoresUseCase: GetBeatmapUsersBestScoresUseCase;
+  parseReplayUseCase: ParseReplayUseCase;
   saveContactAdminMessageUseCase: SaveContactAdminMessageUseCase;
   getContactAdminMessageUseCase: GetContactAdminMessageUseCase;
   deleteContactAdminMessageUseCase: DeleteContactAdminMessageUseCase;

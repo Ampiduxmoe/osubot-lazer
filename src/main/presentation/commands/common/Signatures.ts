@@ -23,3 +23,7 @@ export type GetLocalAppUserIds<TContext> = (ctx: TContext) => Promise<string[]>;
 export type GetContextualBeatmapIds<TContext> = (
   ctx: TContext
 ) => {server: OsuServer; id: number}[];
+
+export type GetReplayFile<TContext> = (
+  ctx: TContext
+) => Promise<string | Buffer>;
