@@ -7,6 +7,11 @@ export interface OsuBeatmapsDao {
     id: number,
     server: OsuServer
   ): Promise<OsuBeatmap | undefined>;
+  getByHash(
+    appUserId: string,
+    id: string,
+    server: OsuServer
+  ): Promise<OsuBeatmap | undefined>;
 }
 
 export type OsuBeatmap = {

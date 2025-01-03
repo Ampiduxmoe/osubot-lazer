@@ -32,6 +32,8 @@ export interface OsuApi {
 
   getBeatmap(beatmapId: number): Promise<OsuBeatmapInfo | undefined>;
 
+  getBeatmapByHash(beatmapHash: string): Promise<OsuBeatmapInfo | undefined>;
+
   getBeatmapUserScores(
     beatmapId: number,
     osuUserId: number,

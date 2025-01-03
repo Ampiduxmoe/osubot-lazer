@@ -4,7 +4,8 @@ import {OsuServer} from '../../../primitives/OsuServer';
 export type GetBeatmapInfoRequest = {
   initiatorAppUserId: string;
   server: OsuServer;
-  beatmapId: number;
+  beatmapId?: number;
+  beatmapHash?: string;
   mapScoreSimulationOsu?: {
     mods?: ModAcronym[];
     combo?: number;

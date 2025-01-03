@@ -814,6 +814,7 @@ export class App {
       getBeatmapInfoUseCase
     );
     const replayDetails = new ReplayDetailsVk(
+      vkBeatmapCovers,
       parseReplayUseCase,
       getInitiatorAppUserId,
       getBeatmapInfoUseCase

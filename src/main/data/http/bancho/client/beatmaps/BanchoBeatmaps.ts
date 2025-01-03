@@ -27,6 +27,23 @@ export class BanchoBeatmaps {
     return rawBeatmap;
   }
 
+  async getByHash(hash: string): Promise<RawBanchoBeatmapExtended | undefined> {
+    const url = `${this.url}/lookup`;
+    const response = await withTimingLogs(
+      async () =>
+        (await this.getHttpClient()).get(url, {params: {checksum: hash}}),
+      () => `Trying to get Bancho beatmap by hash ${hash}`,
+      (_, delta) =>
+        `Got response for Bancho beatmap with hash ${hash} in ${delta}ms`
+    );
+    if (response.status === 404) {
+      console.log(`Bancho beatmap with hash ${hash} was not found`);
+      return undefined;
+    }
+    const rawBeatmap: RawBanchoBeatmapExtended = response.data;
+    return rawBeatmap;
+  }
+
   async getUserScores(
     beatmapId: number,
     userId: number,

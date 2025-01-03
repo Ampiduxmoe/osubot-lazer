@@ -67,11 +67,25 @@ export class GetBeatmapInfoUseCase
     const mapScoreSimulationCtb = params.mapScoreSimulationCtb ?? {};
     const mapScoreSimulationMania = params.mapScoreSimulationMania ?? {};
 
-    const rawMap = await this.beatmaps.get(
-      params.initiatorAppUserId,
-      params.beatmapId,
-      params.server
-    );
+    const rawMap = await (() => {
+      if (params.beatmapId !== undefined) {
+        return this.beatmaps.get(
+          params.initiatorAppUserId,
+          params.beatmapId,
+          params.server
+        );
+      }
+      if (params.beatmapHash !== undefined) {
+        return this.beatmaps.getByHash(
+          params.initiatorAppUserId,
+          params.beatmapHash,
+          params.server
+        );
+      }
+      throw Error(
+        'Request does not have any parameters that identify a beatmap'
+      );
+    })();
     if (rawMap === undefined) {
       return {
         beatmapInfo: undefined,

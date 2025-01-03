@@ -57,6 +57,10 @@ export class FakeBanchoApi implements OsuApi {
   getBeatmap(beatmapId: number): Promise<OsuBeatmapInfo | undefined> {
     throw new Error('Method not implemented.');
   }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  getBeatmapByHash(beatmapHash: string): Promise<OsuBeatmapInfo | undefined> {
+    throw new Error('Method not implemented.');
+  }
   getBeatmapUserScores(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     beatmapId: number,

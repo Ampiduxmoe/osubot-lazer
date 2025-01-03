@@ -101,6 +101,16 @@ export class BanchoApi implements OsuApi {
     return beatmapInternalToExternal(beatmap);
   }
 
+  async getBeatmapByHash(
+    beatmapHash: string
+  ): Promise<OsuBeatmapInfo | undefined> {
+    const beatmap = await this.client.beatmaps.getByHash(beatmapHash);
+    if (beatmap === undefined) {
+      return undefined;
+    }
+    return beatmapInternalToExternal(beatmap);
+  }
+
   async getBeatmapUserScores(
     beatmapId: number,
     osuUserId: number,

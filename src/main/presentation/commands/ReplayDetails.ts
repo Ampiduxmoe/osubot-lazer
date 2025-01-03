@@ -1,7 +1,9 @@
+import {MapInfo} from '../../application/usecases/get_beatmap_info/GetBeatmapInfoResponse';
 import {GetBeatmapInfoUseCase} from '../../application/usecases/get_beatmap_info/GetBeatmapInfoUseCase';
 import {ReplayInfo} from '../../application/usecases/parse_replay/ParseReplayResponse';
 import {ParseReplayUseCase} from '../../application/usecases/parse_replay/ParseReplayUseCase';
 import {MaybeDeferred} from '../../primitives/MaybeDeferred';
+import {OsuServer} from '../../primitives/OsuServer';
 import {TextProcessor} from '../common/arg_processing/TextProcessor';
 import {CommandMatchResult} from '../common/CommandMatchResult';
 import {CommandPrefixes} from '../common/CommandPrefixes';
@@ -60,20 +62,34 @@ export abstract class ReplayDetails<TContext, TOutput> extends TextCommand<
       if (replayInfo === undefined) {
         throw Error('Could not extract data from replay');
       }
+      const initiatorAppUserId = this.getInitiatorAppUserId(ctx);
+      const mapInfoResult = await this.getBeatmapInfo.execute({
+        initiatorAppUserId: initiatorAppUserId,
+        beatmapHash: replayInfo.beatmapHash,
+        server: OsuServer.Bancho,
+      });
       return {
         replayInfo: replayInfo,
+        mapInfo: mapInfoResult.beatmapInfo,
       };
     })();
     return MaybeDeferred.fromInstantPromise(valuePromise);
   }
 
   createOutputMessage(params: ReplayDetailsViewParams): MaybeDeferred<TOutput> {
-    const {replayInfo} = params;
-    return this.createReplayInfoMessage(replayInfo);
+    const {replayInfo, mapInfo} = params;
+    if (mapInfo === undefined) {
+      return this.createReplayInfoWithoutMapMessage(replayInfo);
+    }
+    return this.createReplayInfoMessage(replayInfo, mapInfo);
   }
 
-  abstract createReplayInfoMessage(
+  abstract createReplayInfoWithoutMapMessage(
     replayInfo: ReplayInfo
+  ): MaybeDeferred<TOutput>;
+  abstract createReplayInfoMessage(
+    replayInfo: ReplayInfo,
+    mapInfo: MapInfo
   ): MaybeDeferred<TOutput>;
 
   unparse(): string {
@@ -85,4 +101,5 @@ export type ReplayDetailsExecutionArgs = {};
 
 export type ReplayDetailsViewParams = {
   replayInfo: ReplayInfo;
+  mapInfo: MapInfo | undefined;
 };
