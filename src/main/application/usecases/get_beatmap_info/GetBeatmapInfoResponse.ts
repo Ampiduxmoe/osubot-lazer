@@ -44,6 +44,9 @@ export type MapInfo = {
         speed?: number;
         misses: number;
         mehs: number;
+        // if mode is ctb:
+        smallTickHit?: number;
+        smallTickMiss?: number;
       };
 };
 

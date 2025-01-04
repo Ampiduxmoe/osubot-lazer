@@ -115,6 +115,8 @@ export class ReplayDetailsVk extends ReplayDetails<
         const acc = (replayInfo.accuracy * 100).toFixed(2);
         const modsString =
           replayInfo.mods.length === 0 ? '' : `+${replayInfo.mods.join('')}`;
+        const ppValue = mapInfo.ppEstimations.at(0)?.ppValue?.toFixed(2);
+        const pp = ppValue === undefined ? '—' : `~${ppValue}`;
         const hitcountsString = getHitcountsString(hitcounts, mode);
         const mapUrlShort = mapInfo.url.replace('beatmaps', 'b');
         const couldNotAttachCoverMessage =
@@ -128,8 +130,10 @@ export class ReplayDetailsVk extends ReplayDetails<
 
 ${artist} - ${title} [${diffname}] by ${mapperName} (${mapStatus})
 ${lengthString} (${drainString})　${bpm} BPM　${sr}★　${modsString}
+
 Score: ${score}　Combo: ${comboString}
 Accuracy: ${acc}%
+PP: ${pp}
 Hitcounts: ${hitcountsString}
 
 Beatmap: ${mapUrlShort}${couldNotAttachCoverMessage}

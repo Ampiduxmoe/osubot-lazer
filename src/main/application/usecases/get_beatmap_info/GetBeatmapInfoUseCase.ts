@@ -697,6 +697,8 @@ export class GetBeatmapInfoUseCase
             speed: mapScoreSimulationOsu.speed,
             misses: finalScore.hitcounts.miss,
             mehs: 0,
+            smallTickHit: simulation.score.statistics.smallTickHit,
+            smallTickMiss: simulation.score.statistics.smallTickMiss,
           },
         },
       };

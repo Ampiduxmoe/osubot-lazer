@@ -1,8 +1,10 @@
+import {GetBeatmapInfoRequest} from '../../application/usecases/get_beatmap_info/GetBeatmapInfoRequest';
 import {MapInfo} from '../../application/usecases/get_beatmap_info/GetBeatmapInfoResponse';
 import {GetBeatmapInfoUseCase} from '../../application/usecases/get_beatmap_info/GetBeatmapInfoUseCase';
 import {ReplayInfo} from '../../application/usecases/parse_replay/ParseReplayResponse';
 import {ParseReplayUseCase} from '../../application/usecases/parse_replay/ParseReplayUseCase';
 import {MaybeDeferred} from '../../primitives/MaybeDeferred';
+import {OsuRuleset} from '../../primitives/OsuRuleset';
 import {OsuServer} from '../../primitives/OsuServer';
 import {TextProcessor} from '../common/arg_processing/TextProcessor';
 import {CommandMatchResult} from '../common/CommandMatchResult';
@@ -60,13 +62,24 @@ export abstract class ReplayDetails<TContext, TOutput> extends TextCommand<
       });
       const replayInfo = replayInfoResult.replay;
       if (replayInfo === undefined) {
-        throw Error('Could not extract data from replay');
+        throw Error('Could not get replay info');
       }
       const initiatorAppUserId = this.getInitiatorAppUserId(ctx);
+      const simulationParams = await this.getSimulationParams(
+        replayInfo,
+        initiatorAppUserId
+      );
+      if (simulationParams === undefined) {
+        return {
+          replayInfo: replayInfo,
+          mapInfo: undefined,
+        };
+      }
       const mapInfoResult = await this.getBeatmapInfo.execute({
         initiatorAppUserId: initiatorAppUserId,
         beatmapHash: replayInfo.beatmapHash,
         server: OsuServer.Bancho,
+        ...simulationParams,
       });
       return {
         replayInfo: replayInfo,
@@ -95,6 +108,67 @@ export abstract class ReplayDetails<TContext, TOutput> extends TextCommand<
   unparse(): string {
     return '';
   }
+
+  // this returns undefined only when beatmap is not found by its hash
+  private async getSimulationParams(
+    replay: ReplayInfo,
+    initiatorAppUserId: string
+  ): Promise<BeatmapInfoRequestSimulationParams | undefined> {
+    const mode = replay.mode;
+    const commonArgs = {
+      mods: replay.mods,
+      combo: replay.combo,
+      misses: replay.hitcounts.miss,
+      accuracy: replay.accuracy,
+    };
+    if (mode === OsuRuleset.osu) {
+      return {
+        mapScoreSimulationOsu: {
+          ...commonArgs,
+          mehs: replay.hitcounts.c50,
+          goods: replay.hitcounts.c100,
+        },
+      };
+    }
+    if (mode === OsuRuleset.taiko) {
+      return {
+        mapScoreSimulationTaiko: {
+          ...commonArgs,
+          goods: replay.hitcounts.c100,
+        },
+      };
+    }
+    if (mode === OsuRuleset.ctb) {
+      // little hack to get small tick miss count
+      const ssScoreResult = await this.getBeatmapInfo.execute({
+        initiatorAppUserId: initiatorAppUserId,
+        beatmapHash: replay.beatmapHash,
+        server: OsuServer.Bancho,
+        mapScoreSimulationCtb: {
+          smallMisses: 0,
+        },
+      });
+      if (ssScoreResult.beatmapInfo === undefined) {
+        return undefined;
+      }
+      const smallTickTotal =
+        ssScoreResult.beatmapInfo.simulationParams!.smallTickHit!;
+      return {
+        mapScoreSimulationCtb: {
+          ...commonArgs,
+          smallMisses: smallTickTotal - replay.hitcounts.c50,
+        },
+      };
+    }
+    if (mode === OsuRuleset.mania) {
+      return {
+        mapScoreSimulationMania: {
+          ...commonArgs,
+        },
+      };
+    }
+    throw Error('Unknown game mode');
+  }
 }
 
 export type ReplayDetailsExecutionArgs = {};
@@ -103,3 +177,11 @@ export type ReplayDetailsViewParams = {
   replayInfo: ReplayInfo;
   mapInfo: MapInfo | undefined;
 };
+
+type BeatmapInfoRequestSimulationParams = Pick<
+  GetBeatmapInfoRequest,
+  | 'mapScoreSimulationOsu'
+  | 'mapScoreSimulationTaiko'
+  | 'mapScoreSimulationCtb'
+  | 'mapScoreSimulationMania'
+>;
