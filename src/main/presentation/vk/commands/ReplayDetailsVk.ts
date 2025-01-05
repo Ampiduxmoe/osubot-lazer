@@ -118,6 +118,9 @@ export class ReplayDetailsVk extends ReplayDetails<
         const ppValue = mapInfo.ppEstimations.at(0)?.ppValue?.toFixed(2);
         const pp = ppValue === undefined ? '—' : `~${ppValue}`;
         const hitcountsString = getHitcountsString(hitcounts, mode);
+        const scoreDateString = getScoreDateString(
+          new Date(replayInfo.timestamp)
+        );
         const mapUrlShort = mapInfo.url.replace('beatmaps', 'b');
         const couldNotAttachCoverMessage =
           coverAttachment === undefined
@@ -135,6 +138,7 @@ Score: ${score}　Combo: ${comboString}
 Accuracy: ${acc}%
 PP: ${pp}
 Hitcounts: ${hitcountsString}
+${scoreDateString}
 
 Beatmap: ${mapUrlShort}${couldNotAttachCoverMessage}
           `.trim(),
@@ -159,6 +163,9 @@ Beatmap: ${mapUrlShort}${couldNotAttachCoverMessage}
         const acc = (replayInfo.accuracy * 100).toFixed(2);
         const modsString =
           replayInfo.mods.length === 0 ? '' : ` (+${replayInfo.mods.join('')})`;
+        const scoreDateString = getScoreDateString(
+          new Date(replayInfo.timestamp)
+        );
         const hitcountsString = getHitcountsString(hitcounts, mode);
         return {
           text: `
@@ -169,6 +176,7 @@ Beatmap: ${mapUrlShort}${couldNotAttachCoverMessage}
 Score: ${score}　Combo: ${comboString}
 Accuracy: ${acc}%
 Hitcounts: ${hitcountsString}
+${scoreDateString}
 
 Информацию о карте найти не удалось
           `.trim(),
@@ -221,4 +229,19 @@ async function getOrDownloadCoverAttachment(
   } catch (e) {
     return undefined;
   }
+}
+
+function getScoreDateString(date: Date): string {
+  const day = date.getUTCDate();
+  const dayFormatted = (day > 9 ? '' : '0') + day;
+  const month = date.getUTCMonth() + 1;
+  const monthFormatted = (month > 9 ? '' : '0') + month;
+  const year = date.getUTCFullYear();
+  const hours = date.getUTCHours();
+  const hoursFormatted = (hours > 9 ? '' : '0') + hours;
+  const minutes = date.getUTCMinutes();
+  const minutesFormatted = (minutes > 9 ? '' : '0') + minutes;
+  const datePart = `${dayFormatted}.${monthFormatted}.${year}`;
+  const timePart = `${hoursFormatted}:${minutesFormatted}`;
+  return `${datePart} ${timePart}`;
 }

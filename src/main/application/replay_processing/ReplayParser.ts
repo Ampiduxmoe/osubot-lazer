@@ -36,6 +36,23 @@ export class ReplayParser {
 
     replay.mods = getMods(this.int());
 
+    replay.rawLifeBarData = this.string()
+      .split(',')
+      .map(pairStr => pairStr.split('|'))
+      .map(([time, healthFraction]) => ({
+        time: parseInt(time),
+        healthFraction: parseFloat(healthFraction),
+      }))
+      .filter(
+        ({time, healthFraction}) => !isNaN(time) && !isNaN(healthFraction)
+      );
+    replay.windowsTimestamp = this.long();
+    replay.timestamp = Number(
+      replay.windowsTimestamp / BigInt(10_000) - BigInt(62135596800000)
+    );
+    replay.onlineScoreId = this.int();
+    replay.modsInfo = this.double();
+
     return replay as ReplayData;
   }
 
@@ -54,6 +71,18 @@ export class ReplayParser {
   int(): number {
     const value = this.rawData.readInt32LE(this.offset);
     this.offset += 4;
+    return value;
+  }
+
+  long(): bigint {
+    const value = this.rawData.readBigInt64LE(this.offset);
+    this.offset += 8;
+    return value;
+  }
+
+  double(): number {
+    const value = this.rawData.readDoubleLE(this.offset);
+    this.offset += 8;
     return value;
   }
 
@@ -142,6 +171,11 @@ export type ReplayData = {
   perfect: number;
   accuracy: number;
   mods: ModAcronym[];
+  rawLifeBarData: ReplayLifeBarDataPoint[];
+  windowsTimestamp: bigint;
+  timestamp: number;
+  onlineScoreId: number;
+  modsInfo: number;
 };
 
 export type ReplayDataHitcounts = {
@@ -151,4 +185,9 @@ export type ReplayDataHitcounts = {
   miss: number;
   geki: number;
   katu: number;
+};
+
+export type ReplayLifeBarDataPoint = {
+  time: number;
+  healthFraction: number;
 };

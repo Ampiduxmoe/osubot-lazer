@@ -18,6 +18,9 @@ export type ReplayInfo = {
   perfect: number;
   accuracy: number;
   mods: ModAcronym[];
+  rawLifeBarData: ReplayLifeBarValue[];
+  timestamp: number;
+  onlineScoreId: number;
 };
 
 export type ReplayHitcounts = {
@@ -27,4 +30,9 @@ export type ReplayHitcounts = {
   miss: number;
   geki: number;
   katu: number;
+};
+
+export type ReplayLifeBarValue = {
+  time: number;
+  healthFraction: number;
 };
