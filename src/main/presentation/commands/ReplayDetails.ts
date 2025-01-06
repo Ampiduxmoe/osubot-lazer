@@ -10,7 +10,11 @@ import {TextProcessor} from '../common/arg_processing/TextProcessor';
 import {CommandMatchResult} from '../common/CommandMatchResult';
 import {CommandPrefixes} from '../common/CommandPrefixes';
 import {TextCommand} from './base/TextCommand';
-import {GetInitiatorAppUserId, GetReplayFile} from './common/Signatures';
+import {
+  GetInitiatorAppUserId,
+  GetReplayFile,
+  SaveLastSeenBeatmapId,
+} from './common/Signatures';
 
 export abstract class ReplayDetails<TContext, TOutput> extends TextCommand<
   ReplayDetailsExecutionArgs,
@@ -41,7 +45,8 @@ export abstract class ReplayDetails<TContext, TOutput> extends TextCommand<
     protected getReplayFile: GetReplayFile<TContext>,
     protected parseReplayFile: ParseReplayUseCase,
     protected getInitiatorAppUserId: GetInitiatorAppUserId<TContext>,
-    protected getBeatmapInfo: GetBeatmapInfoUseCase
+    protected getBeatmapInfo: GetBeatmapInfoUseCase,
+    protected saveLastSeenBeatmapId: SaveLastSeenBeatmapId<TContext>
   ) {
     super(ReplayDetails.commandStructure);
   }
@@ -81,6 +86,13 @@ export abstract class ReplayDetails<TContext, TOutput> extends TextCommand<
         server: OsuServer.Bancho,
         ...simulationParams,
       });
+      if (mapInfoResult.beatmapInfo !== undefined) {
+        this.saveLastSeenBeatmapId(
+          ctx,
+          OsuServer.Bancho,
+          mapInfoResult.beatmapInfo.id
+        );
+      }
       return {
         replayInfo: replayInfo,
         mapInfo: mapInfoResult.beatmapInfo,

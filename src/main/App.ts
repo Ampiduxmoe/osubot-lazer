@@ -817,7 +817,8 @@ export class App {
       vkBeatmapCovers,
       parseReplayUseCase,
       getInitiatorAppUserId,
-      getBeatmapInfoUseCase
+      getBeatmapInfoUseCase,
+      saveLastSeenBeatmapId
     );
     const contactAdmin = new ContactAdminVk(
       group.id,

@@ -1,7 +1,10 @@
 /* eslint-disable no-irregular-whitespace */
 import axios from 'axios';
 import {APP_CODE_NAME} from '../../../App';
-import {MapInfo} from '../../../application/usecases/get_beatmap_info/GetBeatmapInfoResponse';
+import {
+  BeatmapsetRankStatus,
+  MapInfo,
+} from '../../../application/usecases/get_beatmap_info/GetBeatmapInfoResponse';
 import {GetBeatmapInfoUseCase} from '../../../application/usecases/get_beatmap_info/GetBeatmapInfoUseCase';
 import {
   ReplayHitcounts,
@@ -16,6 +19,7 @@ import {Timespan} from '../../../primitives/Timespan';
 import {
   GetInitiatorAppUserId,
   GetReplayFile,
+  SaveLastSeenBeatmapId,
 } from '../../commands/common/Signatures';
 import {
   ReplayDetails,
@@ -24,7 +28,9 @@ import {
 import {CommandMatchResult} from '../../common/CommandMatchResult';
 import {VkBeatmapCoversRepository} from '../../data/repositories/VkBeatmapCoversRepository';
 import {VkMessageContext} from '../VkMessageContext';
-import {VkOutputMessage} from '../VkOutputMessage';
+import {VkOutputMessage, VkOutputMessageButton} from '../VkOutputMessage';
+import {ChatLeaderboardOnMapVk} from './ChatLeaderboardOnMapVk';
+import {UserBestPlaysOnMapVk} from './UserBestPlaysOnMapVk';
 
 export class ReplayDetailsVk extends ReplayDetails<
   VkMessageContext,
@@ -34,7 +40,8 @@ export class ReplayDetailsVk extends ReplayDetails<
     protected vkBeatmapCovers: VkBeatmapCoversRepository,
     parseReplayFile: ParseReplayUseCase,
     getInitiatorAppUserId: GetInitiatorAppUserId<VkMessageContext>,
-    getBeatmapInfo: GetBeatmapInfoUseCase
+    getBeatmapInfo: GetBeatmapInfoUseCase,
+    saveLastSeenBeatmapId: SaveLastSeenBeatmapId<VkMessageContext>
   ) {
     const getReplayFile: GetReplayFile<VkMessageContext> = async ctx => {
       const replayAttachments = ctx
@@ -50,7 +57,8 @@ export class ReplayDetailsVk extends ReplayDetails<
       getReplayFile,
       parseReplayFile,
       getInitiatorAppUserId,
-      getBeatmapInfo
+      getBeatmapInfo,
+      saveLastSeenBeatmapId
     );
   }
 
@@ -143,6 +151,11 @@ ${scoreDateString}
 Beatmap: ${mapUrlShort}${couldNotAttachCoverMessage}
           `.trim(),
           attachment: coverAttachment ?? undefined,
+          buttons: this.createBeatmapButtons(
+            OsuServer.Bancho,
+            mapInfo.id,
+            hasLeaderboard(mapInfo.beatmapset.status)
+          ),
         };
       })()
     );
@@ -183,6 +196,42 @@ ${scoreDateString}
         };
       })()
     );
+  }
+
+  createBeatmapButtons(
+    server: OsuServer,
+    beatmapId: number,
+    hasLeaderboard: boolean
+  ): VkOutputMessageButton[][] | undefined {
+    if (!hasLeaderboard) {
+      return undefined;
+    }
+    const buttons: VkOutputMessageButton[] = [];
+    const userBestPlaysOnMapCommand = this.otherCommands.find(
+      x => x instanceof UserBestPlaysOnMapVk
+    );
+    if (userBestPlaysOnMapCommand !== undefined) {
+      buttons.push({
+        text: 'Мой скор на карте',
+        command: userBestPlaysOnMapCommand.unparse({
+          server: server,
+          beatmapId: beatmapId,
+        }),
+      });
+    }
+    const chatLeaderboardOnMapCommand = this.otherCommands.find(
+      x => x instanceof ChatLeaderboardOnMapVk
+    );
+    if (chatLeaderboardOnMapCommand !== undefined) {
+      buttons.push({
+        text: 'Топ чата на карте',
+        command: chatLeaderboardOnMapCommand.unparse({
+          server: server,
+          beatmapId: beatmapId,
+        }),
+      });
+    }
+    return buttons.map(x => [x]);
   }
 }
 
@@ -244,4 +293,23 @@ function getScoreDateString(date: Date): string {
   const datePart = `${dayFormatted}.${monthFormatted}.${year}`;
   const timePart = `${hoursFormatted}:${minutesFormatted}`;
   return `${datePart} ${timePart}`;
+}
+
+function hasLeaderboard(mapStatus: BeatmapsetRankStatus) {
+  switch (mapStatus) {
+    case 'Graveyard':
+      return false;
+    case 'Wip':
+      return false;
+    case 'Pending':
+      return false;
+    case 'Ranked':
+      return true;
+    case 'Approved':
+      return true;
+    case 'Qualified':
+      return true;
+    case 'Loved':
+      return true;
+  }
 }
