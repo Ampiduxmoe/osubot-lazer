@@ -809,6 +809,7 @@ export class App {
       userUpdate,
     ];
     const beatmapMenu = new BeatmapMenuVk(
+      saveLastSeenBeatmapId,
       mainTextProcessor,
       getInitiatorAppUserId,
       getBeatmapInfoUseCase

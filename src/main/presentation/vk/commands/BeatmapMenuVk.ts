@@ -1,17 +1,16 @@
 /* eslint-disable no-irregular-whitespace */
 import {AttachmentType} from 'vk-io';
 import {APP_CODE_NAME} from '../../../App';
-import {
-  BeatmapsetRankStatus,
-  MapInfo,
-} from '../../../application/usecases/get_beatmap_info/GetBeatmapInfoResponse';
+import {BeatmapsetRankStatus} from '../../../application/usecases/get_beatmap_info/GetBeatmapInfoResponse';
 import {MaybeDeferred} from '../../../primitives/MaybeDeferred';
 import {OsuRuleset} from '../../../primitives/OsuRuleset';
 import {OsuServer} from '../../../primitives/OsuServer';
 import {
   BeatmapMenu,
   BeatmapMenuExecutionArgs,
+  MapInfoWithContext,
 } from '../../commands/BeatmapMenu';
+import {SaveLastSeenBeatmapId} from '../../commands/common/Signatures';
 import {CommandMatchResult} from '../../common/CommandMatchResult';
 import {VkMessageContext} from '../VkMessageContext';
 import {VkOutputMessage, VkOutputMessageButton} from '../VkOutputMessage';
@@ -23,6 +22,14 @@ export class BeatmapMenuVk extends BeatmapMenu<
   VkMessageContext,
   VkOutputMessage
 > {
+  constructor(
+    private saveLastSeenBeatmapId: SaveLastSeenBeatmapId<VkMessageContext>,
+    ...parentParams: ConstructorParameters<
+      typeof BeatmapMenu<VkMessageContext, VkOutputMessage>
+    >
+  ) {
+    super(...parentParams);
+  }
   matchMessage(
     ctx: VkMessageContext
   ): CommandMatchResult<BeatmapMenuExecutionArgs> {
@@ -49,13 +56,13 @@ export class BeatmapMenuVk extends BeatmapMenu<
   createMapMenuMessage(
     server: OsuServer,
     beatmapId: number,
-    getMapInfo: () => Promise<MapInfo | undefined>
+    getMapInfo: () => Promise<MapInfoWithContext<VkMessageContext> | undefined>
   ): MaybeDeferred<VkOutputMessage> {
     return MaybeDeferred.fromInstantPromise(
       (async () => {
-        const mapInfo = await getMapInfo();
+        const mapInfoResult = await getMapInfo();
         const serverString = OsuServer[server];
-        if (mapInfo === undefined) {
+        if (mapInfoResult === undefined) {
           return {
             text: `
 [Server: ${serverString}]
@@ -63,13 +70,14 @@ export class BeatmapMenuVk extends BeatmapMenu<
             `,
           };
         }
+        const mapInfo = mapInfoResult.mapInfo;
         const modeString = OsuRuleset[mapInfo.mode];
         const artist = mapInfo.beatmapset.artist;
         const title = mapInfo.beatmapset.title;
         const diffname = mapInfo.version;
         const mapperName = mapInfo.beatmapset.creator;
         const mapStatus = mapInfo.beatmapset.status;
-        return {
+        const output: VkOutputMessage = {
           text: `
 [Server: ${serverString}, Mode: ${modeString}]
 ${artist} - ${title} [${diffname}] by ${mapperName} (${mapStatus})
@@ -80,6 +88,9 @@ ${artist} - ${title} [${diffname}] by ${mapperName} (${mapStatus})
             hasLeaderboard(mapStatus)
           ),
         };
+        const ctx = mapInfoResult.context;
+        await this.saveLastSeenBeatmapId(ctx, server, mapInfo.id);
+        return output;
       })()
     );
   }
