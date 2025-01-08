@@ -922,6 +922,48 @@ export const INTEGER_OR_RANGE: (
   };
 };
 
+export const MULTIPLE_INTEGERS_OR_RANGES: (
+  displayName: string,
+  entityName: string,
+  description: string,
+  min: number | undefined,
+  max: number | undefined
+) => CommandArgument<[number, number][]> = (
+  displayName,
+  entityName,
+  description,
+  min,
+  max
+) => {
+  const integerOrRangeArg = INTEGER_OR_RANGE('', '', '', min, max);
+  return {
+    displayName: displayName,
+    entityName: entityName,
+    description: description,
+    get usageExample(): string {
+      return new Array(pickRandom([1, 2, 3]))
+        .map(() => integerOrRangeArg.usageExample)
+        .join(',');
+    },
+    match: function (token: string): boolean {
+      for (const integerOrRange of token.split(',').map(x => x.trim())) {
+        if (!integerOrRangeArg.match(integerOrRange)) {
+          return false;
+        }
+      }
+      return true;
+    },
+    parse: function (token: string): [number, number][] {
+      return token.split(',').map(x => integerOrRangeArg.parse(x.trim()));
+    },
+    unparse: function (value: [number, number][]): string {
+      return value
+        .map(integerOrRange => integerOrRangeArg.unparse(integerOrRange))
+        .join(',');
+    },
+  };
+};
+
 export const APP_USER_ID = ANY_STRING(
   'ид_польз_прил',
   'ID пользователя приложения',

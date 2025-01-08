@@ -3,7 +3,7 @@ import {CommandMatchResult} from '../common/CommandMatchResult';
 import {CommandPrefixes} from '../common/CommandPrefixes';
 import {
   ANY_STRING,
-  INTEGER_OR_RANGE,
+  MULTIPLE_INTEGERS_OR_RANGES,
   OWN_COMMAND_PREFIX,
   WORD,
 } from '../common/arg_processing/CommandArguments';
@@ -39,7 +39,7 @@ export abstract class Anouncements<TContext, TOutput> extends TextCommand<
   private WORD_EXECUTE = Anouncements.WORD_EXECUTE;
   private static WORD_ECHO = WORD('echo');
   private WORD_ECHO = Anouncements.WORD_ECHO;
-  private static ANOUNCEMENT_ID = INTEGER_OR_RANGE(
+  private static ANOUNCEMENT_ID = MULTIPLE_INTEGERS_OR_RANGES(
     'номер',
     'номер объявления',
     'номер объявления или интервал в формате x-y',
@@ -129,10 +129,8 @@ export abstract class Anouncements<TContext, TOutput> extends TextCommand<
 
     if (argsProcessor.use(this.WORD_SHOW).at(0).extract() !== undefined) {
       const range = argsProcessor.use(this.ANOUNCEMENT_ID).at(0).extract();
-      executionArgs.show = {
-        idStart: range === undefined ? undefined : range[0],
-        idEnd: range === undefined ? undefined : range[1],
-      };
+      executionArgs.show =
+        range?.map(([idStart, idEnd]) => ({idStart, idEnd})) ?? [];
     } else if (
       argsProcessor.use(this.WORD_CREATE).at(0).extract() !== undefined
     ) {
@@ -161,7 +159,7 @@ export abstract class Anouncements<TContext, TOutput> extends TextCommand<
       if (range === undefined) {
         return fail;
       }
-      executionArgs.execute = {id: range[0]};
+      executionArgs.execute = {id: range[0][0]};
     } else if (
       argsProcessor.use(this.WORD_ECHO).at(0).extract() !== undefined
     ) {
@@ -169,7 +167,7 @@ export abstract class Anouncements<TContext, TOutput> extends TextCommand<
       if (range === undefined) {
         return fail;
       }
-      executionArgs.echo = {id: range[0]};
+      executionArgs.echo = {id: range[0][0]};
     }
 
     if (argsProcessor.remainingTokens.length > 0) {
@@ -219,15 +217,18 @@ export abstract class Anouncements<TContext, TOutput> extends TextCommand<
       if (args.show !== undefined) {
         const showArgs = args.show;
         const anouncements = await (async () => {
-          if (showArgs.idStart === undefined || showArgs.idEnd === undefined) {
+          if (showArgs.length === 0) {
             return (await this.anouncements.getLastAnouncements(10)).reverse();
           }
           return (
-            await this.anouncements.getManyByIdRange(
-              showArgs.idStart,
-              showArgs.idEnd
+            await Promise.all(
+              showArgs.map(range =>
+                this.anouncements.getManyByIdRange(range.idStart, range.idEnd)
+              )
             )
-          ).slice(0, 10);
+          )
+            .flat()
+            .slice(0, 10);
         })();
         return {
           anouncements: anouncements.length === 0 ? null : anouncements,
@@ -320,9 +321,11 @@ export abstract class Anouncements<TContext, TOutput> extends TextCommand<
     const tokens = [this.COMMAND_PREFIX.unparse(this.prefixes[0])];
     if (args.show !== undefined) {
       tokens.push(this.WORD_SHOW.unparse(''));
-      if (args.show.idStart !== undefined && args.show.idEnd !== undefined) {
+      if (args.show.length > 0) {
         tokens.push(
-          this.ANOUNCEMENT_ID.unparse([args.show.idStart, args.show.idEnd])
+          this.ANOUNCEMENT_ID.unparse(
+            args.show.map(({idStart, idEnd}) => [idStart, idEnd])
+          )
         );
       }
     } else if (args.create !== undefined) {
@@ -334,12 +337,12 @@ export abstract class Anouncements<TContext, TOutput> extends TextCommand<
     } else if (args.execute !== undefined) {
       tokens.push(
         this.WORD_EXECUTE.unparse(''),
-        this.ANOUNCEMENT_ID.unparse([args.execute.id, args.execute.id])
+        this.ANOUNCEMENT_ID.unparse([[args.execute.id, args.execute.id]])
       );
     } else if (args.echo !== undefined) {
       tokens.push(
         this.WORD_ECHO.unparse(''),
-        this.ANOUNCEMENT_ID.unparse([args.echo.id, args.echo.id])
+        this.ANOUNCEMENT_ID.unparse([[args.echo.id, args.echo.id]])
       );
     }
     return this.textProcessor.detokenize(tokens);
@@ -354,9 +357,9 @@ export type AnouncementsExecutionArgs = {
 };
 
 type ShowArgs = {
-  idStart: number | undefined;
-  idEnd: number | undefined;
-};
+  idStart: number;
+  idEnd: number;
+}[];
 type CreateArgs = {
   description: string;
   text: string;

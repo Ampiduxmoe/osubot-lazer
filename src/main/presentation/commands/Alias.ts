@@ -10,7 +10,7 @@ import {
   ALIAS_PATTERN,
   ALIAS_TARGET,
   ANY_STRING,
-  INTEGER_OR_RANGE,
+  MULTIPLE_INTEGERS_OR_RANGES,
   OWN_COMMAND_PREFIX,
   SERVER_PREFIX,
   WORD,
@@ -59,7 +59,7 @@ export abstract class Alias<TContext, TOutput> extends TextCommand<
   private WORD_TEST = Alias.WORD_TEST;
   private static WORD_LEGACY = WORD('legacy');
   private WORD_LEGACY = Alias.WORD_LEGACY;
-  private static ALIAS_NUMBER = INTEGER_OR_RANGE(
+  private static ALIAS_NUMBER = MULTIPLE_INTEGERS_OR_RANGES(
     'номер',
     'номер шаблона',
     'номер шаблона или интервал в формате x-y',
@@ -209,7 +209,10 @@ export abstract class Alias<TContext, TOutput> extends TextCommand<
       if (range === undefined) {
         return CommandMatchResult.partial(tokenMapping);
       }
-      executionArgs.delete = {deleteStart: range[0], deleteEnd: range[1]};
+      executionArgs.delete = range.map(([deleteStart, deleteEnd]) => ({
+        deleteStart,
+        deleteEnd,
+      }));
     } else if (
       argsProcessor.use(this.WORD_TEST).at(0).extract() !== undefined
     ) {
@@ -310,14 +313,16 @@ export abstract class Alias<TContext, TOutput> extends TextCommand<
         await this.aliases.save({
           appUserId: appUserId,
           aliases: [
-            ...(userAliases?.aliases.filter((_v, i) => {
+            ...(userAliases?.aliases.filter((_, i) => {
               const aliasNumber = i + 1;
-              if (
-                aliasNumber >= deleteArgs.deleteStart &&
-                aliasNumber <= deleteArgs.deleteEnd
-              ) {
-                actionCount += 1;
-                return false;
+              for (const range of deleteArgs) {
+                if (
+                  aliasNumber >= range.deleteStart &&
+                  aliasNumber <= range.deleteEnd
+                ) {
+                  actionCount += 1;
+                  return false;
+                }
               }
               return true;
             }) ?? []),
@@ -477,10 +482,12 @@ export abstract class Alias<TContext, TOutput> extends TextCommand<
     } else if (args.delete !== undefined) {
       tokens.push(
         this.WORD_DELETE.unparse(''),
-        this.ALIAS_NUMBER.unparse([
-          args.delete.deleteStart,
-          args.delete.deleteEnd,
-        ])
+        this.ALIAS_NUMBER.unparse(
+          args.delete.map(({deleteStart, deleteEnd}) => [
+            deleteStart,
+            deleteEnd,
+          ])
+        )
       );
     } else if (args.test !== undefined) {
       tokens.push(
@@ -508,7 +515,7 @@ type AddArgs = {
 type DeleteArgs = {
   deleteStart: number;
   deleteEnd: number;
-};
+}[];
 type TestArgs = {
   testString: string;
 };
