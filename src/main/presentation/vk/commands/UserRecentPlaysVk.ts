@@ -181,8 +181,8 @@ ${couldNotGetSomeStatsMessage}${couldNotAttachCoverMessage}
     const hp = round(play.beatmap.hp, 2);
     const {totalScore} = play;
     const combo = play.combo;
-    const max_combo = play.beatmap.maxCombo;
-    const comboString = `${combo}x/${max_combo}x`;
+    const maxCombo = play.beatmap.maxCombo;
+    const comboString = `${combo}x/${maxCombo}x`;
     const acc = (play.accuracy * 100).toFixed(2);
     const ppValue = play.pp.value?.toFixed(2);
     const ppValueEstimation = (await play.pp.estimatedValue)?.toFixed(0);
@@ -255,8 +255,8 @@ Beatmap: ${mapUrlShort}
       modsPlusSign = '+';
     }
     const combo = play.combo;
-    const max_combo = play.beatmap.maxCombo;
-    const comboString = `${combo}x/${max_combo}x`;
+    const maxCombo = play.beatmap.maxCombo;
+    const comboString = `${combo}x/${maxCombo}x`;
     const acc = (play.accuracy * 100).toFixed(2);
     const ppValue = play.pp.value?.toFixed(2);
     const ppValueEstimation = (await play.pp.estimatedValue)?.toFixed(0);
