@@ -3,6 +3,7 @@ import {CommandMatchResult} from '../common/CommandMatchResult';
 import {CommandPrefixes} from '../common/CommandPrefixes';
 import {
   ANY_STRING,
+  INTEGER,
   MULTIPLE_INTEGERS_OR_RANGES,
   OWN_COMMAND_PREFIX,
   WORD,
@@ -39,7 +40,7 @@ export abstract class Anouncements<TContext, TOutput> extends TextCommand<
   private WORD_EXECUTE = Anouncements.WORD_EXECUTE;
   private static WORD_ECHO = WORD('echo');
   private WORD_ECHO = Anouncements.WORD_ECHO;
-  private static ANOUNCEMENT_ID = MULTIPLE_INTEGERS_OR_RANGES(
+  private static ANOUNCEMENT_ID = INTEGER(
     'номер',
     'номер объявления',
     'номер объявления или интервал в формате x-y',
@@ -47,6 +48,14 @@ export abstract class Anouncements<TContext, TOutput> extends TextCommand<
     10
   );
   private ANOUNCEMENT_ID = Anouncements.ANOUNCEMENT_ID;
+  private static ANOUNCEMENT_IDS = MULTIPLE_INTEGERS_OR_RANGES(
+    'номер',
+    'номер объявления',
+    'номер объявления',
+    1,
+    10
+  );
+  private ANOUNCEMENT_IDS = Anouncements.ANOUNCEMENT_IDS;
   private static ANOUNCEMENT_DESCRIPTION = ANY_STRING(
     'описание',
     'описание объявления',
@@ -74,7 +83,7 @@ export abstract class Anouncements<TContext, TOutput> extends TextCommand<
     {argument: this.WORD_ECHO, isOptional: false}, // 6
 
     {argument: this.ANOUNCEMENT_ID, isOptional: false}, // 7
-    {argument: this.ANOUNCEMENT_ID, isOptional: true}, // 8
+    {argument: this.ANOUNCEMENT_IDS, isOptional: true}, // 8
   ];
 
   argGroups = {
@@ -128,7 +137,7 @@ export abstract class Anouncements<TContext, TOutput> extends TextCommand<
     const executionArgs: AnouncementsExecutionArgs = {};
 
     if (argsProcessor.use(this.WORD_SHOW).at(0).extract() !== undefined) {
-      const range = argsProcessor.use(this.ANOUNCEMENT_ID).at(0).extract();
+      const range = argsProcessor.use(this.ANOUNCEMENT_IDS).at(0).extract();
       executionArgs.show =
         range?.map(([idStart, idEnd]) => ({idStart, idEnd})) ?? [];
     } else if (
@@ -155,19 +164,19 @@ export abstract class Anouncements<TContext, TOutput> extends TextCommand<
     } else if (
       argsProcessor.use(this.WORD_EXECUTE).at(0).extract() !== undefined
     ) {
-      const range = argsProcessor.use(this.ANOUNCEMENT_ID).at(0).extract();
-      if (range === undefined) {
+      const id = argsProcessor.use(this.ANOUNCEMENT_ID).at(0).extract();
+      if (id === undefined) {
         return fail;
       }
-      executionArgs.execute = {id: range[0][0]};
+      executionArgs.execute = {id: id};
     } else if (
       argsProcessor.use(this.WORD_ECHO).at(0).extract() !== undefined
     ) {
-      const range = argsProcessor.use(this.ANOUNCEMENT_ID).at(0).extract();
-      if (range === undefined) {
+      const id = argsProcessor.use(this.ANOUNCEMENT_ID).at(0).extract();
+      if (id === undefined) {
         return fail;
       }
-      executionArgs.echo = {id: range[0][0]};
+      executionArgs.echo = {id: id};
     }
 
     if (argsProcessor.remainingTokens.length > 0) {
@@ -323,7 +332,7 @@ export abstract class Anouncements<TContext, TOutput> extends TextCommand<
       tokens.push(this.WORD_SHOW.unparse(''));
       if (args.show.length > 0) {
         tokens.push(
-          this.ANOUNCEMENT_ID.unparse(
+          this.ANOUNCEMENT_IDS.unparse(
             args.show.map(({idStart, idEnd}) => [idStart, idEnd])
           )
         );
@@ -337,12 +346,12 @@ export abstract class Anouncements<TContext, TOutput> extends TextCommand<
     } else if (args.execute !== undefined) {
       tokens.push(
         this.WORD_EXECUTE.unparse(''),
-        this.ANOUNCEMENT_ID.unparse([[args.execute.id, args.execute.id]])
+        this.ANOUNCEMENT_ID.unparse(args.execute.id)
       );
     } else if (args.echo !== undefined) {
       tokens.push(
         this.WORD_ECHO.unparse(''),
-        this.ANOUNCEMENT_ID.unparse([[args.echo.id, args.echo.id]])
+        this.ANOUNCEMENT_ID.unparse(args.echo.id)
       );
     }
     return this.textProcessor.detokenize(tokens);

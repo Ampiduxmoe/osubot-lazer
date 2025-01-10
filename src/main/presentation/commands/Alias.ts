@@ -59,14 +59,14 @@ export abstract class Alias<TContext, TOutput> extends TextCommand<
   private WORD_TEST = Alias.WORD_TEST;
   private static WORD_LEGACY = WORD('legacy');
   private WORD_LEGACY = Alias.WORD_LEGACY;
-  private static ALIAS_NUMBER = MULTIPLE_INTEGERS_OR_RANGES(
+  private static ALIAS_NUMBERS = MULTIPLE_INTEGERS_OR_RANGES(
     'номер',
     'номер шаблона',
     'номер шаблона или интервал в формате x-y',
     1,
     this.maximumAliases
   );
-  private ALIAS_NUMBER = Alias.ALIAS_NUMBER;
+  private ALIAS_NUMBERS = Alias.ALIAS_NUMBERS;
   private static TEST_COMMAND = ANY_STRING(
     'тестовая_строка',
     'тестовая строка',
@@ -84,7 +84,7 @@ export abstract class Alias<TContext, TOutput> extends TextCommand<
     {argument: ALIAS_TARGET, isOptional: false}, // 4
 
     {argument: this.WORD_DELETE, isOptional: false}, // 5
-    {argument: this.ALIAS_NUMBER, isOptional: false}, // 6
+    {argument: this.ALIAS_NUMBERS, isOptional: false}, // 6
 
     {argument: this.WORD_TEST, isOptional: false}, // 7
     {argument: this.TEST_COMMAND, isOptional: false}, // 8
@@ -197,19 +197,19 @@ export abstract class Alias<TContext, TOutput> extends TextCommand<
     } else if (
       argsProcessor.use(this.WORD_DELETE).at(0).extract() !== undefined
     ) {
-      const range = argsProcessor.use(this.ALIAS_NUMBER).at(0).extract();
+      const ranges = argsProcessor.use(this.ALIAS_NUMBERS).at(0).extract();
       tokenMapping = [
         {token: tokens[0], argument: this.COMMAND_PREFIX},
         {token: tokens[1], argument: this.WORD_DELETE},
-        ...(range !== undefined
-          ? [{token: tokens[2], argument: this.ALIAS_NUMBER}]
+        ...(ranges !== undefined
+          ? [{token: tokens[2], argument: this.ALIAS_NUMBERS}]
           : []),
         ...tokens.slice(3).map(token => ({token: token, argument: undefined})),
       ];
-      if (range === undefined) {
+      if (ranges === undefined) {
         return CommandMatchResult.partial(tokenMapping);
       }
-      executionArgs.delete = range.map(([deleteStart, deleteEnd]) => ({
+      executionArgs.delete = ranges.map(([deleteStart, deleteEnd]) => ({
         deleteStart,
         deleteEnd,
       }));
@@ -482,7 +482,7 @@ export abstract class Alias<TContext, TOutput> extends TextCommand<
     } else if (args.delete !== undefined) {
       tokens.push(
         this.WORD_DELETE.unparse(''),
-        this.ALIAS_NUMBER.unparse(
+        this.ALIAS_NUMBERS.unparse(
           args.delete.map(({deleteStart, deleteEnd}) => [
             deleteStart,
             deleteEnd,
