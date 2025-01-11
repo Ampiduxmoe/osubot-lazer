@@ -499,11 +499,15 @@ export class VkClient {
         if (lateEdit.delayMs !== undefined && lateEdit.delayMs > 0) {
           await delay(lateEdit.delayMs);
         }
-        await botMessage.editMessage({
-          message: editText,
-          attachment: editAttachment,
-          keyboard,
-        });
+        if (lateEdit.text !== undefined || lateEdit.attachment !== undefined) {
+          await botMessage.editMessage({
+            message: editText,
+            attachment: editAttachment,
+            keyboard,
+          });
+        } else {
+          await botMessage.deleteMessage();
+        }
       }
     } catch (e) {
       console.error(e);
