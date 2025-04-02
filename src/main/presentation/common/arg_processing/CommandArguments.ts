@@ -853,12 +853,10 @@ export const INTEGER_RANGE: (
     if (a > b) {
       return false;
     }
-    const numbersMax = Math.max(a, b);
-    const numbersMin = Math.min(a, b);
-    if (min !== undefined && numbersMin < min) {
+    if (min !== undefined && a < min) {
       return false;
     }
-    if (max !== undefined && numbersMax > max) {
+    if (max !== undefined && b > max) {
       return false;
     }
     return true;
