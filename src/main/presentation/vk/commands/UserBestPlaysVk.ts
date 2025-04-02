@@ -339,13 +339,16 @@ ${pp}pp　 ${mapUrlShort}
   createNoBestPlaysMessage(
     server: OsuServer,
     mode: OsuRuleset,
-    username: string
+    username: string,
+    modPatterns?: ModPatternsArg
   ): MaybeDeferred<VkOutputMessage> {
     const serverString = OsuServer[server];
     const modeString = OsuRuleset[mode];
+    const maybeModCombo =
+      modPatterns === undefined ? '' : ` ${MOD_PATTERNS.unparse(modPatterns)}`;
     const text = `
 [Server: ${serverString}, Mode: ${modeString}]
-У ${username} нет лучших скоров
+У ${username} нет${maybeModCombo} скоров в топ-100
     `.trim();
     return MaybeDeferred.fromValue({
       text: text,

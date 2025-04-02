@@ -290,7 +290,12 @@ export abstract class UserBestPlays<TContext, TOutput> extends TextCommand<
       return this.createUserNotFoundMessage(server, usernameInput);
     }
     if (bestPlays.plays.length === 0) {
-      return this.createNoBestPlaysMessage(server, mode!, bestPlays.username);
+      return this.createNoBestPlaysMessage(
+        server,
+        mode!,
+        bestPlays.username,
+        modPatterns
+      );
     }
     if (onlyCount) {
       return this.createBestPlaysCountMessage(
@@ -325,7 +330,8 @@ export abstract class UserBestPlays<TContext, TOutput> extends TextCommand<
   abstract createNoBestPlaysMessage(
     server: OsuServer,
     mode: OsuRuleset,
-    username: string
+    username: string,
+    modPatterns?: ModPatternsArg
   ): MaybeDeferred<TOutput>;
   abstract createBestPlaysCountMessage(
     server: OsuServer,
