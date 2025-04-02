@@ -16,8 +16,10 @@ const modCombos = [
   'NF',
   'NFSO',
 ];
-const ranks: ('SS' | 'S' | 'A' | 'B' | 'C' | 'D' | 'F')[] = [
-  'SS',
+const ranks: ('XH' | 'X' | 'SH' | 'S' | 'A' | 'B' | 'C' | 'D' | 'F')[] = [
+  'XH',
+  'X',
+  'SH',
   'S',
   'A',
   'B',

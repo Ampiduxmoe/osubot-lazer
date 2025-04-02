@@ -56,10 +56,18 @@ export class GetUserBestPlaysUseCase
       initiatorAppUserId,
       targetOsuId,
       server,
-      params.modPatterns,
       params.quantity,
       params.startPosition,
-      targetRuleset
+      targetRuleset,
+      {
+        modPatterns: params.modPatterns,
+        minGrade: params.minGrade,
+        maxGrade: params.maxGrade,
+        minAcc: params.minAcc,
+        maxAcc: params.maxAcc,
+        minPp: params.minPp,
+        maxPp: params.maxPp,
+      }
     );
     const bestPlayPromises = rawBestScores.map(score => {
       const beatmapScore = this.userBestScoreAdapter.createBeatmapScore(

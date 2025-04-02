@@ -44,7 +44,7 @@ export type OsuUserRecentScoreInfo = {
     perfect?: number; // maniaPerfect300
     good?: number; // mania200
   };
-  rank: 'SS' | 'S' | 'A' | 'B' | 'C' | 'D' | 'F';
+  rank: 'XH' | 'X' | 'SH' | 'S' | 'A' | 'B' | 'C' | 'D' | 'F';
   accuracy: number;
   startedAt: string | null;
   endedAt: string;

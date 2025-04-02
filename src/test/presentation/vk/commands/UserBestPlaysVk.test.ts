@@ -591,6 +591,7 @@ describe('UserBestPlaysVk', function () {
         bestPlays: undefined,
         onlyCount: false,
         modPatterns: undefined,
+        gradeRange: undefined,
       };
       viewParams.retryWithUsername = () => MaybeDeferred.fromValue(viewParams);
       const outputMessage =
@@ -618,6 +619,7 @@ describe('UserBestPlaysVk', function () {
         bestPlays: undefined,
         onlyCount: false,
         modPatterns: undefined,
+        gradeRange: undefined,
       }).resultValue;
       assert.strictEqual(
         outputMessage.text,
@@ -644,6 +646,7 @@ describe('UserBestPlaysVk', function () {
         bestPlays: bestPlays,
         onlyCount: false,
         modPatterns: undefined,
+        gradeRange: undefined,
       }).resultValue;
       assert.strictEqual(
         outputMessage.text,
@@ -670,6 +673,7 @@ describe('UserBestPlaysVk', function () {
         bestPlays: bestPlays,
         onlyCount: false,
         modPatterns: undefined,
+        gradeRange: undefined,
       }).resultValue;
       assert.strictEqual(
         outputMessage.text,

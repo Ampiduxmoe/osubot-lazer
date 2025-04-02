@@ -1,9 +1,10 @@
 import {AppUserRecentApiRequestsDao} from '../../application/requirements/dao/AppUserRecentApiRequestsDao';
 import {
   OsuUserBestScore,
+  OsuUserBestScoreFilter,
   OsuUserBestScoresDao,
 } from '../../application/requirements/dao/OsuUserBestScoresDao';
-import {ModPatternCollection} from '../../primitives/ModPatternCollection';
+import {OsuPlayGrade} from '../../primitives/OsuPlayGrade';
 import {OsuRuleset} from '../../primitives/OsuRuleset';
 import {OsuServer} from '../../primitives/OsuServer';
 import {OsuUserBestScoreInfo} from '../http/boundary/OsuUserBestScoreInfo';
@@ -22,23 +23,32 @@ export class OsuUserBestScoresDaoImpl implements OsuUserBestScoresDao {
     appUserId: string,
     osuUserId: number,
     server: OsuServer,
-    modPatterns: ModPatternCollection,
     quantity: number,
     startPosition: number,
-    ruleset: OsuRuleset | undefined
+    ruleset: OsuRuleset | undefined,
+    filter: OsuUserBestScoreFilter
   ): Promise<OsuUserBestScore[]> {
     const api = this.apis.find(api => api.server === server);
     if (api === undefined) {
       throw Error(`Could not find API for server ${OsuServer[server]}`);
     }
-    const modMatcher = new ModPatternCollectionMatcher(modPatterns);
+    const modMatcher = new ModPatternCollectionMatcher(filter.modPatterns);
     if (modMatcher.earlyReturnValue === false) {
       return [];
     }
     let adjustedQuantity = quantity;
     let adjustedStartPosition = startPosition;
-    const hasModFilters = modMatcher.earlyReturnValue !== true;
-    if (hasModFilters) {
+    const hasFilters =
+      modMatcher.earlyReturnValue !== true &&
+      [
+        filter.minGrade,
+        filter.maxGrade,
+        filter.minAcc,
+        filter.maxAcc,
+        filter.minPp,
+        filter.maxPp,
+      ].find(x => x !== undefined) !== undefined;
+    if (hasFilters) {
       adjustedQuantity = 100;
       adjustedStartPosition = 1;
     }
@@ -111,10 +121,32 @@ export class OsuUserBestScoresDaoImpl implements OsuUserBestScoresDao {
       };
       return bestScore;
     });
-    let filteredScores = bestScores.filter(s =>
-      modMatcher.match(s.mods.map(m => m.acronym))
-    );
-    if (hasModFilters) {
+    let filteredScores = bestScores.filter(s => {
+      if (!modMatcher.match(s.mods.map(m => m.acronym))) {
+        return false;
+      }
+      const scoreGrade = normilizeScoreGrade(s.rank);
+      if (filter.minGrade !== undefined && scoreGrade < filter.minGrade) {
+        return false;
+      }
+      if (filter.maxGrade !== undefined && scoreGrade > filter.maxGrade) {
+        return false;
+      }
+      if (filter.minAcc !== undefined && s.accuracy < filter.minAcc) {
+        return false;
+      }
+      if (filter.maxAcc !== undefined && s.accuracy > filter.maxAcc) {
+        return false;
+      }
+      if (filter.minPp !== undefined && s.accuracy < filter.minPp) {
+        return false;
+      }
+      if (filter.maxPp !== undefined && s.accuracy > filter.maxPp) {
+        return false;
+      }
+      return true;
+    });
+    if (hasFilters) {
       filteredScores = filteredScores.splice(startPosition - 1);
       filteredScores.splice(quantity);
     }
@@ -166,3 +198,28 @@ type CapitalizedBeatmapsetStatus =
   | 'Approved'
   | 'Qualified'
   | 'Loved';
+
+function normilizeScoreGrade(grade: InternalScoreGrade): OsuPlayGrade {
+  switch (grade) {
+    case 'XH':
+      return OsuPlayGrade.SS;
+    case 'X':
+      return OsuPlayGrade.SS;
+    case 'SH':
+      return OsuPlayGrade.S;
+    case 'S':
+      return OsuPlayGrade.S;
+    case 'A':
+      return OsuPlayGrade.A;
+    case 'B':
+      return OsuPlayGrade.B;
+    case 'C':
+      return OsuPlayGrade.C;
+    case 'D':
+      return OsuPlayGrade.D;
+    case 'F':
+      return OsuPlayGrade.F;
+  }
+}
+
+type InternalScoreGrade = 'XH' | 'X' | 'SH' | 'S' | 'A' | 'B' | 'C' | 'D' | 'F';

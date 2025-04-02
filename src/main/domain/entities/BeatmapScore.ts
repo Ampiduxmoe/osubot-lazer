@@ -181,4 +181,13 @@ export class BeatmapScore<
 
 export const SCORE_FULL_COMBO: number = Number.POSITIVE_INFINITY;
 
-export type BeatmapScoreRank = 'SS' | 'S' | 'A' | 'B' | 'C' | 'D' | 'F';
+export type BeatmapScoreRank =
+  | 'XH'
+  | 'X'
+  | 'SH'
+  | 'S'
+  | 'A'
+  | 'B'
+  | 'C'
+  | 'D'
+  | 'F';

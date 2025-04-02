@@ -53,15 +53,17 @@ describe('OsuUserBestScoresDao', function () {
         appUserId,
         NaN,
         OsuServer.Bancho,
-        new ModPatternCollection(
-          new ModCombinationPattern({
-            mods: [new ModAcronym('HD')],
-            type: 'required',
-          })
-        ),
         3,
         1,
-        OsuRuleset.osu
+        OsuRuleset.osu,
+        {
+          modPatterns: new ModPatternCollection(
+            new ModCombinationPattern(
+              {mods: [new ModAcronym('HD')], type: 'optional'},
+              {mods: [new ModAcronym('DT')], type: 'required'}
+            )
+          ),
+        }
       );
       assert.strictEqual(result.length, 0);
     });
@@ -71,15 +73,17 @@ describe('OsuUserBestScoresDao', function () {
         appUserId,
         1,
         OsuServer.Bancho,
-        new ModPatternCollection(
-          new ModCombinationPattern({
-            mods: [new ModAcronym('HD')],
-            type: 'required',
-          })
-        ),
         3,
         1,
-        OsuRuleset.osu
+        OsuRuleset.osu,
+        {
+          modPatterns: new ModPatternCollection(
+            new ModCombinationPattern(
+              {mods: [new ModAcronym('HD')], type: 'optional'},
+              {mods: [new ModAcronym('DT')], type: 'required'}
+            )
+          ),
+        }
       );
       assert.notStrictEqual(result, undefined);
       assert.notStrictEqual(result.length, 0);
@@ -108,15 +112,17 @@ describe('OsuUserBestScoresDao', function () {
         appUserId,
         osuId,
         OsuServer.Bancho,
-        new ModPatternCollection(
-          new ModCombinationPattern(
-            {mods: [new ModAcronym('HD')], type: 'optional'},
-            {mods: [new ModAcronym('DT')], type: 'required'}
-          )
-        ),
         10,
         1,
-        ruleset
+        ruleset,
+        {
+          modPatterns: new ModPatternCollection(
+            new ModCombinationPattern(
+              {mods: [new ModAcronym('HD')], type: 'optional'},
+              {mods: [new ModAcronym('DT')], type: 'required'}
+            )
+          ),
+        }
       );
       assert.notStrictEqual(result, undefined);
       assert.strictEqual(result.length, targetScoreCount);

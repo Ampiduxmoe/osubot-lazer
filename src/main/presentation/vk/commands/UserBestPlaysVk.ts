@@ -7,6 +7,7 @@ import {
 } from '../../../application/usecases/get_user_best_plays/GetUserBestPlaysResponse';
 import {MaybeDeferred} from '../../../primitives/MaybeDeferred';
 import {round} from '../../../primitives/Numbers';
+import {OsuPlayGrade} from '../../../primitives/OsuPlayGrade';
 import {OsuRuleset} from '../../../primitives/OsuRuleset';
 import {OsuServer} from '../../../primitives/OsuServer';
 import {chooseCorrectWordFormFromCount} from '../../../primitives/Strings';
@@ -340,15 +341,24 @@ ${pp}pp　 ${mapUrlShort}
     server: OsuServer,
     mode: OsuRuleset,
     username: string,
-    modPatterns?: ModPatternsArg
+    modPatterns?: ModPatternsArg,
+    gradeRange?: [OsuPlayGrade, OsuPlayGrade]
   ): MaybeDeferred<VkOutputMessage> {
     const serverString = OsuServer[server];
     const modeString = OsuRuleset[mode];
     const maybeModCombo =
       modPatterns === undefined ? '' : ` ${MOD_PATTERNS.unparse(modPatterns)}`;
+    let maybeGradeRange = '';
+    if (gradeRange !== undefined) {
+      if (gradeRange[0] === gradeRange[1]) {
+        maybeGradeRange = ` с рангом ${OsuPlayGrade[gradeRange[0]]}`;
+      } else {
+        maybeGradeRange = ` с рангом от ${OsuPlayGrade[gradeRange[0]]} до ${OsuPlayGrade[gradeRange[1]]}`;
+      }
+    }
     const text = `
 [Server: ${serverString}, Mode: ${modeString}]
-У ${username} нет${maybeModCombo} скоров в топ-100
+У ${username} нет${maybeModCombo} скоров в топ-100${maybeGradeRange}
     `.trim();
     return MaybeDeferred.fromValue({
       text: text,
@@ -360,15 +370,24 @@ ${pp}pp　 ${mapUrlShort}
     mode: OsuRuleset,
     username: string,
     count: number,
-    modPatterns?: ModPatternsArg
+    modPatterns?: ModPatternsArg,
+    gradeRange?: [OsuPlayGrade, OsuPlayGrade]
   ): MaybeDeferred<VkOutputMessage> {
     const serverString = OsuServer[server];
     const modeString = OsuRuleset[mode];
     const maybeModCombo =
       modPatterns === undefined ? '' : ` ${MOD_PATTERNS.unparse(modPatterns)}`;
+    let maybeGradeRange = '';
+    if (gradeRange !== undefined) {
+      if (gradeRange[0] === gradeRange[1]) {
+        maybeGradeRange = ` с рангом ${OsuPlayGrade[gradeRange[0]]}`;
+      } else {
+        maybeGradeRange = ` с рангом от ${OsuPlayGrade[gradeRange[0]]} до ${OsuPlayGrade[gradeRange[1]]}`;
+      }
+    }
     const text = `
 [Server: ${serverString}, Mode: ${modeString}]
-У ${username} ${count}${maybeModCombo} ${chooseCorrectWordFormFromCount(count, 'скор', 'скора', 'скоров')} в топ-100
+У ${username} ${count}${maybeModCombo} ${chooseCorrectWordFormFromCount(count, 'скор', 'скора', 'скоров')} в топ-100${maybeGradeRange}
     `.trim();
     return MaybeDeferred.fromValue({
       text: text,

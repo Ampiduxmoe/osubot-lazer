@@ -3,6 +3,11 @@ import {ModAcronym} from '../../../primitives/ModAcronym';
 import {ModCombinationPattern} from '../../../primitives/ModCombinationPattern';
 import {ModPatternCollection} from '../../../primitives/ModPatternCollection';
 import {
+  ALL_OSU_PLAY_GRADE_KEYS,
+  ALL_OSU_PLAY_GRADE_VALUES,
+  OsuPlayGrade,
+} from '../../../primitives/OsuPlayGrade';
+import {
   ALL_OSU_RULESET_KEYS,
   ALL_OSU_RULESET_VALUES,
   OsuRuleset,
@@ -1169,5 +1174,93 @@ export const VK_MENTION: CommandArgument<VkMentionArg> = {
       user: 'id',
     }[value.type];
     return `[${prefix}${value.id}|${value.text}]`;
+  },
+};
+
+export const GRADE_RANGE: CommandArgument<[OsuPlayGrade, OsuPlayGrade]> = {
+  displayName: 'rank=?',
+  entityName: 'ранг плея',
+  description: `ранг сыгранного скора (${ALL_OSU_PLAY_GRADE_KEYS.join('/')})`,
+  get usageExample(): string {
+    const randPos1 = pickRandom(ALL_OSU_PLAY_GRADE_VALUES);
+    const randPos2 = pickRandom(ALL_OSU_PLAY_GRADE_VALUES);
+    return this.unparse([
+      Math.min(randPos1, randPos2),
+      Math.max(randPos1, randPos2),
+    ]);
+  },
+  match: function (token: string): boolean {
+    const allGrades = ALL_OSU_PLAY_GRADE_KEYS.join('|');
+    const allSigns = ['<', '>', '='].join('|');
+    const singleGradeRegex = new RegExp(
+      `^rank(?<sign>${allSigns})(?<grade>${allGrades})$`,
+      'i'
+    );
+    const gradeRangeRegex = new RegExp(
+      `^rank=(?<grade1>${allGrades})-(?<grade2>${allGrades})$`,
+      'i'
+    );
+    return singleGradeRegex.test(token) || gradeRangeRegex.test(token);
+  },
+  parse: function (token: string): [number, number] {
+    const allGrades = ALL_OSU_PLAY_GRADE_KEYS.join('|');
+    const allSigns = ['<', '>', '='].join('|');
+    const singleGradeRegex = new RegExp(
+      `^rank(?<sign>${allSigns})(?<grade>${allGrades})$`,
+      'i'
+    );
+    if (singleGradeRegex.test(token)) {
+      const sign = token['rank'.length];
+      const grade =
+        OsuPlayGrade[
+          token
+            .substring('rank='.length)
+            .toUpperCase() as keyof typeof OsuPlayGrade
+        ];
+      if (sign === '=') {
+        return [grade, grade];
+      }
+      if (sign === '<') {
+        return [Math.min(...ALL_OSU_PLAY_GRADE_VALUES), grade - 1];
+      }
+      if (sign === '>') {
+        return [grade + 1, Math.max(...ALL_OSU_PLAY_GRADE_VALUES)];
+      }
+    }
+    const gradeRangeRegex = new RegExp(
+      `^rank=(?<grade1>${allGrades})-(?<grade2>${allGrades})$`,
+      'i'
+    );
+    const groups = gradeRangeRegex.exec(token)?.groups;
+    const a =
+      OsuPlayGrade[
+        groups!['grade1'].toUpperCase() as keyof typeof OsuPlayGrade
+      ];
+    const b =
+      OsuPlayGrade[
+        groups!['grade2'].toUpperCase() as keyof typeof OsuPlayGrade
+      ];
+    return [Math.min(a, b), Math.max(a, b)];
+  },
+  unparse: function (value: [OsuPlayGrade, OsuPlayGrade]): string {
+    if (value[0] > 0 && value[1] === Math.max(...ALL_OSU_PLAY_GRADE_VALUES)) {
+      return `rank>${OsuPlayGrade[value[0] - 1]}`;
+    }
+    if (value[0] === 0 && value[1] < Math.max(...ALL_OSU_PLAY_GRADE_VALUES)) {
+      return `rank<${OsuPlayGrade[value[1] + 1]}`;
+    }
+    if (value[0] === value[1]) {
+      const v = value[0];
+      const signs = ['='];
+      if (v > 0) {
+        signs.push('<');
+      }
+      if (v < Math.max(...ALL_OSU_PLAY_GRADE_VALUES)) {
+        signs.push('>');
+      }
+      const sign = pickRandom(signs);
+      return `rank${sign}${OsuPlayGrade[0]}`;
+    }
+    return 'rank=' + OsuPlayGrade[value[0]] + '-' + OsuPlayGrade[value[1]];
   },
 };

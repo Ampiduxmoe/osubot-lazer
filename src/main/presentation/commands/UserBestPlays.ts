@@ -152,10 +152,7 @@ export abstract class UserBestPlays<TContext, TOutput> extends TextCommand<
       quantity: quantity,
       modPatterns: modPatterns,
       mode: mode,
-      gradeRange:
-        gradeRange === undefined
-          ? undefined
-          : {min: gradeRange[0], max: gradeRange[1]},
+      gradeRange: gradeRange,
       onlyCount: onlyCount,
     });
   }
@@ -200,8 +197,9 @@ export abstract class UserBestPlays<TContext, TOutput> extends TextCommand<
             retryWithUsername: username =>
               this.process({...args, username}, ctx),
             bestPlays: undefined,
-            onlyCount: false,
+            onlyCount: onlyCount,
             modPatterns: args.modPatterns,
+            gradeRange: args.gradeRange,
           };
         }
         username = boundUser.username;
@@ -240,6 +238,8 @@ export abstract class UserBestPlays<TContext, TOutput> extends TextCommand<
         quantity: quantity,
         modPatterns: modPatterns,
         calculateDifficulty: !onlyCount,
+        minGrade: args.gradeRange?.[0],
+        maxGrade: args.gradeRange?.[1],
       });
       if (bestPlaysResult.isFailure) {
         const internalFailureReason = bestPlaysResult.failureReason!;
@@ -252,8 +252,9 @@ export abstract class UserBestPlays<TContext, TOutput> extends TextCommand<
               setUsername: undefined,
               retryWithUsername: undefined,
               bestPlays: undefined,
-              onlyCount: false,
+              onlyCount: onlyCount,
               modPatterns: args.modPatterns,
+              gradeRange: args.gradeRange,
             };
         }
       }
@@ -274,6 +275,7 @@ export abstract class UserBestPlays<TContext, TOutput> extends TextCommand<
         bestPlays: bestPlays,
         onlyCount: onlyCount,
         modPatterns: args.modPatterns,
+        gradeRange: args.gradeRange,
       };
     })();
     return MaybeDeferred.fromFastPromise(valuePromise);
@@ -289,6 +291,7 @@ export abstract class UserBestPlays<TContext, TOutput> extends TextCommand<
       bestPlays,
       onlyCount,
       modPatterns,
+      gradeRange,
     } = params;
     if (bestPlays === undefined) {
       if (usernameInput === undefined) {
@@ -305,7 +308,8 @@ export abstract class UserBestPlays<TContext, TOutput> extends TextCommand<
         server,
         mode!,
         bestPlays.username,
-        modPatterns
+        modPatterns,
+        gradeRange
       );
     }
     if (onlyCount) {
@@ -314,7 +318,8 @@ export abstract class UserBestPlays<TContext, TOutput> extends TextCommand<
         mode!,
         bestPlays.username,
         bestPlays.plays.length,
-        modPatterns
+        modPatterns,
+        gradeRange
       );
     }
     return this.createBestPlaysMessage(bestPlays, server, mode!);
@@ -342,14 +347,16 @@ export abstract class UserBestPlays<TContext, TOutput> extends TextCommand<
     server: OsuServer,
     mode: OsuRuleset,
     username: string,
-    modPatterns?: ModPatternsArg
+    modPatterns?: ModPatternsArg,
+    gradeRange?: [OsuPlayGrade, OsuPlayGrade]
   ): MaybeDeferred<TOutput>;
   abstract createBestPlaysCountMessage(
     server: OsuServer,
     mode: OsuRuleset,
     username: string,
     count: number,
-    modPatterns?: ModPatternsArg
+    modPatterns?: ModPatternsArg,
+    gradeRange?: [OsuPlayGrade, OsuPlayGrade]
   ): MaybeDeferred<TOutput>;
 
   unparse(args: UserBestPlaysExecutionArgs): string {
@@ -373,9 +380,7 @@ export abstract class UserBestPlays<TContext, TOutput> extends TextCommand<
       tokens.push(MODE.unparse(args.mode));
     }
     if (args.gradeRange !== undefined) {
-      tokens.push(
-        GRADE_RANGE.unparse([args.gradeRange.min, args.gradeRange.max])
-      );
+      tokens.push(GRADE_RANGE.unparse(args.gradeRange));
     }
     if (args.onlyCount === true) {
       tokens.push(this.WORD_COUNT.unparse(''));
@@ -391,7 +396,7 @@ export type UserBestPlaysExecutionArgs = {
   quantity?: number;
   modPatterns?: ModPatternsArg;
   mode?: OsuRuleset;
-  gradeRange?: {min: OsuPlayGrade; max: OsuPlayGrade};
+  gradeRange?: [OsuPlayGrade, OsuPlayGrade];
   onlyCount?: boolean;
 };
 
@@ -408,4 +413,5 @@ export type UserBestPlaysViewParams = {
   bestPlays: OsuUserBestPlays | undefined;
   onlyCount: boolean;
   modPatterns: ModPatternsArg | undefined;
+  gradeRange: [OsuPlayGrade, OsuPlayGrade] | undefined;
 };

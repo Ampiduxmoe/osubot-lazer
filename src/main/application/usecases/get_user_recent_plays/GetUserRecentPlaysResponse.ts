@@ -65,7 +65,7 @@ export type BeatmapsetRankStatus =
   | 'Qualified'
   | 'Loved';
 
-export type ScoreGrade = 'SS' | 'S' | 'A' | 'B' | 'C' | 'D' | 'F';
+export type ScoreGrade = 'XH' | 'X' | 'SH' | 'S' | 'A' | 'B' | 'C' | 'D' | 'F';
 
 export type ModSettings = SettingsDT | SettingsDA | SettingsCL;
 

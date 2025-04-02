@@ -61,7 +61,7 @@ export type OsuUserRecentScore = {
     perfect?: number; // maniaPerfect300
     good?: number; // mania200
   };
-  rank: 'SS' | 'S' | 'A' | 'B' | 'C' | 'D' | 'F';
+  rank: 'XH' | 'X' | 'SH' | 'S' | 'A' | 'B' | 'C' | 'D' | 'F';
   accuracy: number;
   endedAt: string;
   maxCombo: number;
