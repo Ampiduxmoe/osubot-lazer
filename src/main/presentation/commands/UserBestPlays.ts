@@ -5,10 +5,12 @@ import {SetUsernameUseCase} from '../../application/usecases/set_username/SetUse
 import {MaybeDeferred} from '../../primitives/MaybeDeferred';
 import {ModPatternCollection} from '../../primitives/ModPatternCollection';
 import {clamp} from '../../primitives/Numbers';
+import {OsuPlayGrade} from '../../primitives/OsuPlayGrade';
 import {OsuRuleset} from '../../primitives/OsuRuleset';
 import {OsuServer} from '../../primitives/OsuServer';
 import {CommandArgument} from '../common/arg_processing/CommandArgument';
 import {
+  GRADE_RANGE,
   MOD_PATTERNS,
   MODE,
   ModPatternsArg,
@@ -63,6 +65,7 @@ export abstract class UserBestPlays<TContext, TOutput> extends TextCommand<
     {argument: QUANTITY, isOptional: true},
     {argument: MOD_PATTERNS, isOptional: true},
     {argument: MODE, isOptional: true},
+    {argument: GRADE_RANGE, isOptional: true},
     {argument: this.WORD_COUNT, isOptional: true},
   ];
 
@@ -100,6 +103,7 @@ export abstract class UserBestPlays<TContext, TOutput> extends TextCommand<
     const modPatternsRes = argsProcessor.use(MOD_PATTERNS).extractWithToken();
     const modeRes = argsProcessor.use(MODE).extractWithToken();
     const usernameRes = argsProcessor.use(USERNAME).extractWithToken();
+    const gradeRangeRes = argsProcessor.use(GRADE_RANGE).extractWithToken();
     const onlyCountRes = argsProcessor.use(this.WORD_COUNT).extractWithToken();
 
     if (argsProcessor.remainingTokens.length > 0) {
@@ -111,6 +115,7 @@ export abstract class UserBestPlays<TContext, TOutput> extends TextCommand<
         [...modPatternsRes, MOD_PATTERNS],
         [...modeRes, MODE],
         [...usernameRes, USERNAME],
+        [...gradeRangeRes, GRADE_RANGE],
         [...onlyCountRes, this.WORD_COUNT],
       ];
       const mapping: TokenMatchEntry[] = [];
@@ -138,6 +143,7 @@ export abstract class UserBestPlays<TContext, TOutput> extends TextCommand<
     const modPatterns = modPatternsRes[0];
     const mode = modeRes[0];
     const username = usernameRes[0];
+    const gradeRange = gradeRangeRes[0];
     const onlyCount = onlyCountRes[0] !== undefined;
     return CommandMatchResult.ok({
       server: server,
@@ -146,6 +152,10 @@ export abstract class UserBestPlays<TContext, TOutput> extends TextCommand<
       quantity: quantity,
       modPatterns: modPatterns,
       mode: mode,
+      gradeRange:
+        gradeRange === undefined
+          ? undefined
+          : {min: gradeRange[0], max: gradeRange[1]},
       onlyCount: onlyCount,
     });
   }
@@ -197,7 +207,7 @@ export abstract class UserBestPlays<TContext, TOutput> extends TextCommand<
         username = boundUser.username;
         mode ??= boundUser.ruleset;
       }
-      const startPosition = clamp(args.startPosition ?? 1, 1, 100);
+      let startPosition = clamp(args.startPosition ?? 1, 1, 100);
       let quantity: number;
       if (args.startPosition === undefined) {
         quantity = clamp(args.quantity ?? 3, 1, 10);
@@ -206,6 +216,7 @@ export abstract class UserBestPlays<TContext, TOutput> extends TextCommand<
       }
       if (onlyCount) {
         // override
+        startPosition = 1;
         quantity = 100;
       }
       const modPatterns: ModPatternCollection = (() => {
@@ -361,6 +372,11 @@ export abstract class UserBestPlays<TContext, TOutput> extends TextCommand<
     if (args.mode !== undefined) {
       tokens.push(MODE.unparse(args.mode));
     }
+    if (args.gradeRange !== undefined) {
+      tokens.push(
+        GRADE_RANGE.unparse([args.gradeRange.min, args.gradeRange.max])
+      );
+    }
     if (args.onlyCount === true) {
       tokens.push(this.WORD_COUNT.unparse(''));
     }
@@ -375,6 +391,7 @@ export type UserBestPlaysExecutionArgs = {
   quantity?: number;
   modPatterns?: ModPatternsArg;
   mode?: OsuRuleset;
+  gradeRange?: {min: OsuPlayGrade; max: OsuPlayGrade};
   onlyCount?: boolean;
 };
 
