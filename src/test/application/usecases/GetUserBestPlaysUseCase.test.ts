@@ -85,6 +85,7 @@ describe('GetUserBestPlaysUseCase', function () {
                 type: 'optional',
               })
             ),
+            calculateDifficulty: true,
           };
           const result = await usecase.execute(request);
           assert.strictEqual(result.bestPlays, undefined);
@@ -119,6 +120,7 @@ describe('GetUserBestPlaysUseCase', function () {
               type: 'optional',
             })
           ),
+          calculateDifficulty: true,
         };
         const result = await usecase.execute(request);
         assert.notStrictEqual(result.bestPlays, undefined);
@@ -153,6 +155,7 @@ describe('GetUserBestPlaysUseCase', function () {
               type: 'optional',
             })
           ),
+          calculateDifficulty: true,
         };
         const result = await usecase.execute(request);
         assert.notStrictEqual(result.bestPlays, undefined);

@@ -9,6 +9,7 @@ import {MaybeDeferred} from '../../../primitives/MaybeDeferred';
 import {round} from '../../../primitives/Numbers';
 import {OsuRuleset} from '../../../primitives/OsuRuleset';
 import {OsuServer} from '../../../primitives/OsuServer';
+import {chooseCorrectWordFormFromCount} from '../../../primitives/Strings';
 import {Timespan} from '../../../primitives/Timespan';
 import {LinkUsernameResult} from '../../commands/common/LinkUsernameResult';
 import {
@@ -16,6 +17,10 @@ import {
   UserBestPlaysExecutionArgs,
   UserBestPlaysViewParams,
 } from '../../commands/UserBestPlays';
+import {
+  MOD_PATTERNS,
+  ModPatternsArg,
+} from '../../common/arg_processing/CommandArguments';
 import {CommandMatchResult} from '../../common/CommandMatchResult';
 import {VkBeatmapCoversRepository} from '../../data/repositories/VkBeatmapCoversRepository';
 import {VkMessageContext} from '../VkMessageContext';
@@ -341,6 +346,26 @@ ${pp}pp　 ${mapUrlShort}
     const text = `
 [Server: ${serverString}, Mode: ${modeString}]
 У ${username} нет лучших скоров
+    `.trim();
+    return MaybeDeferred.fromValue({
+      text: text,
+    });
+  }
+
+  createBestPlaysCountMessage(
+    server: OsuServer,
+    mode: OsuRuleset,
+    username: string,
+    count: number,
+    modPatterns?: ModPatternsArg
+  ): MaybeDeferred<VkOutputMessage> {
+    const serverString = OsuServer[server];
+    const modeString = OsuRuleset[mode];
+    const maybeModCombo =
+      modPatterns === undefined ? '' : ` ${MOD_PATTERNS.unparse(modPatterns)}`;
+    const text = `
+[Server: ${serverString}, Mode: ${modeString}]
+У ${username} ${count}${maybeModCombo} ${chooseCorrectWordFormFromCount(count, 'скор', 'скора', 'скоров')} в топ-100
     `.trim();
     return MaybeDeferred.fromValue({
       text: text,

@@ -66,7 +66,11 @@ export class GetUserBestPlaysUseCase
         score,
         targetRuleset
       );
-      return getBestPlay(beatmapScore, score.absolutePosition);
+      return getBestPlay(
+        beatmapScore,
+        score.absolutePosition,
+        params.calculateDifficulty
+      );
     });
     const bestPlays = await Promise.all(bestPlayPromises);
     return {
@@ -82,11 +86,13 @@ export class GetUserBestPlaysUseCase
 
 async function getBestPlay(
   score: BeatmapScore<Mode, Hitcounts>,
-  absolutePosition: number
+  absolutePosition: number,
+  calculateDifficulty: boolean
 ): Promise<BestPlay> {
-  const estimatedStarRating = score.hasStarRatingChangingMods
-    ? await score.getEstimatedStarRating()
-    : score.baseBeatmap.starRating;
+  const estimatedStarRating =
+    score.hasStarRatingChangingMods && calculateDifficulty
+      ? await score.getEstimatedStarRating()
+      : score.baseBeatmap.starRating;
   return {
     absolutePosition: absolutePosition,
     beatmapset: {

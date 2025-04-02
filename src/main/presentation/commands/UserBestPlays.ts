@@ -17,6 +17,7 @@ import {
   SERVER_PREFIX,
   START_POSITION,
   USERNAME,
+  WORD,
 } from '../common/arg_processing/CommandArguments';
 import {MainArgsProcessor} from '../common/arg_processing/MainArgsProcessor';
 import {TextProcessor} from '../common/arg_processing/TextProcessor';
@@ -52,6 +53,8 @@ export abstract class UserBestPlays<TContext, TOutput> extends TextCommand<
 
   private static COMMAND_PREFIX = OWN_COMMAND_PREFIX(this.prefixes);
   private COMMAND_PREFIX = UserBestPlays.COMMAND_PREFIX;
+  private static WORD_COUNT = WORD('!count');
+  private WORD_COUNT = UserBestPlays.WORD_COUNT;
   private static commandStructure = [
     {argument: SERVER_PREFIX, isOptional: false},
     {argument: this.COMMAND_PREFIX, isOptional: false},
@@ -60,6 +63,7 @@ export abstract class UserBestPlays<TContext, TOutput> extends TextCommand<
     {argument: QUANTITY, isOptional: true},
     {argument: MOD_PATTERNS, isOptional: true},
     {argument: MODE, isOptional: true},
+    {argument: this.WORD_COUNT, isOptional: true},
   ];
 
   constructor(
@@ -96,6 +100,7 @@ export abstract class UserBestPlays<TContext, TOutput> extends TextCommand<
     const modPatternsRes = argsProcessor.use(MOD_PATTERNS).extractWithToken();
     const modeRes = argsProcessor.use(MODE).extractWithToken();
     const usernameRes = argsProcessor.use(USERNAME).extractWithToken();
+    const onlyCountRes = argsProcessor.use(this.WORD_COUNT).extractWithToken();
 
     if (argsProcessor.remainingTokens.length > 0) {
       let extractionResults = [
@@ -106,6 +111,7 @@ export abstract class UserBestPlays<TContext, TOutput> extends TextCommand<
         [...modPatternsRes, MOD_PATTERNS],
         [...modeRes, MODE],
         [...usernameRes, USERNAME],
+        [...onlyCountRes, this.WORD_COUNT],
       ];
       const mapping: TokenMatchEntry[] = [];
       for (const originalToken of tokens) {
@@ -132,6 +138,7 @@ export abstract class UserBestPlays<TContext, TOutput> extends TextCommand<
     const modPatterns = modPatternsRes[0];
     const mode = modeRes[0];
     const username = usernameRes[0];
+    const onlyCount = onlyCountRes[0] !== undefined;
     return CommandMatchResult.ok({
       server: server,
       username: username,
@@ -139,6 +146,7 @@ export abstract class UserBestPlays<TContext, TOutput> extends TextCommand<
       quantity: quantity,
       modPatterns: modPatterns,
       mode: mode,
+      onlyCount: onlyCount,
     });
   }
 
@@ -149,6 +157,7 @@ export abstract class UserBestPlays<TContext, TOutput> extends TextCommand<
     const valuePromise: Promise<UserBestPlaysViewParams> = (async () => {
       let username = args.username;
       let mode = args.mode;
+      const onlyCount = args.onlyCount === true;
       const initiatorAppUserId = this.getInitiatorAppUserId(ctx);
       if (username === undefined) {
         const targetAppUserId = this.getTargetAppUserId(ctx, {
@@ -181,6 +190,8 @@ export abstract class UserBestPlays<TContext, TOutput> extends TextCommand<
             retryWithUsername: username =>
               this.process({...args, username}, ctx),
             bestPlays: undefined,
+            onlyCount: false,
+            modPatterns: args.modPatterns,
           };
         }
         username = boundUser.username;
@@ -192,6 +203,10 @@ export abstract class UserBestPlays<TContext, TOutput> extends TextCommand<
         quantity = clamp(args.quantity ?? 3, 1, 10);
       } else {
         quantity = clamp(args.quantity ?? 1, 1, 10);
+      }
+      if (onlyCount) {
+        // override
+        quantity = 100;
       }
       const modPatterns: ModPatternCollection = (() => {
         if (args.modPatterns === undefined) {
@@ -213,6 +228,7 @@ export abstract class UserBestPlays<TContext, TOutput> extends TextCommand<
         startPosition: startPosition,
         quantity: quantity,
         modPatterns: modPatterns,
+        calculateDifficulty: !onlyCount,
       });
       if (bestPlaysResult.isFailure) {
         const internalFailureReason = bestPlaysResult.failureReason!;
@@ -225,6 +241,8 @@ export abstract class UserBestPlays<TContext, TOutput> extends TextCommand<
               setUsername: undefined,
               retryWithUsername: undefined,
               bestPlays: undefined,
+              onlyCount: false,
+              modPatterns: args.modPatterns,
             };
         }
       }
@@ -243,6 +261,8 @@ export abstract class UserBestPlays<TContext, TOutput> extends TextCommand<
         setUsername: undefined,
         retryWithUsername: undefined,
         bestPlays: bestPlays,
+        onlyCount: onlyCount,
+        modPatterns: args.modPatterns,
       };
     })();
     return MaybeDeferred.fromFastPromise(valuePromise);
@@ -256,6 +276,8 @@ export abstract class UserBestPlays<TContext, TOutput> extends TextCommand<
       setUsername,
       retryWithUsername,
       bestPlays,
+      onlyCount,
+      modPatterns,
     } = params;
     if (bestPlays === undefined) {
       if (usernameInput === undefined) {
@@ -269,6 +291,15 @@ export abstract class UserBestPlays<TContext, TOutput> extends TextCommand<
     }
     if (bestPlays.plays.length === 0) {
       return this.createNoBestPlaysMessage(server, mode!, bestPlays.username);
+    }
+    if (onlyCount) {
+      return this.createBestPlaysCountMessage(
+        server,
+        mode!,
+        bestPlays.username,
+        bestPlays.plays.length,
+        modPatterns
+      );
     }
     return this.createBestPlaysMessage(bestPlays, server, mode!);
   }
@@ -296,6 +327,13 @@ export abstract class UserBestPlays<TContext, TOutput> extends TextCommand<
     mode: OsuRuleset,
     username: string
   ): MaybeDeferred<TOutput>;
+  abstract createBestPlaysCountMessage(
+    server: OsuServer,
+    mode: OsuRuleset,
+    username: string,
+    count: number,
+    modPatterns?: ModPatternsArg
+  ): MaybeDeferred<TOutput>;
 
   unparse(args: UserBestPlaysExecutionArgs): string {
     const tokens = [
@@ -317,6 +355,9 @@ export abstract class UserBestPlays<TContext, TOutput> extends TextCommand<
     if (args.mode !== undefined) {
       tokens.push(MODE.unparse(args.mode));
     }
+    if (args.onlyCount === true) {
+      tokens.push(this.WORD_COUNT.unparse(''));
+    }
     return this.textProcessor.detokenize(tokens);
   }
 }
@@ -328,6 +369,7 @@ export type UserBestPlaysExecutionArgs = {
   quantity?: number;
   modPatterns?: ModPatternsArg;
   mode?: OsuRuleset;
+  onlyCount?: boolean;
 };
 
 export type UserBestPlaysViewParams = {
@@ -341,4 +383,6 @@ export type UserBestPlaysViewParams = {
     | ((username?: string) => MaybeDeferred<UserBestPlaysViewParams>)
     | undefined;
   bestPlays: OsuUserBestPlays | undefined;
+  onlyCount: boolean;
+  modPatterns: ModPatternsArg | undefined;
 };

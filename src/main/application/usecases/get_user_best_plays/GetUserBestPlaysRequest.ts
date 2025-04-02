@@ -10,4 +10,5 @@ export type GetUserBestPlaysRequest = {
   startPosition: number;
   quantity: number;
   modPatterns: ModPatternCollection;
+  calculateDifficulty: boolean;
 };
