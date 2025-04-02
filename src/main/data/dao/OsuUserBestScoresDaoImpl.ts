@@ -39,7 +39,7 @@ export class OsuUserBestScoresDaoImpl implements OsuUserBestScoresDao {
     let adjustedQuantity = quantity;
     let adjustedStartPosition = startPosition;
     const hasFilters =
-      modMatcher.earlyReturnValue !== true &&
+      modMatcher.earlyReturnValue !== true ||
       [
         filter.minGrade,
         filter.maxGrade,
