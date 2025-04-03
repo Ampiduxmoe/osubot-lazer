@@ -55,7 +55,11 @@ export abstract class UserBestPlays<TContext, TOutput> extends TextCommand<
 
   private static COMMAND_PREFIX = OWN_COMMAND_PREFIX(this.prefixes);
   private COMMAND_PREFIX = UserBestPlays.COMMAND_PREFIX;
-  private static WORD_COUNT = WORD('!count');
+  private static WORD_COUNT = WORD(
+    '!count',
+    'слово «!count»',
+    'слово «!count»; указывайте для того, чтобы вывести количество скоров, а не сами скоры'
+  );
   private WORD_COUNT = UserBestPlays.WORD_COUNT;
   private static commandStructure = [
     {argument: SERVER_PREFIX, isOptional: false},

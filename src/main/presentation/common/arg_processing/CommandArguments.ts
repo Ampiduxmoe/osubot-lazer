@@ -649,10 +649,14 @@ export const DIFFICULTY_ADJUST_SETTING: (
   },
 });
 
-export const WORD: (word: string) => CommandArgument<string> = word => ({
+export const WORD: (
+  word: string,
+  entityName?: string,
+  description?: string
+) => CommandArgument<string> = (word, entityName, description) => ({
   displayName: word,
-  entityName: `слово «${word}»`,
-  description: `слово «${word}»`,
+  entityName: entityName ?? `слово «${word}»`,
+  description: description ?? `слово «${word}»`,
   get usageExample(): string {
     return pickRandom([word.toLowerCase(), word.toUpperCase()]);
   },
